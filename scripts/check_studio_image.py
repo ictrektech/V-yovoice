@@ -23,6 +23,8 @@ def request(path, body=None, token=""):
 
 
 def main():
+    # 与镜像的 python -m 启动方式一致，读取 /app 中当前源码而非旧安装副本。
+    sys.path.insert(0, "/app")
     assert hashlib.sha256(Path("/app/catalog/models.json").read_bytes()).hexdigest() == (
         "3f5eaa724ca756ead7f711096a41a2075cba9e935cea1952138cb12241e8c835")
     assert len(json.loads(Path("/app/catalog/audio-cpp.json").read_text())) == 38

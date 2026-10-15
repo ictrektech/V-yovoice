@@ -111,6 +111,13 @@ Same-architecture hosts may reuse the prepared Go/web artifacts and pinned sourc
 archive via `--reuse-prepared-artifacts`; synchronize current source first. This
 does not reuse historical service images or skip native image compilation.
 
+For staged model mirroring, `scripts/publish_creative_models.py` verifies each
+download against the upstream catalog. After all batches are published, run it
+with `--downloadable-only --audit-only` for the anonymous 41-file SHA256/size gate.
+Adding `--publish` finalizes the complete source/license index without uploading
+weights again. The two upstream import-only variants remain supported but are not
+misrepresented as publicly downloadable files.
+
 After code delivery and all affected images/Feishu records are verified, run the
 migrated `ictrek.app/scripts/update_version.sh` **locally**. It rejects a dirty
 worktree or either existing release tag, pushes only `vos-v-voice-v...`, and lets

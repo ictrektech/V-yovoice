@@ -99,6 +99,7 @@ def main():
     parser.add_argument("--credentials", type=Path)
     parser.add_argument("--plan", action="store_true")
     parser.add_argument("--publish", action="store_true")
+    parser.add_argument("--audit-only", action="store_true", help="verify anonymous remote hashes; with --publish, finalize only the complete source/license index after staged uploads")
     parser.add_argument("--downloadable-only", action="store_true", help="stage published upstream files; import-only variants remain supported but require an administrator-supplied verified file")
     parser.add_argument("--model", action="append", default=[], help="stage a named model's files; does not change supported catalog")
     args = parser.parse_args()
@@ -127,11 +128,23 @@ def main():
         credentials = json.loads(args.credentials.read_text())
     weights = build_root / "weights"
     weights.mkdir(parents=True, exist_ok=True)
+    repo = json.loads((ROOT / "internal/catalog/vos.json").read_text())["modelscope_repo"]
+    if args.audit_only:
+        from modelscope_hub import HubApi
+        remote = {f.path: f for f in HubApi().list_repo_files(repo, "model")}
+        for spec in specs:
+            f = remote.get(spec["path"])
+            if f is None or f.size != spec["size"] or f.sha256 != spec["sha256"]:
+                raise RuntimeError(f"Anonymous ModelScope verification failed: {spec['path']}")
+        print(f"Anonymous catalog audit passed: {len(specs)} files", flush=True)
+        if not args.publish:
+            return
     def stage(spec):
         print(f"Verify/download {spec['path']}", flush=True)
         download(spec, weights / spec["path"], build_root / "cache", credentials.get("hf", ""))
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        list(pool.map(stage, specs))
+    if not args.audit_only:
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            list(pool.map(stage, specs))
     shutil.copyfile(ROOT / "THIRD_PARTY_NOTICES.md", weights / "THIRD_PARTY_NOTICES.md")
     shutil.copyfile(ROOT / "web/public/model-license.txt", weights / "INDEXTTS-MODEL-LICENSE.txt")
     (weights / "source-index.json").write_text(json.dumps(specs, indent=2) + "\n")
@@ -156,7 +169,7 @@ def main():
             raise SystemExit(f"Missing or changed original license: {family}")
     # 只发布本次完整校验的文件，不把其他线程的半成品或未选择的权重一并上传。
     publication = Path(tempfile.mkdtemp(prefix="publish-", dir=build_root))
-    for spec in specs:
+    for spec in ([] if args.audit_only else specs):
         target = publication / spec["path"]
         target.parent.mkdir(parents=True, exist_ok=True)
         target.hardlink_to(weights / spec["path"])
@@ -164,7 +177,6 @@ def main():
         shutil.copyfile(weights / name, publication / name)
     shutil.copytree(weights / "licenses", publication / "licenses")
     from modelscope_hub import HubApi
-    repo = json.loads((ROOT / "internal/catalog/vos.json").read_text())["modelscope_repo"]
     api = HubApi(token=credentials["modelscope"])
     try:
         api.get_repo(repo, "model")
