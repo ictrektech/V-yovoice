@@ -1,5 +1,17 @@
 # 第三方组件
 
+## VOS 镜像补充
+
+VOS 版从固定的 audio.cpp v0.9.1 源码构建 CPU/CUDA 独立进程，原始 LICENSE
+位于 `/opt/vvoice/audiocpp/LICENSE`。FFmpeg、eSpeak-ng、MeCab 及其动态依赖来自
+各 profile 的系统发行版软件包，不是下文桌面安装包中的预编译版本；具体版本、
+版权与许可保留在镜像的软件包数据库和 `/usr/share/doc/` 中。
+
+模型不随镜像打包。ModelScope 镜像保留原始文件校验值、来源索引和独立许可；
+OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非商业协议，
+不能从本应用的 Apache-2.0 许可推导模型商用授权。音色库分别保留自己的许可
+与作者署名，不统一改标为应用许可。
+
 - Astryx 0.6.1：https://astryx.atmeta.com/ ，保留 npm 包中的许可。
 - audio.cpp v0.9.1：https://github.com/0xShug0/audio.cpp ，Apache-2.0，Copyright 2026 ShugoAI LLC。macOS 包内置 Metal 服务，Windows 包内置 CPU 服务及 DLL；原始 LICENSE 随 engine 目录分发；其他运行包从官方发行页下载并保留许可。
 - IndexTTS：https://github.com/index-tts/index-tts ，模型不随应用分发。中文模型协议原文保存在 web/public/model-license.txt，下载和使用模型须遵守该协议。
