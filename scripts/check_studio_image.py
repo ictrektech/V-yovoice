@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import secrets
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.error
@@ -29,6 +30,16 @@ def main():
     assert len(catalog()) > 17
     from vvoice.main import app
     assert "/v1/audio/transcriptions" in {route.path for route in app.routes}
+    sample = os.getenv("VVOICE_IMAGE_SEACO_SAMPLE")
+    if sample:
+        import soundfile
+        from vvoice.runtime import registry, transcribe
+        samples, rate = soundfile.read(sample, dtype="float32")
+        result = transcribe("seaco-paraformer-zh", samples, rate, hotwords=["魔搭"])
+        assert "魔搭" in result["text"], result["text"]
+        assert "torch" not in sys.modules and "funasr" not in sys.modules
+        registry.unload()
+        print("PASS: retained SeACo ONNX inference and request-scoped hotword")
     assert hashlib.sha256(Path("/opt/vvoice/web/v-voice.png").read_bytes()).hexdigest() == (
         "1bbcbdd36858d396f86b5894720003de39441029340ce625795417ae2fa51db0")
     secret = secrets.token_hex(32)
@@ -54,6 +65,8 @@ def main():
             assert b"<title>V-Voice</title>" in request("http://127.0.0.1:7070/")
             assert b"<html" in request("http://127.0.0.1:7070/service/")
             assert b"/v1/audio/speech" in request("http://127.0.0.1:7070/openapi.json")
+            discovery = json.loads(request("http://127.0.0.1:7070/api/v1/discovery"))
+            assert any(model["id"] == "audiocpp-kokoro-82m-q8" for model in discovery["models"])
             try:
                 request("http://127.0.0.1:7070/v1/audio/speech", {
                     "model": "audiocpp-kokoro-82m-q8", "input": "Hello.", "voice": "af_heart"})
