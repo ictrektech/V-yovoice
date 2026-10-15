@@ -1,0 +1,45 @@
+ARG VVOICE_BASE_IMAGE
+ARG AUDIOCPP_BUILD_BASE_IMAGE
+FROM ${AUDIOCPP_BUILD_BASE_IMAGE} AS audio
+ARG AUDIOCPP_CUDA=OFF
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends cmake build-essential pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=audiocpp_source /audio.cpp-v0.9.1.tar.gz /tmp/audio.tar.gz
+RUN mkdir /src && tar xzf /tmp/audio.tar.gz -C /src --strip-components=1 \
+    && cmake -S /src -B /build -DCMAKE_BUILD_TYPE=Release \
+       -DAUDIOCPP_VERSION=v0.9.1 -DAUDIOCPP_DEPLOYMENT_BUILD=ON \
+       -DENGINE_ENABLE_NATIVE_CPU=OFF -DENGINE_ENABLE_CUDA=${AUDIOCPP_CUDA} \
+       -DCMAKE_DISABLE_FIND_PACKAGE_Git=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+       '-DCMAKE_INSTALL_RPATH=$ORIGIN' \
+    && cmake --build /build --target audiocpp_server -j 8 \
+    && mkdir /opt/audiocpp && cp -a /build/bin/. /opt/audiocpp/ \
+    && cp /src/LICENSE /opt/audiocpp/LICENSE
+
+FROM ${VVOICE_BASE_IMAGE}
+ENV VVOICE_STUDIO_ENABLED=true VVOICE_SHARED_MODELS=true VVOICE_SCHEDULER_REQUIRED=true \
+    VVOICE_STUDIO_ASSETS=/opt/vvoice/web \
+    VVOICE_AUDIOCPP_SERVER=/opt/vvoice/audiocpp/audiocpp_server \
+    LD_LIBRARY_PATH=/opt/vvoice/audiocpp:${LD_LIBRARY_PATH}
+ARG TARGETARCH
+ARG AUDIOCPP_BACKEND=cpu
+COPY --from=studio_artifacts /linux-${TARGETARCH}/vvoice-studio /opt/vvoice/vvoice-studio
+COPY --from=studio_artifacts /web/ /opt/vvoice/web/
+COPY --from=audio /opt/audiocpp/ /opt/vvoice/audiocpp/
+RUN apt-get update && apt-get install -y --no-install-recommends libespeak-ng1 libmecab2 mecab-ipadic-utf8 \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /opt/vvoice/tools/kokoro \
+    && ln -s /usr/bin/ffmpeg /opt/vvoice/tools/ffmpeg \
+    && ln -s /usr/bin/ffprobe /opt/vvoice/tools/ffprobe \
+    && cp -L /usr/lib/$(uname -m)-linux-gnu/libespeak-ng.so.1 /opt/vvoice/tools/kokoro/libespeak-ng.so \
+    && cp -L /usr/lib/$(uname -m)-linux-gnu/libmecab.so.2 /opt/vvoice/tools/kokoro/libmecab.so.2 \
+    && ln -s /usr/lib/$(uname -m)-linux-gnu/espeak-ng-data /opt/vvoice/tools/kokoro/espeak-ng-data
+COPY docker/yovoice-engine.${AUDIOCPP_BACKEND}.json /opt/vvoice/audiocpp/yovoice-engine.json
+COPY vvoice/ /app/vvoice/
+COPY catalog/ /app/catalog/
+COPY internal/catalog/catalog.json /app/catalog/audio-cpp.json
+COPY internal/catalog/vos.json /app/catalog/audio-cpp-vos.json
+COPY LICENSE THIRD_PARTY_NOTICES.md /opt/vvoice/notices/
+COPY scripts/licenses/espeak-ng-COPYING.txt /opt/vvoice/tools/kokoro/
+WORKDIR /app
+CMD ["python3", "-m", "vvoice.server"]

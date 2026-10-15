@@ -18,6 +18,12 @@ export const musicLanguages = ['zh', 'en', 'yue', 'ja', 'ko', 'es', 'fr', 'de', 
 export const durationPresets = [0, 30, 60, 120, 180] as const;
 
 const copy: Record<UiLocale, { title: string; style: string; lyrics: string; language: string }> = {
+  'zh-TW': {
+    title: '夏夜便利商店',
+    style: 'city pop, warm synths, chill, female vocals',
+    lyrics: '[verse]\n晚風吹得招牌一閃一閃\n冰櫃裡的汽水排成一行\n你說再等十分鐘就打烊\n我們把整個夏天都買光\n\n[chorus]\n二十四小時的光 不睡的城\n收銀機的叮咚像心跳的聲\n如果今晚可以不說再見\n就在這裡 一直等',
+    language: 'zh',
+  },
   'zh-CN': {
     title: '夏夜便利店',
     style: 'city pop, warm synths, chill, female vocals',

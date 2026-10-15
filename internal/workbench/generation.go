@@ -14,6 +14,12 @@ import (
 
 func (w *Workbench) Generate(d schema.Draft) error { return w.generateAudio(d, "", "", "") }
 
+// GenerateSnapshot 执行已持久化的排队快照，不覆盖用户排队后继续编辑的正文。
+func (w *Workbench) GenerateSnapshot(d schema.Draft, cueID, clipID string) error {
+	_, err := w.startGeneration(d, "", cueID, clipID, false)
+	return err
+}
+
 // GenerateCue 重新生成字幕中的一句，可指定替换的时间线片段。
 func (w *Workbench) GenerateCue(d schema.Draft, cueID, clipID string) error {
 	if cueID == "" {

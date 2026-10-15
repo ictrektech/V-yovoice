@@ -1,0 +1,115 @@
+x-vvoice-env: &vvoice-env
+  APP_VERSION: "__APP_VERSION__"
+  VVOICE_DATA_DIR: /data
+  VVOICE_PORT: "7070"
+  VVOICE_SCHEDULER_REQUIRED: "true"
+  VVOICE_SHARED_MODELS: "true"
+  VVOICE_STUDIO_ENABLED: "true"
+  VOS_USERINFO_URL: http://${VOS_HOST_GW_IP}:${VOS_API_GW_PORT_INTERNAL}/v1000/oauth2/userinfo
+  VVOICE_NUM_THREADS: ${VVOICE_NUM_THREADS:-4}
+  VVOICE_MAX_LOADED_MODELS: ${VVOICE_MAX_LOADED_MODELS:-2}
+  VVOICE_MAX_CONCURRENT_INFERENCE: ${VVOICE_MAX_CONCURRENT_INFERENCE:-2}
+  VVOICE_MAX_CONCURRENT_PER_MODEL: ${VVOICE_MAX_CONCURRENT_PER_MODEL:-2}
+  MODEL_HUB_SHARED_MODELS_PATH: /modelhub
+  MODEL_HUB_API_URL: ${MODEL_HUB_API_URL:-http://model-hub-backend:5005}
+
+x-vvoice-base: &vvoice-base
+  restart: unless-stopped
+  pull_policy: always
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  networks:
+    vos_default:
+      aliases:
+        - v-voice-backend
+  volumes:
+    - ${VOS_APP_STORAGE_PATH}/data:/data
+    - ${MODEL_HUB_SHARED_MODELS_PATH:-/data/vos_workspace/model_hub}:/modelhub:ro
+  ports:
+    - "22700:7070"
+  labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=vos_default"
+    - "traefik.http.routers.v-voice-app.rule=PathPrefix(`/app/com.ictrek.v-voice`)"
+    - "traefik.http.routers.v-voice-app.middlewares=v-voice-app-strip"
+    - "traefik.http.middlewares.v-voice-app-strip.stripprefix.prefixes=/app/com.ictrek.v-voice"
+    - "traefik.http.services.v-voice-app.loadbalancer.server.port=7070"
+  healthcheck:
+    test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:7070/health >/dev/null || exit 1"]
+    interval: 30s
+    timeout: 10s
+    start_period: 10s
+    retries: 3
+
+x-vvoice-gpu: &vvoice-gpu
+  <<: *vvoice-base
+  runtime: nvidia
+  environment:
+    <<: *vvoice-env
+    VVOICE_PROVIDER: cuda
+    NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+    NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+
+services:
+  v-voice-amd:
+    <<: *vvoice-base
+    profiles: ["amd"]
+    image: ${VVOICE_AMD_IMAGE}
+    environment:
+      <<: *vvoice-env
+      VVOICE_PROFILE: amd
+      VVOICE_PROVIDER: cpu
+  v-voice-amd-cuda:
+    <<: *vvoice-gpu
+    profiles: ["amd-cuda"]
+    image: ${VVOICE_AMD_CUDA_IMAGE}
+    environment:
+      <<: *vvoice-env
+      VVOICE_PROFILE: amd-cuda
+      VVOICE_PROVIDER: cuda
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+  v-voice-arm:
+    <<: *vvoice-base
+    profiles: ["arm"]
+    image: ${VVOICE_ARM_IMAGE}
+    environment:
+      <<: *vvoice-env
+      VVOICE_PROFILE: arm
+      VVOICE_PROVIDER: cpu
+  v-voice-arm-cuda:
+    <<: *vvoice-gpu
+    profiles: ["arm-cuda"]
+    image: ${VVOICE_ARM_CUDA_IMAGE}
+    environment:
+      <<: *vvoice-env
+      VVOICE_PROFILE: arm-cuda
+      VVOICE_PROVIDER: cuda
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+  v-voice-l4t:
+    <<: *vvoice-gpu
+    profiles: ["l4t"]
+    image: ${VVOICE_L4T_IMAGE}
+    environment:
+      <<: *vvoice-env
+      VVOICE_PROFILE: l4t
+      VVOICE_PROVIDER: cuda
+      # int8 Paraformer hits ORT CUDA broadcast errors on Jetson; pin it to CPU.
+      VVOICE_CPU_MODELS: paraformer-zh
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+  v-voice-thor:
+    <<: *vvoice-gpu
+    profiles: ["thor"]
+    image: ${VVOICE_THOR_IMAGE}
+    environment:
+      <<: *vvoice-env
+      VVOICE_PROFILE: thor
+      VVOICE_PROVIDER: cuda
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+
+networks:
+  vos_default:
+    external: true

@@ -1,4 +1,13 @@
 {
+  "@vvoice.nav.service": { "defaultMessage": "Speech service · Models" },
+  "@vvoice.nav.api": { "defaultMessage": "API documentation" },
+  "@vvoice.api.hint": { "defaultMessage": "Standard speech APIs, creative extensions, discovery and scheduling. The documentation has its own language selector." },
+  "@vvoice.locale.auto": { "defaultMessage": "Follow VOS" },
+  "@vvoice.models.sharedHint": { "defaultMessage": "Model Hub installs selected shared files from ModelScope. The workbench uses read-only shared weights without per-user copies." },
+  "@vvoice.models.serviceLink": { "defaultMessage": "Speech service and all models" },
+  "@vvoice.runtime.updates": { "defaultMessage": "Runtime updates with the VOS image" },
+  "@vvoice.runtime.unload": { "defaultMessage": "Unload runtime" },
+  "@vvoice.runtime.unloadHint": { "defaultMessage": "Stop this user's runtime. Shared weights remain managed by Model Hub." },
   "@yovoice.settings.proxy": {
     "defaultMessage": "Network proxy"
   },

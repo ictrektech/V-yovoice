@@ -1,0 +1,22 @@
+# Upstream fork source
+
+Repository: https://github.com/leemysw/yovoice
+Git URL: https://github.com/leemysw/yovoice.git
+Branch: main
+Integration baseline: fe3629a07baaba2676c33fbe0ce35eefe2086b9c
+Downstream: git@github.com:ictrektech/V-yovoice.git
+
+This fork hosts the next V-Voice: retain upstream voice-creation features while
+preserving V-Voice APIs, Model Hub / ModelScope management, and VOS releases.
+
+Periodic updates (run locally, never on build hosts):
+  git remote add upstream https://github.com/leemysw/yovoice.git
+  # If upstream already exists, verify its URL instead of adding it again.
+  git fetch upstream main
+  git switch -c codex/merge-yovoice-upstream
+  git merge upstream/main
+
+Resolve conflicts without removing VOS authentication, shared model management,
+legacy API compatibility, or the VOS packaging workflow. Run backend, frontend,
+and API compatibility tests before merging. Update the integration baseline only
+after the merge and verification have completed.

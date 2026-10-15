@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "key": "sensevoice-int8",
+      "name": "SenseVoice Small INT8",
+      "kind": "asr",
+      "family": "SenseVoice",
+      "modelscope_repo": "vivibit/v-voice-sensevoice-int8",
+      "description": "Multilingual ASR for Mandarin, Cantonese, English, Japanese, and Korean with punctuation and ITN.",
+      "languages": ["auto", "zh", "yue", "en", "ja", "ko"],
+      "timestamps": {"word": true, "segment": true, "source": "sherpa_token_timestamps"},
+      "preferred": true,
+      "runtime": {
+        "factory": "from_sense_voice",
+        "files": {"model": "model.int8.onnx", "tokens": "tokens.txt"},
+        "options": {"use_itn": true, "language": "auto"}
+      }
+    },
+    {
+      "key": "whisper-tiny",
+      "name": "Whisper Tiny INT8",
+      "kind": "asr",
+      "family": "Whisper",
+      "modelscope_repo": "vivibit/v-voice-whisper-tiny-int8",
+      "description": "Multilingual Whisper ASR and English translation through sherpa-onnx.",
+      "languages": ["auto", "en", "zh", "ja", "ko", "fr", "de", "es"],
+      "runtime": {
+        "factory": "from_whisper",
+        "files": {"encoder": "tiny-encoder.int8.onnx", "decoder": "tiny-decoder.int8.onnx", "tokens": "tiny-tokens.txt"},
+        "options": {"task": "transcribe", "language": ""}
+      }
+    },
+    {
+      "key": "qwen3-asr-0.6b",
+      "name": "Qwen3-ASR 0.6B INT8",
+      "kind": "asr",
+      "family": "Qwen3-ASR",
+      "modelscope_repo": "vivibit/v-voice-qwen3-asr-0.6b-int8",
+      "description": "Multilingual Qwen3-ASR 0.6B inference through the native sherpa-onnx offline recognizer.",
+      "languages": ["auto", "zh", "en", "yue", "ja", "ko", "de", "fr", "es", "ru", "pt", "it"],
+      "hotwords": {"supported": true, "formats": ["text", "file"], "score": false},
+      "runtime": {
+        "factory": "from_qwen3_asr",
+        "files": {"conv_frontend": "conv_frontend.onnx", "encoder": "encoder.int8.onnx", "decoder": "decoder.int8.onnx", "tokenizer": "tokenizer"},
+        "options": {"sample_rate": 16000, "feature_dim": 128}
+      }
+    },
+    {
+      "key": "qwen3-asr-1.7b",
+      "name": "Qwen3-ASR 1.7B INT8",
+      "kind": "asr",
+      "family": "Qwen3-ASR",
+      "modelscope_repo": "vivibit/v-voice-qwen3-asr-1.7b-int8",
+      "description": "Higher-accuracy multilingual Qwen3-ASR 1.7B int8 export loaded natively by sherpa-onnx.",
+      "languages": ["auto", "zh", "en", "yue", "ja", "ko", "de", "fr", "es", "ru", "pt", "it"],
+      "hotwords": {"supported": true, "formats": ["text", "file"], "score": false},
+      "runtime": {
+        "factory": "from_qwen3_asr",
+        "files": {"conv_frontend": "conv_frontend.onnx", "encoder": "encoder.int8.onnx", "decoder": "decoder.int8.onnx", "tokenizer": "tokenizer"},
+        "options": {"sample_rate": 16000, "feature_dim": 128}
+      }
+    },
+    {
+      "key": "paraformer-zh",
+      "name": "Paraformer Chinese INT8",
+      "kind": "asr",
+      "family": "Paraformer",
+      "modelscope_repo": "vivibit/v-voice-paraformer-zh-int8",
+      "description": "Fast Mandarin speech recognition using the sherpa-onnx Paraformer runtime.",
+      "languages": ["zh"],
+      "timestamps": {"word": true, "segment": true, "source": "sherpa_token_timestamps"},
+      "runtime": {
+        "factory": "from_paraformer",
+        "files": {"paraformer": "model.int8.onnx", "tokens": "tokens.txt"},
+        "options": {}
+      }
+    },
+    {
+      "key": "seaco-paraformer-zh",
+      "name": "SeACo-Paraformer Chinese INT8",
+      "kind": "asr",
+      "family": "SeACo-Paraformer",
+      "backend": "ONNX Runtime · CPU",
+      "translation": false,
+      "modelscope_repo": "vivibit/v-voice-seaco-paraformer-zh-int8",
+      "description": "Chinese SeACo-Paraformer with request-scoped neural hotword customization and INT8 ONNX inference.",
+      "languages": ["zh"],
+      "hotwords": {"supported": true, "formats": ["text", "file"], "score": false},
+      "timestamps": {"word": false, "segment": false, "source": "not_exposed"},
+      "runtime": {
+        "factory": "seaco_onnx",
+        "files": {"model": "model.int8.onnx", "embedder": "model_eb.int8.onnx", "tokens": "tokens.json", "frontend": "frontend.json"},
+        "options": {}
+      }
+    },
+    {
+      "key": "zipformer-en-streaming",
+      "name": "Zipformer English Streaming INT8",
+      "kind": "asr",
+      "streaming": true,
+      "family": "Transducer",
+      "modelscope_repo": "vivibit/v-voice-zipformer-en-streaming-int8",
+      "description": "Streaming English Zipformer transducer for realtime recognition over chunked audio.",
+      "languages": ["en"],
+      "timestamps": {"word": true, "segment": true, "source": "sherpa_token_timestamps"},
+      "hotwords": {"supported": true, "formats": ["text", "file"], "score": true, "default_score": 1.5},
+      "runtime": {
+        "factory": "from_transducer",
+        "files": {
+          "encoder": "encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx",
+          "decoder": "decoder-epoch-99-avg-1-chunk-16-left-128.onnx",
+          "joiner": "joiner-epoch-99-avg-1-chunk-16-left-128.int8.onnx",
+          "tokens": "tokens.txt"
+        },
+        "options": {"decoding_method": "modified_beam_search", "max_active_paths": 4, "enable_endpoint_detection": true}
+      }
+    },
+    {
+      "key": "zipformer-zh-streaming",
+      "name": "Zipformer Chinese Streaming INT8",
+      "kind": "asr",
+      "streaming": true,
+      "family": "Transducer",
+      "modelscope_repo": "vivibit/v-voice-zipformer-zh-streaming-int8",
+      "description": "Streaming Mandarin Zipformer transducer (multi-zh-hans) for realtime recognition.",
+      "languages": ["zh"],
+      "timestamps": {"word": true, "segment": true, "source": "sherpa_token_timestamps"},
+      "hotwords": {"supported": true, "formats": ["text", "file"], "score": true, "default_score": 1.5},
+      "runtime": {
+        "factory": "from_transducer",
+        "files": {
+          "encoder": "encoder-epoch-20-avg-1-chunk-16-left-128.int8.onnx",
+          "decoder": "decoder-epoch-20-avg-1-chunk-16-left-128.int8.onnx",
+          "joiner": "joiner-epoch-20-avg-1-chunk-16-left-128.int8.onnx",
+          "tokens": "tokens.txt"
+        },
+        "options": {"decoding_method": "modified_beam_search", "max_active_paths": 4, "enable_endpoint_detection": true}
+      }
+    },
+    {
+      "key": "speaker-campplus-zh-en",
+      "name": "3D-Speaker CAM++ zh-en",
+      "kind": "speaker",
+      "family": "SpeakerEmbedding",
+      "modelscope_repo": "vivibit/v-voice-speaker-campplus-zh-en",
+      "description": "Chinese/English speaker embedding model for voiceprint enrollment, identification, and verification.",
+      "languages": ["zh", "en"],
+      "runtime": {
+        "factory": "speaker_embedding",
+        "files": {"model": "3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx"}
+      }
+    },
+    {
+      "key": "zipformer-en",
+      "name": "Zipformer English INT8",
+      "kind": "asr",
+      "family": "Transducer",
+      "modelscope_repo": "vivibit/v-voice-zipformer-en-int8",
+      "description": "English Zipformer transducer with modified beam search support.",
+      "languages": ["en"],
+      "timestamps": {"word": true, "segment": true, "source": "sherpa_token_timestamps"},
+      "hotwords": {"supported": true, "formats": ["text", "file"], "score": true, "default_score": 1.5},
+      "runtime": {
+        "factory": "from_transducer",
+        "files": {"encoder": "encoder-epoch-99-avg-1.int8.onnx", "decoder": "decoder-epoch-99-avg-1.onnx", "joiner": "joiner-epoch-99-avg-1.int8.onnx", "tokens": "tokens.txt", "bpe_vocab": "bpe.vocab"},
+        "options": {"decoding_method": "modified_beam_search", "max_active_paths": 4, "modeling_unit": "bpe"}
+      }
+    },
+    {
+      "key": "kokoro-multilang",
+      "name": "Kokoro 82M Multilingual",
+      "kind": "tts",
+      "family": "Kokoro",
+      "modelscope_repo": "vivibit/v-voice-kokoro-multilang-v1",
+      "description": "Kokoro 82M Chinese and English speech synthesis with 54 named voices.",
+      "languages": ["en", "zh"],
+      "default_language": "en",
+      "preferred": true,
+      "runtime": {
+        "family": "kokoro",
+        "files": {"model": "model.onnx", "voices": "voices.bin", "tokens": "tokens.txt", "data_dir": "espeak-ng-data", "lexicon": "lexicon-us-en.txt,lexicon-zh.txt"},
+        "options": {}
+      },
+      "voices": {
+        "default": {"sid": 3, "language": "en"},
+        "af_alloy": {"sid": 0, "language": "en"}, "af_aoede": {"sid": 1, "language": "en"},
+        "af_bella": {"sid": 2, "language": "en"}, "af_heart": {"sid": 3, "language": "en"},
+        "af_jessica": {"sid": 4, "language": "en"}, "af_kore": {"sid": 5, "language": "en"},
+        "af_nicole": {"sid": 6, "language": "en"}, "af_nova": {"sid": 7, "language": "en"},
+        "af_river": {"sid": 8, "language": "en"}, "af_sarah": {"sid": 9, "language": "en"},
+        "af_sky": {"sid": 10, "language": "en"}, "am_adam": {"sid": 11, "language": "en"},
+        "am_echo": {"sid": 12, "language": "en"}, "am_eric": {"sid": 13, "language": "en"},
+        "am_fenrir": {"sid": 14, "language": "en"}, "am_liam": {"sid": 15, "language": "en"},
+        "am_michael": {"sid": 16, "language": "en"}, "am_onyx": {"sid": 17, "language": "en"},
+        "am_puck": {"sid": 18, "language": "en"}, "am_santa": {"sid": 19, "language": "en"},
+        "bf_alice": {"sid": 20, "language": "en"}, "bf_emma": {"sid": 21, "language": "en"},
+        "bf_isabella": {"sid": 22, "language": "en"}, "bf_lily": {"sid": 23, "language": "en"},
+        "bm_daniel": {"sid": 24, "language": "en"}, "bm_fable": {"sid": 25, "language": "en"},
+        "bm_george": {"sid": 26, "language": "en"}, "bm_lewis": {"sid": 27, "language": "en"},
+        "ef_dora": {"sid": 28, "language": "en"}, "em_alex": {"sid": 29, "language": "en"},
+        "ff_siwis": {"sid": 30, "language": "en"}, "hf_alpha": {"sid": 31, "language": "en"},
+        "hf_beta": {"sid": 32, "language": "en"}, "hm_omega": {"sid": 33, "language": "en"},
+        "hm_psi": {"sid": 34, "language": "en"}, "if_sara": {"sid": 35, "language": "en"},
+        "im_nicola": {"sid": 36, "language": "en"}, "jf_alpha": {"sid": 37, "language": "en"},
+        "jf_gongitsune": {"sid": 38, "language": "ja"}, "jf_nezumi": {"sid": 39, "language": "ja"},
+        "jf_tebukuro": {"sid": 40, "language": "ja"}, "jm_kumo": {"sid": 41, "language": "ja"},
+        "pf_dora": {"sid": 42, "language": "en"}, "pm_alex": {"sid": 43, "language": "en"},
+        "pm_santa": {"sid": 44, "language": "en"}, "zf_xiaobei": {"sid": 45, "language": "zh"},
+        "zf_xiaoni": {"sid": 46, "language": "zh"}, "zf_xiaoxiao": {"sid": 47, "language": "zh"},
+        "zf_xiaoyi": {"sid": 48, "language": "zh"}, "zm_yunjian": {"sid": 49, "language": "zh"},
+        "zm_yunxi": {"sid": 50, "language": "zh"}, "zm_yunxia": {"sid": 51, "language": "zh"},
+        "zm_yunyang": {"sid": 52, "language": "zh"}, "em_santa": {"sid": 53, "language": "en"}
+      }
+    },
+    {
+      "key": "vits-zh",
+      "name": "VITS Chinese",
+      "kind": "tts",
+      "family": "VITS",
+      "modelscope_repo": "vivibit/v-voice-vits-zh",
+      "description": "Compact Mandarin VITS speech synthesis.",
+      "languages": ["zh"],
+      "runtime": {"family": "vits", "files": {"model": "model.onnx", "tokens": "tokens.txt", "lexicon": "lexicon.txt"}, "options": {}, "rule_fsts": ["phone.fst", "date.fst", "number.fst"]},
+      "voices": {"default": {"sid": 0, "language": "zh"}}
+    },
+    {
+      "key": "matcha-zh",
+      "name": "Matcha Chinese Baker",
+      "kind": "tts",
+      "family": "Matcha",
+      "modelscope_repo": "vivibit/v-voice-matcha-zh-baker",
+      "description": "Mandarin Matcha acoustic model with Vocos vocoder.",
+      "languages": ["zh"],
+      "runtime": {"family": "matcha", "files": {"acoustic_model": "model-steps-3.onnx", "vocoder": "vocos-22khz-univ.onnx", "tokens": "tokens.txt", "lexicon": "lexicon.txt"}, "options": {}, "rule_fsts": ["phone.fst", "date.fst", "number.fst"]},
+      "voices": {"default": {"sid": 0, "language": "zh"}}
+    },
+    {
+      "key": "zipvoice-zh-en",
+      "name": "ZipVoice Chinese-English INT8",
+      "kind": "tts",
+      "family": "ZipVoice",
+      "modelscope_repo": "vivibit/v-voice-zipvoice-zh-en-int8",
+      "description": "Zero-shot Chinese-English speech synthesis using a bundled reference voice.",
+      "languages": ["zh", "en"],
+      "runtime": {
+        "family": "zipvoice",
+        "files": {"tokens": "tokens.txt", "encoder": "encoder.int8.onnx", "decoder": "decoder.int8.onnx", "data_dir": "espeak-ng-data", "lexicon": "lexicon.txt", "vocoder": "vocos_24khz.onnx"},
+        "options": {}, "reference_audio": "test_wavs/leijun-1.wav", "reference_text": "那还是三十六年前，一九八七年。我考上了武汉大学的计算机系。", "num_steps": 4
+      },
+      "voices": {"default": {"sid": 0, "language": "zh"}}
+    },
+    {
+      "key": "kitten-nano-en",
+      "name": "KittenTTS Nano English",
+      "kind": "tts",
+      "family": "Kitten",
+      "modelscope_repo": "vivibit/v-voice-kitten-nano-en",
+      "description": "Small English multi-speaker KittenTTS model.",
+      "languages": ["en"],
+      "runtime": {"family": "kitten", "files": {"model": "model.fp16.onnx", "voices": "voices.bin", "tokens": "tokens.txt", "data_dir": "espeak-ng-data"}, "options": {}},
+      "voices": {"default": {"sid": 0, "language": "en"}, "speaker_1": {"sid": 1, "language": "en"}}
+    },
+    {
+      "key": "pocket-en",
+      "name": "PocketTTS English INT8",
+      "kind": "tts",
+      "family": "Pocket",
+      "modelscope_repo": "vivibit/v-voice-pocket-tts-int8",
+      "description": "English PocketTTS with a bundled reference voice for standard speech requests.",
+      "languages": ["en"],
+      "runtime": {
+        "family": "pocket",
+        "files": {"lm_flow": "lm_flow.int8.onnx", "lm_main": "lm_main.int8.onnx", "encoder": "encoder.onnx", "decoder": "decoder.int8.onnx", "text_conditioner": "text_conditioner.onnx", "vocab_json": "vocab.json", "token_scores_json": "token_scores.json"},
+        "options": {}, "reference_audio": "test_wavs/bria.wav", "num_steps": 5
+      },
+      "voices": {"default": {"sid": 0, "language": "en"}}
+    },
+    {
+      "key": "supertonic-3",
+      "name": "Supertonic 3 INT8",
+      "kind": "tts",
+      "family": "Supertonic",
+      "modelscope_repo": "vivibit/v-voice-supertonic-3-int8",
+      "description": "Ten-speaker speech synthesis across 31 languages.",
+      "languages": ["en", "ko", "ja", "ar", "bg", "cs", "da", "de", "el", "es", "et", "fi", "fr", "hi", "hr", "hu", "id", "it", "lt", "lv", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "tr", "uk", "vi"],
+      "runtime": {
+        "family": "supertonic",
+        "files": {"duration_predictor": "duration_predictor.int8.onnx", "text_encoder": "text_encoder.int8.onnx", "vector_estimator": "vector_estimator.int8.onnx", "vocoder": "vocoder.int8.onnx", "tts_json": "tts.json", "unicode_indexer": "unicode_indexer.bin", "voice_style": "voice.bin"},
+        "options": {}, "num_steps": 8
+      },
+      "voices": {
+        "default": {"sid": 0, "language": "en"}, "speaker_1": {"sid": 1, "language": "en"},
+        "speaker_2": {"sid": 2, "language": "en"}, "speaker_3": {"sid": 3, "language": "en"},
+        "speaker_4": {"sid": 4, "language": "en"}, "speaker_5": {"sid": 5, "language": "en"},
+        "speaker_6": {"sid": 6, "language": "en"}, "speaker_7": {"sid": 7, "language": "en"},
+        "speaker_8": {"sid": 8, "language": "en"}, "speaker_9": {"sid": 9, "language": "en"}
+      }
+    }
+  ]
+}

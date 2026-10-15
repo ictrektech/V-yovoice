@@ -1,7 +1,21 @@
+## VOS 版 V-Voice
+
+本 fork 是 `com.ictrek.v-voice` 的后继源码仓库。原 V-Voice 的模型目录与
+API 保留，在此基础上增加 yovoice 创作工作台和 audio.cpp 模型；支持范围是
+超集，不以精选模型替代原有能力。创作目录保留上游全部可下载模型和精度，
+原本仅支持导入的条目仍需合法来源文件。模型统一经 ModelScope 和 Model Hub
+共享管理，不在每个用户目录重复下载。
+VOS 工作台及独立 API 文档页面均支持英文、简体中文和繁体中文，可跟随 VOS
+语言，也可仅在本应用内手动切换。
+
+参见[接入、标准 API、调度与回滚](docs/vos-integration.md)及
+[保留的语音服务文档](docs/v-voice-legacy.md)。下文保留上游桌面端说明，
+不表示 VOS 镜像及发布门禁已经通过；原始 fork 源与合并基线见 [UPSTREM](UPSTREM)。
+
 <p align="center">
-  <img src="web/public/icon/voice-workbench-app-icon-v1.png" width="96" alt="yovoice" />
+  <img src="web/public/v-voice.png" width="96" alt="V-Voice" />
 </p>
-<h1 align="center">yovoice</h1>
+<h1 align="center">V-Voice</h1>
 <p align="center">让文字拥有你的声音，让创意谱成完整乐章。</p>
 <p align="center">
   <a href="https://yovoice.leemysw.com"><img src="https://img.shields.io/badge/website-yovoice.leemysw.com-10b981?style=flat-square" alt="官网" /></a>

@@ -9,7 +9,7 @@ export function releaseNotes(body: string, locale: UiLocale): NoteBlock[] {
   const text = body.replace(/\r\n?/g, '\n');
   const sections = new Map<string, string>();
   for (const match of text.matchAll(/^###\s+(English|简体中文)\s*\n([\s\S]*?)(?=^#{1,3}\s|(?![\s\S]))/gm)) sections.set(match[1], match[2]);
-  const preferred = locale === 'zh-CN' ? ['简体中文', 'English'] : ['English', '简体中文'];
+  const preferred = locale.startsWith('zh') ? ['简体中文', 'English'] : ['English', '简体中文'];
   const section = preferred.map(name => sections.get(name)).find(value => value?.trim()) ?? text;
   return section.split('\n').map(line => line.trim())
     .filter(line => line && !line.startsWith('#') && !line.startsWith('<!--'))

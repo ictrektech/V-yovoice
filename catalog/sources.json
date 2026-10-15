@@ -1,0 +1,45 @@
+{
+  "sensevoice-int8": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17.tar.bz2",
+  "whisper-tiny": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.tar.bz2",
+  "qwen3-asr-0.6b": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2",
+  "qwen3-asr-1.7b": {
+    "archive": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2",
+    "extras": {
+      "conv_frontend.onnx": "https://modelscope.cn/models/zengshuishui/Qwen3-ASR-onnx/resolve/master/model_1.7B/conv_frontend.onnx",
+      "encoder.int8.onnx": "https://modelscope.cn/models/zengshuishui/Qwen3-ASR-onnx/resolve/master/model_1.7B/encoder.int8.onnx",
+      "decoder.int8.onnx": "https://modelscope.cn/models/zengshuishui/Qwen3-ASR-onnx/resolve/master/model_1.7B/decoder.int8.onnx"
+    }
+  },
+  "paraformer-zh": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-paraformer-zh-2023-09-14.tar.bz2",
+  "seaco-paraformer-zh": {
+    "export": "seaco",
+    "checkpoint_sha256": "3d491689244ec5dfbf9170ef3827c358aa10f1f20e42a7c59e15e688647946d1",
+    "modelscope_repo": "iic/speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
+    "revision": "0141367fdc9b6ba58b0442ef34bceb56a6c1789c"
+  },
+  "zipformer-en-streaming": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-en-2023-06-26.tar.bz2",
+  "zipformer-zh-streaming": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-multi-zh-hans-2023-12-12.tar.bz2",
+  "speaker-campplus-zh-en": {
+    "extras": {
+      "3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx": "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx"
+    }
+  },
+  "zipformer-en": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-zipformer-en-2023-04-01.tar.bz2",
+  "kokoro-multilang": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2",
+  "vits-zh": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-vits-zh-ll.tar.bz2",
+  "matcha-zh": {
+    "archive": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-icefall-zh-baker.tar.bz2",
+    "extras": {
+      "vocos-22khz-univ.onnx": "https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx"
+    }
+  },
+  "zipvoice-zh-en": {
+    "archive": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-zipvoice-distill-int8-zh-en-emilia.tar.bz2",
+    "extras": {
+      "vocos_24khz.onnx": "https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos_24khz.onnx"
+    }
+  },
+  "kitten-nano-en": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_1-fp16.tar.bz2",
+  "pocket-en": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2",
+  "supertonic-3": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2"
+}

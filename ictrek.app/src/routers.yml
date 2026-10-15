@@ -1,0 +1,10 @@
+routers:
+  - id: v-voice
+    kind: page
+    title: {zh-CN: V-Voice, en: V-Voice}
+    icon: lucide:audio-waveform
+    order: 220
+    iframe-src: /app/com.ictrek.v-voice/?v=__APP_VERSION__
+    keep-alive: true
+    entry-point: true
+    embed: true

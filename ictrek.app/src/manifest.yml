@@ -1,0 +1,103 @@
+id: com.ictrek.v-voice
+name:
+  zh-CN: V-Voice
+  en: V-Voice
+description:
+  zh-CN: 公共语音服务与声音创作工作台，提供 ASR、声音克隆、TTS、共享模型管理和 OpenAI 兼容 API。
+  en: Shared speech service and voice studio with ASR, voice cloning, TTS, model management, and OpenAI-compatible APIs.
+version: __APP_VERSION__
+author: ictrek
+oauth2:
+  client:
+    id: com.ictrek.v-voice
+    client_type: public
+    grant_types: [authorization_code, refresh_token]
+    response_types: [code]
+    scopes: [openid, profile, email]
+    pkce_required: true
+    token_endpoint_auth_method: none
+category: [ai]
+icon: icon.png
+arch: [amd64, arm64]
+
+frontend:
+  enabled: true
+  basePath: /app/com.ictrek.v-voice
+
+platform:
+  version: ">=3.0.0"
+
+dependencies:
+  apps:
+    - id: com.ictrek.model-hub
+      version: latest
+      optional: false
+    - id: com.ictrek.v-router
+      version: latest
+      optional: false
+    - id: com.ictrek.v-scheduler
+      version: latest
+      optional: false
+
+permissions:
+  defines:
+    - code: com.ictrek.v-voice:model:manage
+      name:
+        zh-CN: 管理公共语音模型
+        en: Manage Public Voice Models
+      description:
+        zh-CN: 允许管理员通过 Model Hub 安装、更新和停止 V-Voice 公共模型。
+        en: Allows administrators to install, update, and stop public V-Voice models through Model Hub.
+      default_roles: [system_admin, platform_admin]
+
+profiles:
+  - name: amd
+    title: {zh-CN: AMD64 CPU, en: AMD64 CPU}
+    description: {zh-CN: AMD64 CPU 推理。, en: AMD64 CPU inference.}
+    caps: {arch: amd64}
+    conflicts: [amd-cuda, arm, arm-cuda, l4t, thor]
+  - name: amd-cuda
+    title: {zh-CN: AMD64 CUDA, en: AMD64 CUDA}
+    description: {zh-CN: AMD64 NVIDIA CUDA 加速。, en: AMD64 NVIDIA CUDA acceleration.}
+    caps:
+      arch: amd64
+      software: [cuda]
+    conflicts: [amd, arm, arm-cuda, l4t, thor]
+  - name: arm
+    title: {zh-CN: ARM64 CPU, en: ARM64 CPU}
+    description: {zh-CN: ARM64 CPU 推理。, en: ARM64 CPU inference.}
+    caps: {arch: arm64}
+    conflicts: [amd, amd-cuda, arm-cuda, l4t, thor]
+  - name: arm-cuda
+    title: {zh-CN: ARM64 CUDA, en: ARM64 CUDA}
+    description: {zh-CN: 通用 ARM64 NVIDIA CUDA 加速。, en: Generic ARM64 NVIDIA CUDA acceleration.}
+    caps:
+      device-type: generic
+      arch: arm64
+      software: [cuda]
+    conflicts: [amd, amd-cuda, arm, l4t, thor]
+  - name: l4t
+    title: {zh-CN: Jetson / L4T, en: Jetson / L4T}
+    description: {zh-CN: Jetson / L4T CUDA 加速。, en: Jetson / L4T CUDA acceleration.}
+    caps:
+      device-type:
+        - any-of: [l4t, jetson]
+      arch: arm64
+      software: [cuda]
+    conflicts: [amd, amd-cuda, arm, arm-cuda, thor]
+  - name: thor
+    title: {zh-CN: Thor, en: Thor}
+    description: {zh-CN: Thor / Spark CUDA 加速。, en: Thor / Spark CUDA acceleration.}
+    caps:
+      device-type:
+        - any-of: [thor-spark, thor]
+      arch: arm64
+      software: [cuda]
+    conflicts: [amd, amd-cuda, arm, arm-cuda, l4t]
+
+require-profiles: true
+
+storage:
+  directories:
+    - path: data
+      mode: "0755"

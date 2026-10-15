@@ -1,0 +1,58 @@
+configs:
+  - name: MODEL_HUB_SHARED_MODELS_PATH
+    type: path
+    title: {zh-CN: Model Hub 共享模型目录, en: Model Hub Shared Models Path}
+    description:
+      zh-CN: 与 Model Hub 相同的公共目录；所有 V-Voice 用户共享已安装模型。
+      en: Shared Model Hub directory; installed V-Voice models are shared by all users.
+    default: /data/vos_workspace/model_hub
+    hints: [com.ictrek.model.storage]
+  - name: MODEL_HUB_API_URL
+    type: string
+    title: {zh-CN: Model Hub API 地址, en: Model Hub API URL}
+    description: {zh-CN: VOS 网络内的 Model Hub 后端地址。, en: Model Hub backend URL inside the VOS network.}
+    default: http://model-hub-backend:5005
+  - name: VVOICE_NUM_THREADS
+    type: integer
+    title: {zh-CN: CPU 线程数, en: CPU Threads}
+    description: {zh-CN: sherpa-onnx 每个模型使用的 CPU 线程数。, en: CPU threads used by each sherpa-onnx model.}
+    default: 4
+    minimum: 1
+    maximum: 64
+  - name: VVOICE_MAX_LOADED_MODELS
+    type: integer
+    title: {zh-CN: 最大常驻模型数, en: Maximum Loaded Models}
+    description: {zh-CN: 全局共享的 LRU 推理模型缓存上限。, en: Global shared LRU inference model cache limit.}
+    default: 2
+    minimum: 1
+    maximum: 16
+  - name: VVOICE_MAX_CONCURRENT_INFERENCE
+    type: integer
+    title: {zh-CN: 全局最大并发推理, en: Global Inference Concurrency}
+    description: {zh-CN: 所有模型合计同时执行的推理请求数；其余请求排队。, en: Inference requests executed across all models; additional requests wait in the queue.}
+    default: 2
+    minimum: 1
+    maximum: 16
+  - name: VVOICE_MAX_CONCURRENT_PER_MODEL
+    type: integer
+    title: {zh-CN: 单模型最大并发推理, en: Per-model Inference Concurrency}
+    description: {zh-CN: 同一 sherpa-onnx 模型实例同时执行的请求数；默认 2 路，其余请求排队。, en: Requests executed concurrently by one sherpa-onnx model instance; defaults to 2 and queues additional requests.}
+    default: 2
+    minimum: 1
+    maximum: 8
+  - name: VVOICE_VAD_SPLIT_SECONDS
+    type: number
+    title: {zh-CN: 长音频 VAD 分段阈值(秒), en: Long-audio VAD Split Threshold (s)}
+    description:
+      zh-CN: 超过该时长的整句音频自动做 VAD 分段解码，避免长音频识别劣化；0 禁用。
+      en: Whole-utterance audio longer than this is split with VAD before decoding; 0 disables.
+    default: 30
+    minimum: 0
+    maximum: 600
+  - name: VVOICE_CPU_MODELS
+    type: string
+    title: {zh-CN: 强制 CPU 推理的模型, en: Models Pinned to CPU}
+    description:
+      zh-CN: 逗号分隔的模型 key，这些模型强制使用 CPU 推理（规避特定加速卡的算子缺陷，如 l4t 上 Paraformer 偶发空结果）。
+      en: Comma-separated model keys forced to CPU execution (works around operator defects on some accelerators, e.g. Paraformer on l4t).
+    default: ""

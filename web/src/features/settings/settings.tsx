@@ -18,11 +18,17 @@ import { overflowTitle } from '../../shared/ui/overflow-title';
 import { UpdateSettings } from '../update/update-settings';
 import { LocalAPISettings } from './local-api-settings';
 import { StorageSettings } from './storage-settings';
+import { isVos } from '../../shared/lib/vos';
+import { VosSettings } from './vos-settings';
 
 // AI 请求超时的可选值（秒）。
 const aiTimeouts = [60, 120, 300, 600, 1200, 1800];
 
-export function Settings({ state, catalog, engine, draft, run, focus }: { focus?: { tab: string; modelId: string; request: number }; state: State; catalog: ModelPackage[]; engine: EngineInfo; draft: Draft; run: (task: () => Promise<unknown>) => void }) {
+type SettingsProps = { focus?: { tab: string; modelId: string; request: number }; state: State; catalog: ModelPackage[]; engine: EngineInfo; draft: Draft; run: (task: () => Promise<unknown>) => void };
+export function Settings(props: SettingsProps) {
+  return isVos ? <VosSettings {...props} /> : <DesktopSettings {...props} />;
+}
+function DesktopSettings({ state, catalog, engine, draft, run, focus }: SettingsProps) {
   const t = useTranslator();
   const [license, setLicense] = useState<string | null>(null);
   const [tab, setTab] = useState('general'); const busy = state.activity?.status === 'running'; const modelBusy = state.modelActivity?.status === 'running';

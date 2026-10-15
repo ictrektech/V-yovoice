@@ -34,13 +34,13 @@ export const pitchName = (pitch: number) => `${names[pitch % 12]}${Math.floor(pi
 
 // 示例：科技解读视频的垫底配乐。D 小调 100 BPM 22 小节，前奏只有铺底和钢琴，展开加入弦乐、低音、琶音和鼓，回落时钢琴放慢收在 Dm。
 export function exampleScore(locale: UiLocale): Score {
-  const zh = locale === 'zh-CN';
+  const zh = locale.startsWith('zh');
   const chords = [[50, 53, 57], [46, 50, 53], [41, 45, 48], [48, 52, 55]];
   const melody = [[[81, 2], [77, 1], [76, 1]], [[74, 1.5], [77, .5], [74, 2]], [[72, 2], [69, 1], [72, 1]], [[76, 3], [74, 1]]] as const;
   const chordAt = (bar: number) => bar >= 22 ? chords[0] : chords[(bar - 1) % 4];
   const track = (id: string, name: string, role: ScoreRole, program: number, extra: Partial<ScoreTrack> = {}): ScoreTrack => ({ id, name, role, program, notes: [], ...extra });
-  const pad = track('pad', zh ? '铺底' : 'Pad', 'pad', 89, { reverb: .5 });
-  const piano = track('piano', zh ? '钢琴' : 'Piano', 'piano', 0, { reverb: .3, pan: -.15, humanize: { velocity: 8, timingMs: 6 } });
+  const pad = track('pad', locale === 'zh-TW' ? '鋪底' : zh ? '铺底' : 'Pad', 'pad', 89, { reverb: .5 });
+  const piano = track('piano', locale === 'zh-TW' ? '鋼琴' : zh ? '钢琴' : 'Piano', 'piano', 0, { reverb: .3, pan: -.15, humanize: { velocity: 8, timingMs: 6 } });
   const violin = track('violin', zh ? '小提琴' : 'Violin', 'melody', 40, { reverb: .35, pan: .2, humanize: { velocity: 6 }, dynamics: [{ start: 7, end: 9, from: .35, to: 1 }, { start: 17, end: 18, from: 1, to: .55 }] });
   const viola = track('viola', zh ? '中提琴' : 'Viola', 'strings', 41, { reverb: .35, pan: -.25, dynamics: [{ start: 7, end: 9, from: .35, to: 1 }, { start: 17, end: 18, from: 1, to: .55 }] });
   const cello = track('cello', zh ? '大提琴' : 'Cello', 'bass', 42, { reverb: .3, dynamics: [{ start: 7, end: 9, from: .35, to: 1 }] });
@@ -67,8 +67,8 @@ export function exampleScore(locale: UiLocale): Score {
     if (bar >= 11 && bar <= 18) for (let i = 0; i < 16; i++) add(arp, bar, 1 + i / 4, [root, third, fifth, third][i % 4] + 24, .25, i % 4 ? 52 : 64);
   }
   return {
-    tempo: 100, timeSignature: [4, 4], key: zh ? 'D 小调' : 'D minor',
-    sections: [{ name: zh ? '前奏' : 'Intro', start: 1, end: 6 }, { name: zh ? '展开' : 'Build', start: 7, end: 18 }, { name: zh ? '回落' : 'Outro', start: 19, end: 22, tempo: 88 }],
+    tempo: 100, timeSignature: [4, 4], key: locale === 'zh-TW' ? 'D 小調' : zh ? 'D 小调' : 'D minor',
+    sections: [{ name: zh ? '前奏' : 'Intro', start: 1, end: 6 }, { name: locale === 'zh-TW' ? '展開' : zh ? '展开' : 'Build', start: 7, end: 18 }, { name: zh ? '回落' : 'Outro', start: 19, end: 22, tempo: 88 }],
     tracks: [pad, piano, violin, viola, cello, arp, drums],
   };
 }
@@ -76,7 +76,7 @@ export function exampleScore(locale: UiLocale): Score {
 export function createScoreDraft(locale: UiLocale, example = true): Draft {
   return {
     ...createDraft(false, locale, soundFontId), kind: 'score',
-    title: example ? (locale === 'zh-CN' ? '科技解读 · 垫底配乐' : 'Tech Explainer Underscore') : createDraft(false, locale).title,
+    title: example ? (locale === 'zh-TW' ? '科技解讀 · 背景配樂' : locale === 'zh-CN' ? '科技解读 · 垫底配乐' : 'Tech Explainer Underscore') : createDraft(false, locale).title,
     score: example ? exampleScore(locale) : emptyScore(),
   };
 }

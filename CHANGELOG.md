@@ -43,6 +43,24 @@
 - macOS 退出时作品保存失败（如运行中删除了数据目录、磁盘已满或外置盘断开）不再只能强制结束：与 Windows 一致提供“备份后退出 / 直接退出 / 返回编辑”，错误提示附带具体原因而非仅显示错误码。
 - “当前作品”只存在于作品编辑页（含版本记录）：切到设置、声音库或作品列表时立即保存未落盘的修改并关闭作品，这些页面退出不再保存作品；内容未变化的保存不再改写状态文件，数据目录不可写时也不会因此挡住退出；删除当前作品后切换到的空白新作品不会在退出时被意外创建。
 
+## [0.0.13] - 2026-10-15
+
+### English
+
+- VOS V-Voice adds a voice-creation workbench while retaining its app identity, icon, complete legacy model catalog, ASR, translation, streaming, hotwords, speaker recognition, TTS and compatible APIs. The retained service console is available alongside the workbench.
+- All 38 upstream creative model/precision variants remain supported. Shared weights use ModelScope and Model Hub; native capabilities appear in V-Router discovery. Model-specific licenses apply, and import-only variants still require verified original files.
+- Projects and reference voices are isolated by VOS identity. Creation tasks and direct/gateway inference integrate with V-Scheduler, with single-use permit handoff and no duplicate resource reservation. The workbench can follow VOS language without losing an edited draft.
+- Migrates the existing six platform profiles, image builds, Feishu records and VOS release pipeline. `UPSTREM` records the original fork source for future merges.
+- English, Simplified Chinese and Traditional Chinese UI, with a dedicated multilingual API documentation page covering both standard endpoints and model-specific extensions.
+
+### 简体中文
+
+- VOS V-Voice 新增声音创作工作台，保留应用身份、原图标、完整原模型目录、识别、翻译、流式识别、热词、声纹、TTS 与兼容 API；原语音服务控制台继续可用。
+- 保留上游全部 38 种创作模型/精度，权重统一经 ModelScope 与 Model Hub 共享管理，并向 V-Router 公开模型原生能力。各模型仍受原始许可约束，仅导入版本仍需提供校验通过的原文件。
+- 作品和参考音色按 VOS 身份隔离；创作任务、直接调用和网关推理接入 V-Scheduler，使用单次可核验许可交接，避免重复预约资源。创作界面可跟随 VOS 语言切换且不丢失正在编辑的草稿。
+- 迁移原有六个平台 profile、镜像构建、飞书记录和 VOS 发布流程；通过 `UPSTREM` 记录原始 fork 来源，方便后续合并更新。
+- 创作界面支持英文、简体中文与繁体中文，新增独立的多语言 API 文档页面，涵盖标准接口和模型专用扩展。
+
 ## [0.2.0] - 2026-10-11
 
 ### English

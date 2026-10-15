@@ -1,8 +1,25 @@
+## V-Voice for VOS
+
+This fork is the successor to `com.ictrek.v-voice`. It preserves the existing
+V-Voice model catalog and APIs and adds the yovoice creation workbench/audio.cpp
+models. Model support is additive, not a replacement by a curated subset.
+All upstream downloadable model variants remain in the creation catalog;
+upstream import-only entries retain their source requirements. Models are shared
+through Model Hub from ModelScope, not downloaded separately per user.
+The VOS workbench and its dedicated API documentation page support English,
+Simplified Chinese and Traditional Chinese, following VOS or an app-local override.
+
+See [integration, public APIs, scheduling and rollback](docs/vos-integration.md)
+and [retained speech-service documentation](docs/v-voice-legacy.md).
+The sections below describe the original upstream desktop app; they do not imply
+that VOS images or releases have passed their release gates. Fork source and
+merge baseline are recorded in [UPSTREM](UPSTREM).
+
 <p align="center">
-  <img src="web/public/icon/voice-workbench-app-icon-v1.png" width="96" alt="yovoice" />
+  <img src="web/public/v-voice.png" width="96" alt="V-Voice" />
 </p>
 
-<h1 align="center">yovoice</h1>
+<h1 align="center">V-Voice</h1>
 <p align="center">Give your words a voice. Compose your ideas into songs.</p>
 <p align="center">
   <a href="https://yovoice.leemysw.com"><img src="https://img.shields.io/badge/website-yovoice.leemysw.com-10b981?style=flat-square" alt="Website" /></a>

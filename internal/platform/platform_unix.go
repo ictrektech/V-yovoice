@@ -21,7 +21,10 @@ func Lock(path string) (*os.File, error) {
 	}
 	return f, nil
 }
-func ConfigureProcess(c *exec.Cmd) { c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} }
+func ConfigureProcess(c *exec.Cmd) {
+	c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	setParentDeath(c)
+}
 func KillProcess(c *exec.Cmd) {
 	if c.Process != nil {
 		_ = syscall.Kill(-c.Process.Pid, syscall.SIGKILL)

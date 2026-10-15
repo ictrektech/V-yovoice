@@ -214,12 +214,13 @@ type UiLocale string
 
 const (
 	UiLocaleZhCN UiLocale = "zh-CN"
+	UiLocaleZhTW UiLocale = "zh-TW"
 	UiLocaleEn   UiLocale = "en"
 )
 
 func ParseUiLocale(raw string) (UiLocale, error) {
 	switch UiLocale(raw) {
-	case UiLocaleZhCN, UiLocaleEn:
+	case UiLocaleZhCN, UiLocaleZhTW, UiLocaleEn:
 		return UiLocale(raw), nil
 	default:
 		return "", fmt.Errorf("unsupported uiLocale %q", raw)

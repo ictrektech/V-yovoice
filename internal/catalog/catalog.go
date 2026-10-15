@@ -52,6 +52,10 @@ type ModelFile struct {
 var catalogJSON []byte
 var Models = []ModelPackage{}
 
+//go:embed vos.json
+var vosJSON []byte
+var VOSRepository string
+
 // engine.json 是 audio.cpp 版本与运行包校验值的唯一来源，桌面打包脚本也读取它。
 //
 //go:embed engine.json
@@ -63,6 +67,13 @@ var EngineVersion, EngineMinimum string
 var archives = map[string]string{}
 
 func init() {
+	var vos struct {
+		Repository string `json:"modelscope_repo"`
+	}
+	if e := json.Unmarshal(vosJSON, &vos); e != nil {
+		panic(e)
+	}
+	VOSRepository = vos.Repository
 	if e := json.Unmarshal(catalogJSON, &Models); e != nil {
 		panic(e)
 	}

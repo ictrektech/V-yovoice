@@ -1,0 +1,39 @@
+ARG NODE_IMAGE=node:22-bookworm-slim
+ARG THOR_BASE_IMAGE=nvcr.io/nvidia/pytorch:25.08-py3
+FROM ${NODE_IMAGE} AS frontend
+WORKDIR /src/frontend
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+
+FROM ${THOR_BASE_IMAGE}
+ARG SHERPA_ONNX_VERSION=1.13.8
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VVOICE_PROVIDER=cuda \
+    VVOICE_PORT=7070
+WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl ffmpeg libgomp1 libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+COPY pyproject.toml README.md ./
+COPY vvoice ./vvoice
+COPY catalog ./catalog
+COPY docker/modules/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl /tmp/
+COPY --from=sherpa_wheels / /tmp/sherpa-wheels/
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+RUN python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . \
+    && (python3 -m pip uninstall -y onnxruntime onnxruntime-gpu || true) \
+    && python3 -m pip install --force-reinstall --no-deps \
+      /tmp/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl \
+    && python3 -m pip install --no-cache-dir --verbose --no-deps \
+      /tmp/sherpa-wheels/*.whl \
+    && sherpa_lib="$(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/sherpa_onnx/lib" \
+    && ln -sf libonnxruntime.so.1.27.0 "${sherpa_lib}/libonnxruntime.so.1" \
+    && rm /tmp/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl \
+    && rm -rf /tmp/sherpa-wheels
+COPY --from=frontend /src/frontend/dist ./frontend/dist
+RUN python3 -c "import sherpa_onnx; assert '+cuda' in sherpa_onnx.__version__; print(sherpa_onnx.__version__)"
+EXPOSE 7070
+CMD ["python3", "-m", "uvicorn", "vvoice.main:app", "--host", "0.0.0.0", "--port", "7070"]

@@ -1,4 +1,13 @@
 {
+  "@vvoice.nav.service": { "defaultMessage": "语音服务 · 模型管理" },
+  "@vvoice.nav.api": { "defaultMessage": "API 文档" },
+  "@vvoice.api.hint": { "defaultMessage": "标准语音 API、创作扩展、模型发现与调度接入。文档内可独立切换语言。" },
+  "@vvoice.locale.auto": { "defaultMessage": "跟随 VOS" },
+  "@vvoice.models.sharedHint": { "defaultMessage": "共享模型统一由 Model Hub 按文件安装，创作工作台只读使用；不会在每个用户目录重复下载。" },
+  "@vvoice.models.serviceLink": { "defaultMessage": "语音服务与全部模型管理" },
+  "@vvoice.runtime.updates": { "defaultMessage": "推理内核随 VOS 镜像更新" },
+  "@vvoice.runtime.unload": { "defaultMessage": "卸载运行时" },
+  "@vvoice.runtime.unloadHint": { "defaultMessage": "停止此用户的运行时；共享文件仍由 Model Hub 管理。" },
   "@yovoice.settings.proxy": {
     "defaultMessage": "网络代理"
   },

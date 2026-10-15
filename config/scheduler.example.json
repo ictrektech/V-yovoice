@@ -1,0 +1,19 @@
+{
+  "url": "http://scheduler-controller:38120/api/v1",
+  "token": "<V-Voice scoped submitter token; at least 32 characters>",
+  "executor_token": "<V-Voice executor token; at least 32 characters>",
+  "upstream_url": "http://v-voice-backend:7070/v1",
+  "models": {
+    "sensevoice-int8": "v-voice.local.infer",
+    "speaker-campplus-zh-en": "v-voice.local.infer",
+    "audiocpp-index-2.5-q8": "v-voice.local.infer",
+    "index-2.5-q8": "v-voice.generate"
+  },
+  "gateway_executors": {
+    "sensevoice-int8": "v-router.v-voice.infer",
+    "audiocpp-index-2.5-q8": "v-router.v-voice.infer"
+  },
+  "secondary_models": {
+    "sensevoice-int8": ["speaker-campplus-zh-en"]
+  }
+}

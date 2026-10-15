@@ -62,7 +62,7 @@ export interface InstalledModel { id: string; path: string; managed: boolean }
 export interface GenerationSegment { cueId: string; speakerId: string; speakerName: string; batchId: string; index: number; targetClipId?: string; placement?: 'ripple' | 'preserve' }
 export interface Generation { segment?: GenerationSegment; id: string; title: string; fileName: string; createdAt: string; duration: number; settings: Draft }
 /** UI chrome locale. Distinct from Draft.language (TTS). */
-export type UiLocale = 'zh-CN' | 'en';
+export type UiLocale = 'zh-CN' | 'zh-TW' | 'en';
 /** Stable product message key. Catalogs and Go constants share this spelling. */
 export type MessageCode = `@yovoice.${string}`;
 export type MessageParams = Record<string, unknown>;

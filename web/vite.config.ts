@@ -1,7 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: 'v-voice-vos-brand',
+    transformIndexHtml(html) {
+      return process.env.VITE_VOS === 'true'
+        ? html.replace('<title>yovoice</title>', '<link rel="icon" href="./v-voice.png"/><title>V-Voice</title>').replace("frame-src 'none'", "frame-src 'self'")
+        : html;
+    },
+  }],
   base: './',
   server: { port: 5173, strictPort: true },
   build: {
