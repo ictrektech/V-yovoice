@@ -4,15 +4,6 @@
 
 ## [Unreleased]
 
-- 模型管理分类移至左侧可展开子菜单，移除顶部重复标签；修复 VOS 设置页无法滚动到底部的问题。
-- 设置中的模型管理改为工作台内部切换，不再整页跳转到旧控制台；独立旧控制台增加返回工作台入口。
-- 原有模型、识别和文档页面采用工作台主题，统一背景、字体和控件；补齐音乐、编曲、创作任务查询/取消及用户隔离结果下载文档。
-- 修复 VOS 实际登录的用户启用状态契约不匹配，导致新安装后工作台空白并误报登录过期的问题；补充真实整数启用状态与禁用账户回归测试。
-- 修复局域网 HTTP 打开时缺少 randomUUID/WebCrypto 导致工作台崩溃和 PKCE 登录失败的问题，保留安全随机源与 S256 校验。
-- 在主侧栏补齐模型管理、ASR、声纹识别和热词管理，直接显示原有模型卡片、下载/卸载及识别、注册、验证界面，不再要求离开工作台寻找旧页面。
-- 模型管理补齐所有创作精度、音乐与音色库，显示共享下载/停止/校验状态，明确仅导入模型；修复共享仓库部分文件就绪时其他模型被误报已安装。
-- 增加同 VOS 的自动调度授权交接、执行器预检、私有原子保存和版本化热更新；等待接入时明确显示状态，不绕过资源准入。
-
 - VOS 安装依赖统一的 V-Scheduler（内含模型网关），不再要求另装 V-Router；保留原网关服务地址与调用方式。
 
 - AI 写作栏（写谱、写歌词）未配置时移除快捷连接按钮，统一通过“设置 AI”进入配置；打开 AI 设置时默认聚焦服务列表首项；右侧检查器移除“返回正文”按钮，窄屏下展开时保持与宽屏一致的面板宽度浮出，不再全屏覆盖正文。
@@ -53,6 +44,26 @@
 - 修复迁移数据目录后退出时报 `@yovoice.error.storageRestartRequired`“退出前未能保存作品”且无法退出：旧目录冻结期间的退出保存直接跳过；工作台测试整体隔离用户目录，运行测试不再改写本机 `storage.json`（此前会把真实应用的数据目录指向测试临时目录）。
 - macOS 退出时作品保存失败（如运行中删除了数据目录、磁盘已满或外置盘断开）不再只能强制结束：与 Windows 一致提供“备份后退出 / 直接退出 / 返回编辑”，错误提示附带具体原因而非仅显示错误码。
 - “当前作品”只存在于作品编辑页（含版本记录）：切到设置、声音库或作品列表时立即保存未落盘的修改并关闭作品，这些页面退出不再保存作品；内容未变化的保存不再改写状态文件，数据目录不可写时也不会因此挡住退出；删除当前作品后切换到的空白新作品不会在退出时被意外创建。
+
+## [0.0.16] - 2026-10-15
+
+### English
+
+- Fix VOS sign-in and blank workbench failures, including secure UUID and S256 PKCE support on LAN HTTP.
+- Restore dedicated ASR, original TTS, speaker recognition and hotword pages, with model categories under the expandable Model management sidebar.
+- Keep settings navigation inside the workbench, add a return link to the compatibility console, restore settings scrolling and share the workbench theme across service pages.
+- Manage all creator variants, music models and soundfonts through ModelScope/Model Hub, with per-model download, cancellation and file-verification status; identify import-only weights explicitly.
+- Add multilingual music/score job, cancellation and private-result API documentation, alongside the existing speech APIs and OpenAPI contract.
+- Support VOS-authenticated, versioned Scheduler binding and hot reload without bypassing resource admission; keep uncertain execution states and unconfirmed results private.
+
+### 简体中文
+
+- 修复 VOS 登录与工作台白屏问题，支持局域网 HTTP 下的安全 UUID 与 S256 PKCE 登录。
+- 补齐 ASR、原有 TTS、声纹与热词专用页面，模型分类移入左侧可展开的“模型管理”子菜单。
+- 设置内部切换不再跳出工作台，旧控制台增加返回入口；修复设置页滚动，统一语音服务页面与工作台主题。
+- 通过 ModelScope / Model Hub 管理全部创作精度、音乐模型与音色库，显示逐模型下载、停止与文件校验状态，明确标注仅导入权重。
+- 补齐音乐、编曲、任务查询/取消与用户私有结果的多语言 API 文档，并保留原有语音接口和 OpenAPI 契约。
+- 增加经 VOS 身份核验的版本化调度绑定与热更新，不绕过资源准入；执行停止未知或调度尚未确认成功时不交付结果。
 
 ## [0.0.15] - 2026-10-15
 
