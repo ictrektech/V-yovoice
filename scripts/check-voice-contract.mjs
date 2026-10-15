@@ -67,7 +67,7 @@ const routerConfig = file('router.json', {
   url: scheduler, token: tokens.router, require_model_policy: true,
   models: Object.fromEntries(models.map(id => ['app-v-voice/' + id, { mode: 'permit', executor_id: 'v-router.voice.infer', upstream_url: voice + '/v1', completion: 'synchronous', max_input_bytes: 1 << 20 }])),
 });
-const agentConfig = file('agent.json', { controller: scheduler, token: tokens.worker, node_id: nodeID, journal: path.join(run, 'agent-journal.json'), executors: [{ id: 'v-voice.generate', url: 'http://127.0.0.1:7080', token: tokens.executor, health_url: 'http://127.0.0.1:7080/health' }] });
+const agentConfig = file('agent.json', { controller: scheduler, token: tokens.worker, node_id: nodeID, journal: path.join(run, 'agent-journal.json'), executors: [{ id: 'v-voice.generate', url: voice, token: tokens.executor, health_url: voice + '/health' }] });
 const repo = JSON.parse(readFileSync(path.join(root, 'internal/catalog/vos.json'))).modelscope_repo;
 const hub = path.join(run, 'modelhub');
 mkdirSync(path.join(hub, 'export/ms', repo), { recursive: true });
@@ -89,7 +89,7 @@ const runID = randomBytes(6).toString('hex');
 const db = 'v-voice-contract-pg-' + runID;
 const apiContainer = 'v-voice-contract-api-' + runID;
 const dbEnv = file('postgres.env', `POSTGRES_USER=vscheduler\nPOSTGRES_DB=vscheduler\nPOSTGRES_PASSWORD=${tokens.db}\n`);
-const apiEnv = file('api.env', `PYTHONPATH=/src\nVVOICE_SCHEDULER_REQUIRED=true\nVVOICE_SCHEDULER_CONFIG=/config/voice.json\nVVOICE_STUDIO_INTERNAL_TOKEN=${tokens.internal}\nVVOICE_PORT=${basePort + 1}\nMODEL_HUB_SHARED_MODELS_PATH=${hub}\nMODEL_HUB_API_URL=http://127.0.0.1:9\n`);
+const apiEnv = file('api.env', `PYTHONPATH=/src\nVVOICE_STUDIO_ENABLED=true\nVVOICE_SCHEDULER_REQUIRED=true\nVVOICE_SCHEDULER_CONFIG=/config/voice.json\nVVOICE_STUDIO_INTERNAL_TOKEN=${tokens.internal}\nVVOICE_PORT=${basePort + 1}\nMODEL_HUB_SHARED_MODELS_PATH=${hub}\nMODEL_HUB_API_URL=http://127.0.0.1:9\n`);
 async function speech(endpoint, model, extra = {}) {
   const response = await fetch(endpoint + '/v1/audio/speech', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model, input: 'Hello, welcome to V Voice.', voice: 'af_heart', response_format: 'wav', language: 'en', ...extra }), signal: AbortSignal.timeout(1800000) });
   const audio = Buffer.from(await response.arrayBuffer());
