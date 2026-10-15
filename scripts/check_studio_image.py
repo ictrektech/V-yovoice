@@ -15,9 +15,10 @@ import urllib.request
 
 def request(path, body=None, token=""):
     data = None if body is None else json.dumps(body).encode()
-    req = urllib.request.Request(path, data=data, headers={
-        "Content-Type": "application/json", "Authorization": "Bearer " + token,
-    })
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = "Bearer " + token
+    req = urllib.request.Request(path, data=data, headers=headers)
     with urllib.request.urlopen(req, timeout=180) as response:
         return response.read()
 
@@ -35,12 +36,15 @@ def main():
     sample = os.getenv("VVOICE_IMAGE_SEACO_SAMPLE")
     if sample:
         import soundfile
-        from vvoice.runtime import registry, transcribe
+        from vvoice.catalog import resolve_files
+        from vvoice.seaco import SeacoRecognizer
         samples, rate = soundfile.read(sample, dtype="float32")
-        result = transcribe("seaco-paraformer-zh", samples, rate, hotwords=["魔搭"])
+        model = next(row for row in catalog() if row["key"] == "seaco-paraformer-zh")
+        recognizer = SeacoRecognizer(resolve_files(model), 4)
+        result = recognizer.transcribe(samples, rate, ["魔搭"])
         assert "魔搭" in result["text"], result["text"]
         assert "torch" not in sys.modules and "funasr" not in sys.modules
-        registry.unload()
+        del recognizer
         print("PASS: retained SeACo ONNX inference and request-scoped hotword")
     assert hashlib.sha256(Path("/opt/vvoice/web/v-voice.png").read_bytes()).hexdigest() == (
         "1bbcbdd36858d396f86b5894720003de39441029340ce625795417ae2fa51db0")

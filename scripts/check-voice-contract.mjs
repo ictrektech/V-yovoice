@@ -41,6 +41,9 @@ async function ready(url) {
 const schedulerBin = process.env.SCHEDULER_BINARY || path.join(os.homedir(), 'dev/build/V-Scheduler/cargo/debug/v-scheduler');
 const models = ['audiocpp-kokoro-82m-q8', 'audiocpp-index-2.5-q8'];
 const cloning = process.env.VVOICE_CHECK_CLONING === '1';
+const legacyRepo = 'vivibit/v-voice-seaco-paraformer-zh-int8';
+const legacySource = path.join(build, 'image-modelhub/export/ms', legacyRepo, 'current');
+const legacy = existsSync(path.join(legacySource, 'model.int8.onnx')) && existsSync(path.join(build, 'seaco-public-sample.wav'));
 const budget = { cpu_millicores: 4000, memory_mib: 24576, gpu_slots: 0, gpu_memory_mib: 0 };
 const nodeID = 'v-voice-isolated-check';
 const config = {
@@ -60,7 +63,7 @@ const config = {
 const controllerConfig = file('controller.json', config);
 const voiceConfig = file('voice.json', {
   url: scheduler, token: tokens.voice, executor_token: tokens.executor, upstream_url: voice + '/v1',
-  models: { ...Object.fromEntries(models.map(id => [id, 'v-voice.local.infer'])), 'kokoro-82m-q8': 'v-voice.generate' },
+  models: { ...Object.fromEntries(models.map(id => [id, 'v-voice.local.infer'])), 'seaco-paraformer-zh': 'v-voice.local.infer', 'kokoro-82m-q8': 'v-voice.generate' },
   gateway_executors: Object.fromEntries(models.map(id => [id, 'v-router.voice.infer'])),
 });
 const routerConfig = file('router.json', {
@@ -82,6 +85,13 @@ for (const model of JSON.parse(readFileSync(path.join(root, 'internal/catalog/ca
   }
 }
 symlinkSync(weights, path.join(hub, 'export/ms', repo, 'current'));
+if (legacy) {
+  const target = path.join(hub, 'export/ms', legacyRepo, 'current');
+  mkdirSync(target, { recursive: true });
+  for (const name of ['model.int8.onnx', 'model_eb.int8.onnx', 'frontend.json', 'tokens.json']) {
+    linkSync(path.join(legacySource, name), path.join(target, name));
+  }
+}
 copyFileSync(path.join(root, 'docker/yovoice-engine.cpu.json'), path.join(build, 'audio-runtime/cpu/bin/yovoice-engine.json'));
 const identity = createServer((_req, res) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ sub: 'isolated-voice-user', enable: true, role_code: 'system_admin' })); });
 await new Promise(resolve => identity.listen(0, '127.0.0.1', resolve));
@@ -132,6 +142,18 @@ try {
   assert(permits.every(permit => permit.state === 'released'));
   assert.equal((await call(scheduler + '/reservations', tokens.admin)).data.length, 0);
   console.log('PASS: Router dynamically discovers creative models; one actual computation consumes one released permit');
+  if (legacy) {
+    const form = new FormData();
+    form.set('file', new Blob([readFileSync(path.join(build, 'seaco-public-sample.wav'))], { type: 'audio/wav' }), 'public-sample.wav');
+    form.set('model', 'seaco-paraformer-zh'); form.set('hotwords', '魔搭');
+    const response = await fetch(voice + '/v1/audio/transcriptions', { method: 'POST', body: form, signal: AbortSignal.timeout(180000) });
+    const value = await response.json();
+    assert.equal(response.status, 200, JSON.stringify(value));
+    assert(value.text.includes('魔搭'));
+    const admitted = (await call(scheduler + '/permits', tokens.admin)).data.items;
+    assert.equal(admitted.length, 3); assert(admitted.every(permit => permit.state === 'released'));
+    console.log('PASS: retained multipart ASR API and SeACo hotwords use real Scheduler admission');
+  } else console.log('SKIP: public SeACo sample/weights were not supplied to this fixture');
   const rpc = (method, data, requestId) => call('http://127.0.0.1:7080/studio-api/call', 'isolated-user', 'POST', { method, data, requestId });
   const state = (await rpc('state.get', {})).data.result.state;
   const draft = { ...state.drafts[0], text: 'This is a queued voice test.', title: 'Queued voice check', modelId: 'kokoro-82m-q8', speaker: 'af_heart', synthesisLanguage: 'en-us' };
