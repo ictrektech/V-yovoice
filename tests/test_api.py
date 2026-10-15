@@ -45,6 +45,16 @@ def test_unknown_models_are_rejected_before_runtime_load() -> None:
     assert response.status_code == 404
 
 
+def test_import_only_model_pull_is_an_explicit_management_conflict(monkeypatch):
+    async def pull(key, force=False):
+        from vvoice.modelhub import ImportRequiredError
+        raise ImportRequiredError("Model requires administrator-provided weights in Model Hub")
+    monkeypatch.setattr("vvoice.main.pull_model", pull)
+    response = client.post("/api/v1/models/audiocpp-import-only/pull")
+    assert response.status_code == 409
+    assert "administrator-provided" in response.json()["detail"]
+
+
 def test_discovery_is_public_and_lists_ready_models(monkeypatch) -> None:
     async def fake_models():
         return [

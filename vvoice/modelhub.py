@@ -140,10 +140,16 @@ async def list_models(items: list[dict[str, Any]] | None = None) -> list[dict[st
     return result
 
 
+class ImportRequiredError(ValueError):
+    """仅导入模型不能生成一个不存在的远程下载任务。"""
+
+
 async def pull_model(key: str, force: bool = False) -> dict[str, Any]:
     item = next((row for row in catalog() if row["key"] == key), None)
     if item is None:
         raise KeyError(key)
+    if item.get("import_required"):
+        raise ImportRequiredError("Model requires administrator-provided weights in Model Hub")
     root = model_root(item)
     if not force and item.get("shared_files") and all((root / file["path"]).is_file() for file in item["shared_files"]):
         ready, _ = await asyncio.to_thread(model_files_ready, item)
@@ -177,6 +183,8 @@ async def cancel_model(key: str) -> dict[str, Any]:
             if _clean_id(task.get("model_id")) != item["modelscope_repo"]:
                 continue
             if str(task.get("phase") or "").upper() not in {"PENDING", "DOWNLOADING", "VERIFYING"}:
+                continue
+            if item.get("shared_files") and not ({file["path"] for file in item["shared_files"]} & set(task.get("files") or [])):
                 continue
             response = await client.post(f"{settings.model_hub_api_url}/api/v1/tasks/{task['task_id']}/cancel")
             response.raise_for_status()

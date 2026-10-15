@@ -7,6 +7,42 @@ import time
 from types import SimpleNamespace
 
 from vvoice import catalog as catalog_module, main, modelhub
+import httpx
+import pytest
+
+
+def test_import_only_pull_never_contacts_model_hub(monkeypatch):
+    item = {"key": "audiocpp-import-only", "import_required": True}
+    monkeypatch.setattr(modelhub, "catalog", lambda: [item])
+    def unexpected_client(*args, **kwargs):
+        raise AssertionError("import-only model contacted Model Hub")
+    monkeypatch.setattr(modelhub.httpx, "AsyncClient", unexpected_client)
+    for force in (False, True):
+        with pytest.raises(modelhub.ImportRequiredError):
+            asyncio.run(modelhub.pull_model(item["key"], force))
+
+
+def test_shared_download_cancellation_only_matches_selected_files(monkeypatch):
+    item = {"key": "selected", "modelscope_repo": "vivibit/shared", "shared_files": [{"path": "selected.gguf"}]}
+    tasks = [
+        {"task_id": "match", "model_id": "ms://vivibit/shared", "phase": "DOWNLOADING", "files": ["selected.gguf"]},
+        {"task_id": "other-model", "model_id": "ms://vivibit/shared", "phase": "DOWNLOADING", "files": ["other.gguf"]},
+        {"task_id": "unknown-files", "model_id": "ms://vivibit/shared", "phase": "DOWNLOADING"},
+        {"task_id": "finished", "model_id": "ms://vivibit/shared", "phase": "COMPLETED", "files": ["selected.gguf"]},
+        {"task_id": "other-repo", "model_id": "ms://vivibit/other", "phase": "DOWNLOADING", "files": ["selected.gguf"]},
+    ]
+    cancelled = []
+    async def lists(client):
+        return [], tasks
+    async def post(request):
+        cancelled.append(request.url.path)
+        return httpx.Response(200, json={"status": "cancelled"})
+    client_class = httpx.AsyncClient
+    monkeypatch.setattr(modelhub, "catalog", lambda: [item])
+    monkeypatch.setattr(modelhub, "_modelhub_lists", lists)
+    monkeypatch.setattr(modelhub.httpx, "AsyncClient", lambda **kwargs: client_class(transport=httpx.MockTransport(post)))
+    assert asyncio.run(modelhub.cancel_model("selected"))["tasks"] == ["match"]
+    assert cancelled == ["/api/v1/tasks/match/cancel"]
 
 
 def test_ready_repository_does_not_make_missing_model_files_ready(monkeypatch, tmp_path):

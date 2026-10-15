@@ -52,7 +52,7 @@
 - Fix VOS sign-in and blank workbench failures, including secure UUID and S256 PKCE support on LAN HTTP.
 - Restore dedicated ASR, original TTS, speaker recognition and hotword pages, with model categories under the expandable Model management sidebar.
 - Keep settings navigation inside the workbench, add a return link to the compatibility console, restore settings scrolling and share the workbench theme across service pages.
-- Manage all creator variants, music models and soundfonts through ModelScope/Model Hub, with per-model download, cancellation and file-verification status; identify import-only weights explicitly.
+- Manage all creator variants, music models and soundfonts through ModelScope/Model Hub, with per-model download, cancellation and file-verification status; import-only weights never offer a nonexistent download, and cancellation does not stop unrelated models sharing a repository.
 - Add multilingual music/score job, cancellation and private-result API documentation, alongside the existing speech APIs and OpenAPI contract.
 - Support VOS-authenticated, versioned Scheduler binding and hot reload without bypassing resource admission; keep uncertain execution states and unconfirmed results private.
 
@@ -61,7 +61,7 @@
 - 修复 VOS 登录与工作台白屏问题，支持局域网 HTTP 下的安全 UUID 与 S256 PKCE 登录。
 - 补齐 ASR、原有 TTS、声纹与热词专用页面，模型分类移入左侧可展开的“模型管理”子菜单。
 - 设置内部切换不再跳出工作台，旧控制台增加返回入口；修复设置页滚动，统一语音服务页面与工作台主题。
-- 通过 ModelScope / Model Hub 管理全部创作精度、音乐模型与音色库，显示逐模型下载、停止与文件校验状态，明确标注仅导入权重。
+- 通过 ModelScope / Model Hub 管理全部创作精度、音乐模型与音色库，显示逐模型下载、停止与文件校验状态；仅导入权重不再提供不存在的下载，取消不再影响同仓库的其他模型。
 - 补齐音乐、编曲、任务查询/取消与用户私有结果的多语言 API 文档，并保留原有语音接口和 OpenAPI 契约。
 - 增加经 VOS 身份核验的版本化调度绑定与热更新，不绕过资源准入；执行停止未知或调度尚未确认成功时不交付结果。
 

@@ -22,6 +22,7 @@ export type Model = {
   error?: string
   preferred?: boolean
   loaded?: boolean
+  import_required?: boolean
   hotwords?: {
     supported: boolean
     formats: ('text' | 'file')[]

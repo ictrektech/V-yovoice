@@ -17,6 +17,11 @@ const { chromium } = require('@playwright/test');
 const prefix = '/app/com.ictrek.v-voice';
 const modelCount = JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).length;
 const legacyModels = JSON.parse(readFileSync(path.join(root, 'catalog/models.json'))).models.map(model => ({ ...model, status: 'ready' }));
+// 补充真实目录中的仅导入变体，验证旧模型页也不能显示不存在的下载。
+for (const model of JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).filter(model => !model.remotePath)) {
+  legacyModels.push({ key: `audiocpp-${model.id}`, name: `${model.name} ${model.precision}`, kind: 'tts', family: model.family,
+    description: 'Import-only model', languages: [], modelscope_repo: 'vivibit/v-voice-audiocpp-gguf', status: 'not_installed', import_required: true });
+}
 const creativeModels = JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).map(model => ({ key: `audiocpp-${model.id}`, status: 'not_installed' }));
 let identities = 0;
 const identity = createServer((req, res) => {
@@ -100,6 +105,11 @@ try {
     assert.notEqual(await service.locator('body').evaluate(element => getComputedStyle(element).backgroundColor), 'rgb(7, 11, 20)', 'old dark service background remained');
     if (destination === 'models') {
       assert.equal(await service.locator('.model-grid article').count(), legacyModels.length, 'legacy model cards missing');
+      for (const model of legacyModels.filter(model => model.import_required)) {
+        const card = service.locator('.model-card').filter({ has: service.getByText(model.key, { exact: true }) });
+        assert.equal(await card.getByRole('button').count(), 0, 'import-only card offers an unavailable download');
+        assert((await card.innerText()).includes('Administrator-provided weights required in Model Hub'));
+      }
       await service.getByRole('tab').filter({ hasText: 'ASR' }).click();
       assert.equal(await service.locator('.model-grid article').count(), legacyModels.filter(model => model.kind === 'asr').length);
       await page.screenshot({ path: path.join(build, 'v-voice-models-integrated.png'), fullPage: true });

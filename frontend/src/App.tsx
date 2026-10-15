@@ -79,7 +79,12 @@ function Models({ models, loading, refresh }: { models: Model[]; loading: boolea
         <dl className="model-details"><div><dt>推理后端</dt><dd>{model.backend || 'sherpa-onnx'}{model.streaming ? ' · Online' : ''}</dd></div><div><dt>运行时</dt><dd>{model.loaded ? '已热加载' : '按请求热加载'}</dd></div><div><dt>模型族</dt><dd>{model.family}</dd></div><div><dt>{model.kind === 'tts' ? 'Voice' : '接口'}</dt><dd>{model.kind === 'tts' ? `${voiceCount} 个预设音色` : model.kind === 'speaker' ? '注册 / 识别 / 验证' : `${model.translation === false ? '转写' : '转写 / 翻译'}${model.hotwords?.supported ? ' / 热词增强' : ''}${model.streaming ? ' / 实时流式' : ''}`}</dd></div><div className="wide"><dt>语言</dt><dd>{model.languages.map(language => languageNames[language] || language).join('、')}</dd></div><div className="wide"><dt>ModelScope</dt><dd><a href={`https://modelscope.cn/models/${model.modelscope_repo}`} target="_blank" rel="noreferrer">{model.modelscope_repo}</a></dd></div></dl>
         {model.status === 'downloading' ? <div className="progress"><i style={{ width: `${progress}%` }} /><small>{progress}% · {formatBytes(model.downloaded_bytes)} / {formatBytes(model.total_bytes)}</small></div> : null}
         {model.error ? <small className="error" data-i18n="off">{model.error}</small> : null}
-        <div className="actions">{model.status === 'ready' ? <><button onClick={() => act(model, 'unload')} disabled={!!busy || !model.loaded}>卸载推理实例</button><button onClick={() => act(model, 'force')} disabled={!!busy}>重新下载</button></> : null}{model.status === 'downloading' ? <button onClick={() => act(model, 'stop')} disabled={!!busy}>停止下载</button> : null}{model.status !== 'ready' && model.status !== 'downloading' ? <button className="primary" onClick={() => act(model, 'pull')} disabled={!!busy || model.status === 'verifying'}>从 Model Hub 安装</button> : null}</div>
+        <div className="actions">
+          {model.import_required ? <small>需管理员在 Model Hub 提供原始权重</small> : null}
+          {model.status === 'ready' ? <><button onClick={() => act(model, 'unload')} disabled={!!busy || !model.loaded}>卸载推理实例</button>{!model.import_required ? <button onClick={() => act(model, 'force')} disabled={!!busy}>重新下载</button> : null}</> : null}
+          {model.status === 'downloading' ? <button onClick={() => act(model, 'stop')} disabled={!!busy}>停止下载</button> : null}
+          {!model.import_required && model.status !== 'ready' && model.status !== 'downloading' ? <button className="primary" onClick={() => act(model, 'pull')} disabled={!!busy || model.status === 'verifying'}>从 Model Hub 安装</button> : null}
+        </div>
       </article>
     })}</div>
   </></Localized>

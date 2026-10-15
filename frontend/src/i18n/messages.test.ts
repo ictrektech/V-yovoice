@@ -8,6 +8,7 @@ describe('interface translations', () => {
       expect(translateText(text, 'zh-TW')).not.toBe(text)
     }
     expect(translateText('reference_audio', 'zh-TW')).toBe('reference_audio')
+    expect(translateText('需管理员在 Model Hub 提供原始权重', 'en-US')).toBe('Administrator-provided weights required in Model Hub')
   })
   it('translates fixed labels without changing technical text', () => {
     expect(translateText('模型管理', 'en-US')).toBe('Model management')

@@ -26,7 +26,7 @@ from .hotwords import (
     parse_hotwords,
     render_hotword_format,
 )
-from .modelhub import cancel_model, list_models, pull_model
+from .modelhub import ImportRequiredError, cancel_model, list_models, pull_model
 from .runtime import (
     detect_provider,
     extract_embedding,
@@ -274,6 +274,8 @@ async def pull(key: str, force: bool = False):
         return await pull_model(key, force)
     except KeyError:
         raise HTTPException(status_code=404, detail="model not found") from None
+    except ImportRequiredError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Model Hub pull failed: {exc}") from exc
 

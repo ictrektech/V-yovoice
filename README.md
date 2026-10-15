@@ -7,6 +7,8 @@ compatibility console also provides an explicit return-to-workbench link.
 Embedded service forms inherit the workbench theme. API documentation includes the private
 music/score RPC contract, job polling/cancellation and authenticated result download;
 these are explicitly distinguished from the public OpenAI-compatible speech endpoints.
+Import-only variants do not offer a remote download in either manager; stopping a
+download only cancels active tasks whose file selection overlaps the chosen model.
 The VOS sidebar provides dedicated Model management, ASR, original TTS, Speaker recognition,
 and Hotword management pages inside the workbench. They retain the original
 model cards, download/unload controls, transcription, speaker enrollment,

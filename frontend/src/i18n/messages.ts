@@ -6,6 +6,7 @@ export const languageNames: Record<string, string> = { auto: '自动检测', zh:
 const languageLabels = new Set(Object.values(languageNames))
 
 export const messages: Record<string, Translation> = {
+  '需管理员在 Model Hub 提供原始权重': ['需管理員在 Model Hub 提供原始權重', 'Administrator-provided weights required in Model Hub'],
   '返回工作台': ['返回工作台', 'Back to workbench'],
   '音乐生成': ['音樂生成', 'Music generation'],
   '音乐、编曲与任务': ['音樂、編曲與任務', 'Music, scores and jobs'],
