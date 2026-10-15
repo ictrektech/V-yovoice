@@ -1,5 +1,5 @@
 {
-  "url": "http://scheduler-controller:38120/api/v1",
+  "url": "http://v-router:8080/scheduler/api/v1",
   "token": "<V-Voice scoped submitter token; at least 32 characters>",
   "executor_token": "<V-Voice executor token; at least 32 characters>",
   "upstream_url": "http://v-voice-backend:7070/v1",

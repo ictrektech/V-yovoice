@@ -14,7 +14,8 @@ import (
 const Revision = "6d5436fc85f7a20c2e9f4e472b7f3a532f686444"
 
 type ModelPackage struct {
-	Revision string `json:"revision,omitempty"`
+	ImportRequired bool   `json:"importRequired,omitempty"`
+	Revision       string `json:"revision,omitempty"`
 	// Repo 为空时来自 audio.cpp 的模型仓库；音色库等其他资源写明 Hugging Face 仓库路径，
 	// ModelScope 没有镜像时改用 hf-mirror。
 	Repo string `json:"repo,omitempty"`

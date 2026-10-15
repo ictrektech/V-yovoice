@@ -24,7 +24,7 @@ import { VosSettings } from './vos-settings';
 // AI 请求超时的可选值（秒）。
 const aiTimeouts = [60, 120, 300, 600, 1200, 1800];
 
-type SettingsProps = { focus?: { tab: string; modelId: string; request: number }; state: State; catalog: ModelPackage[]; engine: EngineInfo; draft: Draft; run: (task: () => Promise<unknown>) => void };
+type SettingsProps = { openModels: () => void; focus?: { tab: string; modelId: string; request: number }; state: State; catalog: ModelPackage[]; engine: EngineInfo; draft: Draft; run: (task: () => Promise<unknown>) => void };
 export function Settings(props: SettingsProps) {
   return isVos ? <VosSettings {...props} /> : <DesktopSettings {...props} />;
 }

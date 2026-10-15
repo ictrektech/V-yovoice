@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
-from fastapi import Body, FastAPI, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
+import httpx
+from fastapi import Body, FastAPI, File, Form, HTTPException, Query, Request, Security, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -87,7 +89,45 @@ async def runtime_config():
 
 @app.get("/ready")
 async def ready():
-    return {"ready": True, "model_hub_root": settings.modelhub_root.is_dir()}
+    scheduler = {"configured": False}
+    required = os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true"
+    if required:
+        try:
+            async with httpx.AsyncClient(timeout=2) as client:
+                response = await client.get("http://127.0.0.1:7080/api/v1/scheduler/binding")
+                if response.status_code == 200:
+                    scheduler = response.json()
+        except (httpx.HTTPError, ValueError):
+            pass
+    return {"ready": not required or scheduler.get("configured") is True,
+            "model_hub_root": settings.modelhub_root.is_dir(), "scheduler": scheduler}
+
+
+class SchedulerBindingDocument(BaseModel):
+    """Server-to-server binding body; actual identity and revision checks live in the Go adapter."""
+    protocol_version: Literal[1]
+    binding_revision: int = Field(ge=1)
+    app_id: Literal["com.ictrek.v-voice"]
+    url: str = Field(description="Fixed VVOICE_SCHEDULER_URL; normally http://v-router:8080/scheduler/api/v1")
+    token: str = Field(min_length=32, max_length=4096, json_schema_extra={"writeOnly": True})
+    executor_token: str = Field(min_length=32, max_length=4096, json_schema_extra={"writeOnly": True})
+    upstream_url: str = Field(description="Must match V-Voice's advertised native upstream URL")
+    models: dict[str, str]
+    gateway_executors: dict[str, str] = Field(default_factory=dict)
+    secondary_models: dict[str, list[str]] = Field(default_factory=dict)
+
+
+class WorkbenchCallDocument(BaseModel):
+    """Document the existing private RPC without changing Go-side authorization or validation."""
+    method: Literal[
+        "state.get", "draft.save", "draft.delete", "generation.start", "generation.cue",
+        "character.save", "character.preview", "character.delete", "character.discardPreview",
+        "voice.fromGeneration", "voice.update", "voice.record", "timeline.import",
+        "media.rename", "media.delete", "operation.cancel", "preferences.save",
+        "model.download", "model.cancel", "model.forget", "runtime.unload", "diag.client",
+    ]
+    data: dict = Field(description="Method-specific payload. generation.start accepts a Draft with bare creator modelId; kind music or score selects music generation or soundfont rendering.")
+    requestId: str = Field(pattern="^[0-9a-f]{32}$", description="Stable generation idempotency key; retry with identical data")
 
 
 @app.get("/api/v1/about")
@@ -188,12 +228,44 @@ async def discovery():
         "base_url": "http://v-voice-backend:7070/v1",
         "health_path": "/health",
         "models": models,
+        "scheduler": scheduler_contract(),
+    }
+
+
+def scheduler_contract() -> dict:
+    """声明接入能力，不在发现结果中提供凭据或自报可直接信任的资源预算。"""
+    root = Path(__file__).resolve().parents[1]
+    creative = root / "internal" / "catalog" / "catalog.json"
+    if not creative.is_file():
+        creative = root / "catalog" / "audio-cpp.json"
+    asynchronous = json.loads(creative.read_text()) if creative.is_file() else []
+    return {
+        "protocol_version": 1,
+        "app_id": settings.app_id,
+        "binding_endpoint": "/api/v1/scheduler/binding",
+        "executor_base_url": "http://v-voice-backend:7070",
+        "upstream_url": "http://v-voice-backend:7070/v1",
+        "sync_models": [{"id": row["key"], "kind": row["kind"], "task_type": "model.infer"}
+                        for row in catalog()],
+        "async_models": [{"id": row["id"], "family": row["family"], "task_type": "voice.generate",
+                          "weight_bytes": row["size"]} for row in asynchronous],
+        "num_threads": settings.num_threads,
+        "max_concurrent_inference": settings.max_concurrent_inference,
+        "cpu_models": list(settings.cpu_models),
+        "provider": detect_provider(),
     }
 
 
 @app.get("/api/v1/models")
 async def managed_models():
     return [{**row, "loaded": registry.is_loaded(row["key"])} for row in await list_models()]
+
+
+@app.get("/api/v1/creative-models")
+async def creative_model_inventory():
+    """All creator precisions and soundfonts; management metadata, not speech discovery."""
+    from .creative import models as creative_models
+    return await list_models(creative_models(include_non_speech=True))
 
 
 @app.post("/api/v1/models/{key}/pull", status_code=202)
@@ -904,6 +976,55 @@ frontend = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 if os.getenv("VVOICE_STUDIO_ENABLED") == "true":
     from .studio import proxy as studio_proxy
 
+    @app.get("/api/v1/scheduler/binding", tags=["Scheduling"])
+    async def scheduler_binding_status(request: Request):
+        """Public redacted automatic-binding status; never returns service credentials."""
+        return await studio_proxy(request, "api/v1/scheduler/binding")
+
+    @app.post("/api/v1/scheduler/binding", tags=["Scheduling"], openapi_extra={
+        "requestBody": {"required": True, "content": {"application/json": {"schema": SchedulerBindingDocument.model_json_schema()}}},
+    })
+    async def scheduler_binding_update(request: Request, _identity: HTTPAuthorizationCredentials | None = Security(
+        HTTPBearer(auto_error=False, scheme_name="VOSApplicationBearer",
+                   description="VOS context access token for com.ictrek.v-scheduler; not a user token"))):
+        """VOS Scheduler application only: validate and atomically apply a versioned binding.
+
+        The server-to-server JSON contract is documented in docs/scheduler-auto-binding.md.
+        User tokens, including administrator user tokens, cannot configure this endpoint.
+        """
+        return await studio_proxy(request, "api/v1/scheduler/binding")
+
+    @app.post("/studio-api/call", tags=["Private workbench"], openapi_extra={
+        "requestBody": {"required": True, "content": {"application/json": {
+            "schema": WorkbenchCallDocument.model_json_schema(),
+        }}},
+    })
+    async def workbench_call(request: Request, _identity: HTTPAuthorizationCredentials | None = Security(
+        HTTPBearer(auto_error=False, scheme_name="VOSUserBearer", description="Current VOS user access token; not a service token"))):
+        """Private user RPC: projects, music/score generation, job polling/cancellation and voices.
+
+        Returns result or error (check error even on HTTP 200). generation.start returns a job ID;
+        poll state.get activity/history and read results only after Scheduler-confirmed success.
+        Model download/cancel additionally require an administrator. The Go adapter enforces
+        identity, method allowlist, payload validation, user isolation and scheduling.
+        These are not OpenAI-standard music endpoints or gateway-forwarded public APIs.
+        """
+        return await studio_proxy(request, "studio-api/call")
+
+    @app.get("/studio-api/media/{kind}/{file_name}", tags=["Private workbench"], responses={
+        200: {"description": "User-owned audio file", "content": {"audio/wav": {"schema": {"type": "string", "format": "binary"}}}},
+        401: {"description": "VOS user authentication required"},
+        404: {"description": "Missing, foreign or not-yet-approved result"},
+    })
+    async def workbench_media(kind: Literal["voices", "outputs"], file_name: str, request: Request,
+                              _identity: HTTPAuthorizationCredentials | None = Security(
+                                  HTTPBearer(auto_error=False, scheme_name="VOSUserBearer"))):
+        """Download a reference voice or completed output belonging to the authenticated user.
+
+        Obtain file_name from state.get history/voices; internal filesystem paths are not accepted.
+        """
+        return await studio_proxy(request, f"studio-api/media/{kind}/{file_name}")
+
     if frontend.is_dir():
         app.mount("/service/assets", StaticFiles(directory=frontend / "assets"), name="service-assets")
 
@@ -912,7 +1033,7 @@ if os.getenv("VVOICE_STUDIO_ENABLED") == "true":
             candidate = (frontend / path).resolve()
             if candidate.is_file() and frontend.resolve() in candidate.parents:
                 return FileResponse(candidate)
-            return FileResponse(frontend / "index.html")
+            return FileResponse(frontend / "index.html", headers={"Cache-Control": "no-store"})
 
     @app.api_route("/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "DELETE"], include_in_schema=False)
     async def studio_transport(request: Request, path: str):

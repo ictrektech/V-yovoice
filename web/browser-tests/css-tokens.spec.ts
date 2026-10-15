@@ -12,7 +12,7 @@ test('样式表只引用已定义的 CSS 变量', () => {
   for (const file of sources) for (const [, name] of readFileSync(file, 'utf8').matchAll(/(--[\w-]+)\s*:/g)) defined.add(name);
   // 组件通过 style 属性设置的变量。
   for (const file of files('src', /\.tsx?$/)) for (const [, name] of readFileSync(file, 'utf8').matchAll(/['"](--[\w-]+)['"]\s*:/g)) defined.add(name);
-  const missing = files('src', /\.css$/).flatMap(file => readFileSync(file, 'utf8').split('\n').flatMap((line, index) =>
+  const missing = [...files('src', /\.css$/), '../frontend/src/workbench-theme.css'].flatMap(file => readFileSync(file, 'utf8').split('\n').flatMap((line, index) =>
     [...line.matchAll(/var\((--[\w-]+)/g)].filter(([, name]) => !defined.has(name)).map(([, name]) => `${file}:${index + 1} ${name}`)));
   expect(missing).toEqual([]);
 });

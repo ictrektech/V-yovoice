@@ -18,10 +18,10 @@ func testServer(t *testing.T) *Server {
 	identity := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sub := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if sub == "disabled" {
-			_, _ = w.Write([]byte(`{"sub":"disabled","enable":false}`))
+			_, _ = w.Write([]byte(`{"sub":"disabled","enable":0}`))
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"sub": sub, "enable": true, "role_code": "member"})
+		_ = json.NewEncoder(w).Encode(map[string]any{"sub": sub, "enable": 1, "role_code": "member"})
 	}))
 	t.Cleanup(identity.Close)
 	s := &Server{Root: t.TempDir(), Assets: t.TempDir(), UserinfoURL: identity.URL}
@@ -48,6 +48,41 @@ func TestBrowserRequiresEnabledValidatedIdentity(t *testing.T) {
 	}
 	if got := rpc(s, "alice", "state.get", "{}").Code; got != 200 {
 		t.Fatalf("status=%d", got)
+	}
+}
+
+func TestIdentityUsesVosIntegerEnableContract(t *testing.T) {
+	for _, tc := range []struct {
+		name, body string
+		accepted   bool
+	}{
+		{"enabled", `{"sub":"user","enable":1,"role_code":"system_admin"}`, true},
+		{"disabled", `{"sub":"user","enable":0}`, false},
+		{"missing-enable", `{"sub":"user"}`, false},
+		{"wrong-type", `{"sub":"user","enable":true}`, false},
+		{"invalid-enable", `{"sub":"user","enable":2}`, false},
+		{"missing-sub", `{"enable":1}`, false},
+		{"platform-error-envelope", `{"code":10001,"data":null}`, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("Authorization") != "Bearer test-token" {
+					t.Error("missing bearer forwarding")
+				}
+				_, _ = w.Write([]byte(tc.body))
+			}))
+			defer upstream.Close()
+			s := &Server{UserinfoURL: upstream.URL}
+			r := httptest.NewRequest("POST", "/studio-api/call", nil)
+			r.Header.Set("Authorization", "Bearer test-token")
+			identity, err := s.identity(r)
+			if (err == nil) != tc.accepted {
+				t.Fatalf("accepted=%v, error=%v", tc.accepted, err)
+			}
+			if tc.accepted && identity.Role != "system_admin" {
+				t.Fatal("role lost")
+			}
+		})
 	}
 }
 

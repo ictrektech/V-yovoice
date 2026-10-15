@@ -33,6 +33,8 @@ func main() {
 	if configPath == "" {
 		configPath = "/data/scheduler.local.json"
 	}
+	handler.SchedulerPath = configPath
+	jobs.ConfigPath = configPath
 	if info, err := os.Stat(configPath); err == nil {
 		if info.Mode().Perm()&0077 != 0 {
 			log.Fatal("scheduler.local.json must be private (0600)")

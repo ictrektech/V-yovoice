@@ -47,7 +47,18 @@ these. Do not claim W2 recovery or actual-node conformance from mocked tests.
 
 ## Private configuration and rollback
 
-Provision `/data/scheduler.local.json` with mode `0600`; start from
+For installation-time automatic admission, V-Voice advertises its versioned
+binding endpoint in discovery. The same-VOS V-Scheduler application pushes the
+app-scoped credentials and approved model/executor mappings after provisioning
+its own resource policy. V-Voice checks the actual executor contracts before an
+atomic private write, rejects old revisions, and hot-loads changes. See
+[the exact handoff contract and 229 release gates](scheduler-auto-binding.md).
+Discovery alone does not prove this handshake or resource approval succeeded.
+The interface shows a waiting status while the binding is absent; management
+remains accessible, inference does not bypass admission.
+
+Existing administrator-provisioned deployments remain compatible with
+`/data/scheduler.local.json` in mode `0600`; start from
 `config/scheduler.example.json` but replace all placeholders with this app's
 approved credentials and per-node executor IDs. `models` maps legacy native IDs
 and `audiocpp-...` API IDs to `model.infer` executors; bare creative model IDs map
@@ -99,6 +110,12 @@ hotwords, speaker APIs, model discovery, creative speech extensions and Schedule
 admission. The guide opens in the creator's current language and includes its own
 three-language selector. Technical paths, parameter names and executable examples
 are not translated. Raw `/openapi.json` remains available for machine clients.
+
+Model management is also a main sidebar destination. Its speech tab retains all
+legacy cards and their controls; its creator tab includes every upstream model
+precision, music model and soundfont with Model Hub download/stop/verification
+state. A ready shared repository cannot make its missing individual models ready.
+Import-only variants are explicitly marked instead of offering a false download.
 
 On a matching build host, run `bash docker/build_image.sh --sheet <sheet>` with
 the same sheet names/options as the previous V-Voice release. It builds the

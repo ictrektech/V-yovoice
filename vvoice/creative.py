@@ -46,7 +46,7 @@ def synthesize(item: dict, text: str, voice: str, speed: float, language: str = 
     return samples, int(rate)
 
 
-def models() -> list[dict]:
+def models(include_non_speech: bool = False) -> list[dict]:
     root = Path(__file__).resolve().parents[1]
     source = root / "internal" / "catalog" / "catalog.json"
     if not source.is_file():
@@ -59,7 +59,8 @@ def models() -> list[dict]:
     selection = json.loads(selection_path.read_text())
     result = []
     for row in json.loads(source.read_text()):
-        if row.get("task") in {"gen", "instrument"}:
+        non_speech = row.get("task") in {"gen", "instrument"}
+        if non_speech and not include_non_speech:
             continue
         # 仅导入模型由管理员校验原文件后发布到同一 ModelScope 仓库，不能伪造下载来源。
         files = row.get("files") or [{"path": row["remotePath"] or f"imports/{row['id']}.gguf", "size": row["size"], "sha256": row["sha256"]}]
@@ -68,9 +69,10 @@ def models() -> list[dict]:
         voices = row.get("voices") or (["Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric", "Ryan", "Aiden", "Ono_Anna", "Sohee"] if row.get("variant") == "customvoice" else [])
         result.append({
             "key": f"audiocpp-{row['id']}", "name": f"{row['name']} {row['precision']}",
-            "kind": "tts", "family": row["family"], "backend": "audio.cpp",
+            "kind": ("soundfont" if row.get("task") == "instrument" else "music") if non_speech else "tts", "family": row["family"], "backend": "audio.cpp",
             "description": "Creative speech synthesis through audio.cpp.",
-            "capabilities": speech_capabilities(row),
+            "capabilities": [row["task"]] if non_speech else speech_capabilities(row),
+            "import_required": not bool(row.get("remotePath")),
             "languages": [], "modelscope_repo": selection["modelscope_repo"],
             "runtime": {"family": "audio_cpp", "model_id": row["id"],
                         "files": {f"file_{i}": f["path"] for i, f in enumerate(files)}},

@@ -22,10 +22,16 @@ import (
 
 // SchedulerConfig 只读取私有配置；令牌不下发浏览器、不写入安装包。
 type SchedulerConfig struct {
-	URL           string            `json:"url"`
-	Token         string            `json:"token"`
-	ExecutorToken string            `json:"executor_token"`
-	Models        map[string]string `json:"models"`
+	ProtocolVersion  int                 `json:"protocol_version,omitempty"`
+	BindingRevision  int64               `json:"binding_revision,omitempty"`
+	AppID            string              `json:"app_id,omitempty"`
+	URL              string              `json:"url"`
+	Token            string              `json:"token"`
+	ExecutorToken    string              `json:"executor_token"`
+	Models           map[string]string   `json:"models"`
+	UpstreamURL      string              `json:"upstream_url,omitempty"`
+	GatewayExecutors map[string]string   `json:"gateway_executors,omitempty"`
+	SecondaryModels  map[string][]string `json:"secondary_models,omitempty"`
 }
 
 type Job struct {
@@ -54,10 +60,11 @@ type execution struct {
 }
 
 type Jobs struct {
-	Server *Server
-	Config SchedulerConfig
-	mu     sync.Mutex
-	active map[string]*execution
+	Server     *Server
+	Config     SchedulerConfig
+	ConfigPath string
+	mu         sync.Mutex
+	active     map[string]*execution
 	// 当前镜像只允许一个创作引擎运行，跨用户也不能并行加载多个大模型。
 	executing string
 }
@@ -113,22 +120,36 @@ func (j *Jobs) read(id string) (Job, error) {
 }
 
 func (j *Jobs) configured() bool {
-	return j.Config.URL != "" && len(j.Config.Token) >= 32 && len(j.Config.ExecutorToken) >= 32
+	config := j.config()
+	return config.URL != "" && len(config.Token) >= 32 && len(config.ExecutorToken) >= 32
+}
+
+// 配置由同应用的绑定端点原子替换；每次读取快照，避免轮换时并发改写共享 map。
+func (j *Jobs) config() SchedulerConfig {
+	if j.ConfigPath == "" {
+		return j.Config
+	}
+	config, err := readSchedulerConfig(j.ConfigPath)
+	if err != nil {
+		return SchedulerConfig{}
+	}
+	return config
 }
 
 func (j *Jobs) controller(ctx context.Context, method, path string, body any, key string) (map[string]any, error) {
-	if !j.configured() {
+	config := j.config()
+	if config.URL == "" || len(config.Token) < 32 {
 		return nil, fmt.Errorf("V-Scheduler configuration required")
 	}
 	b, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, method, strings.TrimRight(j.Config.URL, "/")+path, bytes.NewReader(b))
+	req, err := http.NewRequestWithContext(ctx, method, strings.TrimRight(config.URL, "/")+path, bytes.NewReader(b))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+j.Config.Token)
+	req.Header.Set("Authorization", "Bearer "+config.Token)
 	req.Header.Set("Content-Type", "application/json")
 	if key != "" {
 		req.Header.Set("Idempotency-Key", key)
@@ -208,7 +229,7 @@ func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage) (string, 
 	collect(value)
 	executor := ""
 	for model := range models {
-		approved := j.Config.Models[model]
+		approved := j.config().Models[model]
 		if approved == "" || (executor != "" && approved != executor) {
 			return "", fmt.Errorf("model budget not approved")
 		}
@@ -343,7 +364,7 @@ func (j *Jobs) withoutPending(user string, action func() (any, error)) (any, err
 }
 
 func (j *Jobs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !j.configured() || subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+j.Config.ExecutorToken)) != 1 {
+	if !j.configured() || subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+j.config().ExecutorToken)) != 1 {
 		http.Error(w, "Unauthorized", 401)
 		return
 	}

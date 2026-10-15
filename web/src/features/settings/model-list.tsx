@@ -11,6 +11,7 @@ import { formatSize, type Draft, type ModelPackage, type State } from '../../sha
 import { SettingsGroup } from '../../shared/ui/settings-group';
 
 function downloadStatusLabel(t: (key: string) => string, downloading: boolean, received: number, size: number, status: string) {
+  if (status === 'verifying') return t('@yovoice.settings.download.verifying');
   if (downloading) return received >= size ? t('@yovoice.settings.download.verifying') : t('@yovoice.settings.download.running');
   if (status === 'failed') return t('@yovoice.settings.download.failed');
   return t('@yovoice.settings.download.paused');
@@ -29,12 +30,13 @@ function modelDescription(t: (key: string) => string, model: ModelPackage) {
 }
 
 // 模型与音色库共用：已下载的单独一组排在前面，带状态点；其余放在“可下载”组里。
-export function ModelGroups({ models, state, draft, run }: { models: ModelPackage[]; state: State; draft: Draft; run: (task: () => Promise<unknown>) => void }) {
+export type SharedModelStatus = { status: string; downloaded_bytes?: number; total_bytes?: number; error?: string };
+export function ModelGroups({ models, state, draft, run, shared }: { models: ModelPackage[]; state: State; draft: Draft; run: (task: () => Promise<unknown>) => void; shared?: Record<string, SharedModelStatus> }) {
   const t = useTranslator();
   // 生成等主操作与模型下载、导入互不阻塞：下载按钮只看模型安装是否空闲。
   const busy = state.activity?.status === 'running';
   const modelBusy = state.modelActivity?.status === 'running';
-  const installed = models.filter(model => state.models.some(m => m.id === model.id));
+  const installed = models.filter(model => shared ? shared[model.id]?.status === 'ready' : state.models.some(m => m.id === model.id));
   const available = models.filter(model => !installed.includes(model));
   // 可下载的模型较多时按名称、精度和用途搜索。
   const [query, setQuery] = useState('');
@@ -43,7 +45,8 @@ export function ModelGroups({ models, state, draft, run }: { models: ModelPackag
   const row = (model: ModelPackage) => {
     const ready = installed.includes(model);
     const activity = state.modelActivity;
-    const download = activity?.kind === 'download' && (activity.modelId === model.id || (!activity.modelId && activity.total === model.size)) && activity.status !== 'completed' ? activity : null;
+    const hub = shared?.[model.id];
+    const download = hub ? (['downloading', 'verifying', 'failed'].includes(hub.status) ? { received: hub.downloaded_bytes ?? 0, total: hub.total_bytes || model.size, status: hub.status === 'downloading' ? 'running' : hub.status } : null) : activity?.kind === 'download' && (activity.modelId === model.id || (!activity.modelId && activity.total === model.size)) && activity.status !== 'completed' ? activity : null;
     const downloading = download?.status === 'running';
     const removeBlocked = busy || (modelBusy && !(activity?.kind === 'download' && activity.modelId && activity.modelId !== model.id));
     const inUse = draft.modelId === model.id;
@@ -61,15 +64,17 @@ export function ModelGroups({ models, state, draft, run }: { models: ModelPackag
           </HStack>
           <small>{modelDescription(t, model)}</small>
         </VStack>
-        {downloading ? <Button size="sm" label={t('@yovoice.action.pause')} icon={<Pause size={16} />} onClick={() => run(() => call('model.cancel'))} />
+        {downloading ? <Button size="sm" label={t('@yovoice.action.pause')} icon={<Pause size={16} />} onClick={() => run(() => call('model.cancel', { id: model.id }))} />
           : ready ? <Button size="sm" variant="ghost" label={isVos ? t('@vvoice.runtime.unload') : t('@yovoice.settings.removeModel')} icon={<Trash2 size={16} />} isDisabled={removeBlocked} tooltip={removeBlocked ? t('@yovoice.settings.removeBlocked') : isVos ? t('@vvoice.runtime.unloadHint') : t(managed ? '@yovoice.settings.removeManagedTooltip' : '@yovoice.settings.removeTooltip')} onClick={() => run(() => call('model.forget', { id: model.id }))} />
+          : isVos && model.importRequired ? <small>{t('@vvoice.models.importRequired')}</small>
           : !model.remotePath ? <Button size="sm" label={t('@yovoice.settings.importGguf')} icon={<FilePlus size={16} />} isDisabled={modelBusy} onClick={() => run(() => call('model.import'))} />
-          : <Button size="sm" label={download ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={16} />} isDisabled={modelBusy} onClick={() => run(() => call('model.download', { id: model.id }))} />}
+          : <Button size="sm" label={download ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(() => call('model.download', { id: model.id }))} />}
       </HStack>
       {download ? <VStack className="model-download" gap={2} role="status" aria-label={t('@yovoice.settings.downloadProgress', { name: model.name, precision: model.precision })}>
-        <HStack hAlign="between" gap={3}><small>{downloadStatusLabel(t, !!downloading, download.received, model.size, download.status)}</small><small className="model-size">{formatSize(download.received)} / {formatSize(model.size)}</small></HStack>
-        <progress aria-label={t('@yovoice.settings.downloadProgress', { name: model.name, precision: model.precision })} value={download.received} max={model.size} />
+        <HStack hAlign="between" gap={3}><small>{downloadStatusLabel(t, !!downloading, download.received, download.total, download.status)}</small><small className="model-size">{formatSize(download.received)} / {formatSize(download.total)}</small></HStack>
+        <progress aria-label={t('@yovoice.settings.downloadProgress', { name: model.name, precision: model.precision })} value={download.received} max={download.total} />
       </VStack> : null}
+      {hub?.error && hub.status === 'failed' ? <p role="alert">{hub.error}</p> : null}
     </VStack>;
   };
   return <>

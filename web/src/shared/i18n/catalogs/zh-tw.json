@@ -1,4 +1,17 @@
 {
+  "@vvoice.models.speechNav": { "defaultMessage": "語音與聲紋模型" },
+  "@vvoice.models.creativeNav": { "defaultMessage": "創作模型與音色庫" },
+  "@vvoice.models.speechTab": { "defaultMessage": "ASR、TTS 與聲紋模型" },
+  "@vvoice.models.creativeTab": { "defaultMessage": "創作模型與音色庫" },
+  "@vvoice.models.importRequired": { "defaultMessage": "需管理員在 Model Hub 提供原始權重" },
+  "@vvoice.models.inventoryError": { "defaultMessage": "暫時無法讀取共享模型狀態，正在自動重試。" },
+  "@vvoice.scheduler.checking": { "defaultMessage": "正在檢查 V-Scheduler 自動接入…" },
+  "@vvoice.scheduler.waiting": { "defaultMessage": "正在等待 V-Scheduler 自動接入。模型管理可用，推理尚未就緒。" },
+  "@vvoice.nav.models": { "defaultMessage": "模型管理" },
+  "@vvoice.nav.asr": { "defaultMessage": "語音辨識 ASR" },
+  "@vvoice.nav.tts": { "defaultMessage": "語音合成 TTS" },
+  "@vvoice.nav.speaker": { "defaultMessage": "聲紋辨識" },
+  "@vvoice.nav.hotwords": { "defaultMessage": "熱詞管理" },
   "@vvoice.nav.service": {
     "defaultMessage": "語音服務 · 模型管理"
   },

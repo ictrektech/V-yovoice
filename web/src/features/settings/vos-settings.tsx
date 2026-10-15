@@ -1,4 +1,5 @@
 import { VStack } from '@astryxdesign/core/Layout';
+import { Button } from '@astryxdesign/core/Button';
 import { useState } from 'react';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { call } from '../../shared/lib/client';
@@ -9,10 +10,10 @@ import { ModelGroups } from './model-list';
 import { setVosLocalePreference, vosLocalePreference, type VosLocalePreference } from '../../shared/lib/vos-locale';
 
 // VOS 的模型及内核由共享服务管理，不显示桌面路径、HF 来源或内核下载安装。
-export function VosSettings({ state, catalog, draft, run }: { state: State; catalog: ModelPackage[]; draft: Draft; run: (task: () => Promise<unknown>) => void }) {
+export function VosSettings({ openModels, state, catalog, draft, run }: { openModels: () => void; state: State; catalog: ModelPackage[]; draft: Draft; run: (task: () => Promise<unknown>) => void }) {
   const t = useTranslator();
   const [localePreference, setLocalePreference] = useState(vosLocalePreference);
-  return <VStack className="settings-page" gap={6}>
+  return <VStack className="settings-page" gap={6} style={{ overflowY: 'auto', overscrollBehavior: 'contain' }} data-testid="vos-settings">
     <header><h1>{t('@yovoice.settings.title')}</h1></header>
     <SettingsGroup title={t('@yovoice.settings.preferences')}>
       <SettingsRow label={t('@yovoice.settings.uiLocale')}>
@@ -23,7 +24,7 @@ export function VosSettings({ state, catalog, draft, run }: { state: State; cata
           }} />
       </SettingsRow>
       <SettingsRow label="ModelScope · Model Hub" hint={t('@vvoice.models.sharedHint')}>
-        <a href="./service/">{t('@vvoice.models.serviceLink')}</a>
+        <Button data-testid="settings-open-models" variant="ghost" label={t('@vvoice.nav.models')} onClick={openModels} />
       </SettingsRow>
       <SettingsRow label="audio.cpp" hint={state.runtimeVersion ?? ''}>
         <p>{t('@vvoice.runtime.updates')}</p>

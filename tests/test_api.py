@@ -24,6 +24,19 @@ def test_health_and_about() -> None:
     assert about.json()["max_concurrent_inference"] >= 1
 
 
+def test_scheduler_contract_includes_legacy_and_all_creator_models_without_credentials():
+    from vvoice.main import scheduler_contract
+    contract = scheduler_contract()
+    assert contract["app_id"] == "com.ictrek.v-voice"
+    assert contract["protocol_version"] == 1
+    assert contract["binding_endpoint"] == "/api/v1/scheduler/binding"
+    sync = {row["id"]: row for row in contract["sync_models"]}
+    assert {"sensevoice-int8", "seaco-paraformer-zh", "speaker-campplus-zh-en", "audiocpp-kokoro-82m-q8"} <= sync.keys()
+    assert len(contract["async_models"]) == 38
+    assert all(row["task_type"] == "voice.generate" for row in contract["async_models"])
+    assert "token" not in str(contract)
+
+
 def test_unknown_models_are_rejected_before_runtime_load() -> None:
     response = client.post(
         "/v1/audio/speech",

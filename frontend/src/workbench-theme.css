@@ -1,0 +1,30 @@
+/* 嵌入工作台时使用宿主传入的同一组主题令牌；独立服务页保持兼容。 */
+html[data-workbench-theme] { color-scheme: light; color: var(--app-ink); background: var(--app-white); font-family: var(--app-font); font-size: var(--app-ui-font); }
+html[data-workbench-theme] body { background: var(--app-white); color: var(--app-ink); }
+html[data-workbench-theme] header { background: var(--app-white); border-color: var(--app-line); backdrop-filter: none; padding: var(--spacing-3) var(--spacing-6); }
+html[data-workbench-theme] main { padding: var(--spacing-6) var(--spacing-8); }
+html[data-workbench-theme] h1 { font-size: var(--font-size-2xl); line-height: 1.35; }
+html[data-workbench-theme] h2 { font-size: var(--font-size-lg); }
+html[data-workbench-theme] :is(button,input,select,textarea) { font-family: var(--app-font); font-size: var(--app-ui-font); border-radius: var(--radius-element); }
+html[data-workbench-theme] :is(input,select,textarea,.model-details dd,.field-note,.api-addresses div,.playground output) { background: var(--app-paper); color: var(--app-ink); border-color: var(--app-line); }
+html[data-workbench-theme] :is(.model-card,.playground,.api-guide,.endpoint,.summary-strip,.catalog-tabs,.api-tabs,nav,.runtime-note,.hotword-card,.hotword-form,.loading-card) { background: var(--app-white); color: var(--app-ink); border-color: var(--app-line); box-shadow: none; border-radius: var(--radius-container); }
+html[data-workbench-theme] :is(.description,.intro,.section-heading p,.model-details dt,.model-title code,.api-addresses span,.endpoint p,.endpoint-title strong,.error-list,.runtime-note p,.summary-strip span,.playground label,.field-note,.playground label small) { color: var(--app-muted); }
+html[data-workbench-theme] :is(.runtime-note strong,.field-note strong,.summary-strip strong,.endpoint-title code) { color: var(--app-ink); }
+html[data-workbench-theme] :is(a,.api-addresses code,.runtime-note code) { color: var(--color-accent); }
+html[data-workbench-theme] :is(.actions button,button.primary,.secondary-button,.catalog-tabs button,.api-tabs button,nav button) { background: var(--app-surface); color: var(--app-ink); border-color: var(--app-line); padding: var(--spacing-2) var(--spacing-4); }
+html[data-workbench-theme] :is(.actions .primary,button.primary,.catalog-tabs button.active,.api-tabs button.active,nav button.active) { background: var(--app-ink); color: var(--app-white); }
+html[data-workbench-theme] :is(.kind,.status,.recommended,.streaming-badge,.endpoint-title span,.method) { background: var(--app-surface); color: var(--app-ink); }
+html[data-workbench-theme] :is(.status.ready,.model-card.is-ready) { border-color: var(--color-border); }
+html[data-workbench-theme] :is(.progress,pre,table,th,td) { background: var(--app-paper); color: var(--app-ink); border-color: var(--app-line); }
+html[data-workbench-theme] .model-card { padding: var(--spacing-5); min-height: 0; }
+html[data-workbench-theme] .model-details dd { border: 0; padding-inline: 0; }
+html[data-workbench-theme] .model-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,calc(var(--spacing-10) * 10)),1fr)); gap: var(--spacing-4); }
+html[data-workbench-theme] :is(.hotword-forms form,.hotword-formats div,.speaker-result,.modal,.hotword-chip) { background: var(--app-white); color: var(--app-ink); border-color: var(--app-line); border-radius: var(--radius-container); box-shadow: none; }
+html[data-workbench-theme] :is(.hotword-forms label,.hotword-forms small,.hotword-edit label,.hotword-top code,.hotword-formats dt,.speaker-result p,.modal-head span,.about-note,.about-grid dt) { color: var(--app-muted); }
+html[data-workbench-theme] :is(.hotword-actions button,.modal-close) { background: var(--app-surface); color: var(--app-ink); border-color: var(--app-line); }
+html[data-workbench-theme] .hotword-actions .primary { background: var(--app-ink); color: var(--app-white); }
+html[data-workbench-theme] :is(.hotword-formats a,.about-note code) { color: var(--color-accent); }
+html[data-workbench-theme][data-vvoice-docs]:not([data-vvoice-page="api"]) header { display: none; }
+html[data-workbench-theme] .api-guide > :is(h1,.eyebrow) { display: none; }
+html[data-workbench-theme] :is(.description,.model-details dd,.endpoint p,.runtime-note p,.hotword-forms label,.hotword-edit label,.speaker-result p) { font-size: var(--app-ui-font); line-height: 1.6; }
+html[data-workbench-theme] :is(.model-details dt,.model-title code,.endpoint-title strong) { font-size: var(--app-small-font); }

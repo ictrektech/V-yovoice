@@ -12,6 +12,7 @@
     "check": "pnpm run lint && pnpm run build && pnpm test"
   },
   "dependencies": {
+    "@noble/hashes": "2.4.0",
     "@astryxdesign/core": "0.6.1",
     "@astryxdesign/theme-neutral": "0.6.1",
     "@stylexjs/stylex": "^0.19.0",

@@ -97,14 +97,15 @@ async def _modelhub_lists(client: httpx.AsyncClient) -> tuple[list[dict[str, Any
     return models_response.json(), tasks_response.json()
 
 
-async def list_models() -> list[dict[str, Any]]:
+async def list_models(items: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    items = catalog() if items is None else items
     hub = await states()
     result = []
     # 小模型优先，避免一个大权重阻塞旧 ASR 目录和所有其他已安装模型。
     checks = {item["key"]: _shared_status(item) for item in sorted(
-        (row for row in catalog() if row.get("backend") == "audio.cpp"),
+        (row for row in items if row.get("backend") == "audio.cpp"),
         key=lambda row: sum(file["size"] for file in row["shared_files"]))}
-    for item in catalog():
+    for item in items:
         repo = item["modelscope_repo"]
         root = model_root(item)
         state = hub.get(repo, {})
@@ -114,14 +115,19 @@ async def list_models() -> list[dict[str, Any]]:
         ready, validation_error = (checks[item["key"]] if item.get("backend") == "audio.cpp"
                                    else await asyncio.to_thread(model_files_ready, item)) if descriptor_installed else (False, "")
         hub_status = str(state.get("status") or "not_installed").lower()
+        # 一个共享仓库含多个模型，不能把其他已下载文件或其他任务的状态当成本模型就绪。
+        selected = state.get("files")
+        relevant_task = not selected or bool(set(selected) & {file["path"] for file in item.get("shared_files", [])})
         if ready:
             status = "ready"
         elif ready is None:
             status = "verifying"
-        elif descriptor_installed and hub_status not in {"downloading", "pending", "verifying"}:
+        elif hub_status in {"downloading", "pending", "verifying"} and relevant_task:
+            status = "downloading"
+        elif descriptor_installed and (not item.get("shared_files") or all((root / file["path"]).is_file() for file in item["shared_files"])):
             status = "failed"
         else:
-            status = hub_status
+            status = "failed" if hub_status == "failed" and relevant_task else "not_installed"
         result.append({
             **{key: value for key, value in item.items() if key != "runtime"},
             "status": status,

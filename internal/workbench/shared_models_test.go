@@ -1,12 +1,38 @@
 package workbench
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"yovoice/internal/catalog"
 )
+
+func TestSharedModelCancellationOnlyTargetsMatchingActiveFiles(t *testing.T) {
+	original := catalog.Models
+	catalog.Models = []catalog.ModelPackage{{ID: "selected", RemotePath: "selected.gguf", Size: 4}}
+	defer func() { catalog.Models = original }()
+	var cancelled []string
+	hub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/tasks" {
+			_, _ = w.Write([]byte(`[{"task_id":"mine","model_id":"ms://` + SharedRepository + `","phase":"DOWNLOADING","files":["selected.gguf"]},{"task_id":"other-file","model_id":"` + SharedRepository + `","phase":"DOWNLOADING","files":["other.gguf"]},{"task_id":"finished","model_id":"` + SharedRepository + `","phase":"READY","files":["selected.gguf"]},{"task_id":"other-repo","model_id":"other/repo","phase":"DOWNLOADING","files":["selected.gguf"]}]`))
+			return
+		}
+		cancelled = append(cancelled, r.URL.Path)
+		w.WriteHeader(200)
+	}))
+	defer hub.Close()
+	t.Setenv("MODEL_HUB_API_URL", hub.URL)
+	if err := CancelSharedModel(context.Background(), "selected"); err != nil {
+		t.Fatal(err)
+	}
+	if len(cancelled) != 1 || cancelled[0] != "/api/v1/tasks/mine/cancel" {
+		t.Fatalf("cancelled unrelated tasks: %v", cancelled)
+	}
+}
 
 func TestSharedModelBrowsingDoesNotHashWeights(t *testing.T) {
 	root := t.TempDir()

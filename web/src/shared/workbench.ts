@@ -57,7 +57,7 @@ export function cueAudioStatus(draft: Draft, history: Generation[], cue: Subtitl
 }
 export interface Voice { referenceText?: string; source?: string; sourceGenerationId?: string; id: string; name: string; fileName: string; duration: number }
 export interface ModelFile { path: string; size: number; sha256: string }
-export interface ModelPackage { voices?: string[]; variant?: string; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
+export interface ModelPackage { importRequired?: boolean; voices?: string[]; variant?: string; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
 export interface InstalledModel { id: string; path: string; managed: boolean }
 export interface GenerationSegment { cueId: string; speakerId: string; speakerName: string; batchId: string; index: number; targetClipId?: string; placement?: 'ripple' | 'preserve' }
 export interface Generation { segment?: GenerationSegment; id: string; title: string; fileName: string; createdAt: string; duration: number; settings: Draft }

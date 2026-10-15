@@ -3,7 +3,7 @@ import { languageNames, translateText } from './messages'
 
 describe('interface translations', () => {
   it('translates creative API documentation without changing parameter names', () => {
-    for (const text of ['创作语音与调度', '声音克隆、设计与情绪控制', 'V-Router 与 V-Scheduler', '参考音频的 Base64 编码，不接受服务器路径。']) {
+    for (const text of ['创作语音与调度', '声音克隆、设计与情绪控制', 'V-Router 与 V-Scheduler', '参考音频的 Base64 编码，不接受服务器路径。', '音乐、编曲与任务', '音乐生成', '编曲渲染', '任务查询与取消', '结果与参考音色']) {
       expect(translateText(text, 'en-US')).not.toMatch(/[\u3400-\u9fff]/)
       expect(translateText(text, 'zh-TW')).not.toBe(text)
     }

@@ -21,14 +21,14 @@ import (
 )
 
 type Server struct {
-	Root, Assets, UserinfoURL, Runtime string
-	Client                             *http.Client
-	Jobs                               *Jobs
-	mu                                 sync.Mutex
-	users                              map[string]*workbench.Workbench
+	Root, Assets, UserinfoURL, Runtime, SchedulerPath string
+	Client                                            *http.Client
+	Jobs                                              *Jobs
+	mu                                                sync.Mutex
+	users                                             map[string]*workbench.Workbench
 }
 
-type Identity struct{ Key, Role string }
+type Identity struct{ Key, Role, Subject string }
 
 // identity 始终在服务端核验访问令牌，不信任浏览器提供的用户名或路径。
 func (s *Server) identity(r *http.Request) (Identity, error) {
@@ -53,16 +53,16 @@ func (s *Server) identity(r *http.Request) (Identity, error) {
 	var user struct {
 		Sub    string `json:"sub"`
 		Role   string `json:"role_code"`
-		Enable bool   `json:"enable"`
+		Enable int    `json:"enable"`
 	}
 	if res.StatusCode != 200 {
 		return Identity{}, fmt.Errorf("VOS sign-in rejected")
 	}
-	if err = json.NewDecoder(http.MaxBytesReader(nil, res.Body, 65536)).Decode(&user); err != nil || user.Sub == "" || !user.Enable {
+	if err = json.NewDecoder(http.MaxBytesReader(nil, res.Body, 65536)).Decode(&user); err != nil || user.Sub == "" || user.Enable != 1 {
 		return Identity{}, fmt.Errorf("invalid VOS identity")
 	}
 	hash := sha256.Sum256([]byte(user.Sub))
-	return Identity{Key: hex.EncodeToString(hash[:]), Role: user.Role}, nil
+	return Identity{Key: hex.EncodeToString(hash[:]), Role: user.Role, Subject: user.Sub}, nil
 }
 
 func (s *Server) user(id string) (*workbench.Workbench, error) {
@@ -105,6 +105,10 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 		jsonReply(out, map[string]string{"status": "ok"})
 		return
 	}
+	if r.URL.Path == "/api/v1/scheduler/binding" {
+		s.binding(out, r)
+		return
+	}
 	if r.URL.Path == "/internal/speech" {
 		s.speech(out, r)
 		return
@@ -118,6 +122,9 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !strings.HasPrefix(r.URL.Path, "/studio-api/") {
+		if r.URL.Path == "/" || strings.HasSuffix(r.URL.Path, ".html") {
+			out.Header().Set("Cache-Control", "no-store")
+		}
 		http.FileServer(http.Dir(s.Assets)).ServeHTTP(out, r)
 		return
 	}
@@ -160,6 +167,18 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 			}
 			if err = json.Unmarshal(call.Data, &input); err == nil {
 				err = workbench.PullSharedModel(r.Context(), input.ID)
+			}
+			result = true
+		case "model.cancel":
+			if identity.Role != "system_admin" && identity.Role != "platform_admin" {
+				http.Error(out, "Model administrator required", 403)
+				return
+			}
+			var input struct {
+				ID string `json:"id"`
+			}
+			if err = json.Unmarshal(call.Data, &input); err == nil {
+				err = workbench.CancelSharedModel(r.Context(), input.ID)
 			}
 			result = true
 		case "model.forget":

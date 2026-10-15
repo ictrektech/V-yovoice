@@ -3,7 +3,7 @@ import { ResizeHandle, type ResizableProps } from '@astryxdesign/core/Resizable'
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { AudioLines, BookOpen, ChevronRight, FileMusic, Mic, Music, Pencil, Settings2, Trash2 } from 'lucide-react';
+import { AudioLines, BookOpen, ChevronRight, FileMusic, Fingerprint, Library, ListFilter, Mic, Music, Pencil, ScanText, Settings2, Speech, Trash2 } from 'lucide-react';
 import { projectKind, type Draft, type State } from '../shared/workbench';
 import { overflowTitle } from '../shared/ui/overflow-title';
 import { UpdateSidebarCard } from '../features/update/update-notice';
@@ -23,11 +23,19 @@ export function SidebarNav(props: {
   const t = useTranslator();
   const { page, setPage, newDraft, state, draft, selectDraft, removeDraft, resizable } = props;
   const [recentOpen, setRecentOpen] = useState(() => localStorage.getItem('yovoice-recent-open') !== 'false');
+  const [modelsOpen, setModelsOpen] = useState(true);
+  const modelsActive = page === 'models' || page === 'models-creative';
   const projectActive = page === 'create' || page === 'history';
-  return <VStack as="nav" className="sidebar" aria-label={t('@yovoice.nav.main')} gap={6} data-testid="sidebar">
+  return <VStack as="nav" className="sidebar" aria-label={t('@yovoice.nav.main')} gap={6} data-testid="sidebar" style={isVos ? { overflowY: 'auto' } : undefined}>
     {newDraft}
-    {isVos ? <a href="./service/" data-testid="nav-speech-service">{t('@vvoice.nav.service')}</a> : null}
     <VStack className="sidebar-destinations" gap={2}>
+      {isVos ? <VStack gap={1}>
+        <Button data-testid="nav-models" label={t('@vvoice.nav.models')} variant="ghost" icon={<Library />} className="nav-item" aria-expanded={modelsOpen} aria-controls="model-navigation" endContent={<ChevronRight style={{ transform: modelsOpen ? 'rotate(90deg)' : undefined }} />} onClick={() => { setModelsOpen(!modelsOpen); if (!modelsActive) { setModelsOpen(true); setPage('models'); } }} />
+        {modelsOpen ? <VStack id="model-navigation" gap={1} style={{ paddingInlineStart: 'var(--spacing-4)' }}>
+          {([['models', 'speechNav', Speech], ['models-creative', 'creativeNav', Music]] as const).map(([destination, label, Icon]) => <Button key={destination} data-testid={`nav-${destination}-category`} label={t(`@vvoice.models.${label}`)} variant="ghost" icon={<Icon />} className={`nav-item ${page === destination ? 'selected' : ''}`} aria-current={page === destination ? 'page' : undefined} onClick={() => setPage(destination)} />)}
+        </VStack> : null}
+      </VStack> : null}
+      {isVos ? ([['asr', ScanText], ['tts', Speech], ['speaker', Fingerprint], ['hotwords', ListFilter]] as const).map(([destination, Icon]) => <Button key={destination} data-testid={`nav-${destination}`} label={t(`@vvoice.nav.${destination}`)} variant="ghost" icon={<Icon />} className={`nav-item ${page === destination ? 'selected' : ''}`} aria-current={page === destination ? 'page' : undefined} onClick={() => setPage(destination)} />) : null}
       {(['text', 'story', 'music', 'score'] as const).map(kind => <Button key={kind} data-testid={`nav-${kind}`} label={t(`@yovoice.project.${kind}`)} variant="ghost" icon={kind === 'text' ? <Mic /> : kind === 'story' ? <Pencil /> : kind === 'music' ? <Music /> : <FileMusic />} className={`nav-item ${page === kind || (projectActive && projectKind(draft) === kind) ? 'selected' : ''}`} aria-current={page === kind || (projectActive && projectKind(draft) === kind) ? 'page' : undefined} onClick={() => setPage(kind)} />)}
       <Button data-testid="nav-characters" label={t('@yovoice.nav.characters')} variant="ghost" icon={<AudioLines />} className={`nav-item ${page === 'characters' || page === 'voices' ? 'selected' : ''}`} aria-current={page === 'characters' || page === 'voices' ? 'page' : undefined} onClick={() => setPage('characters')} />
       {isVos ? <Button data-testid="nav-api-docs" label={t('@vvoice.nav.api')} variant="ghost" icon={<BookOpen />} className={`nav-item ${page === 'api-docs' ? 'selected' : ''}`} aria-current={page === 'api-docs' ? 'page' : undefined} onClick={() => setPage('api-docs')} /> : null}

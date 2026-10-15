@@ -1,5 +1,23 @@
 ## V-Voice for VOS
 
+Model management expands in the VOS sidebar into speech models and creator models/soundfonts;
+there is no second, easily missed category tab bar. VOS settings scroll independently.
+The settings model-management action stays inside the workbench; the standalone
+compatibility console also provides an explicit return-to-workbench link.
+Embedded service forms inherit the workbench theme. API documentation includes the private
+music/score RPC contract, job polling/cancellation and authenticated result download;
+these are explicitly distinguished from the public OpenAI-compatible speech endpoints.
+The VOS sidebar provides dedicated Model management, ASR, original TTS, Speaker recognition,
+and Hotword management pages inside the workbench. They retain the original
+model cards, download/unload controls, transcription, speaker enrollment,
+identification and verification forms and existing API paths; the creative
+editor stays mounted when opening them. VOS userinfo uses integer `enable: 1`;
+disabled or malformed identities are rejected rather than treated as signed in.
+LAN HTTP uses secure random UUIDs and S256 PKCE without requiring WebCrypto.
+Automatic scheduling uses a VOS-authenticated, versioned server-to-server binding;
+credentials stay in this app's private storage and reload without restarting.
+See [the Scheduler-side handoff and actual-node acceptance gates](docs/scheduler-auto-binding.md).
+
 This fork is the successor to `com.ictrek.v-voice`. It preserves the existing
 V-Voice model catalog and APIs and adds the yovoice creation workbench/audio.cpp
 models. Model support is additive, not a replacement by a curated subset.

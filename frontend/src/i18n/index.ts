@@ -7,7 +7,10 @@ import {
 
 let bridgeLocale: Locale | null = null
 const embedded = new URLSearchParams(window.location.search).get('standalone') === '1'
-if (embedded) document.documentElement.dataset.vvoiceDocs = 'true'
+if (embedded) {
+  document.documentElement.dataset.vvoiceDocs = 'true'
+  document.documentElement.dataset.vvoicePage = new URLSearchParams(window.location.search).get('page') ?? 'models'
+}
 const requestedLocale = new URLSearchParams(window.location.search).get('locale')
 let embeddedMode: LanguageMode = requestedLocale === 'zh-CN' || requestedLocale === 'zh-TW' || requestedLocale === 'en-US' ? requestedLocale : 'auto'
 

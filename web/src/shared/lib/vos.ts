@@ -1,5 +1,6 @@
 import type { State } from '../workbench';
 import { parseCallError } from './call-error';
+import { sha256 } from '@noble/hashes/sha2.js';
 
 // VOS 构建只使用真实服务；普通上游浏览器预览仍使用模拟后端。
 export const isVos = import.meta.env.VITE_VOS === 'true';
@@ -31,7 +32,7 @@ async function signIn(): Promise<string> {
   const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const state = base64url(crypto.getRandomValues(new Uint8Array(24)));
   const nonce = base64url(crypto.getRandomValues(new Uint8Array(24)));
-  const challenge = base64url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
+  const challenge = base64url(sha256(new TextEncoder().encode(verifier)));
   const authorization = await oauth.authorize({ client_id: 'com.ictrek.v-voice', response_type: 'code', scope: 'openid profile email', state, nonce, code_challenge: challenge, code_challenge_method: 'S256' });
   if (authorization.state !== state || !authorization.code) throw new Error('VOS OIDC state mismatch');
   const tokens = await oauth.token({ grant_type: 'authorization_code', client_id: 'com.ictrek.v-voice', code: authorization.code, code_verifier: verifier });

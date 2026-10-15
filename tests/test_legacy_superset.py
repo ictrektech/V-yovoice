@@ -37,3 +37,11 @@ def test_all_downloadable_yovoice_speech_precisions_are_projected():
     expected = {"audiocpp-" + row["id"] for row in upstream
                 if row.get("task") not in {"gen", "instrument"}}
     assert expected <= {row["key"] for row in catalog()}
+
+
+def test_creator_management_also_includes_music_and_soundfonts():
+    from vvoice.creative import models
+    rows = models(include_non_speech=True)
+    assert len(rows) == 38
+    assert {"tts", "music", "soundfont"} <= {row["kind"] for row in rows}
+    assert sum(row["import_required"] for row in rows) == 2

@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
+	"time"
 	"yovoice/internal/catalog"
 	"yovoice/internal/schema"
 )
@@ -23,6 +25,7 @@ func SharedCatalog() []catalog.ModelPackage {
 	models := []catalog.ModelPackage{}
 	for _, m := range catalog.Models {
 		if m.RemotePath == "" {
+			m.ImportRequired = true
 			m.RemotePath = "imports/" + m.ID + ".gguf"
 		}
 		if m.Repo != "" {
@@ -85,6 +88,9 @@ func PullSharedModel(ctx context.Context, id string) error {
 	if selected == nil {
 		return fmt.Errorf("unsupported shared model")
 	}
+	if selected.ImportRequired {
+		return fmt.Errorf("this model requires administrator-provided weights in Model Hub")
+	}
 	files := []string{}
 	for _, f := range selected.PackageFiles() {
 		files = append(files, f.Path)
@@ -102,13 +108,81 @@ func PullSharedModel(ctx context.Context, id string) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	res, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusConflict && (res.StatusCode < 200 || res.StatusCode >= 300) {
 		return fmt.Errorf("Model Hub HTTP %d", res.StatusCode)
+	}
+	return nil
+}
+
+// CancelSharedModel 只取消同一共享仓库且包含选中模型文件的活动任务。
+func CancelSharedModel(ctx context.Context, id string) error {
+	var files map[string]bool
+	for _, model := range SharedCatalog() {
+		if model.ID == id {
+			files = map[string]bool{}
+			for _, file := range model.PackageFiles() {
+				files[file.Path] = true
+			}
+			break
+		}
+	}
+	if files == nil {
+		return fmt.Errorf("unsupported shared model")
+	}
+	base := os.Getenv("MODEL_HUB_API_URL")
+	if base == "" {
+		base = "http://model-hub-backend:5005"
+	}
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequestWithContext(ctx, "GET", base+"/api/v1/tasks", nil)
+	if err != nil {
+		return err
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return fmt.Errorf("Model Hub tasks unavailable")
+	}
+	var tasks []struct {
+		ID    string   `json:"task_id"`
+		Repo  string   `json:"model_id"`
+		Phase string   `json:"phase"`
+		Files []string `json:"files"`
+	}
+	if json.NewDecoder(http.MaxBytesReader(nil, res.Body, 1<<20)).Decode(&tasks) != nil {
+		return fmt.Errorf("invalid Model Hub tasks")
+	}
+	for _, task := range tasks {
+		if strings.TrimPrefix(task.Repo, "ms://") != SharedRepository || (task.Phase != "PENDING" && task.Phase != "DOWNLOADING" && task.Phase != "VERIFYING") {
+			continue
+		}
+		relevant := len(task.Files) == 0
+		for _, file := range task.Files {
+			relevant = relevant || files[file]
+		}
+		if !relevant || task.ID == "" || strings.ContainsAny(task.ID, "/?#") {
+			continue
+		}
+		cancel, err := http.NewRequestWithContext(ctx, "POST", base+"/api/v1/tasks/"+task.ID+"/cancel", nil)
+		if err != nil {
+			return err
+		}
+		reply, err := client.Do(cancel)
+		if err != nil {
+			return err
+		}
+		reply.Body.Close()
+		if reply.StatusCode < 200 || reply.StatusCode >= 300 {
+			return fmt.Errorf("Model Hub cancellation rejected")
+		}
 	}
 	return nil
 }

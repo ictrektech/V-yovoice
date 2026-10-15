@@ -9,6 +9,30 @@ from types import SimpleNamespace
 from vvoice import catalog as catalog_module, main, modelhub
 
 
+def test_ready_repository_does_not_make_missing_model_files_ready(monkeypatch, tmp_path):
+    item = {"key": "not-downloaded", "backend": "audio.cpp", "modelscope_repo": "vivibit/shared",
+            "shared_files": [{"path": "missing.gguf", "size": 4, "sha256": "0" * 64}]}
+
+    async def states():
+        return {"vivibit/shared": {"status": "ready"}}
+
+    monkeypatch.setattr(modelhub, "model_root", lambda _: tmp_path)
+    monkeypatch.setattr(modelhub, "states", states)
+    assert asyncio.run(modelhub.list_models([item]))[0]["status"] == "not_installed"
+
+
+def test_download_state_is_scoped_to_selected_model_files(monkeypatch, tmp_path):
+    item = {"key": "other-model", "backend": "audio.cpp", "modelscope_repo": "vivibit/shared",
+            "shared_files": [{"path": "other.gguf", "size": 4, "sha256": "0" * 64}]}
+
+    async def states():
+        return {"vivibit/shared": {"status": "downloading", "files": ["selected.gguf"]}}
+
+    monkeypatch.setattr(modelhub, "model_root", lambda _: tmp_path)
+    monkeypatch.setattr(modelhub, "states", states)
+    assert asyncio.run(modelhub.list_models([item]))[0]["status"] == "not_installed"
+
+
 def test_atomic_export_change_does_not_reuse_another_revision_hash(monkeypatch, tmp_path):
     monkeypatch.setattr(catalog_module, "settings", SimpleNamespace(modelhub_root=tmp_path))
     repo = tmp_path / "export/ms/vivibit/test"
