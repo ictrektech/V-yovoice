@@ -17,6 +17,12 @@ The sections below describe the original upstream desktop app; they do not imply
 that VOS images or releases have passed their release gates. Fork source and
 merge baseline are recorded in [UPSTREM](UPSTREM).
 
+VOS packaging verifies current published dependency versions. Private GitHub
+repositories are checked through the existing approved App Store SSH tunnel,
+including the published archive, without copying a broad GitHub token into CI.
+The manual Actions trigger checks dependency access only; it does not package,
+publish or install an application. See [the VOS release guide](ictrek.app/README.md).
+
 <p align="center">
   <img src="web/public/v-voice.png" width="96" alt="V-Voice" />
 </p>

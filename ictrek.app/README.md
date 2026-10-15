@@ -14,3 +14,16 @@ The release contains one pull-mode package for six mutually exclusive profiles:
 Run `docker/build_image.sh --sheet <sheet>` on a matching build host. After every
 required image and Feishu cell is published, run `ictrek.app/scripts/update_version.sh patch`
 locally to trigger packaging and App Store publication.
+
+Packaging resolves the current published Model Hub and V-Scheduler versions,
+never guessed versions. When a dependency repository is private, the existing
+App Store credentials open the approved loopback SSH tunnel; the packager reads
+the latest App Store record and confirms that its `app.tar.gz` exists and matches
+the recorded size. The protocol minimum is still enforced. No cross-repository
+GitHub token is required.
+
+The Actions manual trigger runs a read-only dependency-access preflight without
+building a package or publishing. Use it before a version bump when changing the
+release connection. Only `vos-v-voice-v*` tags run the actual release. The tunnel
+is closed on success and failure. A retry after GitHub publication reuses that
+release's existing package for App Store publication rather than replacing it.

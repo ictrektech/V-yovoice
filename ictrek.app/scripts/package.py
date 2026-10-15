@@ -8,6 +8,8 @@ import os
 import re
 import shutil
 import tarfile
+import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -34,6 +36,30 @@ DEPENDENCIES = {
 }
 
 
+def appstore_version(app_id: str, base: str) -> str:
+    """私有 GitHub 仓库改从已授权隧道读取实时发布记录，不扩大 CI 令牌权限。"""
+    parsed = urllib.parse.urlparse(base)
+    if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost"} or parsed.path not in {"", "/"}:
+        raise RuntimeError("App Store dependency verification requires the approved loopback tunnel")
+    with urllib.request.urlopen(f"{base.rstrip('/')}/api/appstore/apps/{app_id}", timeout=30) as response:
+        record = json.load(response)
+    detail = record.get("data") or {}
+    version = detail.get("current_version", "")
+    versions = [v for v in detail.get("versions", []) if re.fullmatch(r"\d+\.\d+\.\d+", v)]
+    archive = detail.get("app_tar_gz") or {}
+    expected = f"appstore/apps/{app_id}/{version}/app.tar.gz"
+    if (record.get("code") != 0 or detail.get("id") != app_id or not versions
+            or version != max(versions, key=lambda v: tuple(map(int, v.split("."))))
+            or archive.get("size", 0) <= 0 or archive.get("download_path") != expected):
+        raise RuntimeError(f"{app_id}: no verified latest published App Store package")
+    # 实际文件必须可访问，不能把仅有索引的记录当成已发布包。
+    probe = urllib.request.Request(f"{base.rstrip('/')}/store/{expected}", method="HEAD")
+    with urllib.request.urlopen(probe, timeout=30) as response:
+        if int(response.headers.get("Content-Length", "0")) != archive["size"]:
+            raise RuntimeError(f"{app_id}: published App Store archive is unavailable or changed")
+    return version
+
+
 def resolve_dependencies(manifest: dict) -> None:
     headers = {"Accept": "application/vnd.github+json", "User-Agent": "V-Voice VOS packaging"}
     token = os.getenv("GH_TOKEN")
@@ -42,19 +68,28 @@ def resolve_dependencies(manifest: dict) -> None:
     for dependency in manifest.get("dependencies", {}).get("apps", []):
         repository, minimum = DEPENDENCIES[dependency["id"]]
         url = f"https://api.github.com/repos/{repository}/releases/latest"
-        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30) as response:
-            release = json.load(response)
-        match = re.fullmatch(r"v?(\d+\.\d+\.\d+)", release.get("tag_name", ""))
-        if (not match or not release.get("published_at") or release.get("draft")
-                or release.get("prerelease") or not any(
-                    asset.get("name", "").endswith("_pull.tar") for asset in release.get("assets", []))):
-            raise RuntimeError(f"{repository}: no verified published VOS package")
-        version = match.group(1)
+        source = "GitHub Release"
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30) as response:
+                release = json.load(response)
+        except urllib.error.HTTPError as exc:
+            base = os.getenv("VVOICE_APPSTORE_API_URL", "")
+            if exc.code not in {401, 403, 404} or not base:
+                raise RuntimeError(f"{repository}: cannot verify published dependency; App Store tunnel required for private repositories") from exc
+            version = appstore_version(dependency["id"], base)
+            source = "VOS App Store"
+        else:
+            match = re.fullmatch(r"v?(\d+\.\d+\.\d+)", release.get("tag_name", ""))
+            if (not match or not release.get("published_at") or release.get("draft")
+                    or release.get("prerelease") or not any(
+                        asset.get("name", "").endswith("_pull.tar") for asset in release.get("assets", []))):
+                raise RuntimeError(f"{repository}: no verified published VOS package")
+            version = match.group(1)
         # 已发布版本不能替代本应用实际需要的协议下限；不足时明确阻止打包。
         if tuple(map(int, version.split("."))) < tuple(map(int, minimum.split("."))):
             raise RuntimeError(f"{repository}: published {version} lacks required contract >= {minimum}")
         dependency["version"] = ">=" + version
-        print(f"Dependency resolved: {dependency['id']} published={version} package=>={version}")
+        print(f"Dependency resolved: {dependency['id']} source={source} published={version} package=>={version}")
 
 
 def request(method: str, url: str, token: str = "", body: dict | None = None) -> dict:
