@@ -1,7 +1,7 @@
 [project]
 name = "v-voice"
 version = "0.1.0"
-description = "Unified ONNX ASR and TTS service"
+description = "Shared ASR and TTS service with ONNX and native audio.cpp inference"
 requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.115,<1",

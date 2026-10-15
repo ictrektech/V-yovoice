@@ -17,7 +17,7 @@ def request(method: str, url: str, token: str = "", body: dict | None = None) ->
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers, method=method)) as response:
+    with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers, method=method), timeout=30) as response:
         value = json.load(response)
     if value.get("code") != 0:
         raise RuntimeError(value)

@@ -44,6 +44,8 @@ export const messages: Record<string, Translation> = {
   '葡萄牙语': ['葡萄牙語', 'Portuguese'],
   '意大利语': ['義大利語', 'Italian'],
   '已就绪': ['已就緒', 'Ready'],
+  '校验中': ['驗證中', 'Verifying'],
+  '显示公共 ONNX / GGUF 模型与校验状态，仅就绪模型对 V-Router 公开。': ['顯示公共 ONNX / GGUF 模型與驗證狀態，僅就緒模型對 V-Router 公開。', 'Shows public ONNX / GGUF models and verification status. Only ready models are exposed to V-Router.'],
   '下载中': ['下載中', 'Downloading'],
   '未安装': ['未安裝', 'Not installed'],
   '失败': ['失敗', 'Failed'],

@@ -3,47 +3,17 @@ package workbench
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
-	"sync"
 	"yovoice/internal/catalog"
 	"yovoice/internal/schema"
 )
 
 var SharedRepository = catalog.VOSRepository
-
-var sharedHashes sync.Map
-
-// 只读共享文件按路径、大小和修改时间缓存校验，所有用户共用，避免反复扫描大权重。
-func verifiedSharedFile(path string, size int64, want string) bool {
-	info, err := os.Stat(path)
-	if err != nil || !info.Mode().IsRegular() || info.Size() != size {
-		return false
-	}
-	key := fmt.Sprintf("%s|%d|%d", path, size, info.ModTime().UnixNano())
-	if value, ok := sharedHashes.Load(key); ok {
-		return value.(string) == want
-	}
-	f, err := os.Open(path)
-	if err != nil {
-		return false
-	}
-	defer f.Close()
-	h := sha256.New()
-	if _, err = io.Copy(h, f); err != nil {
-		return false
-	}
-	got := hex.EncodeToString(h.Sum(nil))
-	sharedHashes.Store(key, got)
-	return got == want
-}
 
 // SharedModelsMode 仅 VOS 开启；桌面端继续沿用上游模型安装方式。
 func SharedModelsMode() bool { return os.Getenv("VVOICE_SHARED_MODELS") == "true" }
@@ -68,7 +38,7 @@ func SharedCatalog() []catalog.ModelPackage {
 	return models
 }
 
-// SyncSharedModels 只读取 Model Hub 的稳定导出，不拷贝或删除共享权重。
+// SyncSharedModels 只检查共享导出的文件元数据；实际使用前由引擎/编曲入口校验摘要。
 func (w *Workbench) SyncSharedModels() error {
 	root := os.Getenv("MODEL_HUB_SHARED_MODELS_PATH")
 	if root == "" {
@@ -79,7 +49,8 @@ func (w *Workbench) SyncSharedModels() error {
 	for _, m := range SharedCatalog() {
 		ready := true
 		for _, f := range m.PackageFiles() {
-			if !verifiedSharedFile(filepath.Join(base, filepath.FromSlash(f.Path)), f.Size, f.SHA256) {
+			info, err := os.Stat(filepath.Join(base, filepath.FromSlash(f.Path)))
+			if err != nil || !info.Mode().IsRegular() || info.Size() != f.Size {
 				ready = false
 				break
 			}

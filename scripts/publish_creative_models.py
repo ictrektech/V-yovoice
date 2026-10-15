@@ -146,6 +146,7 @@ def main():
         with ThreadPoolExecutor(max_workers=3) as pool:
             list(pool.map(stage, specs))
     shutil.copyfile(ROOT / "THIRD_PARTY_NOTICES.md", weights / "THIRD_PARTY_NOTICES.md")
+    shutil.copyfile(ROOT / "docs/modelscope-creative-models.md", weights / "README.md")
     shutil.copyfile(ROOT / "web/public/model-license.txt", weights / "INDEXTTS-MODEL-LICENSE.txt")
     (weights / "source-index.json").write_text(json.dumps(specs, indent=2) + "\n")
     (weights / "SHA256SUMS").write_text("".join(f"{f['sha256']}  {f['path']}\n" for f in specs))
@@ -173,7 +174,7 @@ def main():
         target = publication / spec["path"]
         target.parent.mkdir(parents=True, exist_ok=True)
         target.hardlink_to(weights / spec["path"])
-    for name in ("THIRD_PARTY_NOTICES.md", "INDEXTTS-MODEL-LICENSE.txt", "source-index.json", "SHA256SUMS"):
+    for name in ("README.md", "THIRD_PARTY_NOTICES.md", "INDEXTTS-MODEL-LICENSE.txt", "source-index.json", "SHA256SUMS"):
         shutil.copyfile(weights / name, publication / name)
     shutil.copytree(weights / "licenses", publication / "licenses")
     from modelscope_hub import HubApi

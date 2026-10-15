@@ -3,9 +3,11 @@ package workbench
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"slices"
 	"time"
 	"yovoice/internal/audio"
+	"yovoice/internal/catalog"
 	"yovoice/internal/diag"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
@@ -32,6 +34,20 @@ func (w *Workbench) startScore(d schema.Draft, saveDraft bool) (<-chan struct{},
 		}
 	}
 	return w.start("generate", msg.ActivityGenerate, nil, nil, func(ctx context.Context) error {
+		if SharedModelsMode() {
+			resolved, err := filepath.EvalSymlinks(soundFont)
+			if err != nil {
+				return err
+			}
+			soundFont = resolved
+			definition, err := catalog.Lookup(d.ModelID)
+			if err != nil {
+				return err
+			}
+			if err = catalog.VerifyPackage(ctx, definition, soundFont); err != nil {
+				return err
+			}
+		}
 		sf, e := score.LoadSoundFont(soundFont)
 		if e != nil {
 			return msg.Err(msg.ErrModelMoved, nil)

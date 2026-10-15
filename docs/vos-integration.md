@@ -130,6 +130,13 @@ modifying or releasing those applications.
 
 ## Public API and gateway discovery
 
+Catalog browsing reads file metadata without scanning every installed weight.
+The model-management API reports GGUF models as `verifying` until bounded background
+checks finish; public discovery never advertises an unverified model. Native generation and
+score rendering independently verify only the selected package before use;
+verification honors cancellation and caches immutable-file results across users.
+This keeps large shared catalogs from blocking the creator or legacy ASR UI.
+
 `GET /openapi.json` documents the public V-Voice HTTP contract. Existing
 `/v1/audio/transcriptions`, `/v1/audio/translations`, streaming and speaker
 interfaces are retained. Standard `POST /v1/audio/speech` accepts `model`,

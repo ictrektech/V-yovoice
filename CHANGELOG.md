@@ -52,6 +52,7 @@
 - Projects and reference voices are isolated by VOS identity. Creation tasks and direct/gateway inference integrate with V-Scheduler, with single-use permit handoff and no duplicate resource reservation. The workbench can follow VOS language without losing an edited draft.
 - Migrates the existing six platform profiles, image builds, Feishu records and VOS release pipeline. `UPSTREM` records the original fork source for future merges.
 - English, Simplified Chinese and Traditional Chinese UI, with a dedicated multilingual API documentation page covering both standard endpoints and model-specific extensions.
+- Model browsing stays responsive during large-weight verification. Only verified models are advertised; generation checks the selected package and honors cancellation before loading it.
 
 ### 简体中文
 
@@ -60,6 +61,7 @@
 - 作品和参考音色按 VOS 身份隔离；创作任务、直接调用和网关推理接入 V-Scheduler，使用单次可核验许可交接，避免重复预约资源。创作界面可跟随 VOS 语言切换且不丢失正在编辑的草稿。
 - 迁移原有六个平台 profile、镜像构建、飞书记录和 VOS 发布流程；通过 `UPSTREM` 记录原始 fork 来源，方便后续合并更新。
 - 创作界面支持英文、简体中文与繁体中文，新增独立的多语言 API 文档页面，涵盖标准接口和模型专用扩展。
+- 大型权重校验期间保持目录浏览可响应；仅公开已验证模型，生成前校验所选模型，并支持在装载前取消。
 
 ## [0.2.0] - 2026-10-11
 

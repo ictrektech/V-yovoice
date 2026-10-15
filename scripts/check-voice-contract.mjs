@@ -44,7 +44,7 @@ const cloning = process.env.VVOICE_CHECK_CLONING === '1';
 const legacyRepo = 'vivibit/v-voice-seaco-paraformer-zh-int8';
 const legacySource = path.join(build, 'image-modelhub/export/ms', legacyRepo, 'current');
 const legacy = existsSync(path.join(legacySource, 'model.int8.onnx')) && existsSync(path.join(build, 'seaco-public-sample.wav'));
-const budget = { cpu_millicores: 4000, memory_mib: 24576, gpu_slots: 0, gpu_memory_mib: 0 };
+const budget = { cpu_millicores: 8000, memory_mib: 24576, gpu_slots: 0, gpu_memory_mib: 0 };
 const nodeID = 'v-voice-isolated-check';
 const config = {
   principals: [
@@ -125,8 +125,13 @@ try {
   containers.push(apiContainer);
   execFileSync('docker', ['run', '-d', '--name', apiContainer, '--network', 'host', '--env-file', apiEnv, '-v', root + ':/src:ro', '-v', run + '/voice.json:/config/voice.json:ro', '-v', run + ':' + run + ':ro', '-v', path.join(build, 'model-mirror/weights') + ':' + path.join(build, 'model-mirror/weights') + ':ro', '-v', data + ':/data', '-w', '/src', 'swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_20261013', 'python3', '-m', 'uvicorn', 'vvoice.main:app', '--host', '127.0.0.1', '--port', String(basePort + 1)], { stdio: 'pipe', timeout: 120000 });
   await ready(voice + '/health'); await delay(3000);
-  const catalog = await call(voice + '/api/v1/discovery', '');
-  assert(catalog.data.models.some(model => model.id === models[0]));
+  let catalog;
+  for (let i = 0; i < 120; i++) {
+    catalog = await call(voice + '/api/v1/discovery', '');
+    if (catalog.data.models.some(model => model.id === models[0])) break;
+    await delay(500);
+  }
+  assert(catalog.data.models.some(model => model.id === models[0]), 'verified model did not become ready');
   console.log('PASS: verified shared GGUF weights enter real V-Voice discovery');
   const direct = await speech(voice, models[0]); file('direct.wav', direct);
   console.log('PASS: direct standard speech uses real Scheduler admission and native audio.cpp CPU inference');

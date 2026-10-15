@@ -1,6 +1,7 @@
 package vos
 
 import (
+	"bytes"
 	"context"
 	"net/http/httptest"
 	"os"
@@ -36,7 +37,7 @@ func TestNativeKokoroSpeech(t *testing.T) {
 	d := schema.DefaultDraft()
 	d.ModelID, d.Speaker, d.SynthesisLanguage = "kokoro-82m-q8", "af_heart", "en-us"
 	d.Text = "Hello, welcome to V Voice."
-	if _, err = w.Synthesize(context.Background(), d); err != nil {
+	reportFailure := func(err error) {
 		for _, name := range []string{"engine.log", "engine.log.out", "last-inference-error.txt"} {
 			if b, e := os.ReadFile(filepath.Join(w.Store.Root, "logs", name)); e == nil {
 				if len(b) > 16000 {
@@ -47,9 +48,34 @@ func TestNativeKokoroSpeech(t *testing.T) {
 		}
 		t.Fatal(err)
 	}
+	generation, err := w.Synthesize(context.Background(), d)
+	if err != nil {
+		reportFailure(err)
+	}
 	server := &Server{Root: t.TempDir(), Runtime: runtime}
 	strength := 0.6
 	if _, err = server.synthesize(httptest.NewRequest("POST", "/internal/speech", nil), speechInput{Model: d.ModelID, Text: d.Text, Voice: d.Speaker, Language: "en", Speed: 1, EmotionStrength: &strength}); err != nil {
 		t.Fatalf("standard speech mapping: %v", err)
+	}
+	if os.Getenv("VVOICE_NATIVE_TEST_CLONING") == "1" {
+		file, err := w.MediaFile("outputs", generation.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		reference, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		voice, err := w.ImportVoiceFrom(context.Background(), bytes.NewReader(reference), "Synthetic test voice")
+		if err != nil {
+			t.Fatal(err)
+		}
+		d.ModelID, d.Text, d.Language = "index-2.5-q8", "Hello.", "en"
+		d.VoiceID, d.VoiceMode, d.VoxMode = &voice.ID, "clone", "clone"
+		d.ReferenceText = "Hello, welcome to V Voice."
+		if _, err = w.Synthesize(context.Background(), d); err != nil {
+			reportFailure(err)
+		}
+		t.Log("native IndexTTS cloning passed with a synthetic reference")
 	}
 }

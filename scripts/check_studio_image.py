@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """在隔离镜像容器内验收品牌、旧目录、私有原生推理及未配置调度时的拒绝行为。"""
 import hashlib
+import base64
 import json
 import os
 from pathlib import Path
@@ -71,8 +72,13 @@ def main():
             assert b"<title>V-Voice</title>" in request("http://127.0.0.1:7070/")
             assert b"<html" in request("http://127.0.0.1:7070/service/")
             assert b"/v1/audio/speech" in request("http://127.0.0.1:7070/openapi.json")
-            discovery = json.loads(request("http://127.0.0.1:7070/api/v1/discovery"))
-            assert any(model["id"] == "audiocpp-kokoro-82m-q8" for model in discovery["models"])
+            for _ in range(120):
+                discovery = json.loads(request("http://127.0.0.1:7070/api/v1/discovery"))
+                if any(model["id"] == "audiocpp-kokoro-82m-q8" for model in discovery["models"]):
+                    break
+                time.sleep(0.5)
+            else:
+                raise AssertionError("verified model did not become ready")
             try:
                 request("http://127.0.0.1:7070/v1/audio/speech", {
                     "model": "audiocpp-kokoro-82m-q8", "input": "Hello.", "voice": "af_heart"})
@@ -84,6 +90,14 @@ def main():
                 "voice": "af_heart", "language": "en", "speed": 1,
             }, secret)
             assert audio[:4] == b"RIFF" and len(audio) > 24000
+            if os.getenv("VVOICE_IMAGE_CHECK_CLONING") == "1":
+                cloned = request("http://127.0.0.1:7080/internal/speech", {
+                    "model": "index-2.5-q8", "text": "Hello, welcome to our studio.", "language": "en", "speed": 1,
+                    "reference_audio": base64.b64encode(audio).decode(),
+                    "reference_text": "Hello, welcome to V Voice.",
+                }, secret)
+                assert cloned[:4] == b"RIFF" and len(cloned) > 24000
+                print("PASS: native IndexTTS cloning with a generated synthetic reference")
             tasks = Path(f"/proc/{children[0].pid}/task")
             for thread in tasks.iterdir():
                 try:

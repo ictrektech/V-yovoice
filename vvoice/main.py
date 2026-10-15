@@ -40,7 +40,7 @@ from .transcript import normalize_transcript, subtitle
 from .admission import AdmissionMiddleware, run_blocking, admit_model
 
 
-app = FastAPI(title="V-Voice", version=__version__, description="Unified ONNX ASR and TTS service")
+app = FastAPI(title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
 if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
     app.add_middleware(AdmissionMiddleware)
 

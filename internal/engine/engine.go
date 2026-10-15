@@ -232,6 +232,15 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 	if err != nil {
 		return err
 	}
+	if os.Getenv("VVOICE_SHARED_MODELS") == "true" {
+		m.Path, err = filepath.EvalSymlinks(m.Path)
+		if err != nil {
+			return err
+		}
+		if err = catalog.VerifyPackage(ctx, definition, m.Path); err != nil {
+			return err
+		}
+	}
 	encoderSamples := 0
 	if definition.Family == "voxcpm2" {
 		encoderSamples = 240000

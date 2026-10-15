@@ -445,6 +445,27 @@ func (j *Jobs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (j *Jobs) execute(ctx context.Context, job Job, run *execution) {
 	defer close(run.done)
+	// 租约监控覆盖准备与完整性校验，不能等大文件读取结束后才开始计时。
+	go func() {
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-run.done:
+				return
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				j.mu.Lock()
+				expired := time.Now().After(run.deadline)
+				j.mu.Unlock()
+				if expired {
+					run.cancel()
+					return
+				}
+			}
+		}
+	}()
 	w, err := j.Server.user(job.User)
 	if err == nil {
 		err = w.SyncSharedModels()
@@ -453,26 +474,12 @@ func (j *Jobs) execute(ctx context.Context, job Job, run *execution) {
 	if err == nil {
 		actionErr = startSnapshot(ctx, w, job)
 		if actionErr == nil {
-			ticker := time.NewTicker(200 * time.Millisecond)
-			finished := false
-			for !finished {
-				select {
-				case <-w.Done():
-					finished = true
-				case <-ctx.Done():
-					w.UnloadRuntime()
-					actionErr = ctx.Err()
-					finished = true
-				case <-ticker.C:
-					j.mu.Lock()
-					expired := time.Now().After(run.deadline)
-					j.mu.Unlock()
-					if expired {
-						run.cancel()
-					}
-				}
+			select {
+			case <-w.Done():
+			case <-ctx.Done():
+				w.UnloadRuntime()
+				actionErr = ctx.Err()
 			}
-			ticker.Stop()
 		}
 		// 等待结束并卸载驻留模型，固定模板包含装载峰值，无隐含跨任务驻留预算。
 		w.UnloadRuntime()
@@ -512,6 +519,9 @@ func (j *Jobs) execute(ctx context.Context, job Job, run *execution) {
 }
 
 func startSnapshot(ctx context.Context, w *workbench.Workbench, job Job) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	switch job.Method {
 	case "generation.start":
 		d := schema.DefaultDraft()

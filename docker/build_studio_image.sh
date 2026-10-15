@@ -58,10 +58,35 @@ if [[ "$mode" == full || "$mode" == build ]]; then
   if [[ "$cuda" == ON ]]; then backend=cuda; fi
   # 原 V-Voice 的六套构建配置继续从当前源码生成基础服务，不依赖历史成品镜像。
   cd "$build_root/source"
-  REGISTRY="$registry" VVOICE_LEGACY_STAGE=1 bash docker/build_legacy_image.sh --sheet "$sheet" --build-only
   base="v-voice-legacy-build:${prefix}"
+  compiler_cache=""
+  # 编译器快照只按平台基础镜像标识隔离；Python/Go 改动不应重编译未变的 C++ 内核。
+  # 核对基础层前缀后才复用旧工具链，最终服务仍从当前源码重新构建。
+  if [[ "$sheet" != AMD_with_cuda ]]; then
+    case "$sheet" in
+      AMD_with_mxn100) platform_base="${registry}/python:amd_3.12-slim" ;;
+      ARM_without_cuda|SOPHON_bm1688) platform_base="${registry}/python:arm_3.12-slim" ;;
+      l4t) platform_base="${registry}/pytorch_py312:jet_2.7.0" ;;
+      *) platform_base="${registry}/nvidia-pytorch:arm_25.08-py3" ;;
+    esac
+    docker pull "$platform_base"
+    platform_id="$(docker image inspect --format '{{.Id}}' "$platform_base")"
+    compiler_cache="v-voice-native-compiler:${prefix}-${platform_id#sha256:}"
+    if ! docker image inspect "$compiler_cache" >/dev/null 2>&1 && docker image inspect "$base" >/dev/null 2>&1; then
+      docker image inspect "$platform_base" "$base" > "$build_root/sources/compiler-layers-${prefix}.json"
+      if python3 - "$build_root/sources/compiler-layers-${prefix}.json" <<'PY'
+import json,sys
+root, previous = json.load(open(sys.argv[1]))
+layers = root['RootFS']['Layers']
+raise SystemExit(0 if previous['RootFS']['Layers'][:len(layers)] == layers else 1)
+PY
+      then docker tag "$base" "$compiler_cache"; fi
+    fi
+  fi
+  REGISTRY="$registry" VVOICE_LEGACY_STAGE=1 bash docker/build_legacy_image.sh --sheet "$sheet" --build-only
   docker tag "$image" "$base"
-  compiler="$base"
+  compiler="$compiler_cache"
+  if [[ -n "$compiler_cache" ]] && ! docker image inspect "$compiler_cache" >/dev/null 2>&1; then docker tag "$base" "$compiler_cache"; fi
   if [[ "$sheet" == AMD_with_cuda ]]; then compiler="${registry}/nvidia-cuda:amd_12.8.1-cudnn-devel-ubuntu22.04"; fi
   docker buildx build --builder default --load --provenance=false --sbom=false \
     --build-context "studio_artifacts=${artifacts}" --build-context "audiocpp_source=${build_root}/sources" \

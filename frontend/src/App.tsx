@@ -12,7 +12,7 @@ function RawText({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
-const statusNames: Record<string, string> = { ready: '已就绪', downloading: '下载中', not_installed: '未安装', failed: '失败' }
+const statusNames: Record<string, string> = { ready: '已就绪', verifying: '校验中', downloading: '下载中', not_installed: '未安装', failed: '失败' }
 
 function EmptyReady({ kind }: { kind: 'ASR' | 'TTS' }) {
   const message = kind === 'ASR' ? '暂无已就绪的 ASR 模型' : '暂无已就绪的 TTS 模型'
@@ -63,7 +63,7 @@ function Models({ models, loading, refresh }: { models: Model[]; loading: boolea
   }
 
   return <Localized><>
-    <section className="section-heading"><div><p className="eyebrow">MODEL HUB</p><h1>模型管理</h1><p>只列出 V-Voice 已验证的公开 ONNX 模型，全部对 V-Router 以 public 能力注册。</p></div><button className="secondary-button" onClick={refresh}>刷新状态</button></section>
+    <section className="section-heading"><div><p className="eyebrow">MODEL HUB</p><h1>模型管理</h1><p>显示公共 ONNX / GGUF 模型与校验状态，仅就绪模型对 V-Router 公开。</p></div><button className="secondary-button" onClick={refresh}>刷新状态</button></section>
     <section className="summary-strip" aria-label="模型统计"><div><strong>{counts.all}</strong><span>支持模型</span></div><div><strong>{counts.asr}</strong><span>ASR</span></div><div><strong>{counts.tts}</strong><span>TTS</span></div><div><strong>{counts.speaker}</strong><span>声纹</span></div><div><strong>{counts.ready}</strong><span>已安装</span></div></section>
     <div className="catalog-tabs" role="tablist" aria-label="模型类型">{([['all', '全部模型', counts.all], ['asr', '语音识别 ASR', counts.asr], ['tts', '语音合成 TTS', counts.tts], ['speaker', '声纹识别', counts.speaker]] as const).map(([value, label, count]) => <button role="tab" aria-selected={kind === value} className={kind === value ? 'active' : ''} onClick={() => setKind(value)} key={value}><span>{label}</span><b>{count}</b></button>)}</div>
     {error ? <div className="alert" data-i18n="off">{error}</div> : null}
@@ -79,7 +79,7 @@ function Models({ models, loading, refresh }: { models: Model[]; loading: boolea
         <dl className="model-details"><div><dt>推理后端</dt><dd>{model.backend || 'sherpa-onnx'}{model.streaming ? ' · Online' : ''}</dd></div><div><dt>运行时</dt><dd>{model.loaded ? '已热加载' : '按请求热加载'}</dd></div><div><dt>模型族</dt><dd>{model.family}</dd></div><div><dt>{model.kind === 'tts' ? 'Voice' : '接口'}</dt><dd>{model.kind === 'tts' ? `${voiceCount} 个预设音色` : model.kind === 'speaker' ? '注册 / 识别 / 验证' : `${model.translation === false ? '转写' : '转写 / 翻译'}${model.hotwords?.supported ? ' / 热词增强' : ''}${model.streaming ? ' / 实时流式' : ''}`}</dd></div><div className="wide"><dt>语言</dt><dd>{model.languages.map(language => languageNames[language] || language).join('、')}</dd></div><div className="wide"><dt>ModelScope</dt><dd><a href={`https://modelscope.cn/models/${model.modelscope_repo}`} target="_blank" rel="noreferrer">{model.modelscope_repo}</a></dd></div></dl>
         {model.status === 'downloading' ? <div className="progress"><i style={{ width: `${progress}%` }} /><small>{progress}% · {formatBytes(model.downloaded_bytes)} / {formatBytes(model.total_bytes)}</small></div> : null}
         {model.error ? <small className="error" data-i18n="off">{model.error}</small> : null}
-        <div className="actions">{model.status === 'ready' ? <><button onClick={() => act(model, 'unload')} disabled={!!busy || !model.loaded}>卸载推理实例</button><button onClick={() => act(model, 'force')} disabled={!!busy}>重新下载</button></> : null}{model.status === 'downloading' ? <button onClick={() => act(model, 'stop')} disabled={!!busy}>停止下载</button> : null}{model.status !== 'ready' && model.status !== 'downloading' ? <button className="primary" onClick={() => act(model, 'pull')} disabled={!!busy}>从 Model Hub 安装</button> : null}</div>
+        <div className="actions">{model.status === 'ready' ? <><button onClick={() => act(model, 'unload')} disabled={!!busy || !model.loaded}>卸载推理实例</button><button onClick={() => act(model, 'force')} disabled={!!busy}>重新下载</button></> : null}{model.status === 'downloading' ? <button onClick={() => act(model, 'stop')} disabled={!!busy}>停止下载</button> : null}{model.status !== 'ready' && model.status !== 'downloading' ? <button className="primary" onClick={() => act(model, 'pull')} disabled={!!busy || model.status === 'verifying'}>从 Model Hub 安装</button> : null}</div>
       </article>
     })}</div>
   </></Localized>

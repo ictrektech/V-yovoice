@@ -133,7 +133,7 @@ def model_files_ready(item: dict[str, Any]) -> tuple[bool, str]:
     try:
         resolve_files(descriptor_for(item))
         for file in item.get("shared_files", []):
-            path = model_root(item) / file["path"]
+            path = (model_root(item) / file["path"]).resolve()
             stat = path.stat()
             if stat.st_size != file["size"] or _shared_hash(str(path), stat.st_size, stat.st_mtime_ns) != file["sha256"]:
                 raise ValueError("shared model file size mismatch")

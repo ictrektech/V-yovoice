@@ -1,10 +1,38 @@
 package workbench
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"yovoice/internal/catalog"
 )
+
+func TestSharedModelBrowsingDoesNotHashWeights(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("MODEL_HUB_SHARED_MODELS_PATH", root)
+	w, err := New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+	original := catalog.Models
+	catalog.Models = []catalog.ModelPackage{{ID: "test-browse", RemotePath: "test.gguf", Size: 4, SHA256: strings.Repeat("0", 64)}}
+	defer func() { catalog.Models = original }()
+	base := filepath.Join(root, "export", "ms", SharedRepository, "current")
+	if err := os.MkdirAll(base, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(base, "test.gguf"), []byte("data"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.SyncSharedModels(); err != nil {
+		t.Fatal(err)
+	}
+	if len(w.Store.Read().Models) != 1 {
+		t.Fatal("browsing should inspect metadata; the execution boundary verifies bytes")
+	}
+}
 
 func TestSharedCatalogRetainsEveryUpstreamModelVariant(t *testing.T) {
 	models := SharedCatalog()
