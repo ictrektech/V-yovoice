@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { spawn, execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdirSync, mkdtempSync, writeFileSync, symlinkSync, linkSync, existsSync, openSync, readFileSync, copyFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, symlinkSync, linkSync, existsSync, openSync, readFileSync, readdirSync, copyFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -154,7 +154,10 @@ try {
     file('clone.wav', clone);
     console.log('PASS: native IndexTTS voice cloning through Router using generated reference speech');
   }
-  const active = readFileSync(`/proc/${go.pid}/task/${go.pid}/children`, 'utf8').trim();
+  const active = readdirSync(`/proc/${go.pid}/task`).flatMap(thread => {
+    try { return readFileSync(`/proc/${go.pid}/task/${thread}/children`, 'utf8').trim().split(/\s+/).filter(Boolean); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; return []; }
+  }).join(' ');
   assert.equal(active, '', 'native child remained after confirmed completion');
   console.log('PASS: no inference child remains after confirmed completion');
 } finally {
