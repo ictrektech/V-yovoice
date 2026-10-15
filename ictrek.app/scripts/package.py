@@ -53,9 +53,25 @@ def appstore_version(app_id: str, base: str) -> str:
             or archive.get("size", 0) <= 0 or archive.get("download_path") != expected):
         raise RuntimeError(f"{app_id}: no verified latest published App Store package")
     # 实际文件必须可访问，不能把仅有索引的记录当成已发布包。
-    probe = urllib.request.Request(f"{base.rstrip('/')}/store/{expected}", method="HEAD")
+    probe = urllib.request.Request(f"{base.rstrip('/')}/store/{expected}",
+                                   headers={"Range": "bytes=0-1", "Accept-Encoding": "identity"})
     with urllib.request.urlopen(probe, timeout=30) as response:
-        if int(response.headers.get("Content-Length", "0")) != archive["size"]:
+        prefix = response.read(2)
+        valid = prefix == b"\x1f\x8b"
+        if response.status == 206:
+            valid = valid and response.headers.get("Content-Range") == f"bytes 0-1/{archive['size']}"
+        elif response.status == 200:
+            # 部署端可能忽略 Range 或省略 HEAD 长度；流式计数，不信任 SPA/错误页的 200。
+            count = len(prefix)
+            while count <= archive["size"]:
+                chunk = response.read(min(1024 * 1024, archive["size"] + 1 - count))
+                if not chunk:
+                    break
+                count += len(chunk)
+            valid = valid and count == archive["size"]
+        else:
+            valid = False
+        if not valid:
             raise RuntimeError(f"{app_id}: published App Store archive is unavailable or changed")
     return version
 

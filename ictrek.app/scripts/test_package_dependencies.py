@@ -26,9 +26,10 @@ class DependencyTests(unittest.TestCase):
             url = request if isinstance(request, str) else request.full_url
             if url.startswith("https://api.github.com/"):
                 raise HTTPError(url, 404, "private", {}, None)
-            if not isinstance(request, str) and request.get_method() == "HEAD":
-                response = io.BytesIO()
-                response.headers = {"Content-Length": "1280"}
+            if not isinstance(request, str) and request.has_header("Range"):
+                response = io.BytesIO(b"\x1f\x8b")
+                response.status = 206
+                response.headers = {"Content-Range": "bytes 0-1/1280"}
                 return response
             return io.BytesIO(json.dumps(record).encode())
         return open_url
@@ -75,6 +76,18 @@ class DependencyTests(unittest.TestCase):
     def test_tunnel_cannot_redirect_verification(self):
         with self.assertRaisesRegex(RuntimeError, "loopback"):
             package.appstore_version("com.ictrek.model-hub", "https://unapproved.example")
+
+    def test_store_without_range_support_is_verified_by_streaming(self):
+        original = self.opener(self.store_response())
+        def open_url(request, **kwargs):
+            if not isinstance(request, str) and request.has_header("Range"):
+                response = io.BytesIO(b"\x1f\x8b" + b"x" * 1278)
+                response.status = 200
+                response.headers = {}
+                return response
+            return original(request, **kwargs)
+        with patch.object(package.urllib.request, "urlopen", side_effect=open_url):
+            self.assertEqual(package.appstore_version("com.ictrek.model-hub", "http://127.0.0.1:18899"), "0.0.95")
 
 
 if __name__ == "__main__":
