@@ -1,17 +1,18 @@
 # V-Voice 自动调度接入：V-Scheduler 侧协作清单
 
-状态：V-Voice 接收端已实现并通过回归测试的交接契约 v1；Scheduler 侧仍需实现和联调，
-不能将本文件当成现有 Scheduler v1 已具备的动态注册接口。
-本任务只改 V-Voice。V-Scheduler 侧由另一个进程实现和发布。
+状态：交接契约 v1 已在 229 完成双方真实联调，包括自动绑定、界面与网关单次许可、
+异步生成、运行中取消、凭据轮换，以及断线、忙碌和遥测过期的拒绝边界。
+V-Scheduler 侧由另一个进程独立实现和发布；仅支持本契约的正式版本才能自动接入，
+不能将旧版本的模型发现能力当成已具备自动授权。未实测校准的模型继续拒绝准入。
 
-## 已确认的 229 故障
+## 联调前确认的 229 故障（历史原因）
 
 - 网关 `/v1/models` 已自动列出 `v-voice/` 模型，发现功能正常。
 - 网关真实 ASR 请求返回 503 `local model resource policy not approved`。
 - V-Voice 界面真实 ASR 请求返回 503 `V-Scheduler configuration required`。
 - 所以不能用“已发现”作为“已经可以调度”的验收证明，也不能要求用户手工分发凭据。
 
-## V-Scheduler 需要完成的最小范围
+## V-Scheduler 侧职责（既定交接范围）
 
 1. 复用现有 V-Voice 主动发现器。读取 `/api/v1/discovery` 的新增 `scheduler`
    接入声明；只对可信的同 VOS 已安装应用建立绑定，不能向任意注册 URL 发送凭据。
