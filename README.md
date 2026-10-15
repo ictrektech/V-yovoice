@@ -11,6 +11,8 @@ Simplified Chinese and Traditional Chinese, following VOS or an app-local overri
 
 See [integration, public APIs, scheduling and rollback](docs/vos-integration.md)
 and [retained speech-service documentation](docs/v-voice-legacy.md).
+The VOS package requires the unified V-Scheduler app, which includes the gateway
+and retains the `v-router` service address; a separate V-Router installation is unnecessary.
 The sections below describe the original upstream desktop app; they do not imply
 that VOS images or releases have passed their release gates. Fork source and
 merge baseline are recorded in [UPSTREM](UPSTREM).
