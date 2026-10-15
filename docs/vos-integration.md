@@ -61,6 +61,8 @@ template covering both models.
 The Agent binds `voice.generate` to the V-Voice base URL's `/scheduler` execution
 adapter with the dedicated executor credential. Its `start/inspect/cancel` URLs
 are `/scheduler/executions/{attempt}/{action}`; parameters contain only `job_id`.
+Set the Agent executor `url` to the V-Voice base URL, without `/scheduler`;
+the Agent appends the execution route itself.
 Unknown restart attempts retain reservations and require stop reconciliation;
 automatic retry/W2 recovery is not claimed. Queued request snapshots and outputs
 stay in V-Voice storage, never in Scheduler parameters.
@@ -105,6 +107,9 @@ Dockerfiles, then adds the pinned audio.cpp runtime and Go/React workbench.
 `--build-only` does not publish; `--publish-only` pushes the validated image and
 records its fixed `platform_YYYYMMDD` tag in the canonical Feishu spreadsheet.
 Intermediate base images are local build artifacts, never a second publication.
+Same-architecture hosts may reuse the prepared Go/web artifacts and pinned source
+archive via `--reuse-prepared-artifacts`; synchronize current source first. This
+does not reuse historical service images or skip native image compilation.
 
 After code delivery and all affected images/Feishu records are verified, run the
 migrated `ictrek.app/scripts/update_version.sh` **locally**. It rejects a dirty

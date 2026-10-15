@@ -67,7 +67,7 @@ const routerConfig = file('router.json', {
   url: scheduler, token: tokens.router, require_model_policy: true,
   models: Object.fromEntries(models.map(id => ['app-v-voice/' + id, { mode: 'permit', executor_id: 'v-router.voice.infer', upstream_url: voice + '/v1', completion: 'synchronous', max_input_bytes: 1 << 20 }])),
 });
-const agentConfig = file('agent.json', { controller: scheduler, token: tokens.worker, node_id: nodeID, journal: path.join(run, 'agent-journal.json'), executors: [{ id: 'v-voice.generate', url: 'http://127.0.0.1:7080/scheduler', token: tokens.executor, health_url: 'http://127.0.0.1:7080/health' }] });
+const agentConfig = file('agent.json', { controller: scheduler, token: tokens.worker, node_id: nodeID, journal: path.join(run, 'agent-journal.json'), executors: [{ id: 'v-voice.generate', url: 'http://127.0.0.1:7080', token: tokens.executor, health_url: 'http://127.0.0.1:7080/health' }] });
 const repo = JSON.parse(readFileSync(path.join(root, 'internal/catalog/vos.json'))).modelscope_repo;
 const hub = path.join(run, 'modelhub');
 mkdirSync(path.join(hub, 'export/ms', repo), { recursive: true });

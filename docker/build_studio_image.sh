@@ -5,12 +5,14 @@ registry="${REGISTRY:-swr.cn-southwest-2.myhuaweicloud.com/ictrek}"
 build_root="${VVOICE_BUILD_ROOT:-${HOME}/dev/build/v-yovoice}"
 artifacts="${build_root}/artifacts"
 sheet=""; mode=full
+prepare=true
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --sheet) sheet="$2"; shift 2 ;;
     --build-only) mode=build; shift ;;
     --publish-only) mode=publish; shift ;;
     --prepare-only) mode=prepare; shift ;;
+    --reuse-prepared-artifacts) prepare=false; shift ;;
     *) echo "Usage: $0 --sheet <sheet> [--build-only|--publish-only|--prepare-only]" >&2; exit 1 ;;
   esac
 done
@@ -28,7 +30,7 @@ case "$sheet" in
 esac
 tag="${prefix}_$(date +%Y%m%d)"
 image="${registry}/v-voice:${tag}"
-if [[ "$mode" == prepare || "$mode" == full || "$mode" == build ]]; then
+if [[ "$prepare" == true && ( "$mode" == prepare || "$mode" == full || "$mode" == build ) ]]; then
   mkdir -p "$build_root/source" "$artifacts/linux-${arch}" "$build_root/sources"
   rsync -a --exclude=.git --exclude=node_modules --exclude=dist --exclude=__pycache__ "$root/" "$build_root/source/"
   cd "$build_root/source"
@@ -48,6 +50,11 @@ if [[ "$mode" == prepare || "$mode" == full || "$mode" == build ]]; then
 fi
 if [[ "$mode" == prepare ]]; then exit 0; fi
 if [[ "$mode" == full || "$mode" == build ]]; then
+  test -s "$artifacts/linux-${arch}/vvoice-studio"
+  test -s "$artifacts/web/index.html"
+  echo "20f589b7f891eee1e9d35d1fcea5382c925cf3413f4db5ba71d70cd9a991c938  $build_root/sources/audio.cpp-v0.9.1.tar.gz" | sha256sum -c -
+  mkdir -p "$build_root/source"
+  rsync -a --exclude=.git --exclude=node_modules --exclude=dist --exclude=__pycache__ "$root/" "$build_root/source/"
   if [[ "$cuda" == ON ]]; then backend=cuda; fi
   # 原 V-Voice 的六套构建配置继续从当前源码生成基础服务，不依赖历史成品镜像。
   cd "$build_root/source"
