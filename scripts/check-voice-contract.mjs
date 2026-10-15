@@ -154,7 +154,8 @@ try {
     file('clone.wav', clone);
     console.log('PASS: native IndexTTS voice cloning through Router using generated reference speech');
   }
-  try { const active = execFileSync('pgrep', ['-P', String(go.pid)], { encoding: 'utf8' }).trim(); assert.equal(active, '', 'native child remained after confirmed completion'); } catch (error) { if (error.status !== 1) throw error; }
+  const active = readFileSync(`/proc/${go.pid}/task/${go.pid}/children`, 'utf8').trim();
+  assert.equal(active, '', 'native child remained after confirmed completion');
   console.log('PASS: no inference child remains after confirmed completion');
 } finally {
   for (const child of children.reverse()) child.kill('SIGTERM');

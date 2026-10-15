@@ -61,18 +61,17 @@ def download(spec, target, cache, hf_token):
     if spec["import_only"]:
         raise RuntimeError(f"import-only file required: {spec['path']} (SHA256 {spec['sha256']})")
     # 优先读取已存在的 ModelScope 镜像；任何来源都必须匹配固定目录中的 SHA256。
-    if not spec["repo"].startswith("datasets/"):
-        try:
-            mirror_path = mirror_files().get((spec["sha256"], spec["size"]))
-            if not mirror_path:
-                mirror_path = spec["source_path"] if spec["repo"] == "audio-cpp/audio.cpp-gguf" else spec["repo"].rsplit("/", 1)[-1] + "/" + spec["source_path"]
-            path = HubApi().download_file("HereIsMark/audio.cpp-gguf", "model", mirror_path,
-                                         cache_dir=cache, expected_sha256=spec["sha256"])
-            shutil.copyfile(path, target)
-            if verified(target, spec):
-                return
-        except Exception:
-            print(f"ModelScope source unavailable: {spec['path']}", flush=True)
+    try:
+        mirror_path = mirror_files().get((spec["sha256"], spec["size"]))
+        if not mirror_path:
+            mirror_path = spec["source_path"] if spec["repo"] == "audio-cpp/audio.cpp-gguf" else spec["repo"].rsplit("/", 1)[-1] + "/" + spec["source_path"]
+        path = HubApi().download_file("HereIsMark/audio.cpp-gguf", "model", mirror_path,
+                                     cache_dir=cache, expected_sha256=spec["sha256"])
+        shutil.copyfile(path, target)
+        if verified(target, spec):
+            return
+    except Exception:
+        print(f"ModelScope source unavailable: {spec['path']}", flush=True)
     # 仅在构建机使用 Hugging Face 原地址与 hf-mirror；令牌不写日志或源码。
     repo = spec["repo"]
     kind = "datasets/" if repo.startswith("datasets/") else ""
@@ -146,8 +145,9 @@ def main():
     if not license_index_path.is_file():
         raise SystemExit("Original model licenses and their source-index.json are required before publication")
     license_index = json.loads(license_index_path.read_text())
-    for family in {spec["family"] for spec in specs}:
-        notice = license_index.get(family, {})
+    for spec in specs:
+        family = spec["family"]
+        notice = license_index.get(spec["path"], license_index.get(family, {}))
         relative = Path(notice.get("path", ""))
         if not notice.get("source_urls") or relative.is_absolute() or ".." in relative.parts:
             raise SystemExit(f"Unverified original license: {family}")
