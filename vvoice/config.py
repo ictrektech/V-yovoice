@@ -13,7 +13,7 @@ class Settings:
     host: str = os.getenv("VVOICE_HOST", "0.0.0.0")
     port: int = int(os.getenv("VVOICE_PORT", "7070"))
     modelhub_root: Path = Path(os.getenv("MODEL_HUB_SHARED_MODELS_PATH", "/modelhub"))
-    model_hub_api_url: str = os.getenv("MODEL_HUB_API_URL", "http://model-hub-backend:5005").rstrip("/")
+    model_hub_api_url: str = os.getenv("MODEL_HUB_API_URL", "http://v-scheduler-model-hub:6005").rstrip("/")
     catalog_path: Path = Path(os.getenv("VVOICE_CATALOG_PATH", str(Path(__file__).resolve().parents[1] / "catalog" / "models.json")))
     data_dir: Path = Path(os.getenv("VVOICE_DATA_DIR", "/data"))
     provider: str = os.getenv("VVOICE_PROVIDER", "auto").lower()

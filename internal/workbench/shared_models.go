@@ -101,7 +101,7 @@ func PullSharedModel(ctx context.Context, id string) error {
 	}
 	base := os.Getenv("MODEL_HUB_API_URL")
 	if base == "" {
-		base = "http://model-hub-backend:5005"
+		base = "http://v-scheduler-model-hub:6005"
 	}
 	req, err := http.NewRequestWithContext(ctx, "POST", base+"/api/v1/models/pull", bytes.NewReader(body))
 	if err != nil {
@@ -136,7 +136,7 @@ func CancelSharedModel(ctx context.Context, id string) error {
 	}
 	base := os.Getenv("MODEL_HUB_API_URL")
 	if base == "" {
-		base = "http://model-hub-backend:5005"
+		base = "http://v-scheduler-model-hub:6005"
 	}
 	client := &http.Client{Timeout: 30 * time.Second}
 	req, err := http.NewRequestWithContext(ctx, "GET", base+"/api/v1/tasks", nil)

@@ -29,9 +29,6 @@ platform:
 
 dependencies:
   apps:
-    - id: com.ictrek.model-hub
-      version: latest
-      optional: false
     - id: com.ictrek.v-scheduler
       version: latest
       optional: false

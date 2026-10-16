@@ -30,9 +30,7 @@ PROFILES = {
     "VVOICE_THOR_IMAGE": ["thor_spark"],
 }
 DEPENDENCIES = {
-    "com.ictrek.model-hub": ("ictrektech/model_hub", "0.0.94"),
-    "com.ictrek.v-router": ("ictrektech/V-Router", "0.0.44"),
-    "com.ictrek.v-scheduler": ("ictrektech/V-Scheduler", "0.0.15"),
+    "com.ictrek.v-scheduler": ("ictrektech/V-Scheduler", "0.0.24"),
 }
 
 

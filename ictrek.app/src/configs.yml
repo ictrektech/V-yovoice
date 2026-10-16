@@ -11,7 +11,7 @@ configs:
     type: string
     title: {zh-CN: Model Hub API 地址, en: Model Hub API URL}
     description: {zh-CN: VOS 网络内的 Model Hub 后端地址。, en: Model Hub backend URL inside the VOS network.}
-    default: http://model-hub-backend:5005
+    default: http://v-scheduler-model-hub:6005
   - name: VVOICE_NUM_THREADS
     type: integer
     title: {zh-CN: CPU 线程数, en: CPU Threads}

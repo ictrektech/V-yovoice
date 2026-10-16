@@ -215,3 +215,8 @@ Bug reports, feature suggestions, and pull requests are welcome. Include your pl
 ## License
 
 [Apache-2.0](LICENSE). Dependencies retain their [original licenses](THIRD_PARTY_NOTICES.md); IndexTTS models are covered separately by their [model license](web/public/model-license.txt).
+# V-Scheduler 接入
+
+VOS 安装依赖统一应用 `com.ictrek.v-scheduler`，打包时从已发布的 GitHub Release 或应用商店解析依赖版本，查询失败则停止打包。模型管理默认地址为 `http://v-scheduler-model-hub:6005`；保留 `MODEL_HUB_API_URL` 配置键供现有安装升级使用，已有安装需将该参数切换到新地址。
+
+共享模型目录继续使用 `MODEL_HUB_SHARED_MODELS_PATH`（默认 `/data/vos_workspace/model_hub`），保留现有模型、导出路径和下载记录。统一模型网关仍使用 `http://v-router:8080/v1`；资源调度接口为 `http://v-router:8080/scheduler/api/v1`。接入及资源授权契约见 [V-Scheduler 接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md)。模型目录可见不代表本地推理已获调度授权。
