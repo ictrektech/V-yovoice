@@ -25,6 +25,8 @@ def model_limits(model: str) -> dict | None:
         return None
     config = configuration()
     if "model_limits" not in config:
+        if config.get("input_limits_version"):
+            raise HTTPException(503, "Complete model input calibration required")
         return None
     if config.get("input_limits_version") != 1 or not isinstance(config["model_limits"], dict):
         raise HTTPException(503, "Input limit protocol required")

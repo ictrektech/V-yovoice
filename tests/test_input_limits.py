@@ -32,6 +32,9 @@ def test_exact_limits_and_legacy_binding(calibrated):
     admission.validate_inputs("kokoro-multilang", text_characters=512, speed=1)
     admission.validate_inputs("sensevoice-int8", duration_seconds=20, sample_rate=24000, hotwords_characters=0)
     calibrated.pop("model_limits")
+    with pytest.raises(HTTPException):
+        admission.model_limits("kokoro-multilang")
+    calibrated.pop("input_limits_version")
     assert admission.model_limits("kokoro-multilang") is None
 
 
