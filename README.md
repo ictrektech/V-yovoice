@@ -18,6 +18,9 @@ disabled or malformed identities are rejected rather than treated as signed in.
 LAN HTTP uses secure random UUIDs and S256 PKCE without requiring WebCrypto.
 Automatic scheduling uses a VOS-authenticated, versioned server-to-server binding;
 credentials stay in this app's private storage and reload without restarting.
+New node approvals declare input-limit protocol v1 and enforce their measured text,
+speed, encoded-audio size, source sample rate and duration before native model loading.
+Audio decoding is bounded; oversized direct and gateway requests do not acquire a compute permit.
 See [the Scheduler-side handoff and actual-node acceptance gates](docs/scheduler-auto-binding.md).
 
 This fork is the successor to `com.ictrek.v-voice`. It preserves the existing

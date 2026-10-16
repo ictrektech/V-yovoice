@@ -15,7 +15,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import __version__
-from .audio import StreamingPcmDecoder, decode_audio, encode_audio
+from .audio import StreamingPcmDecoder, decode_audio, decode_calibrated_audio, encode_audio
+from .admission import model_limits
 from .catalog import catalog, find_model
 from .config import settings
 from .hotwords import (
@@ -115,6 +116,8 @@ class SchedulerBindingDocument(BaseModel):
     models: dict[str, str]
     gateway_executors: dict[str, str] = Field(default_factory=dict)
     secondary_models: dict[str, list[str]] = Field(default_factory=dict)
+    input_limits_version: Literal[1] | None = None
+    model_limits: dict[str, dict[str, float]] | None = None
 
 
 class WorkbenchCallDocument(BaseModel):
@@ -241,6 +244,7 @@ def scheduler_contract() -> dict:
     asynchronous = json.loads(creative.read_text()) if creative.is_file() else []
     return {
         "protocol_version": 1,
+        "input_limits_version": 1,
         "app_id": settings.app_id,
         "binding_endpoint": "/api/v1/scheduler/binding",
         "executor_base_url": "http://v-voice-backend:7070",
@@ -402,9 +406,10 @@ async def _transcription(
         raise HTTPException(status_code=413, detail="audio file is too large")
     try:
         item = find_model(model, "asr")
-        await admit_model(model)
-        data = await file.read(settings.max_upload_mb * 1024 * 1024 + 1)
-        if len(data) > settings.max_upload_mb * 1024 * 1024:
+        limits = model_limits(model)
+        maximum_bytes = min(settings.max_upload_mb * 1024 * 1024, int(limits["input_bytes"])) if limits else settings.max_upload_mb * 1024 * 1024
+        data = await file.read(maximum_bytes + 1)
+        if len(data) > maximum_bytes:
             raise HTTPException(status_code=413, detail="audio file is too large")
         hotword_config = item.get("hotwords") or {}
         set_phrases: list[str] = []
@@ -431,7 +436,13 @@ async def _transcription(
         invalid_granularities = set(timestamp_granularities or []) - {"word", "segment"}
         if invalid_granularities:
             raise ValueError(f"unsupported timestamp granularity: {sorted(invalid_granularities)}")
-        samples, rate = await run_blocking(decode_audio, data, file.filename or "audio")
+        if limits:
+            if hotwords_requested or speaker_model or task != "transcribe":
+                raise HTTPException(422, "Combined or modified ASR is not calibrated")
+            samples, rate = await run_blocking(decode_calibrated_audio, data, file.filename or "audio", limits)
+        else:
+            samples, rate = await run_blocking(decode_audio, data, file.filename or "audio")
+        await admit_model(model)
         result = await run_blocking(
             transcribe, model, samples, rate, language, task, phrases, effective_score
         )
@@ -919,14 +930,20 @@ async def legacy_transcribe(
 ):
     try:
         find_model(model, "asr")
+        limits = model_limits(model)
+        if limits:
+            samples, rate = await run_blocking(decode_calibrated_audio, audio, "audio.bin", limits)
+        else:
+            samples, rate = await run_blocking(decode_audio, audio, "audio.bin")
         await admit_model(model)
-        samples, rate = await run_blocking(decode_audio, audio, "audio.bin")
         result = await run_blocking(transcribe, model, samples, rate, lang, "transcribe")
         return {"text": result["text"]}
     except KeyError:
         raise HTTPException(status_code=404, detail="ASR model not found") from None
     except FileNotFoundError as exc:
         raise HTTPException(status_code=409, detail=f"model is not ready: {exc}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         if isinstance(exc, HTTPException):
             raise

@@ -5,6 +5,14 @@
 V-Scheduler 侧由另一个进程独立实现和发布；仅支持本契约的正式版本才能自动接入，
 不能将旧版本的模型发现能力当成已具备自动授权。未实测校准的模型继续拒绝准入。
 
+新增 `scheduler.input_limits_version=1` 发现声明。新节点批准必须匹配该能力，绑定同时下发
+`input_limits_version: 1` 和逐模型 `model_limits`：Kokoro 使用 `text_characters`、
+`speed_min`、`speed_max`；SenseVoice 使用 `duration_seconds`、`sample_rate`、
+`hotwords_characters`、`input_bytes`。直连及网关请求在取模型计算许可前校验，
+音频先限制编码字节和源采样率，再有界解码并检查时长；超限不加载模型。
+当前新增节点实测范围为 Kokoro 512 字符/语速 1，以及 SenseVoice 20 秒/24kHz/
+1MiB/无热词，不包括联合声纹或翻译。旧 Thor 未带此字段的既有绑定保持兼容。
+
 ## 联调前确认的 229 故障（历史原因）
 
 - 网关 `/v1/models` 已自动列出 `v-voice/` 模型，发现功能正常。

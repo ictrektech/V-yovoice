@@ -47,6 +47,28 @@ func bindRequest(s *Server, subject string, config SchedulerConfig) *httptest.Re
 	return w
 }
 
+func TestBindingPreservesCalibratedInputLimits(t *testing.T) {
+	server, config := bindingFixture(t)
+	config.InputLimitsVersion = 1
+	config.ModelLimits = map[string]map[string]float64{"sensevoice-int8": {"duration_seconds": 20, "sample_rate": 24000, "hotwords_characters": 0, "input_bytes": 1048576}}
+	if response := bindRequest(server, schedulerAppID, config); response.Code != 200 {
+		t.Fatalf("binding failed: %d %s", response.Code, response.Body.String())
+	}
+	stored, err := readSchedulerConfig(server.SchedulerPath)
+	if err != nil || stored.InputLimitsVersion != 1 || stored.ModelLimits["sensevoice-int8"]["duration_seconds"] != 20 {
+		t.Fatal("calibrated input limits were not preserved")
+	}
+	config.InputLimitsVersion = 0
+	if validateBinding(config) == nil {
+		t.Fatal("missing input protocol accepted")
+	}
+	config.InputLimitsVersion = 1
+	delete(config.ModelLimits["sensevoice-int8"], "sample_rate")
+	if validateBinding(config) == nil {
+		t.Fatal("incomplete input calibration accepted")
+	}
+}
+
 func TestBindingOnlyAcceptsSameVosSchedulerApplication(t *testing.T) {
 	s, config := bindingFixture(t)
 	for _, subject := range []string{"", "disabled", "admin-user", "com.ictrek.other-app"} {

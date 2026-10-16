@@ -6,6 +6,7 @@ import contextvars
 import functools
 import gc
 import json
+import math
 import os
 import secrets
 import threading
@@ -17,6 +18,46 @@ from fastapi import HTTPException
 
 
 current: contextvars.ContextVar[Execution | None] = contextvars.ContextVar("vvoice_execution", default=None)
+
+
+def model_limits(model: str) -> dict | None:
+    if os.getenv("VVOICE_SCHEDULER_REQUIRED") != "true":
+        return None
+    config = configuration()
+    if "model_limits" not in config:
+        return None
+    if config.get("input_limits_version") != 1 or not isinstance(config["model_limits"], dict):
+        raise HTTPException(503, "Input limit protocol required")
+    limits = config["model_limits"].get(model)
+    expected = ({"text_characters", "speed_min", "speed_max"} if model == "kokoro-multilang"
+                else {"duration_seconds", "sample_rate", "hotwords_characters", "input_bytes"} if model == "sensevoice-int8" else set())
+    if not isinstance(limits, dict) or not expected or set(limits) != expected:
+        raise HTTPException(503, "Complete model input calibration required")
+    if any(type(value) not in (int, float) or not math.isfinite(value) or value < 0 or (value == 0 and name != "hotwords_characters") for name, value in limits.items()):
+        raise HTTPException(503, "Invalid model input calibration")
+    if "speed_min" in limits and limits["speed_min"] > limits["speed_max"]:
+        raise HTTPException(503, "Invalid calibrated speed range")
+    execution = current.get()
+    if execution is not None:
+        if execution.validated_binding is not None and execution.validated_binding != config:
+            raise HTTPException(503, "Input calibration changed; retry request")
+        execution.validated_binding = config
+    return limits
+
+
+def validate_inputs(model: str, **values) -> None:
+    limits = model_limits(model)
+    if limits is None:
+        return
+    for name, value in values.items():
+        if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+            raise HTTPException(422, "Invalid model input metric")
+        if name == "speed":
+            valid = limits.get("speed_min", math.inf) <= value <= limits.get("speed_max", -math.inf)
+        else:
+            valid = name in limits and value <= limits[name]
+        if not valid:
+            raise HTTPException(422, "Input exceeds calibrated model limits")
 
 
 def configuration() -> dict:
@@ -56,6 +97,7 @@ class Execution:
         self.id = secrets.token_hex(16)
         self.lock = threading.RLock()
         self.config: dict = {}
+        self.validated_binding: dict | None = None
         self.permit = ""
         self.model = ""
         self.executor = ""
@@ -77,6 +119,8 @@ class Execution:
                     raise HTTPException(503, "Combined model budget is not approved")
                 return
             self.config = configuration()
+            if self.validated_binding is not None and self.validated_binding != self.config:
+                raise HTTPException(503, "Input calibration changed; retry request")
             self.model = model
             inherited = self.headers.get("x-vscheduler-permit-id", "")
             proof = self.headers.get("x-vscheduler-execution-token", "")
@@ -199,6 +243,18 @@ class AdmissionMiddleware:
         if scope["type"] not in {"http", "websocket"}:
             return await self.app(scope, receive, send)
         execution = Execution({key.decode().lower(): value.decode() for key, value in scope.get("headers", [])})
+        received_bytes = 0
+
+        async def guarded_receive():
+            nonlocal received_bytes
+            message = await receive()
+            if scope["type"] == "http" and scope.get("path") in {"/transcribe", "/v1/audio/transcriptions", "/v1/audio/translations", "/v1/audio/speech"}:
+                config = configuration()
+                if "model_limits" in config:
+                    received_bytes += len(message.get("body", b""))
+                    if received_bytes > 1048576 + 65536:
+                        raise HTTPException(413, "Request exceeds calibrated upload limit")
+            return message
         token = current.set(execution)
         closing = None
 
@@ -218,7 +274,7 @@ class AdmissionMiddleware:
             await send(message)
 
         try:
-            await self.app(scope, receive, guarded_send)
+            await self.app(scope, guarded_receive, guarded_send)
         finally:
             current.reset(token)
             await asyncio.to_thread(execution.end)

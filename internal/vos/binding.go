@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"regexp"
@@ -78,6 +79,31 @@ func validateBinding(config SchedulerConfig) error {
 	}
 	if len(config.SecondaryModels) > 512 {
 		return fmt.Errorf("too many combined bindings")
+	}
+	if config.ModelLimits != nil || config.InputLimitsVersion != 0 {
+		if config.InputLimitsVersion != 1 || len(config.ModelLimits) == 0 || len(config.ModelLimits) > 512 {
+			return fmt.Errorf("invalid calibrated input protocol")
+		}
+		for model, limits := range config.ModelLimits {
+			fields := []string{"text_characters", "speed_min", "speed_max"}
+			if model == "sensevoice-int8" {
+				fields = []string{"duration_seconds", "sample_rate", "hotwords_characters", "input_bytes"}
+			} else if model != "kokoro-multilang" {
+				return fmt.Errorf("unsupported calibrated model")
+			}
+			if config.Models[model] == "" || len(limits) != len(fields) {
+				return fmt.Errorf("incomplete calibrated input limits")
+			}
+			for _, field := range fields {
+				value, exists := limits[field]
+				if !exists || math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || (value == 0 && field != "hotwords_characters") {
+					return fmt.Errorf("invalid calibrated input limit")
+				}
+			}
+			if model == "kokoro-multilang" && limits["speed_min"] > limits["speed_max"] {
+				return fmt.Errorf("invalid calibrated speed range")
+			}
+		}
 	}
 	for model, secondary := range config.SecondaryModels {
 		if config.Models[model] == "" || len(secondary) > 64 {

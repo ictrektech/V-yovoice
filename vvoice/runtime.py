@@ -266,6 +266,8 @@ def transcribe(
     hotwords: list[str] | None = None,
     hotwords_score: float | None = None,
 ) -> dict[str, Any]:
+    from .admission import validate_inputs
+    validate_inputs(key, duration_seconds=len(samples) / sample_rate if sample_rate > 0 else float("nan"), sample_rate=sample_rate, hotwords_characters=sum(len(phrase) for phrase in hotwords or []))
     item = find_model(key, "asr")
     if item.get("streaming"):
         return _transcribe_online(key, item, samples, sample_rate, hotwords, hotwords_score)
@@ -391,6 +393,8 @@ def extract_embedding(key: str, samples: np.ndarray, sample_rate: int) -> np.nda
 
 
 def synthesize(key: str, text: str, voice: str, speed: float, language: str = "", **options) -> tuple[np.ndarray, int]:
+    from .admission import validate_inputs
+    validate_inputs(key, text_characters=len(text), speed=speed)
     item = find_model(key, "tts")
     if item["runtime"]["family"] == "audio_cpp":
         from .creative import synthesize as creative_synthesize

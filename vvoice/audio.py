@@ -1,12 +1,33 @@
 from __future__ import annotations
 
 import subprocess
+import json
+import math
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
 import numpy as np
 import soundfile as sf
+
+
+def decode_calibrated_audio(data: bytes, filename: str, limits: dict) -> tuple[np.ndarray, int]:
+    if len(data) > limits["input_bytes"]:
+        raise ValueError("audio exceeds calibrated input bytes")
+    with tempfile.TemporaryDirectory(prefix="vvoice-") as directory:
+        source = Path(directory) / ("input" + (Path(filename).suffix or ".audio"))
+        target = Path(directory) / "decoded.wav"
+        source.write_bytes(data)
+        metadata = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries", "stream=sample_rate", "-of", "json", str(source)], check=True, capture_output=True, timeout=30)
+        rate = float(json.loads(metadata.stdout)["streams"][0]["sample_rate"])
+        if not math.isfinite(rate) or rate <= 0 or rate > limits["sample_rate"]:
+            raise ValueError("audio exceeds calibrated sample rate")
+        maximum = limits["duration_seconds"]
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-threads", "1", "-i", str(source), "-filter_threads", "1", "-t", str(maximum + 1 / 16000), "-ac", "1", "-ar", "16000", str(target)], check=True, timeout=30)
+        samples, sample_rate = sf.read(target, dtype="float32", always_2d=False)
+        if len(samples) > maximum * sample_rate:
+            raise ValueError("audio exceeds calibrated duration")
+    return np.asarray(samples, dtype=np.float32), int(sample_rate)
 
 
 def decode_audio(data: bytes, filename: str) -> tuple[np.ndarray, int]:
