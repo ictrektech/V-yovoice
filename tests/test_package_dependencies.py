@@ -18,7 +18,7 @@ def manifest():
     return {"dependencies": {"apps": [{"id": "com.ictrek.v-scheduler", "version": "latest"}]}}
 
 
-def published(version="0.0.16", **changes):
+def published(version="0.0.26", **changes):
     return {"tag_name": "v" + version, "published_at": "2026-10-15T00:00:00Z",
             "assets": [{"name": f"v_scheduler_{version}_pull.tar"}], **changes}
 
@@ -27,10 +27,10 @@ def test_dependency_uses_actual_published_package():
     value = manifest()
     with patch("urllib.request.urlopen", return_value=io.BytesIO(json.dumps(published()).encode())):
         package.resolve_dependencies(value)
-    assert value["dependencies"]["apps"][0]["version"] == ">=0.0.16"
+    assert value["dependencies"]["apps"][0]["version"] == ">=0.0.26"
 
 
-@pytest.mark.parametrize("release", [published("0.0.14"), published(draft=True),
+@pytest.mark.parametrize("release", [published("0.0.23"), published(draft=True),
                                     published(assets=[]), published(published_at=None)])
 def test_unpublished_or_incompatible_dependency_fails_closed(release):
     value = manifest()
