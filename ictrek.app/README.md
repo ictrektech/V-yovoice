@@ -15,6 +15,10 @@ Run `docker/build_image.sh --sheet <sheet>` on a matching build host. After ever
 required image and Feishu cell is published, run `ictrek.app/scripts/update_version.sh patch`
 locally to trigger packaging and App Store publication.
 
+ARM CUDA and Thor share the compiler-cache reference when their validated base
+image is identical. Their runtime images and Feishu records remain separate;
+the source archive and CUDA build arguments still participate in cache checks.
+
 Packaging resolves the current published V-Scheduler version, never a guessed
 version. Its built-in shared model repository needs no separate Model Hub app.
 When the dependency repository is private, the existing

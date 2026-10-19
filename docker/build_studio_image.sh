@@ -71,7 +71,10 @@ if [[ "$mode" == full || "$mode" == build ]]; then
     esac
     docker pull "$platform_base"
     platform_id="$(docker image inspect --format '{{.Id}}' "$platform_base")"
-    compiler_cache="v-voice-native-compiler:${prefix}-${platform_id#sha256:}"
+    compiler_prefix="$prefix"
+    # 两套 ARM CUDA 配置基础镜像和编译参数相同，复用既有 Thor 别名，避免重复编译。
+    case "$sheet" in ARM_with_cuda|thor_spark) compiler_prefix=thor ;; esac
+    compiler_cache="v-voice-native-compiler:${compiler_prefix}-${platform_id#sha256:}"
     if ! docker image inspect "$compiler_cache" >/dev/null 2>&1 && docker image inspect "$base" >/dev/null 2>&1; then
       docker image inspect "$platform_base" "$base" > "$build_root/sources/compiler-layers-${prefix}.json"
       if python3 - "$build_root/sources/compiler-layers-${prefix}.json" <<'PY'
