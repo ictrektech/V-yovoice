@@ -28,7 +28,7 @@ class WorkerLifecycleTests(unittest.TestCase):
             return result
 
     def test_normal_exit_is_reaped(self):
-        result = self.execute('import sys; sys.stdin.read()')
+        result = self.execute('import os,sys; assert os.environ["VVOICE_MUSIC_PARENT_PID"] == str(os.getppid()); sys.stdin.read()')
         self.assertEqual(result['exit_code'], 0)
         self.assertFalse(result['cancelled'])
 
@@ -41,6 +41,24 @@ class WorkerLifecycleTests(unittest.TestCase):
         result = self.execute('import time; time.sleep(60)', timeout=0)
         self.assertTrue(result['timed_out'])
         self.assertLess(result['exit_code'], 0)
+
+    def test_real_linux_worker_parent_handshake_without_model_inference(self):
+        code = '''
+import sys, types
+runtime = types.ModuleType('vvoice.music_runtime')
+runtime.generate_music = lambda *_args, **_kwargs: (b'fixture-only', 'audio/wav')
+sys.modules['vvoice.music_runtime'] = runtime
+from vvoice.music_worker import main
+main()
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / 'fixture.wav'
+            result = worker.run_worker([sys.executable, '-c', code, str(output)],
+                                       {'model': 'fixture'}, root, threading.Event())
+            self.assertEqual(result['exit_code'], 0)
+            self.assertEqual(output.read_bytes(), b'fixture-only')
+            self.assertTrue(result['stopped'])
 
 
 if __name__ == '__main__':

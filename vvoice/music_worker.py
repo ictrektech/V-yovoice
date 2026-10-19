@@ -12,7 +12,8 @@ def main():
     if sys.platform == 'linux':
         parent = os.getppid()
         # 容器主服务正常就是 PID 1；按设置死亡信号前后的父进程一致性判断。
-        if ctypes.CDLL(None).prctl(1, signal.SIGKILL) != 0 or os.getppid() != parent:
+        if (os.getenv('VVOICE_MUSIC_PARENT_PID') != str(parent) or
+                ctypes.CDLL(None).prctl(1, signal.SIGKILL) != 0 or os.getppid() != parent):
             raise SystemExit('Music parent process unavailable')
     # 固定本地权重；适配器不得临时向外网下载补件或执行用户提供的模型代码。
     os.environ['HF_HUB_OFFLINE'] = '1'

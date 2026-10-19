@@ -88,7 +88,8 @@ class MusicRuntime:
                 with error.open('wb') as stderr:
                     python = os.getenv('VVOICE_MUSIC_PYTHON', sys.executable)
                     process = subprocess.Popen([python, '-m', 'vvoice.music_worker', str(output)],
-                                               stdin=subprocess.PIPE, stdout=stderr, stderr=stderr, start_new_session=True)
+                                               stdin=subprocess.PIPE, stdout=stderr, stderr=stderr, start_new_session=True,
+                                               env={**os.environ, 'VVOICE_MUSIC_PARENT_PID': str(os.getpid())})
                     with self.lock:
                         self.process, self.model = process, request.model
                     payload = request.model_dump()

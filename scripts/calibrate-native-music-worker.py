@@ -55,7 +55,8 @@ def run_worker(command, payload, root, cancelled, timeout=1800):
     with (root / 'native.log').open('xb') as log:
         try:
             process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=log,
-                                       stderr=subprocess.STDOUT, start_new_session=True)
+                                       stderr=subprocess.STDOUT, start_new_session=True,
+                                       env={**os.environ, 'VVOICE_MUSIC_PARENT_PID': str(os.getpid())})
             marker = birth_marker(process.pid)
             record(root / 'native-started', marker | {'phase': 'worker_spawned_before_runtime_import'})
             process.stdin.write(json.dumps(payload).encode())
