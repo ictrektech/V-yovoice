@@ -9,7 +9,8 @@ if ! "$music_python" -c 'import torch' >/dev/null 2>&1; then
   torch_index=https://download.pytorch.org/whl/cpu
   torch_version=2.7.1
   if [[ "${VVOICE_PROVIDER:-cpu}" == cuda ]]; then
-    torch_index=https://download.pytorch.org/whl/cu128
+    # PyPI 的 Linux AMD64 Torch 2.8.0 固定依赖 CUDA 12.8，沿用可达镜像下载。
+    torch_index="$index"
     torch_version=2.8.0
   elif [[ "$(uname -m)" == aarch64 ]]; then
     torch_index="$index"
