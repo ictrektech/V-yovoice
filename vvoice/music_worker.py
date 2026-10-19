@@ -11,7 +11,8 @@ def main():
     # Linux 宿主意外退出时结束音乐计算，不能留下脱离许可生命周期的孤儿进程。
     if sys.platform == 'linux':
         parent = os.getppid()
-        if parent == 1 or ctypes.CDLL(None).prctl(1, signal.SIGKILL) != 0 or os.getppid() != parent:
+        # 容器主服务正常就是 PID 1；按设置死亡信号前后的父进程一致性判断。
+        if ctypes.CDLL(None).prctl(1, signal.SIGKILL) != 0 or os.getppid() != parent:
             raise SystemExit('Music parent process unavailable')
     # 固定本地权重；适配器不得临时向外网下载补件或执行用户提供的模型代码。
     os.environ['HF_HUB_OFFLINE'] = '1'
