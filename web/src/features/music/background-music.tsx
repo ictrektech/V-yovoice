@@ -9,7 +9,7 @@ import { vosFetch } from '../../shared/lib/vos';
 import { formatSize } from '../../shared/workbench';
 import { SettingsGroup, SettingsRow } from '../../shared/ui/settings-group';
 
-type MusicModel = { key: string; name: string; status: string; size: number; modelscope_repo: string; runtime_available: boolean; admission_ready: boolean; loaded: boolean; max_duration_seconds?: number; downloaded_bytes?: number; total_bytes?: number };
+type MusicModel = { key: string; name: string; status: string; size: number; modelscope_repo: string; runtime_available: boolean; admission_ready: boolean; loaded: boolean; max_duration_seconds?: number; max_prompt_characters?: number; max_negative_prompt_characters?: number; downloaded_bytes?: number; total_bytes?: number };
 
 // 离开配乐页暂停轮询，但保留参数和已生成音频。
 function useMusicModels(active: boolean) {
@@ -63,10 +63,11 @@ export function BackgroundMusic({ active, openModels }: { active: boolean; openM
   const resultRef = useRef('');
   useEffect(() => () => { if (resultRef.current) URL.revokeObjectURL(resultRef.current); }, []);
   const selected = models.find(item => item.key === model);
-  const supportsNegative = model.startsWith('stable-audio-3-');
+  const maxPrompt = selected?.max_prompt_characters ?? 4000, maxNegative = selected?.max_negative_prompt_characters ?? 4000;
+  const supportsNegative = model.startsWith('stable-audio-3-') && maxNegative > 0;
   async function generate() {
     const seconds = Number(duration), tempo = bpm.trim() ? Number(bpm) : undefined, random = seed.trim() ? Number(seed) : undefined;
-    if (!prompt.trim() || !Number.isFinite(seconds) || seconds < 10 || seconds > (selected?.max_duration_seconds ?? 300) || (tempo !== undefined && (!Number.isInteger(tempo) || tempo < 20 || tempo > 300)) || (random !== undefined && (!Number.isInteger(random) || random < -1 || random > 2147483647))) { setError(t('@vvoice.music.invalid')); return; }
+    if (!prompt.trim() || [...prompt].length > maxPrompt || (supportsNegative && [...negative].length > maxNegative) || !Number.isFinite(seconds) || seconds < 10 || seconds > (selected?.max_duration_seconds ?? 300) || (tempo !== undefined && (!Number.isInteger(tempo) || tempo < 20 || tempo > 300)) || (random !== undefined && (!Number.isInteger(random) || random < -1 || random > 2147483647))) { setError(t('@vvoice.music.invalid')); return; }
     setBusy(true); setError('');
     try {
       const response = await vosFetch('/v1/audio/music/generations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model, prompt, duration: seconds, negative_prompt: supportsNegative ? negative : '', seed: random, bpm: tempo, key, time_signature: meter, instrumental: instrumental === 'true', response_format: format }) });
@@ -83,8 +84,10 @@ export function BackgroundMusic({ active, openModels }: { active: boolean; openM
     <VStack as="header" gap={2} style={{ height: 'auto', flexShrink: 0, alignItems: 'stretch' }}><h1>{t('@vvoice.music.title')}</h1><p>{t('@vvoice.music.hint')}</p></VStack>
     {failed ? <p role="alert">{t('@vvoice.models.inventoryError')}</p> : null}
     <HStack gap={3} vAlign="end" wrap="wrap"><Selector label={t('@vvoice.music.model')} value={model} options={models.map(item => ({ value: item.key, label: item.name }))} onChange={setModel} isDisabled={busy} /><Button label={t('@vvoice.nav.models')} onClick={openModels} /></HStack>
-    <TextArea label={t('@vvoice.music.prompt')} value={prompt} onChange={setPrompt} rows={4} maxLength={4000} isDisabled={busy} />
-    <TextArea label={t('@vvoice.music.negative')} value={supportsNegative ? negative : ''} onChange={setNegative} rows={2} maxLength={4000} isDisabled={busy || !supportsNegative} disabledMessage={!supportsNegative ? t('@vvoice.music.negativeUnsupported') : undefined} />
+    <TextArea label={t('@vvoice.music.prompt')} value={prompt} onChange={setPrompt} rows={4} maxLength={maxPrompt} status={[...prompt].length > maxPrompt ? { type: 'error', message: t('@vvoice.music.invalid') } : undefined} isDisabled={busy} />
+    <small>{t('@vvoice.music.prompt')} · {[...prompt].length} / {maxPrompt}</small>
+    <TextArea label={t('@vvoice.music.negative')} value={supportsNegative ? negative : ''} onChange={setNegative} rows={2} maxLength={maxNegative} status={supportsNegative && [...negative].length > maxNegative ? { type: 'error', message: t('@vvoice.music.invalid') } : undefined} isDisabled={busy || !supportsNegative} disabledMessage={!supportsNegative ? t('@vvoice.music.negativeUnsupported') : undefined} />
+    {supportsNegative ? <small>{t('@vvoice.music.negative')} · {[...negative].length} / {maxNegative}</small> : null}
     <HStack gap={4} wrap="wrap"><TextInput label={t('@vvoice.music.duration')} value={duration} onChange={setDuration} isDisabled={busy} /><TextInput label={t('@vvoice.music.seed')} value={seed} onChange={setSeed} isDisabled={busy} /><TextInput label={t('@vvoice.music.bpm')} value={bpm} onChange={setBpm} isDisabled={busy} /></HStack>
     <HStack gap={4} wrap="wrap"><TextInput label={t('@vvoice.music.key')} value={key} onChange={setKey} isDisabled={busy} /><Selector label={t('@vvoice.music.meter')} value={meter} options={['', '2/4', '3/4', '4/4', '6/8'].map(value => ({ value, label: value || t('@vvoice.music.auto') }))} onChange={setMeter} isDisabled={busy} /><Selector label={t('@vvoice.music.instrumental')} value={instrumental} options={[{ value: 'true', label: t('@vvoice.music.yes') }, { value: 'false', label: t('@vvoice.music.no') }]} onChange={setInstrumental} isDisabled={busy} /><Selector label={t('@vvoice.music.format')} value={format} options={['wav', 'flac']} onChange={setFormat} isDisabled={busy} /></HStack>
     <small>{t('@vvoice.music.controlsHint')}</small>

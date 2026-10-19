@@ -17,6 +17,23 @@ app.include_router(music.router)
 client = TestClient(app)
 
 
+@pytest.mark.parametrize('scheduled', [False, True])
+def test_model_metadata_exposes_effective_input_limits(monkeypatch, scheduled):
+    monkeypatch.setenv('VVOICE_SCHEDULER_REQUIRED', str(scheduled).lower())
+    async def inventory(_):
+        return [{'key': 'musicgen-small', 'max_duration_seconds': 300}]
+    monkeypatch.setattr(music, 'list_models', inventory)
+    monkeypatch.setattr(music, 'detect_provider', lambda: 'cuda')
+    monkeypatch.setattr(music, 'supported', lambda *args: True)
+    monkeypatch.setattr(music, 'configuration', lambda: {'models': {'musicgen-small': {'cpu': 1}}, 'input_limits_version': 1, 'execution_settings': {'music': music.runtime_settings()}})
+    monkeypatch.setattr(music, 'model_limits', lambda _: {'duration_seconds': 30, 'prompt_characters': 512, 'negative_prompt_characters': 0})
+    row = client.get('/api/v1/music-models').json()[0]
+    assert row['admission_ready']
+    assert row['max_duration_seconds'] == (30 if scheduled else 300)
+    assert row['max_prompt_characters'] == (512 if scheduled else 4000)
+    assert row['max_negative_prompt_characters'] == (0 if scheduled else 4000)
+
+
 def test_all_original_models_keep_modelscope_repositories_and_pinned_files():
     rows = music_catalog.catalog()
     assert {row['key'] for row in rows} == {'ace-step-1.5-turbo', 'stable-audio-3-small-music', 'stable-audio-3-medium', 'musicgen-small'}

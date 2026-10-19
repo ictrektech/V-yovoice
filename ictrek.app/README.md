@@ -25,6 +25,11 @@ use `docker/build_image.sh --sheet <sheet> --assets-only` with freshly built
 the creation UI. It builds without publishing; verify the resulting image before
 the usual `--publish-only` step. Use the normal full build for backend changes.
 
+The narrowly scoped `--music-ui-only` variant also copies `vvoice/music.py` to
+refresh effective input-limit metadata alongside the UI. It must only be used
+when native adapters, admission logic, dependencies and binaries are unchanged;
+verify its packaged Python hash, HTTP metadata, tests and UI before publishing.
+
 Packaging resolves the current published V-Scheduler version, never a guessed
 version. Its built-in shared model repository needs no separate Model Hub app.
 When the dependency repository is private, the existing

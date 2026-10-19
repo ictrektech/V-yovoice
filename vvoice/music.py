@@ -141,9 +141,12 @@ async def models():
             except HTTPException:
                 approved = False
         row.update(loaded=runtime.loaded(row['key']), runtime_available=supported(row, detect_provider()),
-                   admission_ready=approved, execution_settings=runtime_settings())
+                   admission_ready=approved, execution_settings=runtime_settings(),
+                   max_prompt_characters=4000, max_negative_prompt_characters=4000)
         if limit:
             row['max_duration_seconds'] = min(row.get('max_duration_seconds', 300), limit['duration_seconds'])
+            row['max_prompt_characters'] = min(4000, limit['prompt_characters'])
+            row['max_negative_prompt_characters'] = min(4000, limit['negative_prompt_characters'])
     return rows
 
 

@@ -6,7 +6,7 @@ test('VOS 原生配乐切换模型后不发送不支持的排除内容', async (
   const models = [
     ['musicgen-small', 'MusicGen Small'], ['ace-step-1.5-turbo', 'ACE-Step 1.5 Turbo'],
     ['stable-audio-3-small-music', 'Stable Audio 3 Small-Music'], ['stable-audio-3-medium', 'Stable Audio 3 Medium'],
-  ].map(([key, name]) => ({ key, name, status: 'ready', size: 1, modelscope_repo: `vivibit/v-music-${key}`, runtime_available: true, admission_ready: true, loaded: false, max_duration_seconds: 30 }));
+  ].map(([key, name]) => ({ key, name, status: 'ready', size: 1, modelscope_repo: `vivibit/v-music-${key}`, runtime_available: true, admission_ready: true, loaded: false, max_duration_seconds: 30, max_prompt_characters: 512, max_negative_prompt_characters: key.startsWith('stable-audio-3-') ? 256 : 0 }));
   await page.addInitScript(() => {
     window.vos_platform = { getState: async () => ({ locale: 'zh-CN' }), api: { v1000: { oauth2: {
       authorize: async input => ({ code: 'fixture-code', state: input.state }),
@@ -40,4 +40,19 @@ test('VOS 原生配乐切换模型后不发送不支持的排除内容', async (
     else await expect(page.getByLabel('排除内容', { exact: true })).toBeDisabled();
     await expect(page.getByRole('link', { name: '下载配乐', exact: true })).toBeVisible();
   }
+  const prompt = page.getByLabel('配乐描述', { exact: true }), negative = page.getByLabel('排除内容', { exact: true });
+  await prompt.fill('p'.repeat(512));
+  await negative.fill('n'.repeat(256));
+  await expect(page.getByText('配乐描述 · 512 / 512', { exact: true })).toBeVisible();
+  await expect(page.getByText('排除内容 · 256 / 256', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '生成配乐', exact: true }).click();
+  await expect.poll(() => requests.length).toBe(5);
+  await prompt.fill('p'.repeat(513));
+  await page.getByRole('button', { name: '生成配乐', exact: true }).click();
+  await expect(page.getByTestId('background-music').getByRole('alert')).toBeVisible();
+  expect(requests).toHaveLength(5);
+  await prompt.fill('p'.repeat(512));
+  await negative.fill('n'.repeat(257));
+  await page.getByRole('button', { name: '生成配乐', exact: true }).click();
+  expect(requests).toHaveLength(5);
 });
