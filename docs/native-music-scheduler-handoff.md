@@ -70,3 +70,20 @@ python3 /home/jhu/dev/repos/V-yovoice/scripts/check-native-music-handoff.py \
 重建隔离容器前必须先检查现有测试是否活跃；启动脚本遇到同名容器会拒绝覆盖：
 `bash scripts/start-native-music-handoff.sh <已核对的生产V-Voice容器名>`。
 该测试镜像不属于正式发布镜像，不能据此声称六平台构建或版本发布完成。
+
+### 受控校准 worker
+
+`scripts/calibrate-native-music-worker.py` 只用于 Scheduler 的外层校准编排。
+外层先申请并续租真实许可、限制容器 CPU/RAM，再设置
+`VVOICE_EXTERNAL_CALIBRATION_PERMIT=active` 启动此脚本；这个环境标识只是误用防护，
+不是授权凭据。不要把它放入生产 Compose，也不要关闭生产 API 准入。
+使用镜像内主 Python 启动包装器，原生子进程自动使用 `VVOICE_MUSIC_PYTHON`。
+必须传递真实 `VVOICE_PROVIDER`、音乐 Torch 线程参数和只读共享模型目录。
+
+脚本先校验固定文件，生成十秒 WAV 并记录输入实值、execution_settings、文件清单、
+输出时长/哈希以及子进程 PID、Linux starttime 和 boot ID。`native-started` 标记只表示
+子进程已创建，**不表示模型导入/加载结束**，不能用于推理阶段 CPU 峰值归因。
+SIGTERM/SIGINT 或独立输出目录中的 `cancel` 文件触发杀进程组并 wait；
+停止证据写入 `calibration-stop.json`，成功证据写入 `calibration-result.json`。
+外层仍必须确认容器及其后代全部退出后才能释放许可；worker 不申请第二份许可。
+每次运行使用新的输出目录，不复用旧证据。
