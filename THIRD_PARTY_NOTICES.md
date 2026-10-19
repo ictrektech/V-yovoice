@@ -7,6 +7,12 @@ VOS 版从固定的 audio.cpp v0.9.1 源码构建 CPU/CUDA 独立进程，原始
 各 profile 的系统发行版软件包，不是下文桌面安装包中的预编译版本；具体版本、
 版权与许可保留在镜像的软件包数据库和 `/usr/share/doc/` 中。
 
+旧 AMD CUDA 镜像另为音乐子进程分发 CPython 3.12.15，来自
+[python-build-standalone 20261013](https://github.com/astral-sh/python-build-standalone/releases/tag/20261013)，
+固定归档的 SHA-256 在构建时校验。PSF 原始许可位于
+`/opt/vvoice/music-bootstrap/lib/python3.12/LICENSE.txt`，依赖许可随各包保留；
+原语音服务的系统 Python 不被替换。
+
 模型不随镜像打包。ModelScope 镜像保留原始文件校验值、来源索引和独立许可；
 OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非商业协议，
 不能从本应用的 Apache-2.0 许可推导模型商用授权。音色库分别保留自己的许可

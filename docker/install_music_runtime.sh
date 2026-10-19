@@ -4,9 +4,24 @@ set -euo pipefail
 index="${VVOICE_MUSIC_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}"
 # 不继承基础镜像已失效的 Jetson 索引或 pip 配置。
 export PIP_INDEX_URL="$index" PIP_EXTRA_INDEX_URL="" PIP_CONFIG_FILE=/dev/null
-python3 -m pip install --no-cache-dir --target /opt/vvoice/venv-bootstrap --index-url "$index" virtualenv
-parent_sites="$(python3 -c 'import json,site; print(json.dumps(site.getsitepackages()))')"
-PYTHONPATH=/opt/vvoice/venv-bootstrap python3 -m virtualenv --system-site-packages /opt/vvoice/music-python
+bootstrap_python=python3
+if [[ "${VVOICE_PROVIDER:-cpu}" == cuda ]] && ! python3 -c 'import sys; raise SystemExit(not ((3, 11) <= sys.version_info[:2] < (3, 13)))'; then
+  # 旧 AMD CUDA 服务保留 Python 3.10；ACE-Step 单独使用受支持的解释器，
+  # 不把旧解释器的扩展模块加入新环境。归档及校验值固定于上游发布。
+  [[ "$(uname -m)" == x86_64 ]] || { echo 'Unsupported music bootstrap architecture' >&2; exit 1; }
+  archive=/tmp/vvoice-music-python.tar.gz
+  curl -4 -fL --retry 4 --connect-timeout 15 --max-time 900 \
+    "${GITHUB_ACCELERATOR:-https://gh-proxy.com/}https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.12.15%2B20261013-x86_64-unknown-linux-gnu-install_only.tar.gz" \
+    -o "$archive"
+  echo "5d546fc004fc2435fa142eb8f42ed8de5eb4725963dc22f7e6671014a80eb560  $archive" | sha256sum -c -
+  mkdir -p /opt/vvoice/music-bootstrap
+  tar xzf "$archive" -C /opt/vvoice/music-bootstrap --strip-components=1
+  rm "$archive"
+  bootstrap_python=/opt/vvoice/music-bootstrap/bin/python3.12
+fi
+"$bootstrap_python" -m pip install --no-cache-dir --target /opt/vvoice/venv-bootstrap --index-url "$index" virtualenv
+parent_sites="$("$bootstrap_python" -c 'import json,site; print(json.dumps(site.getsitepackages()))')"
+PYTHONPATH=/opt/vvoice/venv-bootstrap "$bootstrap_python" -m virtualenv --system-site-packages /opt/vvoice/music-python
 music_python=/opt/vvoice/music-python/bin/python
 # L4T 的 CUDA Torch 位于父虚拟环境，而非系统 site-packages。
 "$music_python" "$(dirname "${BASH_SOURCE[0]}")/inherit_parent_packages.py" "$parent_sites"

@@ -21,6 +21,10 @@ to the Tsinghua mirror), retain parent-environment CUDA Torch on L4T, and reject
 GPU images that resolve a CPU-only Torch build.
 Stable Audio converts CUDA-bound weights to their final FP16 precision on the CPU
 before transferring them; CPU inference retains its original precision.
+The legacy AMD CUDA speech environment remains on Python 3.10. Music workers use
+a separately pinned, checksum-verified Python 3.12 interpreter when ACE-Step's
+Python requirements are not met; extension packages are never shared across
+different Python versions.
 New native models require **V-Voice-specific** calibration and admission, not copied
 V-Music credentials. See [the Scheduler handoff](docs/native-music-scheduler-handoff.md)
 for the required binding fields and actual-node acceptance checks.
