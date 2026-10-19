@@ -12,6 +12,7 @@ worker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(worker)
 
 
+@unittest.skipUnless(sys.platform == 'linux', 'Linux /proc lifecycle evidence only')
 class WorkerLifecycleTests(unittest.TestCase):
     def execute(self, code, cancelled=False, timeout=5):
         with tempfile.TemporaryDirectory() as directory:
