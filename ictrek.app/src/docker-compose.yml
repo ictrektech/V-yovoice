@@ -96,7 +96,7 @@ services:
       VVOICE_PROFILE: l4t
       VVOICE_PROVIDER: cuda
       # int8 Paraformer hits ORT CUDA broadcast errors on Jetson; pin it to CPU.
-      VVOICE_CPU_MODELS: paraformer-zh
+      VVOICE_CPU_MODELS: ${VVOICE_CPU_MODELS:-paraformer-zh}
       NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
       NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
   v-voice-thor:

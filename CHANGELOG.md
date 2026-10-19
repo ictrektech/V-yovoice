@@ -2,6 +2,14 @@
 
 各版本的重要更新记录。日常改动记入 `Unreleased`；发布前合并重复项，整理为简短的功能、改进和修复说明。
 
+## [0.0.20] - 2026-10-19
+
+### 简体中文
+- 修复 L4T 安装配置覆盖强制 CPU 模型列表的问题，保留 Paraformer 默认兼容行为，并允许为低内存设备选择 CPU 推理。
+
+### English
+- Honor the configured CPU model list on L4T while retaining the default Paraformer compatibility setting, enabling measured low-memory inference configurations.
+
 ## [Unreleased]
 
 - AI 写作栏（写谱、写歌词）未配置时移除快捷连接按钮，统一通过“设置 AI”进入配置；打开 AI 设置时默认聚焦服务列表首项；右侧检查器移除“返回正文”按钮，窄屏下展开时保持与宽屏一致的面板宽度浮出，不再全屏覆盖正文。
