@@ -12,6 +12,7 @@
 
 ## [Unreleased]
 
+- CPU 语音模型卸载或被 LRU 替换后回收无引用对象并尝试归还空闲堆内存，降低低内存设备的常驻占用；TTS、声纹与 ASR 一致遵循强制 CPU 模型列表。
 - 修复 VOS 容器主进程为 PID 1 时原生配乐子进程被误判为失去宿主的问题；保留宿主退出和租约失效时的停止保护。
 - VOS 新增「配乐生成」，整合 V-Music 的 ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music / Medium、MusicGen Small，以及生成参数、WAV/FLAC 试听下载；原生模型并入创作模型管理并复用 V-Scheduler / ModelScope 共享模型，公共配乐 API 与多语言文档同步增加，原有歌曲和编曲功能保留。
 - VOS 界面、模型管理和安装说明统一标注 V-Scheduler，模型下载、共享存储与推理调度均接入统一应用；保留旧配置键和共享目录以兼容已有安装，不再误导用户安装独立 Model Hub。

@@ -14,6 +14,11 @@ PyTorch 使用独立 Python 环境，不替换 ONNX/audio.cpp 运行时；每次
 退出音乐进程，确认停止后释放许可。新模型需要 V-Voice 自己的实测校准和准入，
 不能继承旧 V-Music 凭据；[V-Scheduler 所需配合及验收条件](docs/native-music-scheduler-handoff.md)。
 
+`VVOICE_CPU_MODELS` 同时作用于 ASR、TTS 与声纹模型。显式卸载与 LRU 替换后回收
+无引用对象，并尽力归还空闲 CPU 堆页；这不代表 GPU 或原生执行已经停止。
+`scripts/calibrate-cpu-voice-worker.py` 只供真实外层 Scheduler 许可覆盖的隔离容器使用，
+记录三轮原始 512 字 TTS、20 秒 ASR、RSS 与宿主可用内存；不得关闭生产准入来执行。
+
 本 fork 是 `com.ictrek.v-voice` 的后继源码仓库。原 V-Voice 的模型目录与
 API 保留，在此基础上增加 yovoice 创作工作台和 audio.cpp 模型；支持范围是
 超集，不以精选模型替代原有能力。创作目录保留上游全部可下载模型和精度，

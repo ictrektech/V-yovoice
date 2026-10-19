@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import ctypes
+import gc
 import os
 import threading
 from collections import OrderedDict
@@ -22,6 +24,19 @@ def _sherpa():
     return sherpa_onnx
 
 
+def _release_cpu_memory() -> None:
+    # 只处理已无引用的对象及空闲 CPU 堆页；不代表 GPU/推理进程已停止。
+    gc.collect()
+    try:
+        trim = ctypes.CDLL(None).malloc_trim
+        trim.argtypes = [ctypes.c_size_t]
+        trim.restype = ctypes.c_int
+        trim(0)
+    except (AttributeError, OSError):
+        # 非 glibc 平台没有此接口，模型卸载仍应正常完成。
+        pass
+
+
 def detect_provider() -> str:
     if settings.provider != "auto":
         return settings.provider
@@ -35,6 +50,10 @@ def detect_provider() -> str:
     return "cpu"
 
 
+def _model_provider(key: str | None) -> str:
+    return "cpu" if key in settings.cpu_models else detect_provider()
+
+
 def _kwargs(item: dict[str, Any], include_common: bool = True) -> dict[str, Any]:
     runtime = item["runtime"]
     values = dict(runtime.get("options") or {})
@@ -43,7 +62,7 @@ def _kwargs(item: dict[str, Any], include_common: bool = True) -> dict[str, Any]
         # Some model/provider combinations are broken on specific accelerators
         # (e.g. int8 Paraformer broadcasting errors on Jetson CUDA EP); listed
         # models are pinned to CPU via VVOICE_CPU_MODELS.
-        provider = "cpu" if item.get("key") in settings.cpu_models else detect_provider()
+        provider = _model_provider(item.get("key"))
         values.setdefault("provider", provider)
         values.setdefault("num_threads", settings.num_threads)
     return values
@@ -86,6 +105,7 @@ class RuntimeRegistry:
                     or candidate == f"speaker:{key}"
                 ]:
                     self._items.pop(cache_key, None)
+        _release_cpu_memory()
 
     def is_loaded(self, key: str) -> bool:
         with self._lock:
@@ -105,9 +125,13 @@ class RuntimeRegistry:
                 return self._items[key]
             value = factory()
             self._items[key] = value
+            evicted = False
             while len(self._items) > settings.max_loaded_models:
                 self._items.popitem(last=False)
-            return value
+                evicted = True
+        if evicted:
+            _release_cpu_memory()
+        return value
 
     def asr(
         self,
@@ -171,7 +195,7 @@ class RuntimeRegistry:
             config = sherpa.SpeakerEmbeddingExtractorConfig(
                 model=resolve_files(item)["model"],
                 num_threads=settings.num_threads,
-                provider=detect_provider(),
+                provider=_model_provider(key),
             )
             if not config.validate():
                 raise ValueError(f"invalid speaker model descriptor: {key}")
@@ -191,7 +215,7 @@ class RuntimeRegistry:
             model = sherpa.OfflineTtsModelConfig(
                 **{
                     family: family_class(**_kwargs(item, include_common=False)),
-                    "provider": detect_provider(),
+                    "provider": _model_provider(key),
                     "num_threads": settings.num_threads,
                     "debug": bool(runtime.get("debug", False)),
                 }

@@ -23,6 +23,13 @@ The handoff also documents the isolated 229 endpoint and
 `scripts/check-native-music-handoff.py`: read-only by default, real generation only
 with explicit `--generate` after calibration; never a substitute for full release QA.
 
+`VVOICE_CPU_MODELS` applies consistently to ASR, TTS and speaker models. Explicit
+unload and LRU eviction collect unreachable objects and attempt to return free
+CPU heap pages; this is best effort, not proof that GPU/native execution stopped.
+The isolated `scripts/calibrate-cpu-voice-worker.py` requires an outer Scheduler
+permit and records three rounds of unchanged 512-character TTS / 20-second ASR,
+RSS and host available memory; never run it by disabling production admission.
+
 Model management expands in the VOS sidebar into speech models and creator models/soundfonts;
 there is no second, easily missed category tab bar. VOS settings scroll independently.
 The settings model-management action stays inside the workbench; the standalone
