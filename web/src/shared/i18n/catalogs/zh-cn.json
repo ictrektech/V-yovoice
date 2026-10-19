@@ -6,6 +6,7 @@
   "@vvoice.music.model": { "defaultMessage": "配乐模型" },
   "@vvoice.music.prompt": { "defaultMessage": "配乐描述" },
   "@vvoice.music.negative": { "defaultMessage": "排除内容" },
+  "@vvoice.music.negativeUnsupported": { "defaultMessage": "此模型不支持排除内容。" },
   "@vvoice.music.duration": { "defaultMessage": "时长（10–300 秒，MusicGen 最长 30 秒）" },
   "@vvoice.music.seed": { "defaultMessage": "随机种子（可选）" },
   "@vvoice.music.bpm": { "defaultMessage": "BPM（20–300，可选）" },

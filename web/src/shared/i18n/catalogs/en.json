@@ -6,6 +6,7 @@
   "@vvoice.music.model": { "defaultMessage": "Music model" },
   "@vvoice.music.prompt": { "defaultMessage": "Music description" },
   "@vvoice.music.negative": { "defaultMessage": "Negative prompt" },
+  "@vvoice.music.negativeUnsupported": { "defaultMessage": "This model does not support a negative prompt." },
   "@vvoice.music.duration": { "defaultMessage": "Duration (10–300 seconds; MusicGen up to 30)" },
   "@vvoice.music.seed": { "defaultMessage": "Seed (optional)" },
   "@vvoice.music.bpm": { "defaultMessage": "BPM (20–300, optional)" },

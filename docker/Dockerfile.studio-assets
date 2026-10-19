@@ -1,0 +1,3 @@
+ARG VVOICE_STUDIO_BASE_IMAGE
+FROM ${VVOICE_STUDIO_BASE_IMAGE}
+COPY --from=studio_artifacts /web/ /opt/vvoice/web/

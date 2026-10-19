@@ -19,6 +19,12 @@ ARM CUDA and Thor share the compiler-cache reference when their validated base
 image is identical. Their runtime images and Feishu records remain separate;
 the source archive and CUDA build arguments still participate in cache checks.
 
+For frontend-only changes after the current day's full backend image is built,
+use `docker/build_image.sh --sheet <sheet> --assets-only` with freshly built
+`artifacts/web`. This preserves the validated inference runtime and refreshes only
+the creation UI. It builds without publishing; verify the resulting image before
+the usual `--publish-only` step. Use the normal full build for backend changes.
+
 Packaging resolves the current published V-Scheduler version, never a guessed
 version. Its built-in shared model repository needs no separate Model Hub app.
 When the dependency repository is private, the existing

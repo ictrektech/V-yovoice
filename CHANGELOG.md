@@ -5,12 +5,12 @@
 ## [0.0.21] - 2026-10-19
 
 ### 简体中文
-- 新增「配乐生成」，整合 V-Music 的 ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music / Medium、MusicGen Small，支持生成参数、WAV/FLAC 试听下载和多语言 API 文档。
+- 新增「配乐生成」，整合 V-Music 的 ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music / Medium、MusicGen Small，支持按模型适配的生成参数、WAV/FLAC 试听下载和多语言 API 文档。
 - 配乐模型统一纳入创作模型管理，复用公开 ModelScope 权重与 V-Scheduler 共享存储、输入限制和资源调度；与旧 ASR、TTS、声纹及创作审批共存，保留旧接口与上传配置。
 - 降低低内存设备 CPU 语音模型卸载后的常驻占用，统一遵循强制 CPU 配置；优化 Stable Audio GPU 权重加载，修复配乐子进程生命周期及各平台运行时依赖。
 
 ### English
-- Add background music generation with V-Music's ACE-Step 1.5 Turbo, Stable Audio 3 Small-Music / Medium and MusicGen Small, generation controls, WAV/FLAC playback and download, and multilingual API documentation.
+- Add background music generation with V-Music's ACE-Step 1.5 Turbo, Stable Audio 3 Small-Music / Medium and MusicGen Small, model-aware generation controls, WAV/FLAC playback and download, and multilingual API documentation.
 - Unify music model management with public ModelScope weights and V-Scheduler storage, bounded inputs and admission. Preserve existing ASR, TTS, speaker and creation approvals, APIs and upload settings.
 - Reduce retained CPU speech memory after unloading, honor CPU model configuration consistently, optimize Stable Audio GPU loading, and fix music worker lifecycle and platform runtime dependencies.
 

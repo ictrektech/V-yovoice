@@ -12,8 +12,9 @@ while [[ $# -gt 0 ]]; do
     --build-only) mode=build; shift ;;
     --publish-only) mode=publish; shift ;;
     --prepare-only) mode=prepare; shift ;;
+    --assets-only) mode=assets; prepare=false; shift ;;
     --reuse-prepared-artifacts) prepare=false; shift ;;
-    *) echo "Usage: $0 --sheet <sheet> [--build-only|--publish-only|--prepare-only]" >&2; exit 1 ;;
+    *) echo "Usage: $0 --sheet <sheet> [--build-only|--publish-only|--prepare-only|--assets-only]" >&2; exit 1 ;;
   esac
 done
 case "$(uname -m)" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) exit 1 ;; esac
@@ -30,6 +31,17 @@ case "$sheet" in
 esac
 tag="${prefix}_$(date +%Y%m%d)"
 image="${registry}/v-voice:${tag}"
+if [[ "$mode" == assets ]]; then
+  # 仅用于前端变更：沿用已完成的当日后端镜像，验证通过后仍须显式发布。
+  test -s "$artifacts/web/index.html"
+  docker run --rm --pull never --entrypoint test "$image" -f /opt/vvoice/web/index.html
+  assets_base="v-voice-assets-base:${tag}"
+  docker tag "$image" "$assets_base"
+  docker buildx build --builder default --load --provenance=false --sbom=false \
+    --build-context "studio_artifacts=${artifacts}" --build-arg "VVOICE_STUDIO_BASE_IMAGE=${assets_base}" \
+    -f "$root/docker/Dockerfile.studio-assets" -t "$image" "$root"
+  exit 0
+fi
 if [[ "$prepare" == true && ( "$mode" == prepare || "$mode" == full || "$mode" == build ) ]]; then
   mkdir -p "$build_root/source" "$artifacts/linux-${arch}" "$build_root/sources"
   rsync -a --exclude=.git --exclude=node_modules --exclude=dist --exclude=__pycache__ "$root/" "$build_root/source/"
