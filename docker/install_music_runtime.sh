@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # 原生音乐依赖独立安装，避免改变已有 ONNX 服务的 NumPy/Transformers 环境。
-index="${PIP_INDEX_URL:-https://repo.huaweicloud.com/repository/pypi/simple}"
+index="${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}"
 python3 -m pip install --no-cache-dir --target /opt/vvoice/venv-bootstrap --index-url "$index" virtualenv
 PYTHONPATH=/opt/vvoice/venv-bootstrap python3 -m virtualenv --system-site-packages /opt/vvoice/music-python
 music_python=/opt/vvoice/music-python/bin/python
