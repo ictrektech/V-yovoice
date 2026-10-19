@@ -16,6 +16,9 @@ The public extension `POST /v1/audio/music/generations` returns binary WAV/FLAC.
 Only verified, hardware-compatible models appear in discovery. Native PyTorch
 dependencies use a separate Python environment; each generation exits its worker
 before releasing compute. Existing ONNX/audio.cpp paths and model IDs remain intact.
+Music builds use their own package index (`VVOICE_MUSIC_PIP_INDEX_URL`, defaulting
+to the Tsinghua mirror), retain parent-environment CUDA Torch on L4T, and reject
+GPU images that resolve a CPU-only Torch build.
 New native models require **V-Voice-specific** calibration and admission, not copied
 V-Music credentials. See [the Scheduler handoff](docs/native-music-scheduler-handoff.md)
 for the required binding fields and actual-node acceptance checks.

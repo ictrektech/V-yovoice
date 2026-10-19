@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # 原生音乐依赖独立安装，避免改变已有 ONNX 服务的 NumPy/Transformers 环境。
-index="${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}"
+index="${VVOICE_MUSIC_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}"
+# 不继承基础镜像已失效的 Jetson 索引或 pip 配置。
+export PIP_INDEX_URL="$index" PIP_EXTRA_INDEX_URL="" PIP_CONFIG_FILE=/dev/null
 python3 -m pip install --no-cache-dir --target /opt/vvoice/venv-bootstrap --index-url "$index" virtualenv
+parent_sites="$(python3 -c 'import json,site; print(json.dumps(site.getsitepackages()))')"
 PYTHONPATH=/opt/vvoice/venv-bootstrap python3 -m virtualenv --system-site-packages /opt/vvoice/music-python
 music_python=/opt/vvoice/music-python/bin/python
+# L4T 的 CUDA Torch 位于父虚拟环境，而非系统 site-packages。
+"$music_python" "$(dirname "${BASH_SOURCE[0]}")/inherit_parent_packages.py" "$parent_sites"
 if ! "$music_python" -c 'import torch' >/dev/null 2>&1; then
   torch_index=https://download.pytorch.org/whl/cpu
   torch_version=2.7.1
@@ -19,6 +24,9 @@ if ! "$music_python" -c 'import torch' >/dev/null 2>&1; then
 elif ! "$music_python" -c 'import torchaudio' >/dev/null 2>&1; then
   version="$("$music_python" -c 'import torch; print(torch.__version__.split("+")[0].split("a")[0])')"
   "$music_python" -m pip install --no-cache-dir --no-deps --index-url "$index" "torchaudio==$version"
+fi
+if [[ "${VVOICE_PROVIDER:-cpu}" == cuda ]]; then
+  "$music_python" -c 'import torch; assert torch.version.cuda, "GPU profile requires a CUDA-enabled Torch build"'
 fi
 "$music_python" -m pip install --no-cache-dir --index-url "$index" \
   einops einops-exts packaging safetensors sentencepiece tqdm 'huggingface-hub<1' 'transformers>=4.51,<4.58'
