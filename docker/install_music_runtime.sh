@@ -25,6 +25,12 @@ PYTHONPATH=/opt/vvoice/venv-bootstrap "$bootstrap_python" -m virtualenv --system
 music_python=/opt/vvoice/music-python/bin/python
 # L4T 的 CUDA Torch 位于父虚拟环境，而非系统 site-packages。
 "$music_python" "$(dirname "${BASH_SOURCE[0]}")/inherit_parent_packages.py" "$parent_sites"
+if [[ "$bootstrap_python" != python3 ]]; then
+  # 独立解释器不继承旧 Python 的包，显式补齐原 V-Music 基础运行依赖。
+  "$music_python" -m pip install --no-cache-dir --index-url "$index" \
+    'fastapi>=0.115,<1' 'httpx>=0.27,<1' 'numpy>=1.26,<2' \
+    'soundfile>=0.13,<1' 'uvicorn[standard]>=0.34,<1' 'setuptools<72'
+fi
 if ! "$music_python" -c 'import torch' >/dev/null 2>&1; then
   torch_index=https://download.pytorch.org/whl/cpu
   torch_version=2.7.1
@@ -60,7 +66,10 @@ if [[ "${VVOICE_PROVIDER:-cpu}" == cuda ]]; then
     -o /tmp/vvoice-music-sources/ace-step.zip
   "$music_python" -m pip install --no-cache-dir --no-deps /tmp/vvoice-music-sources/ace-step.zip
 fi
-"$music_python" -c 'import torch, torchaudio, stable_audio_3, transformers; from transformers import MusicgenForConditionalGeneration'
+"$music_python" -c 'import torch, torchaudio, soundfile, transformers; from stable_audio_3.loading_utils import copy_state_dict; from stable_audio_3.factory import create_diffusion_cond_from_config; from stable_audio_3.model import StableAudioModel; from transformers import MusicgenForConditionalGeneration'
+if [[ "${VVOICE_PROVIDER:-cpu}" == cuda ]]; then
+  "$music_python" -c 'from acestep.handler import AceStepHandler; from acestep.inference import GenerationConfig, GenerationParams, generate_music'
+fi
 rm /tmp/vvoice-music-sources/stable-audio.zip
 if [[ -f /tmp/vvoice-music-sources/ace-step.zip ]]; then rm /tmp/vvoice-music-sources/ace-step.zip; fi
 rmdir /tmp/vvoice-music-sources
