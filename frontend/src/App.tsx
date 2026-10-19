@@ -80,10 +80,10 @@ function Models({ models, loading, refresh }: { models: Model[]; loading: boolea
         {model.status === 'downloading' ? <div className="progress"><i style={{ width: `${progress}%` }} /><small>{progress}% · {formatBytes(model.downloaded_bytes)} / {formatBytes(model.total_bytes)}</small></div> : null}
         {model.error ? <small className="error" data-i18n="off">{model.error}</small> : null}
         <div className="actions">
-          {model.import_required ? <small>需管理员在 Model Hub 提供原始权重</small> : null}
+          {model.import_required ? <small>需管理员在 V-Scheduler 提供原始权重</small> : null}
           {model.status === 'ready' ? <><button onClick={() => act(model, 'unload')} disabled={!!busy || !model.loaded}>卸载推理实例</button>{!model.import_required ? <button onClick={() => act(model, 'force')} disabled={!!busy}>重新下载</button> : null}</> : null}
           {model.status === 'downloading' ? <button onClick={() => act(model, 'stop')} disabled={!!busy}>停止下载</button> : null}
-          {!model.import_required && model.status !== 'ready' && model.status !== 'downloading' ? <button className="primary" onClick={() => act(model, 'pull')} disabled={!!busy || model.status === 'verifying'}>从 Model Hub 安装</button> : null}
+          {!model.import_required && model.status !== 'ready' && model.status !== 'downloading' ? <button className="primary" onClick={() => act(model, 'pull')} disabled={!!busy || model.status === 'verifying'}>从 V-Scheduler 安装</button> : null}
         </div>
       </article>
     })}</div>
@@ -258,6 +258,15 @@ function ApiGuide({ models }: { models: Model[] }) {
     <div className="api-tabs" role="tablist" aria-label="API 文档章节">{tabs.map(([value, label]) => <button role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)} key={value}>{label}</button>)}</div>
     {tab === 'workbench' ? <section className="api-section">
       <h2>音乐、编曲与任务</h2>
+      <Endpoint method="POST" path="/v1/audio/music/generations" title="原生配乐生成">
+        <p>公共音乐扩展接口，返回 WAV 或 FLAC 二进制音频；不是 OpenAI 标准接口。直接调用与统一网关转发都受 V-Scheduler 准入控制，不复用旧 V-Music 凭据。</p>
+        <p>模型：ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music、Stable Audio 3 Medium、MusicGen Small。MusicGen 最长 30 秒，其他模型 10–300 秒，且不能超过调度批准的输入上限。</p>
+        <CodeBlock>{JSON.stringify({ model: 'stable-audio-3-small-music', prompt: 'Warm cinematic ambient music, soft piano', duration: 10, negative_prompt: 'speech, distortion', seed: 42, bpm: 80, key: 'C major', time_signature: '4/4', instrumental: true, response_format: 'wav' }, null, 2)}</CodeBlock>
+        <p>MusicGen 仅使用描述、种子与时长；其他音乐控制由支持的模型解释。生成失败不返回伪音频，503 表示模型、运行时或调度尚未就绪，429 表示计算繁忙，422 表示输入无效或超出批准范围。</p>
+      </Endpoint>
+      <Endpoint method="GET" path="/api/v1/music-models" title="配乐模型管理">
+        <p>{'列出全部原生配乐模型、安装校验和运行时状态。POST /api/v1/music-models/{model}/{pull|stop|unload} 安装、停止下载或卸载，必须使用 VOS 模型管理员身份。权重由 V-Scheduler 从 ModelScope 安装并共享；正在生成时不能卸载。'}</p>
+      </Endpoint>
       <p>以下是现有工作台 RPC，不是 OpenAI 标准音乐接口；不会作为公共语音接口经网关转发。所有请求使用当前用户的 VOS Bearer Token，数据与结果按用户隔离。</p>
       <Endpoint method="POST" path="/studio-api/call" title="工作台调用契约">
         <ParameterTable rows={[

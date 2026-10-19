@@ -34,6 +34,7 @@ type SchedulerConfig struct {
 	SecondaryModels    map[string][]string           `json:"secondary_models,omitempty"`
 	ModelLimits        map[string]map[string]float64 `json:"model_limits,omitempty"`
 	InputLimitsVersion int                           `json:"input_limits_version,omitempty"`
+	ExecutionSettings  map[string]any                `json:"execution_settings,omitempty"`
 }
 
 type Job struct {

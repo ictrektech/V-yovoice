@@ -1,10 +1,24 @@
 ## VOS 版 V-Voice
 
+VOS 侧栏新增「配乐生成」，与原有歌曲生成、编曲并列，保留 V-Music 的
+ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music、Stable Audio 3 Medium 和
+MusicGen Small。安装入口为「模型管理 → 创作模型与音色库 → 原生配乐模型」。
+模型管理统一接入 V-Scheduler，复用已有 ModelScope 仓库和共享目录，不重复下载。
+保留描述、排除词、时长、种子、BPM、调性、拍号、纯音乐以及 WAV/FLAC 试听下载；
+MusicGen 最长 30 秒，仅使用描述、种子和时长。
+
+公共扩展 API 为 `POST /v1/audio/music/generations`，直接返回二进制音频；
+`GET /api/v1/music-models` 查询全部配乐模型，管理员经
+`POST /api/v1/music-models/{model}/{pull|stop|unload}` 管理共享模型。
+PyTorch 使用独立 Python 环境，不替换 ONNX/audio.cpp 运行时；每次生成结束后
+退出音乐进程，确认停止后释放许可。新模型需要 V-Voice 自己的实测校准和准入，
+不能继承旧 V-Music 凭据；[V-Scheduler 所需配合及验收条件](docs/native-music-scheduler-handoff.md)。
+
 本 fork 是 `com.ictrek.v-voice` 的后继源码仓库。原 V-Voice 的模型目录与
 API 保留，在此基础上增加 yovoice 创作工作台和 audio.cpp 模型；支持范围是
 超集，不以精选模型替代原有能力。创作目录保留上游全部可下载模型和精度，
-原本仅支持导入的条目仍需合法来源文件。模型统一经 ModelScope 和 Model Hub
-共享管理，不在每个用户目录重复下载。
+原本仅支持导入的条目仍需合法来源文件。模型统一由 V-Scheduler 内置模型仓库
+从 ModelScope 下载并共享管理，不在每个用户目录重复下载，无需独立安装 Model Hub。
 VOS 工作台及独立 API 文档页面均支持英文、简体中文和繁体中文，可跟随 VOS
 语言，也可仅在本应用内手动切换。
 

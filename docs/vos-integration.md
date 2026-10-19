@@ -13,7 +13,7 @@ available alongside the voice-creation workbench.
   support includes every upstream model/precision, not a selected subset.
 - Browser creation uses a real backend, not the upstream preview simulator.
 - VOS-authenticated users have separate projects, voices and output files.
-- Shared ONNX and GGUF models install through Model Hub from ModelScope only;
+- Shared ONNX and GGUF models install through V-Scheduler's built-in model repository from ModelScope only;
   consumers use its read-only export, without duplicating weights per user.
 - V-Router discovery remains compatible; unknown/new models are not implicitly
   approved for scheduling.
@@ -113,7 +113,7 @@ are not translated. Raw `/openapi.json` remains available for machine clients.
 
 Model management is also a main sidebar destination. Its speech tab retains all
 legacy cards and their controls; its creator tab includes every upstream model
-precision, music model and soundfont with Model Hub download/stop/verification
+precision, music model and soundfont with V-Scheduler download/stop/verification
 state. A ready shared repository cannot make its missing individual models ready.
 Import-only variants are explicitly marked instead of offering a false download.
 
@@ -141,9 +141,12 @@ worktree or either existing release tag, pushes only `vos-v-voice-v...`, and let
 GitHub Actions produce the public release/package and publish to VOS App Store.
 Do not call the packaging script manually as a substitute for that release gate.
 Packaging resolves dependency requirements from their actual latest published
-GitHub VOS packages and fails if unavailable or below the required protocol floor
-(Model Hub 0.0.94, V-Router 0.0.44, V-Scheduler 0.0.15). This does not authorize
-modifying or releasing those applications.
+GitHub Release or App Store records and fails if the required unified V-Scheduler
+package cannot be verified. Separate Model Hub and V-Router applications are not
+dependencies. The retained `MODEL_HUB_API_URL`, `MODEL_HUB_SHARED_MODELS_PATH` and
+`/modelhub` mount are compatibility names for V-Scheduler's built-in repository
+and existing shared files, not independent services. This does not authorize
+modifying or releasing V-Scheduler.
 
 ## Public API and gateway discovery
 

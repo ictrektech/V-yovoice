@@ -1,9 +1,44 @@
 {
+  "@vvoice.music.title": { "defaultMessage": "配樂生成" },
+  "@vvoice.music.models": { "defaultMessage": "原生配樂模型" },
+  "@vvoice.music.modelsHint": { "defaultMessage": "V-Scheduler 從 ModelScope 安裝，共享唯讀使用；原生權重與歌曲編輯器的 GGUF 模型分別管理。" },
+  "@vvoice.music.hint": { "defaultMessage": "描述配樂風格，生成後可試聽並下載 WAV 或 FLAC；需要歌詞的歌曲請使用音樂生成，寫譜請使用編曲。" },
+  "@vvoice.music.model": { "defaultMessage": "配樂模型" },
+  "@vvoice.music.prompt": { "defaultMessage": "配樂描述" },
+  "@vvoice.music.negative": { "defaultMessage": "排除內容" },
+  "@vvoice.music.duration": { "defaultMessage": "時長（10–300 秒，MusicGen 最長 30 秒）" },
+  "@vvoice.music.seed": { "defaultMessage": "隨機種子（可選）" },
+  "@vvoice.music.bpm": { "defaultMessage": "BPM（20–300，可選）" },
+  "@vvoice.music.key": { "defaultMessage": "調性（可選）" },
+  "@vvoice.music.meter": { "defaultMessage": "拍號" },
+  "@vvoice.music.instrumental": { "defaultMessage": "純音樂，不包含人聲" },
+  "@vvoice.music.format": { "defaultMessage": "音訊格式" },
+  "@vvoice.music.auto": { "defaultMessage": "自動" },
+  "@vvoice.music.yes": { "defaultMessage": "是" },
+  "@vvoice.music.no": { "defaultMessage": "否" },
+  "@vvoice.music.controlsHint": { "defaultMessage": "MusicGen 僅使用描述、種子與時長；其他音樂控制由支援的模型解釋。模型授權條款見各 ModelScope 倉庫。" },
+  "@vvoice.music.generate": { "defaultMessage": "生成配樂" },
+  "@vvoice.music.generating": { "defaultMessage": "正在生成配樂…" },
+  "@vvoice.music.result": { "defaultMessage": "生成的配樂" },
+  "@vvoice.music.download": { "defaultMessage": "下載配樂" },
+  "@vvoice.music.invalid": { "defaultMessage": "請檢查描述、時長、BPM 與種子，參數不能超出模型或調度核准的範圍。" },
+  "@vvoice.music.notReady": { "defaultMessage": "模型或調度尚未就緒，請檢查模型安裝及 V-Scheduler 對該模型的接入核准。" },
+  "@vvoice.music.busy": { "defaultMessage": "計算資源忙碌，請稍後重試。" },
+  "@vvoice.music.failed": { "defaultMessage": "配樂生成失敗，請檢查執行階段與模型狀態後重試。" },
+  "@vvoice.music.installFirst": { "defaultMessage": "請先到模型管理安裝並校驗配樂模型。" },
+  "@vvoice.music.gpuRequired": { "defaultMessage": "此模型需要相容的 CUDA GPU。" },
+  "@vvoice.music.adminRequired": { "defaultMessage": "需要 VOS 模型管理員權限。" },
+  "@vvoice.music.manageFailed": { "defaultMessage": "模型操作失敗，請檢查 V-Scheduler 模型倉庫後重試。" },
+  "@vvoice.music.status.ready": { "defaultMessage": "已就緒" },
+  "@vvoice.music.status.not_installed": { "defaultMessage": "未安裝" },
+  "@vvoice.music.status.verifying": { "defaultMessage": "校驗中" },
+  "@vvoice.music.status.downloading": { "defaultMessage": "下載中" },
+  "@vvoice.music.status.failed": { "defaultMessage": "失敗" },
   "@vvoice.models.speechNav": { "defaultMessage": "語音與聲紋模型" },
   "@vvoice.models.creativeNav": { "defaultMessage": "創作模型與音色庫" },
   "@vvoice.models.speechTab": { "defaultMessage": "ASR、TTS 與聲紋模型" },
   "@vvoice.models.creativeTab": { "defaultMessage": "創作模型與音色庫" },
-  "@vvoice.models.importRequired": { "defaultMessage": "需管理員在 Model Hub 提供原始權重" },
+  "@vvoice.models.importRequired": { "defaultMessage": "需管理員在 V-Scheduler 提供原始權重" },
   "@vvoice.models.inventoryError": { "defaultMessage": "暫時無法讀取共享模型狀態，正在自動重試。" },
   "@vvoice.scheduler.checking": { "defaultMessage": "正在檢查 V-Scheduler 自動接入…" },
   "@vvoice.scheduler.waiting": { "defaultMessage": "正在等待 V-Scheduler 自動接入。模型管理可用，推理尚未就緒。" },
@@ -25,7 +60,7 @@
     "defaultMessage": "跟隨 VOS"
   },
   "@vvoice.models.sharedHint": {
-    "defaultMessage": "共享模型統一由 Model Hub 按檔案安裝，創作工作台只讀使用；不會在每個使用者目錄重複下載。"
+    "defaultMessage": "共享模型統一由 V-Scheduler 從 ModelScope 按檔案安裝，創作工作台只讀使用；不會在每個使用者目錄重複下載。"
   },
   "@vvoice.models.serviceLink": {
     "defaultMessage": "語音服務與全部模型管理"
@@ -37,7 +72,7 @@
     "defaultMessage": "卸載執行階段"
   },
   "@vvoice.runtime.unloadHint": {
-    "defaultMessage": "停止此使用者的執行階段；共享檔案仍由 Model Hub 管理。"
+    "defaultMessage": "停止此使用者的執行階段；共享檔案仍由 V-Scheduler 管理。"
   },
   "@yovoice.settings.proxy": {
     "defaultMessage": "網路代理"

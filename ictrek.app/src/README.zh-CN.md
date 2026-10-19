@@ -1,6 +1,13 @@
 # V-Voice
 
-V-Voice 是基于 ONNX 的公共 ASR / 流式 ASR / TTS / 声纹服务。模型由 Model Hub 安装并由所有用户共享；V-Router 可通过发现接口把全部能力作为 public 公共模型注册。
+统一工作台提供语音、歌曲生成、编曲和「配乐生成」。原生配乐支持 ACE-Step 1.5
+Turbo、Stable Audio 3 Small-Music / Medium、MusicGen Small，在「模型管理 →
+创作模型与音色库」经 V-Scheduler / ModelScope 安装，保留 WAV/FLAC 试听下载。
+公共配乐扩展 API 为 `POST /v1/audio/music/generations`；MusicGen 最长 30 秒。
+模型就绪不等于计算已批准：新音乐模型须取得 V-Voice 自己的资源校准与调度绑定。
+原有歌曲、编曲和以下语音服务功能继续保留。
+
+V-Voice 保留基于 ONNX 的公共 ASR / 流式 ASR / TTS / 声纹服务。模型由 V-Scheduler 内置模型仓库安装并由所有用户共享；其统一网关通过发现接口接入公共能力，无需独立安装 Model Hub 或 V-Router。
 
 新增 `seaco-paraformer-zh`，模型源为 `vivibit/v-voice-seaco-paraformer-zh-int8`。
 SeACo 在所有 profile 上使用 CPU ONNX Runtime，支持中文整句转写与神经热词，

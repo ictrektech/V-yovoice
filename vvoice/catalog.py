@@ -9,7 +9,7 @@ from typing import Any
 from .config import settings
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1024)
 def _shared_hash(path: str, size: int, modified: int) -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as source:
@@ -43,8 +43,10 @@ def validate_descriptor(value: dict[str, Any], source: str = "descriptor") -> di
     key = str(value.get("key") or "").strip()
     kind = str(value.get("kind") or "").strip().lower()
     runtime = value.get("runtime")
-    if not key or kind not in {"asr", "tts", "speaker"} or not isinstance(runtime, dict):
+    if not key or kind not in {"asr", "tts", "speaker", "music"} or not isinstance(runtime, dict):
         raise ValueError(f"{source}: key, kind(asr|tts|speaker), and runtime are required")
+    if kind == 'music' and runtime.get('family') != 'native_music':
+        raise ValueError(f'{source}: unsupported native music family')
     streaming = bool(value.get("streaming", False))
     if kind == "asr":
         factory = runtime.get("factory")

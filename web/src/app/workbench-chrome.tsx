@@ -41,6 +41,7 @@ import type { DraftSession } from './use-draft-session';
 import { SpeechService, type SpeechPage } from '../features/api/speech-service';
 import { SchedulerStatus } from '../features/api/scheduler-status';
 import { ModelManagement } from '../features/api/model-management';
+import { BackgroundMusic } from '../features/music/background-music';
 const Settings = lazy(() => import('../features/settings/settings').then(module => ({ default: module.Settings })));
 const ApiDocumentation = lazy(() => import('../features/api/api-documentation').then(module => ({ default: module.ApiDocumentation })));
 const VoicePicker = lazy(() => import('../features/media/voice-picker').then(module => ({ default: module.VoicePicker })));
@@ -310,6 +311,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
               reuse={item => run(() => newDraft({ ...structuredClone(item.settings), id: crypto.randomUUID().replaceAll('-', ''), title: (item.title + t('@yovoice.draft.copySuffix')).slice(0, 120), createdAt: undefined, updatedAt: undefined }))} />
           </PageBoundary></VStack>)}
         </>}
+        {isVos ? <VStack className="page-panel" gap={0} style={{ display: page === 'background-music' ? 'flex' : 'none' }}><PageBoundary name="background-music"><BackgroundMusic active={page === 'background-music'} openModels={() => setPage('models-creative')} /></PageBoundary></VStack> : null}
 
       </VStack>} /></VStack>
     </VStack></AppShell>

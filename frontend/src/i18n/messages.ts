@@ -6,7 +6,13 @@ export const languageNames: Record<string, string> = { auto: '自动检测', zh:
 const languageLabels = new Set(Object.values(languageNames))
 
 export const messages: Record<string, Translation> = {
-  '需管理员在 Model Hub 提供原始权重': ['需管理員在 Model Hub 提供原始權重', 'Administrator-provided weights required in Model Hub'],
+  "原生配乐生成": ["原生配樂生成", "Native background-music generation"],
+  "配乐模型管理": ["配樂模型管理", "Music model management"],
+  "公共音乐扩展接口，返回 WAV 或 FLAC 二进制音频；不是 OpenAI 标准接口。直接调用与统一网关转发都受 V-Scheduler 准入控制，不复用旧 V-Music 凭据。": ["公共音樂擴充介面，傳回 WAV 或 FLAC 二進位音訊；不是 OpenAI 標準介面。直接呼叫與統一閘道轉發都受 V-Scheduler 准入控制，不重用舊 V-Music 憑證。", "Public music extension returning binary WAV or FLAC; not an OpenAI standard endpoint. Direct and gateway calls require V-Scheduler admission and do not reuse V-Music credentials."],
+  "模型：ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music、Stable Audio 3 Medium、MusicGen Small。MusicGen 最长 30 秒，其他模型 10–300 秒，且不能超过调度批准的输入上限。": ["模型：ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music、Stable Audio 3 Medium、MusicGen Small。MusicGen 最長 30 秒，其他模型 10–300 秒，且不能超過調度核准的輸入上限。", "Models: ACE-Step 1.5 Turbo, Stable Audio 3 Small-Music, Stable Audio 3 Medium and MusicGen Small. MusicGen supports up to 30 seconds; others support 10–300 seconds, within approved scheduling limits."],
+  "MusicGen 仅使用描述、种子与时长；其他音乐控制由支持的模型解释。生成失败不返回伪音频，503 表示模型、运行时或调度尚未就绪，429 表示计算繁忙，422 表示输入无效或超出批准范围。": ["MusicGen 僅使用描述、種子與時長；其他音樂控制由支援的模型解釋。生成失敗不傳回偽音訊，503 表示模型、執行階段或調度尚未就緒，429 表示計算忙碌，422 表示輸入無效或超出核准範圍。", "MusicGen uses description, seed and duration only; other controls depend on the model. Errors never return fake audio: 503 means model, runtime or scheduling is not ready; 429 means busy; 422 means invalid or unapproved inputs."],
+  "列出全部原生配乐模型、安装校验和运行时状态。POST /api/v1/music-models/{model}/{pull|stop|unload} 安装、停止下载或卸载，必须使用 VOS 模型管理员身份。权重由 V-Scheduler 从 ModelScope 安装并共享；正在生成时不能卸载。": ["列出全部原生配樂模型、安裝校驗和執行階段狀態。POST /api/v1/music-models/{model}/{pull|stop|unload} 安裝、停止下載或卸載，必須使用 VOS 模型管理員身分。權重由 V-Scheduler 從 ModelScope 安裝並共享；正在生成時不能卸載。", "Lists all native music models, installation verification and runtime status. POST /api/v1/music-models/{model}/{pull|stop|unload} installs, stops downloads or unloads; VOS model administrator identity is required. V-Scheduler installs and shares ModelScope weights; active generation cannot be unloaded."],
+  '需管理员在 V-Scheduler 提供原始权重': ['需管理員在 V-Scheduler 提供原始權重', 'Administrator-provided weights required in V-Scheduler'],
   '返回工作台': ['返回工作台', 'Back to workbench'],
   '音乐生成': ['音樂生成', 'Music generation'],
   '音乐、编曲与任务': ['音樂、編曲與任務', 'Music, scores and jobs'],
@@ -124,7 +130,7 @@ export const messages: Record<string, Translation> = {
   '卸载推理实例': ['卸載推理實例', 'Unload runtime'],
   '重新下载': ['重新下載', 'Download again'],
   '停止下载': ['停止下載', 'Stop download'],
-  '从 Model Hub 安装': ['從 Model Hub 安裝', 'Install from Model Hub'],
+  '从 V-Scheduler 安装': ['從 V-Scheduler 安裝', 'Install from V-Scheduler'],
   '热词管理': ['熱詞管理', 'Hotword management'],
   '保存常用热词集并在识别请求中直接引用。保存或更新时，服务端会自动生成模型所需的格式（Qwen3-ASR 提示词表、Zipformer contextual biasing 表），识别时与一次性热词合并去重。': ['儲存常用熱詞集並在辨識請求中直接引用。儲存或更新時，服務端會自動產生模型所需格式（Qwen3-ASR 提示詞表、Zipformer contextual biasing 表），辨識時與單次熱詞合併去重。', 'Save reusable hotword sets and reference them directly in recognition requests. On save or update, the server generates the formats required by Qwen3-ASR and Zipformer, then merges and deduplicates them with one-time hotwords during recognition.'],
   '刷新': ['重新整理', 'Refresh'],

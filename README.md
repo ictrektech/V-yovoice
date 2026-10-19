@@ -1,5 +1,25 @@
 ## V-Voice for VOS
 
+VOS adds a dedicated **Background music** page alongside the song editor and score
+workflow. It retains V-Music's four native models: ACE-Step 1.5 Turbo, Stable Audio 3
+Small-Music, Stable Audio 3 Medium and MusicGen Small. Install them from
+**Model management → Creator models and soundfonts → Native background-music models**.
+V-Scheduler installs the existing ModelScope repositories into the existing shared
+directory; weights are not copied into user storage or converted to GGUF.
+The page preserves prompt/negative prompt, duration, seed, BPM, key, meter,
+instrumental mode and WAV/FLAC preview/download. MusicGen accepts up to 30 seconds
+and uses prompt, duration and seed only; other adapters support their native controls.
+
+The public extension `POST /v1/audio/music/generations` returns binary WAV/FLAC.
+`GET /api/v1/music-models` reports all four models; VOS administrators can use
+`POST /api/v1/music-models/{model}/{pull|stop|unload}` for shared model management.
+Only verified, hardware-compatible models appear in discovery. Native PyTorch
+dependencies use a separate Python environment; each generation exits its worker
+before releasing compute. Existing ONNX/audio.cpp paths and model IDs remain intact.
+New native models require **V-Voice-specific** calibration and admission, not copied
+V-Music credentials. See [the Scheduler handoff](docs/native-music-scheduler-handoff.md)
+for the required binding fields and actual-node acceptance checks.
+
 Model management expands in the VOS sidebar into speech models and creator models/soundfonts;
 there is no second, easily missed category tab bar. VOS settings scroll independently.
 The settings model-management action stays inside the workbench; the standalone
@@ -28,14 +48,14 @@ V-Voice model catalog and APIs and adds the yovoice creation workbench/audio.cpp
 models. Model support is additive, not a replacement by a curated subset.
 All upstream downloadable model variants remain in the creation catalog;
 upstream import-only entries retain their source requirements. Models are shared
-through Model Hub from ModelScope, not downloaded separately per user.
+through V-Scheduler's built-in model repository from ModelScope, not downloaded separately per user.
 The VOS workbench and its dedicated API documentation page support English,
 Simplified Chinese and Traditional Chinese, following VOS or an app-local override.
 
 See [integration, public APIs, scheduling and rollback](docs/vos-integration.md)
 and [retained speech-service documentation](docs/v-voice-legacy.md).
 The VOS package requires the unified V-Scheduler app, which includes the gateway
-and retains the `v-router` service address; a separate V-Router installation is unnecessary.
+and model repository; separate V-Router and Model Hub installations are unnecessary.
 The sections below describe the original upstream desktop app; they do not imply
 that VOS images or releases have passed their release gates. Fork source and
 merge baseline are recorded in [UPSTREM](UPSTREM).
@@ -222,4 +242,4 @@ Bug reports, feature suggestions, and pull requests are welcome. Include your pl
 
 VOS 安装依赖统一应用 `com.ictrek.v-scheduler`，打包时从已发布的 GitHub Release 或应用商店解析依赖版本，查询失败则停止打包。模型管理默认地址为 `http://v-scheduler-model-hub:6005`；保留 `MODEL_HUB_API_URL` 配置键供现有安装升级使用，已有安装需将该参数切换到新地址。
 
-共享模型目录继续使用 `MODEL_HUB_SHARED_MODELS_PATH`（默认 `/data/vos_workspace/model_hub`），保留现有模型、导出路径和下载记录。统一模型网关仍使用 `http://v-router:8080/v1`；资源调度接口为 `http://v-router:8080/scheduler/api/v1`。接入及资源授权契约见 [V-Scheduler 接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md)。模型目录可见不代表本地推理已获调度授权。
+V-Scheduler 已内置模型仓库，无需独立安装 Model Hub。共享模型目录继续使用兼容配置键 `MODEL_HUB_SHARED_MODELS_PATH`（默认 `/data/vos_workspace/model_hub`），保留现有模型、导出路径和下载记录；这些历史命名不代表仍依赖旧应用。统一模型网关为 `http://v-scheduler-gateway:8080/v1`；资源调度接口为 `http://v-scheduler:38120/api/v1`。接入及资源授权契约见 [V-Scheduler 接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md)。模型目录可见不代表本地推理已获调度授权。

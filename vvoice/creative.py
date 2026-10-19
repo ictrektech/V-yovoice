@@ -1,4 +1,4 @@
-"""audio.cpp 模型目录映射；权重统一由 Model Hub 安装。"""
+"""audio.cpp 模型目录映射；权重统一由 V-Scheduler 内置模型仓库安装。"""
 from __future__ import annotations
 
 import json

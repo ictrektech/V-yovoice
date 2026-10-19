@@ -23,7 +23,7 @@ export function VosSettings({ openModels, state, catalog, draft, run }: { openMo
             if (value !== 'auto') run(() => call('preferences.save', { uiLocale: value as UiLocale }));
           }} />
       </SettingsRow>
-      <SettingsRow label="ModelScope · Model Hub" hint={t('@vvoice.models.sharedHint')}>
+      <SettingsRow label="ModelScope · V-Scheduler" hint={t('@vvoice.models.sharedHint')}>
         <Button data-testid="settings-open-models" variant="ghost" label={t('@vvoice.nav.models')} onClick={openModels} />
       </SettingsRow>
       <SettingsRow label="audio.cpp" hint={state.runtimeVersion ?? ''}>

@@ -23,6 +23,9 @@ ENV VVOICE_STUDIO_ENABLED=true VVOICE_SHARED_MODELS=true VVOICE_SCHEDULER_REQUIR
     LD_LIBRARY_PATH=/opt/vvoice/audiocpp:${LD_LIBRARY_PATH}
 ARG TARGETARCH
 ARG AUDIOCPP_BACKEND=cpu
+COPY docker/install_music_runtime.sh /opt/vvoice/install_music_runtime.sh
+RUN bash /opt/vvoice/install_music_runtime.sh
+ENV VVOICE_MUSIC_PYTHON=/opt/vvoice/music-python/bin/python
 COPY --from=studio_artifacts /linux-${TARGETARCH}/vvoice-studio /opt/vvoice/vvoice-studio
 COPY --from=studio_artifacts /web/ /opt/vvoice/web/
 COPY --from=audio /opt/audiocpp/ /opt/vvoice/audiocpp/

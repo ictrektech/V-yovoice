@@ -31,11 +31,14 @@ def model_limits(model: str) -> dict | None:
     if config.get("input_limits_version") != 1 or not isinstance(config["model_limits"], dict):
         raise HTTPException(503, "Input limit protocol required")
     limits = config["model_limits"].get(model)
-    expected = ({"text_characters", "speed_min", "speed_max"} if model == "kokoro-multilang"
+    from .music_catalog import catalog as music_catalog
+    music = any(item['key'] == model for item in music_catalog())
+    expected = ({"duration_seconds", "prompt_characters", "negative_prompt_characters"} if music else
+                {"text_characters", "speed_min", "speed_max"} if model == "kokoro-multilang"
                 else {"duration_seconds", "sample_rate", "hotwords_characters", "input_bytes"} if model == "sensevoice-int8" else set())
     if not isinstance(limits, dict) or not expected or set(limits) != expected:
         raise HTTPException(503, "Complete model input calibration required")
-    if any(type(value) not in (int, float) or not math.isfinite(value) or value < 0 or (value == 0 and name != "hotwords_characters") for name, value in limits.items()):
+    if any(type(value) not in (int, float) or not math.isfinite(value) or value < 0 or (value == 0 and name not in {"hotwords_characters", "negative_prompt_characters"}) for name, value in limits.items()):
         raise HTTPException(503, "Invalid model input calibration")
     if "speed_min" in limits and limits["speed_min"] > limits["speed_max"]:
         raise HTTPException(503, "Invalid calibrated speed range")
@@ -250,6 +253,10 @@ class AdmissionMiddleware:
         async def guarded_receive():
             nonlocal received_bytes
             message = await receive()
+            if scope['type'] == 'http' and scope.get('path') == '/v1/audio/music/generations':
+                received_bytes += len(message.get('body', b''))
+                if received_bytes > 65536:
+                    raise HTTPException(413, 'Music request exceeds upload limit')
             if scope["type"] == "http" and scope.get("path") in {"/transcribe", "/v1/audio/transcriptions", "/v1/audio/translations", "/v1/audio/speech"}:
                 config = configuration()
                 if "model_limits" in config:

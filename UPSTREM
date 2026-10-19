@@ -7,7 +7,11 @@ Integration baseline: fe3629a07baaba2676c33fbe0ce35eefe2086b9c
 Downstream: git@github.com:ictrektech/V-yovoice.git
 
 This fork hosts the next V-Voice: retain upstream voice-creation features while
-preserving V-Voice APIs, Model Hub / ModelScope management, and VOS releases.
+preserving V-Voice APIs, V-Scheduler / ModelScope management, and VOS releases.
+
+Additional integration source: git@github.com:ictrektech/V-Music.git
+V-Music baseline: 4033fbd9620d5db56d9b14dcd2c5ededca61d0ce
+Native music adapters and ModelScope model IDs are retained separately from audio.cpp GGUF models.
 
 Periodic updates (run locally, never on build hosts):
   git remote add upstream https://github.com/leemysw/yovoice.git

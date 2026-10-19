@@ -3,8 +3,8 @@ name:
   zh-CN: V-Voice
   en: V-Voice
 description:
-  zh-CN: 公共语音服务与声音创作工作台，提供 ASR、声音克隆、TTS、共享模型管理和 OpenAI 兼容 API。
-  en: Shared speech service and voice studio with ASR, voice cloning, TTS, model management, and OpenAI-compatible APIs.
+  zh-CN: 语音与音乐创作工作台，提供 ASR、声纹、声音克隆、TTS、歌曲与配乐生成、编曲、共享模型管理和标准 API。
+  en: Speech and music studio with ASR, speaker recognition, voice cloning, TTS, songs, background music, scores, shared models and standard APIs.
 version: __APP_VERSION__
 author: ictrek
 oauth2:
@@ -40,8 +40,8 @@ permissions:
         zh-CN: 管理公共语音模型
         en: Manage Public Voice Models
       description:
-        zh-CN: 允许管理员通过 Model Hub 安装、更新和停止 V-Voice 公共模型。
-        en: Allows administrators to install, update, and stop public V-Voice models through Model Hub.
+        zh-CN: 允许管理员通过 V-Scheduler 安装、更新和停止 V-Voice 公共模型。
+        en: Allows administrators to install, update, and stop public V-Voice models through V-Scheduler.
       default_roles: [system_admin, platform_admin]
 
 profiles:

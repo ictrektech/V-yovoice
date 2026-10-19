@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# V-Scheduler 内置模型仓库客户端；模块名和配置键保留兼容，不依赖独立 Model Hub 应用。
+
 from typing import Any
 import asyncio
 from concurrent.futures import Future
@@ -103,16 +105,16 @@ async def list_models(items: list[dict[str, Any]] | None = None) -> list[dict[st
     result = []
     # 小模型优先，避免一个大权重阻塞旧 ASR 目录和所有其他已安装模型。
     checks = {item["key"]: _shared_status(item) for item in sorted(
-        (row for row in items if row.get("backend") == "audio.cpp"),
+        (row for row in items if row.get("backend") in {"audio.cpp", "pytorch"}),
         key=lambda row: sum(file["size"] for file in row["shared_files"]))}
     for item in items:
         repo = item["modelscope_repo"]
         root = model_root(item)
         state = hub.get(repo, {})
         descriptor_installed = (root / "vvoice-model.json").is_file() or (
-            item.get("backend") == "audio.cpp" and any((root / f["path"]).is_file() for f in item.get("shared_files", []))
+            item.get("backend") in {"audio.cpp", "pytorch"} and any((root / f["path"]).is_file() for f in item.get("shared_files", []))
         )
-        ready, validation_error = (checks[item["key"]] if item.get("backend") == "audio.cpp"
+        ready, validation_error = (checks[item["key"]] if item.get("backend") in {"audio.cpp", "pytorch"}
                                    else await asyncio.to_thread(model_files_ready, item)) if descriptor_installed else (False, "")
         hub_status = str(state.get("status") or "not_installed").lower()
         # 一个共享仓库含多个模型，不能把其他已下载文件或其他任务的状态当成本模型就绪。
@@ -144,12 +146,17 @@ class ImportRequiredError(ValueError):
     """仅导入模型不能生成一个不存在的远程下载任务。"""
 
 
+def management_catalog():
+    from .music_catalog import catalog as music_catalog
+    return [*catalog(), *music_catalog()]
+
+
 async def pull_model(key: str, force: bool = False) -> dict[str, Any]:
-    item = next((row for row in catalog() if row["key"] == key), None)
+    item = next((row for row in management_catalog() if row["key"] == key), None)
     if item is None:
         raise KeyError(key)
     if item.get("import_required"):
-        raise ImportRequiredError("Model requires administrator-provided weights in Model Hub")
+        raise ImportRequiredError("Model requires administrator-provided weights in V-Scheduler")
     root = model_root(item)
     if not force and item.get("shared_files") and all((root / file["path"]).is_file() for file in item["shared_files"]):
         ready, _ = await asyncio.to_thread(model_files_ready, item)
@@ -173,7 +180,7 @@ async def pull_model(key: str, force: bool = False) -> dict[str, Any]:
 
 
 async def cancel_model(key: str) -> dict[str, Any]:
-    item = next((row for row in catalog() if row["key"] == key), None)
+    item = next((row for row in management_catalog() if row["key"] == key), None)
     if item is None:
         raise KeyError(key)
     async with httpx.AsyncClient(timeout=30) as client:

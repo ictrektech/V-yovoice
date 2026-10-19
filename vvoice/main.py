@@ -41,9 +41,20 @@ from .runtime import (
 from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore
 from .transcript import normalize_transcript, subtitle
 from .admission import AdmissionMiddleware, run_blocking, admit_model
+from .music_catalog import catalog as native_music_catalog, runtime_settings as music_runtime_settings, supported as music_supported
+from .music import models as native_music_models
+
+
+async def music_discovery():
+    return [{"id": row['key'], "object": "model", "owned_by": "v-voice", "kind": "music",
+             "capabilities": row['capabilities'], "endpoints": ['audio/music/generations']}
+            for row in await native_music_models()
+            if row['status'] == 'ready' and music_supported(row, detect_provider())]
 
 
 app = FastAPI(title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
+from .music import router as music_router
+app.include_router(music_router)
 if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
     app.add_middleware(AdmissionMiddleware)
 
@@ -109,7 +120,7 @@ class SchedulerBindingDocument(BaseModel):
     protocol_version: Literal[1]
     binding_revision: int = Field(ge=1)
     app_id: Literal["com.ictrek.v-voice"]
-    url: str = Field(description="Fixed VVOICE_SCHEDULER_URL; normally http://v-router:8080/scheduler/api/v1")
+    url: str = Field(description="Must match fixed VVOICE_SCHEDULER_URL. Default uses V-Scheduler's retained compatibility alias http://v-router:8080/scheduler/api/v1; the unified controller is http://v-scheduler:38120/api/v1.")
     token: str = Field(min_length=32, max_length=4096, json_schema_extra={"writeOnly": True})
     executor_token: str = Field(min_length=32, max_length=4096, json_schema_extra={"writeOnly": True})
     upstream_url: str = Field(description="Must match V-Voice's advertised native upstream URL")
@@ -118,6 +129,7 @@ class SchedulerBindingDocument(BaseModel):
     secondary_models: dict[str, list[str]] = Field(default_factory=dict)
     input_limits_version: Literal[1] | None = None
     model_limits: dict[str, dict[str, float]] | None = None
+    execution_settings: dict | None = Field(None, description="Calibrated runtime settings advertised by the scheduler contract; native music uses the music member.")
 
 
 class WorkbenchCallDocument(BaseModel):
@@ -230,7 +242,7 @@ async def discovery():
         "authentication": "none",
         "base_url": "http://v-voice-backend:7070/v1",
         "health_path": "/health",
-        "models": models,
+        "models": models + await music_discovery(),
         "scheduler": scheduler_contract(),
     }
 
@@ -250,7 +262,8 @@ def scheduler_contract() -> dict:
         "executor_base_url": "http://v-voice-backend:7070",
         "upstream_url": "http://v-voice-backend:7070/v1",
         "sync_models": [{"id": row["key"], "kind": row["kind"], "task_type": "model.infer"}
-                        for row in catalog()],
+                        for row in [*catalog(), *native_music_catalog()]],
+        "execution_settings": {"music": music_runtime_settings()},
         "async_models": [{"id": row["id"], "family": row["family"], "task_type": "voice.generate",
                           "weight_bytes": row["size"]} for row in asynchronous],
         "num_threads": settings.num_threads,
@@ -269,11 +282,14 @@ async def managed_models():
 async def creative_model_inventory():
     """All creator precisions and soundfonts; management metadata, not speech discovery."""
     from .creative import models as creative_models
-    return await list_models(creative_models(include_non_speech=True))
+    return await list_models([*creative_models(include_non_speech=True), *native_music_catalog()])
 
 
 @app.post("/api/v1/models/{key}/pull", status_code=202)
-async def pull(key: str, force: bool = False):
+async def pull(key: str, request: Request, force: bool = False):
+    if any(row['key'] == key for row in native_music_catalog()):
+        from .music import manage
+        return await manage(key, 'pull', request, force)
     try:
         return await pull_model(key, force)
     except KeyError:
@@ -281,21 +297,27 @@ async def pull(key: str, force: bool = False):
     except ImportRequiredError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Model Hub pull failed: {exc}") from exc
+        raise HTTPException(status_code=502, detail="V-Scheduler model download failed") from exc
 
 
 @app.post("/api/v1/models/{key}/stop")
-async def stop(key: str):
+async def stop(key: str, request: Request):
+    if any(row['key'] == key for row in native_music_catalog()):
+        from .music import manage
+        return await manage(key, 'stop', request)
     try:
         return await cancel_model(key)
     except KeyError:
         raise HTTPException(status_code=404, detail="model not found") from None
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Model Hub cancel failed: {exc}") from exc
+        raise HTTPException(status_code=502, detail="V-Scheduler model download cancellation failed") from exc
 
 
 @app.post("/api/v1/models/{key}/unload")
-async def unload(key: str):
+async def unload(key: str, request: Request):
+    if any(row['key'] == key for row in native_music_catalog()):
+        from .music import manage
+        return await manage(key, 'unload', request)
     registry.unload(key)
     return {"status": "unloaded", "model": key}
 

@@ -1,16 +1,16 @@
 configs:
   - name: MODEL_HUB_SHARED_MODELS_PATH
     type: path
-    title: {zh-CN: Model Hub 共享模型目录, en: Model Hub Shared Models Path}
+    title: {zh-CN: V-Scheduler 共享模型目录, en: V-Scheduler Shared Models Path}
     description:
-      zh-CN: 与 Model Hub 相同的公共目录；所有 V-Voice 用户共享已安装模型。
-      en: Shared Model Hub directory; installed V-Voice models are shared by all users.
+      zh-CN: V-Scheduler 的公共模型目录；所有 V-Voice 用户共享已安装模型。保留旧配置键和目录以兼容升级。
+      en: V-Scheduler shared model directory; installed models are shared by all V-Voice users. The legacy configuration key and path remain upgrade-compatible.
     default: /data/vos_workspace/model_hub
     hints: [com.ictrek.model.storage]
   - name: MODEL_HUB_API_URL
     type: string
-    title: {zh-CN: Model Hub API 地址, en: Model Hub API URL}
-    description: {zh-CN: VOS 网络内的 Model Hub 后端地址。, en: Model Hub backend URL inside the VOS network.}
+    title: {zh-CN: V-Scheduler 模型仓库 API 地址, en: V-Scheduler Model Repository API URL}
+    description: {zh-CN: V-Scheduler 内置模型仓库的容器网络地址，无需独立安装 Model Hub。, en: Container-network URL of the model repository built into V-Scheduler; no separate Model Hub installation is required.}
     default: http://v-scheduler-model-hub:6005
   - name: VVOICE_NUM_THREADS
     type: integer

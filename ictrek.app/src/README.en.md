@@ -1,6 +1,14 @@
 # V-Voice
 
-The additional `seaco-paraformer-zh` model is installed through Model Hub from
+The unified workbench includes speech, songs, scores and a Background music page.
+Native music supports ACE-Step 1.5 Turbo, Stable Audio 3 Small-Music / Medium and
+MusicGen Small. Install them in Model management → Creator models and soundfonts
+through V-Scheduler / ModelScope, then preview and download WAV/FLAC.
+The public music extension is `POST /v1/audio/music/generations`; MusicGen supports
+up to 30 seconds. Installed models still require V-Voice-specific resource
+calibration and scheduling approval. Existing song, score and speech features remain.
+
+The additional `seaco-paraformer-zh` model is installed through V-Scheduler from
 `vivibit/v-voice-seaco-paraformer-zh-int8`. It uses CPU ONNX Runtime on every profile,
 with two INT8 ONNX graphs and no PyTorch/FunASR inference dependency. It supports
 Chinese batch transcription and request-scoped neural hotwords (inline, UTF-8 file,
@@ -9,8 +17,9 @@ No bias score is needed. Translation, streaming and word timestamps are not expo
 The existing `paraformer-zh` remains available.
 
 V-Voice is a public ASR / streaming ASR / TTS / speaker-recognition service powered
-by ONNX runtimes. Models are installed through Model Hub and shared globally. V-Router
-registers every capability as a public model through the discovery endpoint.
+by ONNX runtimes. Models are installed through V-Scheduler's built-in model repository
+and shared globally. Its gateway discovers public capabilities through the discovery endpoint.
+No separate Model Hub or V-Router installation is required.
 
 Host OpenAI-compatible endpoint: `http://<VOS-IP>:22700/v1`.
 
