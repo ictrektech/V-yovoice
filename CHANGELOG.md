@@ -2,6 +2,18 @@
 
 各版本的重要更新记录。日常改动记入 `Unreleased`；发布前合并重复项，整理为简短的功能、改进和修复说明。
 
+## [0.0.21] - 2026-10-19
+
+### 简体中文
+- 新增「配乐生成」，整合 V-Music 的 ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music / Medium、MusicGen Small，支持生成参数、WAV/FLAC 试听下载和多语言 API 文档。
+- 配乐模型统一纳入创作模型管理，复用公开 ModelScope 权重与 V-Scheduler 共享存储、输入限制和资源调度；与旧 ASR、TTS、声纹及创作审批共存，保留旧接口与上传配置。
+- 降低低内存设备 CPU 语音模型卸载后的常驻占用，统一遵循强制 CPU 配置；优化 Stable Audio GPU 权重加载，修复配乐子进程生命周期及各平台运行时依赖。
+
+### English
+- Add background music generation with V-Music's ACE-Step 1.5 Turbo, Stable Audio 3 Small-Music / Medium and MusicGen Small, generation controls, WAV/FLAC playback and download, and multilingual API documentation.
+- Unify music model management with public ModelScope weights and V-Scheduler storage, bounded inputs and admission. Preserve existing ASR, TTS, speaker and creation approvals, APIs and upload settings.
+- Reduce retained CPU speech memory after unloading, honor CPU model configuration consistently, optimize Stable Audio GPU loading, and fix music worker lifecycle and platform runtime dependencies.
+
 ## [0.0.20] - 2026-10-19
 
 ### 简体中文
@@ -12,15 +24,6 @@
 
 ## [Unreleased]
 
-- 原生配乐与旧语音审批可安全共存，保留旧 ASR 大文件上传和 TTS 接口；配乐超限输入在申请资源前拒绝，无效混合审批不会覆盖已有配置。
-
-- AMD CUDA 的音乐环境独立使用受校验的 Python 3.12，兼容 ACE-Step 依赖，同时保留原语音服务的 Python 与 ONNX 环境。
-- Stable Audio 在 CPU 上转换最终 FP16 权重后再迁移到 GPU，避免先分配完整 FP32 CUDA 权重；CPU 推理精度保持不变。
-- 修复 L4T 音乐依赖安装的软件源与 CUDA Torch 继承，GPU 镜像缺少 CUDA 推理依赖时明确阻止构建。
-- CPU 语音模型卸载或被 LRU 替换后回收无引用对象并尝试归还空闲堆内存，降低低内存设备的常驻占用；TTS、声纹与 ASR 一致遵循强制 CPU 模型列表。
-- 修复 VOS 容器主进程为 PID 1 时原生配乐子进程被误判为失去宿主的问题；保留宿主退出和租约失效时的停止保护。
-- VOS 新增「配乐生成」，整合 V-Music 的 ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music / Medium、MusicGen Small，以及生成参数、WAV/FLAC 试听下载；原生模型并入创作模型管理并复用 V-Scheduler / ModelScope 共享模型，公共配乐 API 与多语言文档同步增加，原有歌曲和编曲功能保留。
-- VOS 界面、模型管理和安装说明统一标注 V-Scheduler，模型下载、共享存储与推理调度均接入统一应用；保留旧配置键和共享目录以兼容已有安装，不再误导用户安装独立 Model Hub。
 - AI 写作栏（写谱、写歌词）未配置时移除快捷连接按钮，统一通过“设置 AI”进入配置；打开 AI 设置时默认聚焦服务列表首项；右侧检查器移除“返回正文”按钮，窄屏下展开时保持与宽屏一致的面板宽度浮出，不再全屏覆盖正文。
 - 音频读不到（如文件已被删除）时，播放器与故事时间线直接标出不可用，不再主动弹出“音频无法播放”，只在试听或播放时说明原因；打开作品只预读音频时长，再次试听同一段音频不再重新读取；弹窗背景去掉模糊，修复 macOS 上弹窗背后出现一圈边线的问题。
 - 作品、音色、模型和设置改为保存在数据目录的 SQLite 数据库 `yovoice.db`：每次保存在一个事务中只写入改动的内容，断电或崩溃不会留下写了一半的数据，作品较多时保存也不再越来越慢；每次启动自动备份为 `yovoice.backup.db`，数据库损坏时自动从备份恢复并保留损坏原件。升级后首次启动自动导入原来的 `state.json`（原文件改名为 `state.migrated.json` 保留），本机接口设置和 AI 密钥也一并移入数据库，迁移数据目录后不再丢失。
