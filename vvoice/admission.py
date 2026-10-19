@@ -20,13 +20,52 @@ from fastapi import HTTPException
 current: contextvars.ContextVar[Execution | None] = contextvars.ContextVar("vvoice_execution", default=None)
 
 
+def _pin_validated_binding(config: dict) -> None:
+    execution = current.get()
+    if execution is not None:
+        if execution.validated_binding is not None and execution.validated_binding != config:
+            raise HTTPException(503, "Input calibration changed; retry request")
+        execution.validated_binding = config
+
+
+def _mixed_legacy_models(config: dict) -> set[str]:
+    if 'mixed_input_limits_version' not in config and 'legacy_unbounded_models' not in config:
+        return set()
+    legacy, models, limits = (config.get('legacy_unbounded_models'), config.get('models'), config.get('model_limits'))
+    if (type(config.get('mixed_input_limits_version')) is not int or config['mixed_input_limits_version'] != 1 or
+            type(config.get('input_limits_version')) is not int or config['input_limits_version'] != 1 or
+            not isinstance(legacy, list) or not 0 < len(legacy) <= 512 or
+            not all(isinstance(key, str) and key for key in legacy) or
+            len(set(legacy)) != len(legacy) or not isinstance(models, dict) or not models or
+            not isinstance(limits, dict) or not limits or
+            set(legacy) & set(limits) or set(legacy) | set(limits) != set(models)):
+        raise HTTPException(503, 'Invalid mixed input calibration')
+    from .music_catalog import catalog as music_catalog
+    if set(legacy) & {item['key'] for item in music_catalog()}:
+        raise HTTPException(503, 'Native music always requires bounded input calibration')
+    return set(legacy)
+
+
+@functools.lru_cache(maxsize=1)
+def _creative_input_aliases() -> dict[str, str]:
+    from .creative import models
+    return {item['key']: item['runtime']['model_id'] for item in models(include_non_speech=True)}
+
+
 def model_limits(model: str) -> dict | None:
     if os.getenv("VVOICE_SCHEDULER_REQUIRED") != "true":
         return None
     config = configuration()
+    legacy = _mixed_legacy_models(config)
+    # 仅归一已知创作目录的输入校验别名，不改变同步/异步执行器和许可授权。
+    legacy_key = model if model in config.get('models', {}) else _creative_input_aliases().get(model, model)
+    if legacy_key in legacy:
+        _pin_validated_binding(config)
+        return None
     if "model_limits" not in config:
         if config.get("input_limits_version"):
             raise HTTPException(503, "Complete model input calibration required")
+        _pin_validated_binding(config)
         return None
     if config.get("input_limits_version") != 1 or not isinstance(config["model_limits"], dict):
         raise HTTPException(503, "Input limit protocol required")
@@ -42,11 +81,7 @@ def model_limits(model: str) -> dict | None:
         raise HTTPException(503, "Invalid model input calibration")
     if "speed_min" in limits and limits["speed_min"] > limits["speed_max"]:
         raise HTTPException(503, "Invalid calibrated speed range")
-    execution = current.get()
-    if execution is not None:
-        if execution.validated_binding is not None and execution.validated_binding != config:
-            raise HTTPException(503, "Input calibration changed; retry request")
-        execution.validated_binding = config
+    _pin_validated_binding(config)
     return limits
 
 
@@ -261,7 +296,11 @@ class AdmissionMiddleware:
                 config = configuration()
                 if "model_limits" in config:
                     received_bytes += len(message.get("body", b""))
-                    if received_bytes > 1048576 + 65536:
+                    maximum = 1048576
+                    if _mixed_legacy_models(config):
+                        from .config import settings
+                        maximum = settings.max_upload_mb * 1024 * 1024
+                    if received_bytes > maximum + 65536:
                         raise HTTPException(413, "Request exceeds calibrated upload limit")
             return message
         token = current.set(execution)

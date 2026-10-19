@@ -47,6 +47,58 @@ func bindRequest(s *Server, subject string, config SchedulerConfig) *httptest.Re
 	return w
 }
 
+func TestMixedBindingJSONRoundTripAndInvalidRotation(t *testing.T) {
+	changes := map[string]func(map[string]any){
+		"missing protocol":   func(v map[string]any) { delete(v, "mixed_input_limits_version") },
+		"zero protocol":      func(v map[string]any) { v["mixed_input_limits_version"] = 0 },
+		"unknown protocol":   func(v map[string]any) { v["mixed_input_limits_version"] = 2 },
+		"missing legacy":     func(v map[string]any) { delete(v, "legacy_unbounded_models") },
+		"duplicate legacy":   func(v map[string]any) { v["legacy_unbounded_models"] = []string{"kokoro-82m-q8", "kokoro-82m-q8"} },
+		"unapproved legacy":  func(v map[string]any) { v["legacy_unbounded_models"] = []string{"unknown"} },
+		"overlapping legacy": func(v map[string]any) { v["legacy_unbounded_models"] = []string{"kokoro-82m-q8", "sensevoice-int8"} },
+		"uncovered model":    func(v map[string]any) { v["models"].(map[string]any)["whisper-tiny"] = "voice.infer" },
+		"native exemption": func(v map[string]any) {
+			v["models"].(map[string]any)["musicgen-small"] = "voice.infer"
+			v["legacy_unbounded_models"] = []string{"kokoro-82m-q8", "musicgen-small"}
+		},
+	}
+	for name, change := range changes {
+		t.Run(name, func(t *testing.T) {
+			s, config := bindingFixture(t)
+			version := 1
+			config.MixedInputLimitsVersion = &version
+			config.InputLimitsVersion = 1
+			config.LegacyUnboundedModels = []string{"kokoro-82m-q8"}
+			config.ModelLimits = map[string]map[string]float64{"sensevoice-int8": {"duration_seconds": 20, "sample_rate": 24000, "hotwords_characters": 0, "input_bytes": 1048576}}
+			if response := bindRequest(s, schedulerAppID, config); response.Code != 200 {
+				t.Fatalf("mixed binding rejected: %d %s", response.Code, response.Body.String())
+			}
+			stored, err := readSchedulerConfig(s.SchedulerPath)
+			if err != nil || stored.MixedInputLimitsVersion == nil || *stored.MixedInputLimitsVersion != 1 || len(stored.LegacyUnboundedModels) != 1 || stored.LegacyUnboundedModels[0] != "kokoro-82m-q8" {
+				t.Fatal("mixed JSON fields lost on disk")
+			}
+			before, _ := os.ReadFile(s.SchedulerPath)
+			config.BindingRevision++
+			encoded, _ := json.Marshal(config)
+			var document map[string]any
+			json.Unmarshal(encoded, &document)
+			change(document)
+			encoded, _ = json.Marshal(document)
+			r := httptest.NewRequest("POST", "/api/v1/scheduler/binding", bytes.NewReader(encoded))
+			r.Header.Set("Authorization", "Bearer "+schedulerAppID)
+			response := httptest.NewRecorder()
+			s.ServeHTTP(response, r)
+			if response.Code < 400 {
+				t.Fatal("invalid mixed rotation accepted")
+			}
+			after, _ := os.ReadFile(s.SchedulerPath)
+			if !bytes.Equal(before, after) {
+				t.Fatal("invalid rotation replaced approved binding")
+			}
+		})
+	}
+}
+
 func TestBindingPreservesCalibratedInputLimits(t *testing.T) {
 	server, config := bindingFixture(t)
 	config.InputLimitsVersion = 1

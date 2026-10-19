@@ -82,6 +82,25 @@ func validateBinding(config SchedulerConfig) error {
 	if len(config.SecondaryModels) > 512 {
 		return fmt.Errorf("too many combined bindings")
 	}
+	if config.MixedInputLimitsVersion != nil || config.LegacyUnboundedModels != nil {
+		if config.MixedInputLimitsVersion == nil || *config.MixedInputLimitsVersion != 1 || config.InputLimitsVersion != 1 ||
+			len(config.LegacyUnboundedModels) == 0 || len(config.LegacyUnboundedModels) > 512 || len(config.ModelLimits) == 0 {
+			return fmt.Errorf("invalid mixed calibrated input protocol")
+		}
+		legacy := map[string]bool{}
+		for _, model := range config.LegacyUnboundedModels {
+			_, bounded := config.ModelLimits[model]
+			if !bindingID.MatchString(model) || config.Models[model] == "" || legacy[model] || bounded || nativeMusicModel(model) {
+				return fmt.Errorf("invalid legacy input exemption")
+			}
+			legacy[model] = true
+		}
+		for model := range config.Models {
+			if _, bounded := config.ModelLimits[model]; !bounded && !legacy[model] {
+				return fmt.Errorf("mixed input calibration must cover every model")
+			}
+		}
+	}
 	if config.ModelLimits != nil || config.InputLimitsVersion != 0 {
 		if config.InputLimitsVersion != 1 || len(config.ModelLimits) == 0 || len(config.ModelLimits) > 512 {
 			return fmt.Errorf("invalid calibrated input protocol")

@@ -259,6 +259,8 @@ Bug reports, feature suggestions, and pull requests are welcome. Include your pl
 [Apache-2.0](LICENSE). Dependencies retain their [original licenses](THIRD_PARTY_NOTICES.md); IndexTTS models are covered separately by their [model license](web/public/model-license.txt).
 # V-Scheduler 接入
 
+新旧审批共存时，服务发现声明 `mixed_input_limits_version: 1`；调度绑定必须同时携带同版本及明确的 `legacy_unbounded_models`。旧模型名单与 `model_limits` 不得重叠，两者必须恰好覆盖已批准的 `models`。四个原生配乐模型始终要求独立的有界输入校准，不能进入旧模型名单。无效绑定被拒绝并保留上一份审批；输入校验和许可获取期间绑定变化时要求重试，避免跨版本使用预算。旧创作模型的目录别名仅用于输入校验，不授予额外同步执行器或改变原有异步任务类型。
+
 VOS 安装依赖统一应用 `com.ictrek.v-scheduler`，打包时从已发布的 GitHub Release 或应用商店解析依赖版本，查询失败则停止打包。模型管理默认地址为 `http://v-scheduler-model-hub:6005`；保留 `MODEL_HUB_API_URL` 配置键供现有安装升级使用，已有安装需将该参数切换到新地址。
 
 V-Scheduler 已内置模型仓库，无需独立安装 Model Hub。共享模型目录继续使用兼容配置键 `MODEL_HUB_SHARED_MODELS_PATH`（默认 `/data/vos_workspace/model_hub`），保留现有模型、导出路径和下载记录；这些历史命名不代表仍依赖旧应用。统一模型网关为 `http://v-scheduler-gateway:8080/v1`；资源调度接口为 `http://v-scheduler:38120/api/v1`。接入及资源授权契约见 [V-Scheduler 接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md)。模型目录可见不代表本地推理已获调度授权。

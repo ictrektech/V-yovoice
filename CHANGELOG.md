@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+- 原生配乐与旧语音审批可安全共存，保留旧 ASR 大文件上传和 TTS 接口；配乐超限输入在申请资源前拒绝，无效混合审批不会覆盖已有配置。
+
 - AMD CUDA 的音乐环境独立使用受校验的 Python 3.12，兼容 ACE-Step 依赖，同时保留原语音服务的 Python 与 ONNX 环境。
 - Stable Audio 在 CPU 上转换最终 FP16 权重后再迁移到 GPU，避免先分配完整 FP32 CUDA 权重；CPU 推理精度保持不变。
 - 修复 L4T 音乐依赖安装的软件源与 CUDA Torch 继承，GPU 镜像缺少 CUDA 推理依赖时明确阻止构建。

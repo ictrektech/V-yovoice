@@ -128,6 +128,8 @@ class SchedulerBindingDocument(BaseModel):
     gateway_executors: dict[str, str] = Field(default_factory=dict)
     secondary_models: dict[str, list[str]] = Field(default_factory=dict)
     input_limits_version: Literal[1] | None = None
+    mixed_input_limits_version: Literal[1] | None = None
+    legacy_unbounded_models: list[str] | None = Field(None, description="Explicit old approvals only; disjoint from model_limits, together covering models. Native music cannot be exempted. Does not grant an executor or alter task types.")
     model_limits: dict[str, dict[str, float]] | None = None
     execution_settings: dict | None = Field(None, description="Calibrated runtime settings advertised by the scheduler contract; native music uses the music member.")
 
@@ -257,6 +259,7 @@ def scheduler_contract() -> dict:
     return {
         "protocol_version": 1,
         "input_limits_version": 1,
+        "mixed_input_limits_version": 1,
         "app_id": settings.app_id,
         "binding_endpoint": "/api/v1/scheduler/binding",
         "executor_base_url": "http://v-voice-backend:7070",
