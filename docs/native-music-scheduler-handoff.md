@@ -36,3 +36,37 @@ V-Voice 合入 V-Music 的 4 个原生权重模型，仍使用 `com.ictrek.v-voi
    不得提前释放资源预算。
 
 本文是契约交接，不是校准数据。没有以上批准不能声称完整生产调度链路已验收。
+
+## 229 隔离联调入口
+
+- 隔离容器：`v-voice-music-handoff-qa`，VOS 网络地址
+  `http://v-voice-music-handoff-qa:7070`；主机仅绑定 `127.0.0.1:22709`。
+- 独立数据与 binding：`/home/jhu/dev/build/v-yovoice/music-merge/handoff-data`；
+  共享权重和生产卷只读挂载，并以独立目录覆盖 `/data`，不复制原应用凭据。
+- `VVOICE_SCHEDULER_UPSTREAM_URL` 固定为隔离地址的 `/v1`。
+  discovery 的生产兼容地址仍为 `v-voice-backend`；联调必须显式指定上述隔离地址，
+  不得由此覆盖生产服务注册或 binding。
+- 使用新 Go 二进制，binding 更新仍验证真实 Scheduler 的 VOS 应用身份。
+  不伪造校准记录，不关闭 Scheduler 准入。
+- 当前隔离资源上限 CPU 4 核、内存 12 GiB；这不是批准预算或模型峰值结论。
+  真实校准前应按节点余量协调隔离资源上限，避免把容器内存限制当成硬件不支持。
+
+源码同步后，在 229 执行以下只读探针（不执行推理）：
+
+```bash
+python3 /home/jhu/dev/repos/V-yovoice/scripts/check-native-music-handoff.py
+```
+
+探针的 `READ_ONLY_PASS` 仅表示接口及四模型声明完整，文件仍可能在后台校验。
+批准后可显式执行真实十秒生成，输出路径必须不存在：
+
+```bash
+python3 /home/jhu/dev/repos/V-yovoice/scripts/check-native-music-handoff.py \
+  --generate musicgen-small \
+  --output /home/jhu/dev/build/v-yovoice/music-merge/musicgen-approved.wav
+```
+
+输出 WAV 格式检查不代替听音、时长、资源峰值、单次许可及停止确认验收。
+重建隔离容器前必须先检查现有测试是否活跃；启动脚本遇到同名容器会拒绝覆盖：
+`bash scripts/start-native-music-handoff.sh <已核对的生产V-Voice容器名>`。
+该测试镜像不属于正式发布镜像，不能据此声称六平台构建或版本发布完成。

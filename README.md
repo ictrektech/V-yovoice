@@ -19,6 +19,9 @@ before releasing compute. Existing ONNX/audio.cpp paths and model IDs remain int
 New native models require **V-Voice-specific** calibration and admission, not copied
 V-Music credentials. See [the Scheduler handoff](docs/native-music-scheduler-handoff.md)
 for the required binding fields and actual-node acceptance checks.
+The handoff also documents the isolated 229 endpoint and
+`scripts/check-native-music-handoff.py`: read-only by default, real generation only
+with explicit `--generate` after calibration; never a substitute for full release QA.
 
 Model management expands in the VOS sidebar into speech models and creator models/soundfonts;
 there is no second, easily missed category tab bar. VOS settings scroll independently.
