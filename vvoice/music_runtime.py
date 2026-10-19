@@ -114,7 +114,9 @@ class RuntimeRegistry:
                 raise FileNotFoundError(f"model files are incomplete: {root}")
 
             import torch
-            from stable_audio_3.loading_utils import load_diffusion_cond
+            from safetensors.torch import load_file
+            from stable_audio_3.factory import create_diffusion_cond_from_config
+            from stable_audio_3.loading_utils import copy_state_dict
             from stable_audio_3.model import StableAudioModel
 
             device = detect_provider()
@@ -126,13 +128,13 @@ class RuntimeRegistry:
                 if conditioner.get("type") == "t5gemma":
                     conditioner.setdefault("config", {})["repo_id"] = str(root)
 
-            model = load_diffusion_cond(
-                model_config,
-                str(checkpoint_path),
-                device=device,
-                model_half=device == "cuda",
-            )
-            model.eval().requires_grad_(False)
+            model = create_diffusion_cond_from_config(model_config)
+            copy_state_dict(model, load_file(str(checkpoint_path)))
+            # 固定版本的上游加载器先搬运 FP32 再降精度；在 CPU 完成转换，
+            # 避免大模型无谓的 CUDA 瞬态分配，最终推理精度保持不变。
+            if device == "cuda":
+                model.to(torch.float16)
+            model.to(device).eval().requires_grad_(False)
             value = StableAudioModel(model, model_config, device, device == "cuda")
             return self._remember(key, value)
 
