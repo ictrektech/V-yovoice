@@ -166,6 +166,9 @@ try {
   }
   await page.setViewportSize({ width: 900, height: 800 });
   assert(await music.evaluate(element => element.scrollWidth <= element.clientWidth + 1), 'background-music form overflowed the narrow viewport');
+  const introBox = await music.locator('header p').boundingBox();
+  const modelLabelBox = await music.getByText('Music model', { exact: true }).boundingBox();
+  assert(introBox.y + introBox.height <= modelLabelBox.y, 'music introduction overlaps the model selector label');
   await page.screenshot({ path: path.join(build, 'v-voice-background-music-narrow.png'), fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByTestId('nav-api-docs').click();

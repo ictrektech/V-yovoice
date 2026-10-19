@@ -79,7 +79,7 @@ export function BackgroundMusic({ active, openModels }: { active: boolean; openM
     finally { setBusy(false); }
   }
   return <VStack className="settings-page" gap={5} style={{ overflowY: 'auto', overscrollBehavior: 'contain' }} data-testid="background-music">
-    <VStack as="header" gap={2}><h1>{t('@vvoice.music.title')}</h1><p>{t('@vvoice.music.hint')}</p></VStack>
+    <VStack as="header" gap={2} style={{ height: 'auto', flexShrink: 0, alignItems: 'stretch' }}><h1>{t('@vvoice.music.title')}</h1><p>{t('@vvoice.music.hint')}</p></VStack>
     {failed ? <p role="alert">{t('@vvoice.models.inventoryError')}</p> : null}
     <HStack gap={3} vAlign="end" wrap="wrap"><Selector label={t('@vvoice.music.model')} value={model} options={models.map(item => ({ value: item.key, label: item.name }))} onChange={setModel} isDisabled={busy} /><Button label={t('@vvoice.nav.models')} onClick={openModels} /></HStack>
     <TextArea label={t('@vvoice.music.prompt')} value={prompt} onChange={setPrompt} rows={4} maxLength={4000} isDisabled={busy} />
