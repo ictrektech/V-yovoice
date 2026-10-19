@@ -90,6 +90,7 @@ jobs:
           cmp ictrek.app/src/icon.png web/dist/v-voice.png
           pnpm --dir web exec playwright install --with-deps chromium
           pnpm --dir web test
+          VITE_VOS=true PLAYWRIGHT_TEST_PORT=4187 pnpm --dir web exec playwright test browser-tests/native-music.spec.ts
 
       - name: Build frontend
         run: |
