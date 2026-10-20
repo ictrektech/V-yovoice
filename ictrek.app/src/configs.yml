@@ -11,7 +11,7 @@ configs:
     type: string
     title: {zh-CN: V-Scheduler 模型仓库 API 地址, en: V-Scheduler Model Repository API URL}
     description: {zh-CN: V-Scheduler 内置模型仓库的容器网络地址，无需独立安装 Model Hub。, en: Container-network URL of the model repository built into V-Scheduler; no separate Model Hub installation is required.}
-    default: http://v-scheduler-model-hub:6005
+    default: http://v-scheduler:6005
   - name: VVOICE_NUM_THREADS
     type: integer
     title: {zh-CN: CPU 线程数, en: CPU Threads}

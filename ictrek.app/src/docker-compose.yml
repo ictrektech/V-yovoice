@@ -3,6 +3,7 @@ x-vvoice-env: &vvoice-env
   VVOICE_DATA_DIR: /data
   VVOICE_PORT: "7070"
   VVOICE_SCHEDULER_REQUIRED: "true"
+  VVOICE_SCHEDULER_URL: http://v-scheduler:8080/scheduler/api/v1
   VVOICE_SHARED_MODELS: "true"
   VVOICE_STUDIO_ENABLED: "true"
   VOS_USERINFO_URL: http://${VOS_HOST_GW_IP}:${VOS_API_GW_PORT_INTERNAL}/v1000/oauth2/userinfo
@@ -11,7 +12,7 @@ x-vvoice-env: &vvoice-env
   VVOICE_MAX_CONCURRENT_INFERENCE: ${VVOICE_MAX_CONCURRENT_INFERENCE:-2}
   VVOICE_MAX_CONCURRENT_PER_MODEL: ${VVOICE_MAX_CONCURRENT_PER_MODEL:-2}
   MODEL_HUB_SHARED_MODELS_PATH: /modelhub
-  MODEL_HUB_API_URL: ${MODEL_HUB_API_URL:-http://v-scheduler-model-hub:6005}
+  MODEL_HUB_API_URL: ${MODEL_HUB_API_URL:-http://v-scheduler:6005}
 
 x-vvoice-base: &vvoice-base
   restart: unless-stopped

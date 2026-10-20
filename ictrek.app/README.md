@@ -43,3 +43,9 @@ building a package or publishing. Use it before a version bump when changing the
 release connection. Only `vos-v-voice-v*` tags run the actual release. The tunnel
 is closed on success and failure. A retry after GitHub publication reuses that
 release's existing package for App Store publication rather than replacing it.
+
+VOS 0.0.22 is a packaging-only endpoint migration: new installations prefer
+`http://v-scheduler:6005` for the model repository and trusted bindings use
+`http://v-scheduler:8080/scheduler/api/v1`. Existing model paths and explicit
+repository settings are retained. All six profiles reuse the exact 0.0.21
+native service images; inference code, dependencies and resource settings do not change.

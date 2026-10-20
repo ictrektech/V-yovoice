@@ -2,6 +2,14 @@
 
 各版本的重要更新记录。日常改动记入 `Unreleased`；发布前合并重复项，整理为简短的功能、改进和修复说明。
 
+## [0.0.22] - 2026-10-20
+
+### 简体中文
+- VOS 默认接入地址统一为 `v-scheduler`，保留共享模型目录和显式配置；复用 0.0.21 原生镜像，不改变推理运行时及资源设置。
+
+### English
+- Prefer the canonical `v-scheduler` VOS endpoints while preserving shared model paths and explicit settings. Reuse the 0.0.21 native images with unchanged inference runtime and resource settings.
+
 ## [0.0.21] - 2026-10-19
 
 ### 简体中文
