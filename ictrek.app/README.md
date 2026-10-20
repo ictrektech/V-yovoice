@@ -49,3 +49,9 @@ VOS 0.0.22 is a packaging-only endpoint migration: new installations prefer
 `http://v-scheduler:8080/scheduler/api/v1`. Existing model paths and explicit
 repository settings are retained. All six profiles reuse the exact 0.0.21
 native service images; inference code, dependencies and resource settings do not change.
+
+If CI fails before the public version tag exists, commit the correction and use
+`vos-release.yml`'s `workflow_dispatch` with `retry_version` equal to the current
+`ictrek.app/VERSION`. This retries that unpublished version from the selected
+commit without moving its original trigger tag. The guard refuses an existing
+public version; leaving the input blank keeps the dependency-only preflight.

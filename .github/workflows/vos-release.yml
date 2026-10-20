@@ -2,6 +2,12 @@ name: VOS Pull Package Release
 
 on:
   workflow_dispatch:
+    inputs:
+      retry_version:
+        description: 'Retry the current failed, unpublished VOS version without moving its trigger tag; leave blank for dependency preflight'
+        required: false
+        default: ''
+        type: string
   push:
     tags:
       - "vos-v-voice-v*"
@@ -11,7 +17,7 @@ permissions:
 
 jobs:
   dependency-preflight:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.retry_version == ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -40,7 +46,7 @@ jobs:
         run: bash ictrek.app/scripts/appstore_tunnel.sh close
 
   release:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.retry_version != '')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -50,6 +56,23 @@ jobs:
 
       - name: Fetch all release tags
         run: git fetch --force --tags origin
+
+      - name: Resolve and guard release version
+        env:
+          REQUESTED_RETRY_VERSION: ${{ inputs.retry_version }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            VERSION="${GITHUB_REF_NAME#vos-v-voice-v}"
+          else
+            VERSION="$REQUESTED_RETRY_VERSION"
+            [[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+            [[ "$(tr -d '[:space:]' < ictrek.app/VERSION)" == "$VERSION" ]]
+            git rev-parse --verify "refs/tags/vos-v-voice-v${VERSION}^{commit}" >/dev/null
+            PUBLIC_REF="$(git ls-remote --tags origin "refs/tags/v${VERSION}")"
+            [[ -z "$PUBLIC_REF" ]] || { echo 'Manual retry refuses an already published version.' >&2; exit 1; }
+          fi
+          printf 'VOS_RELEASE_VERSION=%s\n' "$VERSION" >> "$GITHUB_ENV"
 
       - name: Write Feishu credentials
         run: |
@@ -112,7 +135,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${GITHUB_REF_NAME#vos-v-voice-v}"
+          VERSION="$VOS_RELEASE_VERSION"
           PACKAGE_VERSION="$VERSION" ./ictrek.app/scripts/package.sh
           test -f "ictrek.app/dist/v_voice_${VERSION}_pull.tar"
 
@@ -122,8 +145,8 @@ jobs:
           TAG_PREFIX: vos-v-voice-v
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#vos-v-voice-v}"
-          CURRENT="${GITHUB_REF_NAME}"
+          VERSION="$VOS_RELEASE_VERSION"
+          CURRENT="$GITHUB_SHA"
           PUBLIC_TAG="v${VERSION}"
           export PUBLIC_TAG
           python3 scripts/release-notes.py "$PUBLIC_TAG" > changelog-notes.md
@@ -148,7 +171,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${GITHUB_REF_NAME#vos-v-voice-v}"
+          VERSION="$VOS_RELEASE_VERSION"
           PUBLIC_TAG="v${VERSION}"
           if ! git ls-remote --exit-code --tags origin "refs/tags/${PUBLIC_TAG}" >/dev/null 2>&1; then
             git tag "$PUBLIC_TAG" "$GITHUB_SHA"
@@ -165,7 +188,7 @@ jobs:
       - name: Publish package to VOS App Store
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#vos-v-voice-v}"
+          VERSION="$VOS_RELEASE_VERSION"
           PACKAGE="ictrek.app/dist/v_voice_${VERSION}_pull.tar"
           response="$(curl -kfsS -F "package=@${PACKAGE}" -F "force=true" -F "channel=stable" "http://127.0.0.1:18899/api/appstore/apps")" \
             || response="$(curl -kfsS -F "package=@${PACKAGE}" -F "force=true" "http://127.0.0.1:18899/api/appstore/apps")"

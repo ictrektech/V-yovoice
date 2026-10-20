@@ -11,7 +11,9 @@ def test_model_repository_uses_unified_scheduler_without_moving_existing_weights
 
     assert Settings.__dataclass_fields__['model_hub_api_url'].default == 'http://v-scheduler-model-hub:6005'
     compose = (ROOT / 'ictrek.app/src/docker-compose.yml').read_text()
-    assert 'http://v-scheduler-model-hub:6005' in compose
+    # 原生镜像保持旧兼容默认值；新安装通过显式环境参数选择正式地址。
+    assert 'MODEL_HUB_API_URL: ${MODEL_HUB_API_URL:-http://v-scheduler:6005}' in compose
+    assert 'VVOICE_SCHEDULER_URL: http://v-scheduler:8080/scheduler/api/v1' in compose
     assert '${MODEL_HUB_SHARED_MODELS_PATH:-/data/vos_workspace/model_hub}:/modelhub:ro' in compose
     manifest = (ROOT / 'ictrek.app/src/manifest.yml').read_text()
     assert '- id: com.ictrek.v-scheduler' in manifest
