@@ -894,7 +894,7 @@
   @keyframes now-playing-mote { 50% { opacity: var(--mote-peak); } to { opacity: 0; transform: translateY(calc(var(--spacing-12) * -2)); } }
   /* 浮光样式下封面与控制收成底部居中的一条，静置时和其他控件一起隐去，画面只剩歌词。 */
   .now-playing[data-style="stage"] .now-playing-side { position: absolute; z-index: 1; left: 50%; bottom: var(--spacing-6); width: min(calc(var(--spacing-12) * 15), calc(100% - var(--spacing-12)));
-    flex-direction: row; align-items: center; column-gap: var(--spacing-4); padding: var(--spacing-2) var(--spacing-6) var(--spacing-2) var(--spacing-2); border-radius: calc(var(--spacing-12) + var(--spacing-0-5));
+    flex-direction: row; align-items: center; column-gap: var(--spacing-4); padding: var(--spacing-2) var(--spacing-6) var(--spacing-2) var(--spacing-2); border-radius: calc(var(--radius-element) + var(--spacing-2));
     background: var(--now-playing-glass); backdrop-filter: blur(var(--spacing-3)) saturate(1.8) brightness(1.16); box-shadow: var(--now-playing-glass-edge); transform: translateX(-50%);
     transition: opacity var(--duration-slow) var(--ease-standard), transform var(--duration-slow) var(--ease-standard); }
   .now-playing[data-style="stage"][data-idle="true"] .now-playing-side { opacity: 0; transform: translate(-50%, 40%); pointer-events: none; }
