@@ -825,17 +825,17 @@
   /* 滚动歌词：位置、透明度和大小由 useLyricFollow 逐帧写入；上下边缘用遮罩渐隐，不按距离模糊。 */
   .now-playing-lyrics { position: relative; flex: 1; min-width: 0; height: 100%; overflow: hidden; mask-image: linear-gradient(transparent, var(--app-ink) 18%, var(--app-ink) 80%, transparent); }
   .now-playing-line { margin: 0; padding-block: var(--spacing-2); font-size: clamp(var(--font-size-xl), 2.6vw, var(--font-size-4xl)); font-weight: var(--font-weight-bold); line-height: 1.35; cursor: pointer;
-    opacity: var(--line-alpha, 1); transform-origin: left center; will-change: transform, opacity;
+    --line-alpha: 1; opacity: var(--line-alpha); transform-origin: left center; will-change: transform, opacity;
     text-shadow: 0 0 calc(var(--spacing-3) + var(--spacing-0-5)) hsl(var(--now-playing-hue) 40% 3% / 18%), 0 0 var(--spacing-1) hsl(var(--now-playing-hue) 40% 3% / 32%);
     transition: text-shadow var(--duration-slow) var(--ease-standard), opacity var(--duration-fast) linear; }
   .now-playing-line[data-state="current"] { text-shadow: 0 0 var(--spacing-6) color-mix(in srgb, var(--now-playing-ink) 35%, transparent); }
-  .now-playing-line:hover { opacity: max(.8, var(--line-alpha, 1)); }
+  .now-playing-line:hover { opacity: max(.8, var(--line-alpha)); }
   .now-playing-line[data-instrumental] { letter-spacing: .3em; }
   .now-playing-line[data-instrumental][data-state="current"] { animation: now-playing-breathe 2.4s ease-in-out infinite; }
   @keyframes now-playing-breathe { 50% { opacity: .55; } }
   /* 校准：待标记的一行带下划线提示，标过的行保持明亮。 */
   .now-playing[data-syncing] .now-playing-line { cursor: default; }
-  .now-playing-line[data-target] { opacity: max(.9, var(--line-alpha, 1)); text-decoration: underline; text-decoration-thickness: var(--spacing-0-5); text-underline-offset: var(--spacing-2); text-decoration-color: color-mix(in srgb, var(--now-playing-ink) 45%, transparent); }
+  .now-playing-line[data-target] { opacity: max(.9, var(--line-alpha)); text-decoration: underline; text-decoration-thickness: var(--spacing-0-5); text-underline-offset: var(--spacing-2); text-decoration-color: color-mix(in srgb, var(--now-playing-ink) 45%, transparent); }
   /* 逐字点亮：当前句每个字从暗到亮扫过一道柔边（--word-fill 由播放进度逐帧写入），正在唱的字微微上浮并发光。 */
   .now-playing-word { --word-fill: 0; display: inline-block; white-space: pre-wrap; color: transparent; -webkit-background-clip: text; background-clip: text;
     background-image: linear-gradient(90deg, var(--now-playing-ink) 44%, hsl(var(--now-playing-accent) 90% 88%) 49.5%, color-mix(in srgb, var(--now-playing-ink) 40%, transparent) 55.5%); background-size: 225% 100%; background-position: calc(100% - var(--word-fill) * 100%) 0;
@@ -915,7 +915,7 @@
   .now-playing[data-host="macos"] .now-playing-lyrics { mask-image: linear-gradient(transparent, var(--app-ink) 26%, var(--app-ink) 78%, transparent); }
   /* 逐字编辑：底部一块磨砂面板，上面是这一句的工具，下面是时间轴；字块可拖动，两端是调整长短的把手，播放头随音频移动。 */
   .now-playing[data-editing] .now-playing-stage { padding-block-end: var(--spacing-4); }
-  .now-playing-line[data-editing] { opacity: max(.9, var(--line-alpha, 1)); padding-inline-start: var(--spacing-3); box-shadow: inset var(--spacing-1) 0 0 hsl(var(--now-playing-accent) 85% 70%); }
+  .now-playing-line[data-editing] { opacity: max(.9, var(--line-alpha)); padding-inline-start: var(--spacing-3); box-shadow: inset var(--spacing-1) 0 0 hsl(var(--now-playing-accent) 85% 70%); }
   .lyric-word-editor { flex: none; margin: 0 var(--spacing-6) var(--spacing-6); padding: var(--spacing-3) var(--spacing-4) var(--spacing-4); border-radius: var(--radius-container); background: var(--now-playing-glass); backdrop-filter: blur(var(--spacing-3)) saturate(1.8) brightness(1.16); box-shadow: var(--now-playing-glass-edge);
     color: var(--now-playing-ink); animation: now-playing-editor-in var(--duration-medium) var(--ease-standard) both; }
   @keyframes now-playing-editor-in { from { opacity: 0; transform: translateY(30%); } }
