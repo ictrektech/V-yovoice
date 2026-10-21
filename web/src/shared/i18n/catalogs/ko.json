@@ -2766,22 +2766,22 @@
     "defaultMessage": "가사 도구"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "단어 타이밍 편집"
+    "defaultMessage": "가사 타이밍 조정"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "단어 블록을 끌거나 노래에 맞춰 탭해 단어별 시간을 조정"
+    "defaultMessage": "재생 중 줄을 클릭하면 현재 위치에서 시작합니다. 줄 단위로 앞뒤 조정하거나 단어별로 세밀하게 조정할 수 있습니다"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "들으면서 줄마다 시작 지점을 표시"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "이 줄 편집"
+    "defaultMessage": "재생 중 클릭: 이 줄을 여기서 시작"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "단어 타이밍 편집기"
+    "defaultMessage": "가사 타이밍 조정"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "블록을 끌어 이동하고 양 끝을 끌어 길이를 조정합니다. 선택 후 ←/→로 미세 조정, Shift는 더 세밀하게. 더블 클릭으로 미리 듣기"
+    "defaultMessage": "재생 중 가사 줄을 클릭하면 재생 위치에 고정됩니다. ←/→ 줄 미세 조정, ↑/↓ 줄 이동, 블록이나 양 끝을 끌어 단어별 조정"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "탭으로 기록"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "“{word}” 끝 조정"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "재생 위치에 고정"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "이 줄을 현재 재생 위치에서 시작(Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n}초 앞당기기"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n}초 늦추기"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "조정 방식"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "뒤 줄도 함께 이동"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "이 줄만"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "자동 정렬"

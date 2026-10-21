@@ -2766,22 +2766,22 @@
     "defaultMessage": "Herramientas de letra"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "Editar tiempos por palabra"
+    "defaultMessage": "Ajustar tiempos de la letra"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Arrastra los bloques o marca al ritmo para ajustar cuándo se canta cada palabra"
+    "defaultMessage": "Durante la reproducción, haz clic en una línea para que empiece en la posición actual; mueve líneas enteras o ajusta palabras sueltas"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "Marca el inicio de cada línea mientras escuchas"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "Editar esta línea"
+    "defaultMessage": "Clic durante la reproducción: esta línea empieza aquí"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "Editor de tiempos por palabra"
+    "defaultMessage": "Tiempos de la letra"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Arrastra una palabra para moverla y sus bordes para cambiar su duración; ←/→ ajusta la palabra seleccionada, con Mayús en pasos más finos; doble clic para escuchar"
+    "defaultMessage": "Durante la reproducción, haz clic en una línea para anclarla a la posición actual; ←/→ mueve la línea, ↑/↓ cambia de línea; arrastra bloques o bordes para palabras sueltas"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "Marcar al ritmo"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "Ajustar el final de «{word}»"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Anclar a la reproducción"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Empezar esta línea en la posición actual (Intro)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n} s antes"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n} s después"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Modo de ajuste"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Mover las siguientes"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Solo esta línea"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "Alinear automáticamente"

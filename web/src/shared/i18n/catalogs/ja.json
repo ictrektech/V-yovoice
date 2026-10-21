@@ -2766,22 +2766,22 @@
     "defaultMessage": "歌詞ツール"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "単語のタイミングを編集"
+    "defaultMessage": "歌詞のタイミングを調整"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "単語ブロックをドラッグするか、歌に合わせてタップして各語のタイミングを調整"
+    "defaultMessage": "再生中に行をクリックすると現在位置から歌い出します。行ごとの前後調整や単語ごとの微調整も可能"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "聴きながら各行の開始を記録"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "この行を編集"
+    "defaultMessage": "再生中にクリック：この行をここから開始"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "単語タイミング編集"
+    "defaultMessage": "歌詞タイミング調整"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "ブロックをドラッグで移動、端をドラッグで長さを調整。選択中は ←/→ で微調整、Shift でさらに細かく。ダブルクリックで試聴"
+    "defaultMessage": "再生中に歌詞の行をクリックすると再生位置に固定。←/→ で行を微調整、↑/↓ で行を移動。ブロックや端をドラッグして単語ごとに調整"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "タップで記録"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "「{word}」の終了を調整"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "再生位置に固定"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "この行を現在の再生位置から開始（Enter）"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n} 秒早く"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n} 秒遅く"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "調整方法"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "後続の行も移動"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "この行だけ"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "自動アライン"

@@ -1,13 +1,18 @@
 import { useEffect, useEffectEvent, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type RefObject } from 'react';
+import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, StackItem, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { Check, ChevronLeft, ChevronRight, GripVertical, MousePointerClick, Play, Undo2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, GripVertical, Play, Undo2 } from 'lucide-react';
+import { readLocal, writeLocal } from '../../shared/lib/local-store';
 import type { AlignedWord } from '../../shared/workbench';
 import { estimateWords, type LyricLine } from './lyric-timing';
 
-// 每个字最短的时长与键盘微调的步长（秒）；按住 Shift 时用细步长。
-const minWord = 0.05, nudge = 0.05, fineNudge = 0.01;
+// 每个字最短的时长与键盘微调的步长（秒）；按住 Shift 时用细步长。整句微调的步长单独一组。
+const minWord = 0.05, nudge = 0.05, fineNudge = 0.01, lineNudge = 0.1, fineLineNudge = 0.02;
+// 整句调整的方式记在本机：ripple 是后面的句子跟着一起移，single 是只改这一句。
+const shiftModeKey = 'yovoice-lyric-shift';
+type ShiftMode = 'ripple' | 'single';
 // 时间轴在这一句前后多留的秒数，方便把首尾的字往外拖；播放这一句时提前开始的秒数。
 const margin = 0.6, preroll = 0.8;
 
@@ -17,6 +22,40 @@ export function editableLines(lines: LyricLine[]) {
 }
 // 保存用的逐字时间：按歌词顺序列出每个字，与对齐模型的结果同一格式。
 export const editedWords = (lines: LyricLine[]): AlignedWord[] => lines.flatMap(line => line.instrumental ? [] : (line.words ?? []).filter(word => word.text.trim()).map(word => ({ word: word.text.trim(), start: Math.round(word.start * 1000) / 1000, end: Math.round(word.end * 1000) / 1000 })));
+
+// 按逐字时间重算每行的起止：一行从第一个字开始，显示到下一句开始；后面是器乐段落时唱完就收，器乐段落占住两句之间的空档。
+export function retime(lines: LyricLine[], duration: number) {
+  const next = lines.map(line => line.instrumental || !line.words?.length ? { ...line } : { ...line, start: line.words[0].start, end: line.words.at(-1)!.end });
+  for (let i = 0; i < next.length; i++) {
+    const following = next.slice(i + 1).find(line => !line.instrumental && line.words?.length)?.start ?? duration;
+    if (next[i].instrumental) { next[i].start = i ? next[i - 1].end : 0; next[i].end = Math.max(next[i].start, following); }
+    else if (!next[i + 1]?.instrumental) next[i].end = Math.max(next[i].end, following);
+  }
+  return next;
+}
+
+// 整句平移 delta 秒（第一个字的开始与后面的字一起移）。ripple 时后面所有句子跟着移；single 时只移这一句，
+// 不越过前后两句，碰到时让相邻的字收短。返回调整后的歌词，平移量会被限制在可移动的范围里。
+export function shiftLine(lines: LyricLine[], line: number, delta: number, mode: ShiftMode, duration: number) {
+  const words = lines[line]?.words;
+  if (!words?.length) return lines;
+  const before = lines.slice(0, line).flatMap(entry => entry.words ?? []).at(-1);
+  const after = lines.slice(line + 1).flatMap(entry => entry.words ?? [])[0];
+  const moving = mode === 'ripple' ? lines.slice(line).flatMap(entry => entry.words ?? []) : words;
+  const low = (before ? before.start + minWord : 0) - words[0].start;
+  const high = mode === 'single' && after ? after.start - minWord - words.at(-1)!.start : Math.max(0, duration - Math.max(...moving.map(word => word.end)));
+  const step = Math.max(low, Math.min(high, delta));
+  if (!step) return lines;
+  const moved = lines.map((entry, i) => !entry.words || i < line || (mode === 'single' && i > line) ? entry : { ...entry, words: entry.words.map(word => ({ ...word, start: word.start + step, end: Math.min(duration, word.end + step) })) });
+  const first = moved[line].words![0], last = moved[line].words!.at(-1)!;
+  return moved.map((entry, i) => {
+    if (!entry.words?.length) return entry;
+    // 前一句最后一个字唱到这一句开始为止；只改这一句时，这一句最后一个字也不压到下一句。
+    if (before && entry.words.includes(before) && before.end > first.start) return { ...entry, words: entry.words.map(word => word === before ? { ...word, end: Math.max(word.start + minWord, first.start) } : word) };
+    if (i === line && mode === 'single' && after && last.end > after.start) return { ...entry, words: entry.words.map((word, k) => k === entry.words!.length - 1 ? { ...word, end: Math.max(word.start + minWord, after.start) } : word) };
+    return entry;
+  });
+}
 
 // 改了一个字之后保持整首的字按顺序：开始不早于前一个字的开始，结束不晚于后一个字的结束，相邻的字让出重叠部分。
 function settle(lines: LyricLine[], line: number, index: number, start: number, end: number, duration: number) {
@@ -37,10 +76,14 @@ function settle(lines: LyricLine[], line: number, index: number, start: number, 
 // 播放页的逐字时间编辑：一次编辑一句，字块铺在时间轴上，拖动字块移动、拖两端改长短，键盘可微调；
 // 也可以“跟唱打点”：边听边在每个字开始唱时按 ↓ 或回车，自动跳到下一个字和下一句。编辑结果实时显示在歌词上，保存后随版本记录。
 // lines 是正在编辑的歌词（含器乐段落），line 是当前编辑的行号，由播放页持有以便同步滚动和高亮。
-export function LyricWordEditor({ lines, setLines, line, setLine, audio, duration, seek, play, onSave, onCancel }: {
+// lineClick 由编辑器填入：播放中点歌词里的某一句，就把这句锚定到当前播放位置；暂停时只选中这一句。
+export function LyricWordEditor({ lines, setLines: setRaw, line, setLine, audio, duration, seek, play, lineClick, onSave, onCancel }: {
   lines: LyricLine[]; setLines: (lines: LyricLine[]) => void; line: number; setLine: (line: number) => void; audio: RefObject<HTMLAudioElement | null>; duration: number;
-  seek: (time: number) => void; play: () => void; onSave: (words: AlignedWord[]) => void; onCancel: () => void;
+  seek: (time: number) => void; play: () => void; lineClick: RefObject<((index: number) => void) | null>; onSave: (words: AlignedWord[]) => void; onCancel: () => void;
 }) {
+  const setLines = (next: LyricLine[]) => setRaw(retime(next, duration));
+  const [mode, setMode] = useState<ShiftMode>(() => readLocal(shiftModeKey) === 'single' ? 'single' : 'ripple');
+  const chooseMode = (value: string) => { const next = value === 'single' ? 'single' : 'ripple'; setMode(next); writeLocal(shiftModeKey, next); };
   const t = useTranslator();
   const sung = lines.flatMap((entry, i) => entry.instrumental || !entry.words?.length ? [] : [i]);
   const position = Math.max(0, sung.indexOf(line)), current = lines[line];
@@ -62,6 +105,11 @@ export function LyricWordEditor({ lines, setLines, line, setLine, audio, duratio
     const next = settle(lines, line, index, start, end, duration);
     if (record) commit(next); else setLines(next);
   };
+  const shift = (delta: number, target = line) => commit(shiftLine(lines, target, delta, mode, duration));
+  // 锚定：这一句从当前播放位置开始唱。
+  const anchor = (target = line) => { const first = lines[target]?.words?.[0]; if (first && audio.current) shift(audio.current.currentTime - first.start, target); };
+  const lineStart = words[0]?.start ?? 0;
+  const stamp = (time: number) => `${Math.floor(time / 60)}:${(time % 60).toFixed(2).padStart(5, '0')}`;
   const undo = () => { const last = history.at(-1); if (!last) return; setHistory(history.slice(0, -1)); setLines(last); };
   const goto = (next: number) => { const target = sung[Math.max(0, Math.min(sung.length - 1, next))]; if (target === undefined) return; setLine(target); setSelected(0); };
   const playLine = () => { if (!words.length) return; stopAt.current = (words.at(-1)?.end ?? 0) + .4; seek(Math.max(0, words[0].start - preroll)); play(); };
@@ -93,11 +141,27 @@ export function LyricWordEditor({ lines, setLines, line, setLine, audio, duratio
     frame = requestAnimationFrame(paint);
     return () => cancelAnimationFrame(frame);
   }, [audio, windowStart, span]);
+  useEffect(() => {
+    lineClick.current = (index: number) => {
+      if (tapping || !lines[index]?.words?.length) return;
+      setLine(index); setSelected(0);
+      if (audio.current && !audio.current.paused) anchor(index);
+    };
+    return () => { lineClick.current = null; };
+  });
+  // 键盘：←/→ 整句提前、推后（Shift 更细），↑/↓ 换句，回车把这一句锚定到播放位置；焦点在字块上时方向键改的是那个字。
   const keys = useEffectEvent((event: globalThis.KeyboardEvent) => {
     if (event.target instanceof HTMLInputElement) return;
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(); return; }
     if (tapping && (event.key === 'ArrowDown' || event.key === 'Enter' && !(event.target instanceof HTMLButtonElement))) { event.preventDefault(); tap(); return; }
-    if (event.key === 'Escape' && tapping) { event.preventDefault(); event.stopPropagation(); setTapping(false); }
+    if (event.key === 'Escape' && tapping) { event.preventDefault(); event.stopPropagation(); setTapping(false); return; }
+    if (tapping || event.target instanceof Element && event.target.closest('.lyric-word-track, [role="radiogroup"]')) return;
+    const step = event.shiftKey ? fineLineNudge : lineNudge;
+    const action = event.key === 'ArrowLeft' ? () => shift(-step) : event.key === 'ArrowRight' ? () => shift(step)
+      : event.key === 'ArrowUp' ? () => goto(position - 1) : event.key === 'ArrowDown' ? () => goto(position + 1)
+        : event.key === 'Enter' && !(event.target instanceof HTMLButtonElement) ? () => anchor() : null;
+    if (!action) return;
+    event.preventDefault(); action();
   });
   useEffect(() => {
     const listener = (event: globalThis.KeyboardEvent) => keys(event);
@@ -136,15 +200,21 @@ export function LyricWordEditor({ lines, setLines, line, setLine, audio, duratio
 
   return <VStack className="lyric-word-editor" gap={3} role="group" aria-label={t('@yovoice.music.wordEditor')}>
     <HStack gap={2} vAlign="center" wrap="wrap">
-      <Button className="now-playing-glass now-playing-round" size="sm" variant="ghost" isIconOnly icon={<ChevronLeft />} label={t('@yovoice.music.prevLine')} isDisabled={position <= 0 || tapping} onClick={() => goto(position - 1)} />
+      <Button className="now-playing-glass now-playing-round" size="sm" variant="ghost" isIconOnly icon={<ChevronLeft />} label={t('@yovoice.music.prevLine')} tooltip={`${t('@yovoice.music.prevLine')} · ↑`} isDisabled={position <= 0 || tapping} onClick={() => goto(position - 1)} />
       <small className="lyric-word-editor-count">{t('@yovoice.music.wordLine', { n: position + 1, total: sung.length })}</small>
-      <Button className="now-playing-glass now-playing-round" size="sm" variant="ghost" isIconOnly icon={<ChevronRight />} label={t('@yovoice.music.nextLine')} isDisabled={position >= sung.length - 1 || tapping} onClick={() => goto(position + 1)} />
-      <Button className="now-playing-glass" size="sm" variant="ghost" icon={<Play />} label={t('@yovoice.music.playLine')} isDisabled={tapping} onClick={playLine} />
-      <Button className={tapping ? 'now-playing-mark' : 'now-playing-glass'} size="sm" variant="ghost" icon={<MousePointerClick />} label={t(tapping ? '@yovoice.music.wordTapStop' : '@yovoice.music.wordTap')} tooltip={t('@yovoice.music.wordTapHint')} aria-pressed={tapping} onClick={() => tapping ? setTapping(false) : startTap()} />
-      <small className="lyric-word-editor-hint">{t(tapping ? '@yovoice.music.wordTapHint' : '@yovoice.music.wordEditorHint')}</small>
-      <Button className="now-playing-glass now-playing-round" size="sm" variant="ghost" isIconOnly icon={<Undo2 />} label={t('@yovoice.music.wordUndo')} tooltip={`${t('@yovoice.music.wordUndo')} · ⌘Z`} isDisabled={!history.length} onClick={undo} />
-      <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.wordCancel')} onClick={onCancel} />
-      <Button className="now-playing-mark" size="sm" variant="ghost" icon={<Check />} label={t('@yovoice.music.wordSave')} isDisabled={!history.length} onClick={() => onSave(editedWords(lines))} />
+      <Button className="now-playing-glass now-playing-round" size="sm" variant="ghost" isIconOnly icon={<ChevronRight />} label={t('@yovoice.music.nextLine')} tooltip={`${t('@yovoice.music.nextLine')} · ↓`} isDisabled={position >= sung.length - 1 || tapping} onClick={() => goto(position + 1)} />
+      <small className="lyric-word-editor-time" aria-live="polite">{stamp(lineStart)}</small>
+      <HStack className="lyric-word-editor-nudge" gap={1} vAlign="center">
+        <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.shiftEarlier', { n: '0.5' })} isDisabled={tapping} onClick={() => shift(-.5)} />
+        <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.shiftEarlier', { n: '0.1' })} tooltip="←" isDisabled={tapping} onClick={() => shift(-lineNudge)} />
+        <Button className="now-playing-mark" size="sm" variant="ghost" label={t('@yovoice.music.anchorLine')} tooltip={t('@yovoice.music.anchorLineHint')} isDisabled={tapping} onClick={() => anchor()} />
+        <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.shiftLater', { n: '0.1' })} tooltip="→" isDisabled={tapping} onClick={() => shift(lineNudge)} />
+        <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.shiftLater', { n: '0.5' })} isDisabled={tapping} onClick={() => shift(.5)} />
+      </HStack>
+      <SegmentedControl size="sm" label={t('@yovoice.music.shiftMode')} value={mode} onChange={chooseMode} isDisabled={tapping}>
+        <SegmentedControlItem value="ripple" label={t('@yovoice.music.shiftRipple')} />
+        <SegmentedControlItem value="single" label={t('@yovoice.music.shiftSingle')} />
+      </SegmentedControl>
     </HStack>
     <VStack ref={track} className="lyric-word-track" gap={0} data-tapping={tapping || undefined}
       onPointerDown={event => { if (event.target === event.currentTarget || (event.target as HTMLElement).classList.contains('lyric-word-tick')) { const box = event.currentTarget.getBoundingClientRect(); seek(windowStart + (event.clientX - box.left) / box.width * span); } }}>
@@ -157,5 +227,13 @@ export function LyricWordEditor({ lines, setLines, line, setLine, audio, duratio
       </StackItem>)}
       <StackItem as="span" className="lyric-word-head" aria-hidden />
     </VStack>
+    <HStack gap={2} vAlign="center" wrap="wrap">
+      <Button className="now-playing-glass" size="sm" variant="ghost" icon={<Play />} label={t('@yovoice.music.playLine')} isDisabled={tapping} onClick={playLine} />
+      <Button className={tapping ? 'now-playing-mark' : 'now-playing-glass'} size="sm" variant="ghost" label={t(tapping ? '@yovoice.music.wordTapStop' : '@yovoice.music.wordTap')} tooltip={t('@yovoice.music.wordTapHint')} aria-pressed={tapping} onClick={() => tapping ? setTapping(false) : startTap()} />
+      <small className="lyric-word-editor-hint">{t(tapping ? '@yovoice.music.wordTapHint' : '@yovoice.music.wordEditorHint')}</small>
+      <Button className="now-playing-glass now-playing-round" size="sm" variant="ghost" isIconOnly icon={<Undo2 />} label={t('@yovoice.music.wordUndo')} tooltip={`${t('@yovoice.music.wordUndo')} · ⌘Z`} isDisabled={!history.length} onClick={undo} />
+      <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.wordCancel')} onClick={onCancel} />
+      <Button className="now-playing-mark" size="sm" variant="ghost" icon={<Check />} label={t('@yovoice.music.wordSave')} isDisabled={!history.length} onClick={() => onSave(editedWords(lines))} />
+    </HStack>
   </VStack>;
 }

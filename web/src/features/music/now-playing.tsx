@@ -14,7 +14,7 @@ import { alignLines, alignedTimeline, alignLyrics, vocalActivity, withWords, typ
 import { activeLyric, lyricRows, lyricTimeline, lyricsToLrc, type LyricLine } from './lyric-timing';
 import { splitTags } from './music-draft';
 import { editableLines, LyricWordEditor } from './lyric-word-editor';
-import { backdropScene, useKineticLyrics, phraseLayout } from './kinetic-lyrics';
+import { backdropScene, phraseLayout, useKineticLyrics, useLyricFollow } from './kinetic-lyrics';
 import { coverPalette, SongCover } from './song-cover';
 import { readLocal, writeLocal } from '../../shared/lib/local-store';
 import { decodeAudio } from '../../shared/lib/sound';
@@ -93,6 +93,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
   // 逐字编辑中的歌词（含器乐段落）和正在编辑的行号，null 表示不在编辑；编辑结果实时显示在歌词上。
   const [edit, setEdit] = useState<LyricLine[] | null>(null);
   const [editLine, setEditLine] = useState(0);
+  const lineClick = useRef<((index: number) => void) | null>(null);
   const envelope = useRef<number[]>([]);
   // 音频分析得到的人声片段，用来自动定位歌词。
   const [voice, setVoice] = useState<{ activity: VocalActivity; duration: number } | null>(null);
@@ -107,7 +108,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
   // 校准时逐行显示，不补前奏；刚标记的一行视为当前句，下一行是待标记的目标。
   const lines: LyricLine[] = sync ? rows.map(row => ({ ...row, start: 0, end: 0 })) : edit ?? timeline;
   const current = sync ? sync.length - 1 : activeLyric(lines, time);
-  const focus = sync ? Math.min(sync.length, lines.length - 1) : edit ? editLine : current, syncing = sync !== null;
+  const focus = sync ? Math.min(sync.length, lines.length - 1) : edit ? editLine : current;
   // 校准和逐字编辑时总用滚动歌词，方便看到上下文。
   const staged = lyricStyle === 'stage' && !sync && !edit && lines.length > 0;
   const { hue, accent } = coverPalette(item.id);
@@ -242,13 +243,8 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
   const hidden = idle && !sync && !edit;
   useEffect(() => { if (isDesktop) void call('window.immersive', { active: true, chrome: !hidden }).catch(() => undefined); }, [hidden]);
   useEffect(() => () => { if (isDesktop) void call('window.immersive', { active: false, chrome: true }).catch(() => undefined); }, []);
-  const editing = edit !== null;
-  // 当前句（校准时是待标记的一行，编辑时是正在编辑的一句）滚到歌词区中间。
-  useEffect(() => {
-    const box = lyricsBox.current, line = box?.querySelector<HTMLElement>(`[data-index="${focus}"]`);
-    if (!box || !line) return;
-    box.scrollTo({ top: line.offsetTop - box.clientHeight / 2 + line.clientHeight / 2, behavior: reducedMotion() ? 'auto' : 'smooth' });
-  }, [focus, syncing, staged, editing]);
+  // 当前句（校准时是待标记的一行，编辑时是正在编辑的一句）平滑地停到歌词区中线。
+  useLyricFollow(lyricsBox, focus, !staged && lines.length > 0);
   // 播放中鼠标静置 2.5 秒后隐藏控件和指针，录屏时画面只留封面与歌词；校准时保持显示。
   const lastActive = useRef(0);
   const wake = () => { lastActive.current = performance.now(); if (idle) setIdle(false); };
@@ -384,11 +380,10 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
         </VStack> : lines.length ? <VStack ref={lyricsBox} className="now-playing-lyrics" gap={0} role="list" aria-label={t('@yovoice.music.lyrics')}>
           {lines.map((line, index) => <p key={`${sync ? 'sync' : 'play'}-${index}`} role="listitem" data-index={index} className="now-playing-line" data-state={lineState(index)}
             data-target={sync && index === sync.length || undefined} data-instrumental={line.instrumental || undefined}
-            style={{ '--now-playing-distance': Math.min(4, Math.abs(index - focus)) } as CSSProperties}
             data-editing={edit && index === editLine || undefined}
             title={sync || line.instrumental ? undefined : t(edit ? '@yovoice.music.editThisLine' : '@yovoice.music.seekLyric')} onClick={() => {
               if (sync || line.instrumental) return;
-              if (edit) { if (line.words?.length) setEditLine(index); return; }
+              if (edit) { lineClick.current?.(index); return; }
               seek(line.start); if (audio.current?.paused) void play();
             }}>
             {lineText(line, index)}
@@ -401,7 +396,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
         <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.syncUndo')} isDisabled={!sync.length} onClick={undo} />
         <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.syncCancel')} onClick={() => setSync(null)} />
         <Button className="now-playing-mark" size="sm" variant="ghost" icon={<ArrowDown />} label={t('@yovoice.music.syncNext')} isDisabled={!url} onClick={mark} />
-      </HStack> : edit ? <LyricWordEditor lines={edit} setLines={setEdit} line={editLine} setLine={setEditLine} audio={audio} duration={duration} seek={seek} play={() => void play()} onSave={saveWords} onCancel={() => setEdit(null)} /> : null}
+      </HStack> : edit ? <LyricWordEditor lines={edit} setLines={setEdit} line={editLine} setLine={setEditLine} audio={audio} duration={duration} seek={seek} play={() => void play()} lineClick={lineClick} onSave={saveWords} onCancel={() => setEdit(null)} /> : null}
     </VStack>
   </Dialog>;
 }

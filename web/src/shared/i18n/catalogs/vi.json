@@ -2766,22 +2766,22 @@
     "defaultMessage": "Công cụ lời bài hát"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "Chỉnh thời gian từng chữ"
+    "defaultMessage": "Chỉnh thời gian lời bài hát"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Kéo các khối chữ hoặc gõ theo nhịp để chỉnh thời điểm hát từng chữ"
+    "defaultMessage": "Khi đang phát, bấm vào một dòng để dòng đó bắt đầu tại vị trí hiện tại; dịch cả dòng hoặc chỉnh từng chữ"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "Đánh dấu điểm bắt đầu từng dòng khi nghe"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "Chỉnh dòng này"
+    "defaultMessage": "Bấm khi đang phát: dòng này bắt đầu tại đây"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "Trình chỉnh thời gian từng chữ"
+    "defaultMessage": "Thời gian lời bài hát"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Kéo chữ để di chuyển, kéo hai đầu để đổi độ dài; ←/→ dịch chữ đang chọn, giữ Shift để dịch nhỏ hơn; nhấp đúp để nghe thử"
+    "defaultMessage": "Khi đang phát, bấm vào một dòng để neo vào vị trí phát; ←/→ dịch dòng, ↑/↓ đổi dòng; kéo khối chữ hoặc hai đầu để chỉnh từng chữ"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "Gõ theo nhịp"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "Chỉnh điểm cuối của “{word}”"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Neo vào vị trí phát"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Cho dòng này bắt đầu tại vị trí đang phát (Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "Sớm {n} giây"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "Muộn {n} giây"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Cách chỉnh"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Dịch cả các dòng sau"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Chỉ dòng này"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "Tự căn chỉnh"

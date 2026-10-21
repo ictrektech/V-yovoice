@@ -354,7 +354,7 @@ test('播放页智能对齐歌词：没装对齐模型时去设置下载，装�
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).history[0].lyricWords)).toBeUndefined();
 });
 
-test('播放页逐字编辑：拖动或按键微调字的时间、跟唱打点，保存后作为逐字时间随版本记录', async ({ page }) => {
+test('播放页调整歌词时间：整句前后微调（后面跟着移或只改这一句）、逐字微调、跟唱打点，保存后随版本记录', async ({ page }) => {
   const draft = { ...createMusicDraft('zh-CN'), id: 'c'.repeat(32) };
   const state = emptyState();
   state.drafts = [draft];
@@ -376,20 +376,26 @@ test('播放页逐字编辑：拖动或按键微调字的时间、跟唱打点�
   await page.locator('.player .transport').getByRole('button', { name: '播放页', exact: true }).click();
   const playing = page.getByRole('dialog', { name: `${draft.title} · 播放页` });
   await playing.locator('audio').evaluate((audio: HTMLAudioElement) => { audio.pause(); audio.currentTime = 0; });
-  await lyricTools(page, playing, undefined, /^编辑逐字时间/);
-  const editor = playing.getByRole('group', { name: '逐字时间编辑' });
+  await lyricTools(page, playing, undefined, /^调整歌词时间/);
+  const editor = playing.getByRole('group', { name: '歌词时间调整' });
   await expect(editor).toContainText('第 1/3 句');
   await expect(playing.locator('.now-playing-line[data-editing]')).toHaveText('第一句');
-  // 选中“一”，→ 往后挪 0.05 秒，Shift+← 往前挪 0.01 秒；可以撤销。
+  await expect(editor).toContainText('0:01.00');
+  // → 整句推后 0.1 秒，默认后面的句子跟着移；换成“只改这一句”后再推后 0.1 秒，后面的句子不动。
+  await page.keyboard.press('ArrowRight');
+  await expect(editor).toContainText('0:01.10');
+  await editor.getByRole('radio', { name: '只改这一句' }).click();
+  await editor.getByRole('button', { name: '推后 0.1 秒', exact: true }).click();
+  await expect(editor).toContainText('0:01.20');
+  // 选中“一”，→ 往后挪 0.05 秒、Shift+← 往前挪 0.01 秒，只改这个字。
   const word = editor.getByRole('button', { name: '一', exact: true });
   await word.focus();
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Shift+ArrowLeft');
   await expect(word).toHaveAttribute('aria-pressed', 'true');
-  // 换到下一句，跟唱打点：按 ↓ 标记当前字的开始并跳到下一个字。
-  await editor.getByRole('button', { name: '下一句', exact: true }).click();
+  // 暂停时点歌词里的一句只是选中它；换到下一句后可以跟唱打点。
+  await playing.getByRole('list', { name: '歌词' }).getByText('第二句', { exact: true }).click();
   await expect(editor).toContainText('第 2/3 句');
-  await expect(playing.locator('.now-playing-line[data-editing]')).toHaveText('第二句');
   await editor.getByRole('button', { name: '跟唱打点', exact: true }).click();
   await expect(editor.getByRole('button', { name: '停止打点', exact: true })).toBeVisible();
   await page.keyboard.press('ArrowDown');
@@ -403,9 +409,10 @@ test('播放页逐字编辑：拖动或按键微调字的时间、跟唱打点�
   expect(saved.lyricWords.map((entry: { word: string }) => entry.word).join('')).toBe('第一句第二句第三句');
   const starts = saved.lyricWords.map((entry: { start: number }) => entry.start);
   expect([...starts].sort((a: number, b: number) => a - b)).toEqual(starts);
-  // 按校准时间均分时“一”从 1.25 秒附近开始，微调后晚了 0.04 秒。
-  expect(saved.lyricWords[1].start).toBeGreaterThan(saved.lyricWords[0].start);
+  // 第一句从 1 秒推后到 1.2 秒，“一”多晚 0.04 秒；第三句只跟着第一次推后了 0.1 秒。
+  expect(starts[0]).toBeCloseTo(1.2, 3);
   expect(Math.round((saved.lyricWords[1].start - saved.lyricWords[0].end) * 100)).toBe(4);
+  expect(starts[6]).toBeCloseTo(4.6, 3);
 });
 
 test('播放页按音频里的人声自动定位歌词，点歌词跳到这一句实际开始唱的位置', async ({ page }) => {

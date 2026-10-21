@@ -2766,22 +2766,22 @@
     "defaultMessage": "歌词工具"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "编辑逐字时间"
+    "defaultMessage": "调整歌词时间"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "拖动字块或跟唱打点，调整每个字的时间"
+    "defaultMessage": "播放中点一句就从当前位置开始唱，可整句前后微调，也能逐字细调"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "边听边逐行标记每句的开始"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "编辑这一句"
+    "defaultMessage": "播放中点击：这一句从当前位置开始"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "逐字时间编辑"
+    "defaultMessage": "歌词时间调整"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "拖动字块移动，拖两端调整长短；选中后按 ←/→ 微调，按住 Shift 更细；双击试听"
+    "defaultMessage": "播放中点歌词里的一句即锚定到当前位置；←/→ 整句微调，↑/↓ 换句；拖动字块或两端逐字细调"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "跟唱打点"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "调整“{word}”的结束"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "锚定到播放位置"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "这一句从当前播放位置开始唱（回车）"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "提前 {n} 秒"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "推后 {n} 秒"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "调整方式"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "后面跟着移"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "只改这一句"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "智能对齐"
