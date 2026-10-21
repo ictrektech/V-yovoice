@@ -422,9 +422,6 @@
   "@yovoice.error.audioTooLarge": {
     "defaultMessage": "參考音訊需小於 20 MB。"
   },
-  "@yovoice.error.exportTooLarge": {
-    "defaultMessage": "匯出的音訊超過 20 MB，請分段匯出。"
-  },
   "@yovoice.error.backendUnsupported": {
     "defaultMessage": "不支援的運算裝置或平台。"
   },

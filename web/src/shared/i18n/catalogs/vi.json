@@ -422,9 +422,6 @@
   "@yovoice.error.audioTooLarge": {
     "defaultMessage": "Âm thanh tham chiếu phải nhỏ hơn 20 MB."
   },
-  "@yovoice.error.exportTooLarge": {
-    "defaultMessage": "Âm thanh xuất ra lớn hơn 20 MB. Hãy xuất thành các phần ngắn hơn."
-  },
   "@yovoice.error.backendUnsupported": {
     "defaultMessage": "Thiết bị tính toán hoặc nền tảng không được hỗ trợ."
   },

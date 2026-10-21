@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"os"
@@ -54,7 +52,6 @@ func (a *app) dispatch(method string, data json.RawMessage) (any, error) {
 		Version     string          `json:"version"`
 		Format      string          `json:"format"`
 		Text        *string         `json:"text"`
-		Base64      string          `json:"base64"`
 		UILocale    string          `json:"uiLocale"`
 		Score       json.RawMessage `json:"score"`
 	}
@@ -124,13 +121,16 @@ func (a *app) dispatch(method string, data json.RawMessage) (any, error) {
 		}
 		return a.svc.Call(method, map[string]any{"path": path, "score": input.Score}, 0)
 	case "audio.export":
-		if len(input.Base64) > 240_000_000 {
-			return nil, errors.New(T("导出音频超过大小限制。", "The exported audio is too large."))
+		// 时间线合成的音频已由页面上传到本地服务的临时文件，这里只选位置并复制，用完即删。
+		location, err := a.svc.Call("export.path", map[string]any{"id": input.ID}, 0)
+		if err != nil {
+			return nil, err
 		}
-		wav, err := base64.StdEncoding.DecodeString(input.Base64)
-		if err != nil || len(wav) < 44 || !bytes.Equal(wav[0:4], []byte("RIFF")) || !bytes.Equal(wav[8:12], []byte("WAVE")) {
-			return nil, errors.New(T("导出音频格式无效。", "The exported audio format is invalid."))
+		var source string
+		if err = json.Unmarshal(location, &source); err != nil {
+			return nil, err
 		}
+		defer os.Remove(source)
 		name := input.Name
 		if name == "" {
 			name = "yovoice.wav"
@@ -138,6 +138,10 @@ func (a *app) dispatch(method string, data json.RawMessage) (any, error) {
 		path := a.pick(chooseSave, T("导出音频", "Export Audio"), filepath.Base(name), fileFilter{T("WAV 音频", "WAV Audio"), []string{"wav"}})
 		if path == "" {
 			return false, nil
+		}
+		wav, err := os.ReadFile(source)
+		if err != nil {
+			return nil, err
 		}
 		return true, writeAtomic(path, wav)
 	case "output.export":
