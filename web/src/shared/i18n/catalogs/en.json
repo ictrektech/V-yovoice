@@ -42,6 +42,7 @@
   "@vvoice.models.importRequired": { "defaultMessage": "Administrator-provided weights required in V-Scheduler" },
   "@vvoice.models.inventoryError": { "defaultMessage": "Shared model status is unavailable. Retrying automatically." },
   "@vvoice.scheduler.checking": { "defaultMessage": "Checking automatic V-Scheduler connection…" },
+  "@vvoice.scheduler.needsModels": {"defaultMessage": "No speech models are ready. Download a model in Model management; V-Scheduler will set up supported models automatically when ready."},
   "@vvoice.scheduler.waiting": { "defaultMessage": "Waiting for automatic V-Scheduler setup. Model management is available; inference is not ready yet." },
   "@vvoice.nav.models": { "defaultMessage": "Model management" },
   "@vvoice.nav.asr": { "defaultMessage": "Speech recognition (ASR)" },

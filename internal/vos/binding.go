@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"regexp"
@@ -234,7 +235,7 @@ func (s *Server) binding(out http.ResponseWriter, r *http.Request) {
 		http.Error(out, "Method not allowed", 405)
 		return
 	}
-	id, err := s.identity(r)
+	id, err := s.verifyIdentity(r, true)
 	if err != nil {
 		http.Error(out, "VOS application sign-in required", 401)
 		return
@@ -283,4 +284,39 @@ func (s *Server) binding(out http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonReply(out, s.bindingStatus())
+}
+
+// 兼容只支持 user/check 的旧版 VOS；只能验证已启用的 Scheduler 服务身份。
+func (s *Server) legacySchedulerIdentity(r *http.Request, client *http.Client) (Identity, error) {
+	target, err := url.Parse(s.UserinfoURL)
+	if err != nil {
+		return Identity{}, fmt.Errorf("invalid VOS endpoint")
+	}
+	target.Path, target.RawQuery, target.Fragment = "/v1000/user/check", "", ""
+	request, err := http.NewRequestWithContext(r.Context(), "GET", target.String(), nil)
+	if err != nil {
+		return Identity{}, err
+	}
+	request.Header.Set("Authorization", r.Header.Get("Authorization"))
+	bounded := *client
+	bounded.CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }
+	response, err := bounded.Do(request)
+	if err != nil {
+		return Identity{}, err
+	}
+	defer response.Body.Close()
+	var envelope struct {
+		Code *int `json:"code"`
+		Data struct {
+			ID       string `json:"id"`
+			Username string `json:"username"`
+			Role     string `json:"role_code"`
+			Enable   int    `json:"enable"`
+			Delete   *int   `json:"delete"`
+		} `json:"data"`
+	}
+	if response.StatusCode != 200 || json.NewDecoder(io.LimitReader(response.Body, 65536)).Decode(&envelope) != nil || envelope.Code == nil || *envelope.Code != 0 || envelope.Data.ID == "" || envelope.Data.Username != schedulerAppID || envelope.Data.Role != "system_admin" || envelope.Data.Enable != 1 || envelope.Data.Delete == nil || *envelope.Data.Delete != 0 {
+		return Identity{}, fmt.Errorf("VOS application identity required")
+	}
+	return Identity{Subject: envelope.Data.Username, Role: envelope.Data.Role}, nil
 }

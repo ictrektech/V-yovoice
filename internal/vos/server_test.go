@@ -164,3 +164,52 @@ func TestJobOutboxIsPrivateStableAndFailClosed(t *testing.T) {
 		t.Fatal("queued input deletion was allowed")
 	}
 }
+
+func TestLegacySchedulerIdentityIsVerifiedBySameVOS(t *testing.T) {
+	for _, name := range []string{"scheduler", "ordinary-admin", "other-app", "disabled", "deleted", "expired"} {
+		t.Run(name, func(t *testing.T) {
+			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/v1000/oauth2/userinfo" {
+					w.WriteHeader(401)
+					json.NewEncoder(w).Encode(map[string]any{"error": "invalid_token"})
+					return
+				}
+				if r.URL.Path != "/v1000/user/check" || r.Header.Get("Authorization") != "Bearer fixture" {
+					t.Error("unexpected identity request")
+					w.WriteHeader(401)
+					return
+				}
+				user := map[string]any{"id": "context-user", "username": schedulerAppID, "role_code": "system_admin", "enable": 1, "delete": 0}
+				code := 0
+				switch name {
+				case "ordinary-admin":
+					user["username"] = "admin"
+				case "other-app":
+					user["username"] = "com.ictrek.other"
+				case "disabled":
+					user["enable"] = 0
+				case "deleted":
+					user["delete"] = 1
+				case "expired":
+					code = 10001
+				}
+				json.NewEncoder(w).Encode(map[string]any{"code": code, "data": user})
+			}))
+			defer upstream.Close()
+			server := &Server{UserinfoURL: upstream.URL + "/v1000/oauth2/userinfo"}
+			request := httptest.NewRequest("POST", "/api/v1/scheduler/binding", nil)
+			request.Header.Set("Authorization", "Bearer fixture")
+			identity, err := server.verifyIdentity(request, true)
+			if name == "scheduler" {
+				if err != nil || identity.Subject != schedulerAppID {
+					t.Fatalf("valid service rejected: %v", err)
+				}
+			} else if err == nil {
+				t.Fatal("untrusted identity accepted")
+			}
+			if _, err := server.identity(request); err == nil {
+				t.Fatal("legacy service fallback leaked into browser user authentication")
+			}
+		})
+	}
+}

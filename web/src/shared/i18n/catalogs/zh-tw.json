@@ -42,6 +42,7 @@
   "@vvoice.models.importRequired": { "defaultMessage": "需管理員在 V-Scheduler 提供原始權重" },
   "@vvoice.models.inventoryError": { "defaultMessage": "暫時無法讀取共享模型狀態，正在自動重試。" },
   "@vvoice.scheduler.checking": { "defaultMessage": "正在檢查 V-Scheduler 自動接入…" },
+  "@vvoice.scheduler.needsModels": {"defaultMessage": "尚無就緒的語音模型。請先在模型管理中下載模型；模型就緒後，V-Scheduler 會自動接入支援的模型。"},
   "@vvoice.scheduler.waiting": { "defaultMessage": "正在等待 V-Scheduler 自動接入。模型管理可用，推理尚未就緒。" },
   "@vvoice.nav.models": { "defaultMessage": "模型管理" },
   "@vvoice.nav.asr": { "defaultMessage": "語音辨識 ASR" },

@@ -2,6 +2,18 @@
 
 各版本的重要更新记录。日常改动记入 `Unreleased`；发布前合并重复项，整理为简短的功能、改进和修复说明。
 
+## [0.0.25] - 2026-10-21
+
+### 简体中文
+- 自动接入兼容旧版 VOS 应用身份核验，继续严格限制为 V-Scheduler 服务身份。
+- 修复旧版 VOS 上选择“跟随 VOS”仍显示浏览器语言的问题；支持平台语言切换，无需刷新页面。
+- 尚无就绪语音模型时明确提示先下载模型，避免误报为等待调度器接入。
+
+### English
+- Verify the Scheduler service identity on older VOS versions during automatic binding.
+- Follow the platform language on older VOS versions and update open pages when the platform language changes.
+- Explain when speech models need downloading instead of showing a generic scheduler setup message.
+
 ## [0.0.24] - 2026-10-21
 
 ### 简体中文

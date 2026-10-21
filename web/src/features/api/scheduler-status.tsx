@@ -5,6 +5,7 @@ import { useTranslator } from '@astryxdesign/core/i18n';
 export function SchedulerStatus() {
   const t = useTranslator();
   const [configured, setConfigured] = useState<boolean>();
+  const [needsModels, setNeedsModels] = useState(false);
   useEffect(() => {
     let active = true;
     let running = false;
@@ -16,7 +17,18 @@ export function SchedulerStatus() {
         const response = await fetch('./api/v1/scheduler/binding', { signal: controller.signal, cache: 'no-store' });
         const status = response.ok ? await response.json() as { configured?: boolean } : undefined;
         if (active) setConfigured(status?.configured === true);
-      } catch { if (active) setConfigured(false); }
+        if (status?.configured === false) {
+          const [discovery, creative] = await Promise.all([
+            fetch('./api/v1/discovery', { signal: controller.signal, cache: 'no-store' }),
+            fetch('./api/v1/creative-models', { signal: controller.signal, cache: 'no-store' }),
+          ]);
+          if (discovery.ok && creative.ok) {
+            const native = await discovery.json() as { models?: unknown[] };
+            const rows = await creative.json() as { status?: string }[];
+            if (active) setNeedsModels(Array.isArray(native.models) && native.models.length === 0 && Array.isArray(rows) && !rows.some(row => row.status === 'ready'));
+          } else if (active) setNeedsModels(false);
+        } else if (active) setNeedsModels(false);
+      } catch { if (active) { setConfigured(false); setNeedsModels(false); } }
       finally { running = false; }
     }
     void update();
@@ -24,5 +36,5 @@ export function SchedulerStatus() {
     return () => { active = false; controller.abort(); clearInterval(timer); };
   }, []);
   if (configured === true) return null;
-  return <p role="status" aria-live="polite" data-testid="scheduler-status">{t(configured === undefined ? '@vvoice.scheduler.checking' : '@vvoice.scheduler.waiting')}</p>;
+  return <p role="status" aria-live="polite" data-testid="scheduler-status">{t(configured === undefined ? '@vvoice.scheduler.checking' : needsModels ? '@vvoice.scheduler.needsModels' : '@vvoice.scheduler.waiting')}</p>;
 }

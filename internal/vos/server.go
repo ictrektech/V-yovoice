@@ -32,6 +32,10 @@ type Identity struct{ Key, Role, Subject string }
 
 // identity 始终在服务端核验访问令牌，不信任浏览器提供的用户名或路径。
 func (s *Server) identity(r *http.Request) (Identity, error) {
+	return s.verifyIdentity(r, false)
+}
+
+func (s *Server) verifyIdentity(r *http.Request, legacyApplication bool) (Identity, error) {
 	auth := r.Header.Get("Authorization")
 	if !strings.HasPrefix(auth, "Bearer ") {
 		return Identity{}, fmt.Errorf("VOS sign-in required")
@@ -56,7 +60,14 @@ func (s *Server) identity(r *http.Request) (Identity, error) {
 		Enable int    `json:"enable"`
 	}
 	if res.StatusCode != 200 {
-		return Identity{}, fmt.Errorf("VOS sign-in rejected")
+		// 旧版 VOS 的应用令牌在 userinfo 查库失败，但 user/check 可核验签名身份。
+		var rejected struct {
+			Error string `json:"error"`
+		}
+		if !legacyApplication || res.StatusCode != 401 || json.NewDecoder(http.MaxBytesReader(nil, res.Body, 65536)).Decode(&rejected) != nil || rejected.Error != "invalid_token" {
+			return Identity{}, fmt.Errorf("VOS sign-in rejected")
+		}
+		return s.legacySchedulerIdentity(r, client)
 	}
 	if err = json.NewDecoder(http.MaxBytesReader(nil, res.Body, 65536)).Decode(&user); err != nil || user.Sub == "" || user.Enable != 1 {
 		return Identity{}, fmt.Errorf("invalid VOS identity")

@@ -287,3 +287,7 @@ never automatically replayed. Force admission requires a current administrator B
 identity verified by V-Scheduler; hard budgets, stop barriers and at least 1 GiB RAM
 headroom remain enforced. Operator credentials are never persisted in tasks.
 See the [unified integration guide](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md).
+
+VOS 界面默认跟随平台语言，兼容旧版平台语言存储和新版语言广播；显式选择的语言仍优先。尚无就绪语音模型时，页面提示先下载模型，模型就绪后自动重试 V-Scheduler 接入，不要求用户部署 Agent。
+
+自动接入同时兼容新版 VOS 身份接口和旧版 VOS 的 `user/check` 应用身份核验；只接受 V-Scheduler 的精确已启用服务身份，普通用户及其他应用不能交接授权。用户无需手工配置服务令牌，既有共享目录和兼容地址继续保留。
