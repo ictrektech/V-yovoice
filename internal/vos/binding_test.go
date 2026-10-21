@@ -22,6 +22,7 @@ func bindingFixture(t *testing.T) (*Server, SchedulerConfig) {
 		}
 		jsonReply(w, map[string]any{"code": "OK", "data": []any{
 			map[string]any{"id": "voice.infer", "app_id": voiceAppID, "contract_version": "1", "task_type": "model.infer", "upstream_urls": []string{"http://v-voice-backend:7070/v1"}},
+			map[string]any{"id": "voice.speaker", "app_id": voiceAppID, "contract_version": "1", "task_type": "model.infer", "upstream_urls": []string{"http://v-voice-backend:7070/v1"}},
 			map[string]any{"id": "voice.generate", "app_id": voiceAppID, "contract_version": "1", "task_type": "voice.generate"},
 			map[string]any{"id": "foreign.infer", "app_id": "other-app", "contract_version": "1", "task_type": "model.infer", "upstream_urls": []string{"http://v-voice-backend:7070/v1"}},
 			map[string]any{"id": "wrong-origin.infer", "app_id": voiceAppID, "contract_version": "1", "task_type": "model.infer", "upstream_urls": []string{"http://other.invalid/v1"}},
@@ -253,5 +254,26 @@ func TestBindingCannotRedirectCredentialsOrOverwriteUnsafeFile(t *testing.T) {
 	}
 	if bindRequest(s, schedulerAppID, config).Code != 503 {
 		t.Fatal("unsafe existing file overwritten")
+	}
+}
+
+func TestCombinedBindingAcceptsDistinctApprovedExecutors(t *testing.T) {
+	s, config := bindingFixture(t)
+	config.Models["speaker-campplus-zh-en"] = "voice.speaker"
+	config.SecondaryModels = map[string][]string{"sensevoice-int8": {"speaker-campplus-zh-en"}}
+	if response := bindRequest(s, schedulerAppID, config); response.Code != 200 {
+		t.Fatalf("approved combined binding rejected: %d %s", response.Code, response.Body.String())
+	}
+	before, _ := os.ReadFile(s.SchedulerPath)
+	for _, executor := range []string{"", "foreign.infer", "wrong-origin.infer", "unknown.infer"} {
+		config.BindingRevision++
+		config.Models["speaker-campplus-zh-en"] = executor
+		if response := bindRequest(s, schedulerAppID, config); response.Code < 400 {
+			t.Fatalf("unapproved secondary executor accepted: %s", executor)
+		}
+		after, _ := os.ReadFile(s.SchedulerPath)
+		if !bytes.Equal(before, after) {
+			t.Fatal("invalid secondary replaced approved binding")
+		}
 	}
 }

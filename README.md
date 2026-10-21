@@ -291,3 +291,5 @@ See the [unified integration guide](https://github.com/ictrektech/V-Scheduler/bl
 VOS 界面默认跟随平台语言，兼容旧版平台语言存储和新版语言广播；显式选择的语言仍优先。尚无就绪语音模型时，页面提示先下载模型，模型就绪后自动重试 V-Scheduler 接入，不要求用户部署 Agent。
 
 自动接入同时兼容新版 VOS 身份接口和旧版 VOS 的 `user/check` 应用身份核验；只接受 V-Scheduler 的精确已启用服务身份，普通用户及其他应用不能交接授权。用户无需手工配置服务令牌，既有共享目录和兼容地址继续保留。
+
+组合语音调用由 V-Scheduler 校准主任务的总预算；次模型可以使用不同执行器，但全部模型映射均须通过同一应用的执行器审批。

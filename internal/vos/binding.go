@@ -137,8 +137,9 @@ func validateBinding(config SchedulerConfig) error {
 			return fmt.Errorf("invalid combined binding")
 		}
 		for _, id := range secondary {
-			if config.Models[id] != config.Models[model] {
-				return fmt.Errorf("combined models require one approved budget")
+			// 组合预算由已核验的调度器校准；每个模型仍须通过执行器审批预检。
+			if config.Models[id] == "" {
+				return fmt.Errorf("combined models require approved mappings")
 			}
 		}
 	}
