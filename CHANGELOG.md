@@ -4,17 +4,35 @@
 
 ## [Unreleased]
 
-- 新增 Linux x64 桌面版：提供 `.deb`（Debian/Ubuntu）和 `.tar.gz`（附 `install.sh`，为当前用户添加到应用菜单），开箱使用内置 CPU 内核，可在设置中下载 Vulkan GPU 内核；需要系统提供 WebKitGTK 4.1，暂不支持自动更新。
-- 音乐播放页逐字点亮当前句：按音频里的人声自动分出每个字的时间；新增一句一屏的“浮光”歌词样式，字随演唱逐个跃出并发光，适合录屏；可导出逐字 LRC。
-- 新增可选下载的歌词对齐模型（BS-RoFormer 人声分离 + Qwen3 Forced Aligner，约 1.3 GB）：播放页“智能对齐”先分离人声，去掉间奏和长停顿后把歌词逐字对到演唱上，按句分段对齐，结果随版本保存；同一版本重新对齐时复用已分离的人声；日文、韩文按字给出时间。
-- 音乐播放页焕新：macOS 上打开播放页时标题栏与背景融为一体，静置隐藏控件时窗口按钮一起隐去；校准、对齐、导出收进顶栏的“歌词工具”菜单，画面不再有一排按钮。“浮光”样式重做动效：字散落在画面中央，唱到时飞入放大、按演唱进度染色并亮起拖尾光晕，唱过后慢慢偏转外漂，换句时旧句放大散去、新句淡入，背景改为虚化的封面铺底，上面漂着细线和实心的小几何图形，缓慢平移旋转并随响度胀缩，另有光点上升和四角压暗。新增“调整歌词时间”：播放时点一句就把它锚定到当前播放位置开始演唱，也可整句提前或推后 0.1/0.5 秒（←/→ 键微调），可选“后面跟着移”或“只改这一句”；单字可在时间轴上拖动字块或两端调整，也可边听边“跟唱打点”，保存后随版本记录。歌词滚动改为连续缓动跟随、远处的句子渐隐缩小不再模糊，顶栏按钮和菜单统一为深色磨砂玻璃。
-- 安装包变小：Kokoro 发音库（约 10 MB）不再内置，第一次下载 Kokoro 模型时自动一并下载；已装 Kokoro 的用户升级后首次生成时自动补齐。
-- 设置 › 通用新增“功能显示”，可分别隐藏故事配音、音乐生成（含编曲）和 Ocho 助手的入口，默认全部显示；Ocho 与音乐生成都关闭时，AI 服务设置也一并隐藏。
-- 修复最近作品里有二三十分钟的长音频时，启动一直停在启动画面的问题：播放器和时间线的波形改为边读取边计算，不再整段解码音频。各页面改为第一次打开时才加载，启动更快。
-- 生成、下载和 Ocho 回复过程中界面更流畅：后台只推送变化的内容，Ocho 流式回复不再带动整个界面重绘；版本记录很多时先显示最近 30 条；音乐播放页分析音频占用的内存更少。
-- 修复 Windows 和 Linux 上导出较长的音乐（约两分钟以上）时点击没有反应的问题：导出改为直接复制已生成的文件，不再受大小限制；故事配音时间线导出的长音频也不再受限。播放器工具栏改为“打开位置”，导出移到“更多”菜单。
-- Windows 安装包的最低系统要求从 Windows 10 2004（19041）放宽到 Windows 10 1809（17763），1903、1909 等版本也能安装。
-- 升级时一次性把旧版本保存的作品、助手对话和内核记录转换为新格式，转换前自动留一份数据库副本，转换出错不影响原有数据。
+## [0.4.0] - 2026-10-21
+
+### English
+
+- New Linux x64 desktop app: `.deb` (Debian/Ubuntu) and `.tar.gz` with `install.sh`. It runs on the bundled CPU engine, can download a Vulkan GPU engine in Settings, and needs WebKitGTK 4.1; auto-update is not available on Linux yet.
+- Word-by-word lyrics on the music playback page: each word lights up as it is sung, timed from the vocals. A new one-line-per-screen "Glow" style flies words in and lights them up, good for screen recording. Export word-level LRC.
+- Optional lyric alignment model (BS-RoFormer vocal separation + Qwen3 Forced Aligner, about 1.3 GB): "Smart align" separates the vocals, skips interludes and long pauses, and aligns the lyrics word by word, line by line; results are saved with the version.
+- Refreshed playback page: an immersive title bar on macOS, a "Lyric tools" menu for calibration, alignment and export, reworked "Glow" motion and backdrop, and smoother lyric scrolling. "Adjust lyric timing" anchors a line to the playhead or nudges it by 0.1/0.5 s (←/→), with or without shifting later lines; drag single words on a timeline or tap along while listening.
+- Smaller installers: the Kokoro pronunciation data (about 10 MB) now downloads together with the Kokoro model.
+- Settings › General › "Features" lets you hide story narration, music generation and the Ocho assistant; AI service settings hide when both Ocho and music are off.
+- Faster launch and a smoother interface: fixes launch stalling on the splash screen when recent work includes 20–30 minute audio; pages load on first open; generation, downloads and Ocho replies no longer redraw the whole interface.
+- Fix exporting longer music (about two minutes or more) doing nothing on Windows and Linux; long timeline exports are no longer limited either. The player toolbar now has "Show in folder", with export under "More".
+- Fix model downloads from ModelScope failing size checks after the mirror was refreshed.
+- The Windows installer now supports Windows 10 1809 (17763) and later.
+- On upgrade, saved projects, assistant chats and engine records are converted to the new format once, with a database backup made first.
+
+### 简体中文
+
+- 新增 Linux x64 桌面版：提供 `.deb`（Debian/Ubuntu）和附 `install.sh` 的 `.tar.gz`，开箱使用内置 CPU 内核，可在设置中下载 Vulkan GPU 内核；需要系统提供 WebKitGTK 4.1，暂不支持自动更新。
+- 音乐播放页逐字点亮歌词：按音频里的人声分出每个字的时间；新增一句一屏的“浮光”样式，字随演唱逐个飞入亮起，适合录屏；可导出逐字 LRC。
+- 新增可选下载的歌词对齐模型（BS-RoFormer 人声分离 + Qwen3 Forced Aligner，约 1.3 GB）：“智能对齐”先分离人声，去掉间奏和长停顿，再按句把歌词逐字对到演唱上，结果随版本保存。
+- 音乐播放页焕新：macOS 上标题栏与背景融为一体；校准、对齐、导出收进“歌词工具”菜单；“浮光”动效和背景重做，歌词滚动更顺滑。新增“调整歌词时间”：把一句锚定到当前播放位置，或整句提前、推后 0.1/0.5 秒（←/→），可选后面跟着移或只改这一句；单字可在时间轴上拖动，也可边听边跟唱打点。
+- 安装包变小：Kokoro 发音库（约 10 MB）改为第一次下载 Kokoro 模型时一并下载。
+- 设置 › 通用新增“功能显示”，可分别隐藏故事配音、音乐生成和 Ocho 助手；Ocho 与音乐生成都关闭时一并隐藏 AI 服务设置。
+- 启动更快、界面更流畅：修复最近作品里有二三十分钟长音频时启动停在启动画面的问题；各页面第一次打开时才加载；生成、下载和 Ocho 回复过程中不再重绘整个界面。
+- 修复 Windows 和 Linux 上导出约两分钟以上的音乐时点击没有反应的问题，时间线导出长音频也不再受限；播放器工具栏改为“打开位置”，导出移到“更多”菜单。
+- 修复 ModelScope 镜像刷新后，从该来源下载模型时大小校验失败的问题。
+- Windows 安装包最低系统要求放宽到 Windows 10 1809（17763）。
+- 升级时一次性把旧版本保存的作品、助手对话和内核记录转换为新格式，转换前自动备份数据库。
 
 ## [0.3.1] - 2026-10-19
 
