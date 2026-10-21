@@ -272,3 +272,5 @@ VOS 安装后，应用通过 Scheduler 的可信绑定获得 `lifecycle_protocol
 在 V-Scheduler「节点管理 → 应用统一接入」可查看实际节点、批准预算和运行中的执行。同步计算使用「停止并卸载」，异步任务使用「取消」；停止请求本身不释放预算。应用确认原生调用/子进程退出并卸载权重后才提交原执行的停止证明。未知执行或确认失败继续保留预约，避免把仍在运行的计算当成空闲；确认回执保存在应用私有目录，可在重启后重试。阻塞式原生调用须等待其实际返回，不能承诺立即中断。
 
 完整流程、身份和接口见 [V-Scheduler 统一接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md#unified-lifecycle)。
+
+发布纯应用层改动时，可在对应架构构建机上使用 `VVOICE_STUDIO_BASE_IMAGE=<已核验的同 profile 发布镜像> bash docker/build_studio_image.sh --sheet <sheet> --application-only`，复用已校准的原生环境，仅更新当前 `vvoice/`、预先编译的 Go 程序和网页资产。随后用原脚本 `--publish-only` 推送并记录飞书。改变原生依赖、内核或目录契约时仍须完整构建。

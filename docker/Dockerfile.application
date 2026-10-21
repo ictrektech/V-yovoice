@@ -1,0 +1,8 @@
+ARG VVOICE_STUDIO_BASE_IMAGE
+FROM ${VVOICE_STUDIO_BASE_IMAGE}
+# 仅更新应用与配置交接；保留已发布的 ORT、Torch、Sherpa 和 audio.cpp 环境。
+ARG TARGETARCH
+COPY --from=studio_artifacts /linux-${TARGETARCH}/vvoice-studio /opt/vvoice/vvoice-studio
+COPY --from=studio_artifacts /web/ /opt/vvoice/web/
+COPY vvoice/ /app/vvoice/
+RUN python3 -m compileall -q /app/vvoice
