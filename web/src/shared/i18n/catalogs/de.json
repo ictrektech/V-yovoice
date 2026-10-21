@@ -2766,22 +2766,22 @@
     "defaultMessage": "Liedtext-Werkzeuge"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "Wort-Timing bearbeiten"
+    "defaultMessage": "Liedtext-Timing anpassen"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Wortblöcke ziehen oder mittippen, um das Timing jedes Wortes anzupassen"
+    "defaultMessage": "Beim Abspielen eine Zeile anklicken, damit sie an der aktuellen Stelle beginnt; ganze Zeilen verschieben oder einzelne Wörter feinjustieren"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "Beim Zuhören den Beginn jeder Zeile markieren"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "Diese Zeile bearbeiten"
+    "defaultMessage": "Beim Abspielen klicken: Zeile beginnt hier"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "Wort-Timing-Editor"
+    "defaultMessage": "Liedtext-Timing"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Wort ziehen zum Verschieben, Ränder ziehen zum Ändern der Länge; ←/→ verschiebt das gewählte Wort, mit Umschalt feiner; Doppelklick zum Anhören"
+    "defaultMessage": "Beim Abspielen eine Zeile anklicken, um sie an der Abspielposition zu verankern; ←/→ verschiebt die Zeile, ↑/↓ wechselt die Zeile; Wortblöcke oder Ränder ziehen für einzelne Wörter"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "Mittippen"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "Ende von „{word}“ anpassen"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "An Abspielposition verankern"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Diese Zeile an der aktuellen Abspielposition beginnen (Eingabe)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n} s früher"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n} s später"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Anpassungsmodus"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Folgende Zeilen mitverschieben"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Nur diese Zeile"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "Automatisch ausrichten"

@@ -2766,22 +2766,22 @@
     "defaultMessage": "Инструменты текста"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "Изменить тайминг слов"
+    "defaultMessage": "Настроить тайминг текста"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Перетаскивайте слова или отстукивайте в такт, чтобы настроить время каждого слова"
+    "defaultMessage": "Во время воспроизведения нажмите на строку, чтобы она начиналась с текущей позиции; сдвигайте строки целиком или настраивайте отдельные слова"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "Отмечайте начало каждой строки во время прослушивания"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "Изменить эту строку"
+    "defaultMessage": "Нажатие во время воспроизведения: строка начинается здесь"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "Редактор тайминга слов"
+    "defaultMessage": "Тайминг текста"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Перетащите слово, чтобы сдвинуть, края — чтобы изменить длину; ←/→ сдвигает выбранное слово, с Shift точнее; двойной щелчок — прослушать"
+    "defaultMessage": "Во время воспроизведения нажмите на строку, чтобы привязать её к позиции; ←/→ сдвигает строку, ↑/↓ меняет строку; перетаскивайте блоки или края для отдельных слов"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "Отстукивать"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "Конец «{word}»"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Привязать к позиции"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Начать эту строку с текущей позиции (Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "На {n} с раньше"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "На {n} с позже"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Режим сдвига"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Сдвигать следующие"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Только эта строка"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "Автовыравнивание"

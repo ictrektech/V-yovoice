@@ -2766,22 +2766,22 @@
     "defaultMessage": "Outils des paroles"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "Modifier le minutage des mots"
+    "defaultMessage": "Ajuster le minutage des paroles"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Faites glisser les mots ou tapez en rythme pour ajuster le moment de chaque mot"
+    "defaultMessage": "Pendant la lecture, cliquez sur une ligne pour la faire commencer à la position actuelle ; décalez des lignes entières ou affinez mot à mot"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "Marquez le début de chaque ligne en écoutant"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "Modifier cette ligne"
+    "defaultMessage": "Clic pendant la lecture : la ligne commence ici"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "Éditeur de minutage des mots"
+    "defaultMessage": "Minutage des paroles"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Faites glisser un mot pour le déplacer, ses bords pour changer sa durée ; ←/→ décale le mot sélectionné, Maj pour un pas plus fin ; double-cliquez pour écouter"
+    "defaultMessage": "Pendant la lecture, cliquez sur une ligne pour l’ancrer à la tête de lecture ; ←/→ décale la ligne, ↑/↓ change de ligne ; faites glisser les blocs ou leurs bords pour un mot"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "Taper en rythme"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "Ajuster la fin de « {word} »"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Ancrer à la tête de lecture"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Faire commencer cette ligne à la position actuelle (Entrée)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n} s plus tôt"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n} s plus tard"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Mode d’ajustement"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Décaler les suivantes"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Cette ligne seulement"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "Aligner automatiquement"

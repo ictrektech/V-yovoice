@@ -2766,22 +2766,22 @@
     "defaultMessage": "Strumenti testo"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "Modifica i tempi delle parole"
+    "defaultMessage": "Regola i tempi del testo"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Trascina i blocchi o batti a tempo per regolare quando viene cantata ogni parola"
+    "defaultMessage": "Durante la riproduzione, fai clic su una riga per farla iniziare alla posizione attuale; sposta righe intere o rifinisci le singole parole"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "Segna l’inizio di ogni riga mentre ascolti"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "Modifica questa riga"
+    "defaultMessage": "Clic in riproduzione: la riga inizia qui"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "Editor dei tempi delle parole"
+    "defaultMessage": "Tempi del testo"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Trascina una parola per spostarla e i bordi per cambiarne la durata; ←/→ sposta la parola selezionata, Maiusc per passi più fini; doppio clic per ascoltare"
+    "defaultMessage": "Durante la riproduzione, fai clic su una riga per ancorarla alla posizione attuale; ←/→ sposta la riga, ↑/↓ cambia riga; trascina i blocchi o i bordi per le singole parole"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "Batti a tempo"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "Regola la fine di «{word}»"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Ancora alla riproduzione"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Fai iniziare questa riga alla posizione attuale (Invio)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n} s prima"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n} s dopo"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Modalità"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Sposta anche le successive"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Solo questa riga"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "Allinea automaticamente"

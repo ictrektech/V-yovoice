@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import type { LyricLine } from './lyric-timing';
 
 // 浮光样式的逐字动效：一句一屏，字散落在画面中央，唱到时从远处飞入、放大发光，唱过后缩回原位并慢慢偏转、向外漂开。
@@ -108,4 +108,47 @@ export function backdropScene(seed: string) {
   }));
   const motes = Array.from({ length: 20 }, () => ({ x: next() * 100, y: next() * 100, size: 1 + next() * 4, peak: .08 + next() * .22, duration: 15 + next() * 20, delay: -next() * 35 }));
   return { shapes, motes };
+}
+
+// 滚动歌词的跟随动效（参照 Mineradio 的影院式排布）：当前句停在歌词区中线略偏上，整列歌词按一个连续的滚动位置平滑地追过去，
+// 每帧最多走大半行；离当前句越远越淡、越小，不做模糊，远处靠上下的渐隐遮罩收住。整列随时间轻轻浮动，上下文的句子各自微微呼吸，
+// 响度大时整体略微放大。逐帧写到每一行的样式上，不经过 React 渲染；减少动态效果时直接跳到位、不浮动。
+export function useLyricFollow(box: RefObject<HTMLElement | null>, focus: number, enabled: boolean) {
+  const target = useRef(focus);
+  useEffect(() => { target.current = focus; }, [focus]);
+  useEffect(() => {
+    if (!enabled) return;
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let frame = 0, last = performance.now(), position = -1;
+    const tick = (stamp: number) => {
+      const dt = Math.min(.1, (stamp - last) / 1000), now = stamp / 1000, viewport = box.current;
+      last = stamp;
+      const lines = viewport ? [...viewport.querySelectorAll<HTMLElement>('.now-playing-line')] : [];
+      if (viewport && lines.length) {
+        const goal = clamp(target.current, 0, lines.length - 1);
+        if (position < 0 || still) position = goal;
+        else {
+          const cap = .68 * dt * 60, step = (goal - position) * (1 - (1 - .157) ** (dt * 60));
+          position = Math.abs(goal - position) < .002 ? goal : position + clamp(step, -cap, cap);
+        }
+        const centers = lines.map(line => line.offsetTop + line.offsetHeight / 2);
+        const low = Math.floor(position), high = Math.min(lines.length - 1, low + 1), y = centers[low] + (centers[high] - centers[low]) * (position - low);
+        const row = lines[low].offsetHeight || 1;
+        const level = Number(viewport.closest<HTMLElement>('.now-playing')?.style.getPropertyValue('--now-playing-level')) || 0;
+        const drift = still ? 0 : (Math.sin(now * .55) * .046 + Math.sin(now * 1.35) * .012) * row;
+        const base = viewport.clientHeight * .45 - y + drift, swell = 1 + level * .03;
+        lines.forEach((line, i) => {
+          const distance = Math.abs(i - position);
+          let alpha = distance < 1 ? 1 - distance * .46 : distance < 2 ? .54 - (distance - 1) * .1944 : .3456;
+          alpha *= clamp(1 - Math.max(0, distance - 1.25) * .07, .16, 1) * easeInOut(clamp((5.1 - distance) / 1.1));
+          const breathe = still || distance < .5 ? 1 : 1 + Math.sin(now * .68 + i * .71) * .012;
+          line.style.setProperty('--line-alpha', alpha.toFixed(3));
+          line.style.transform = `translateY(${base.toFixed(2)}px) scale(${(clamp(1 - distance * .026, .84, 1.02) * breathe * swell).toFixed(4)})`;
+        });
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [box, enabled]);
 }

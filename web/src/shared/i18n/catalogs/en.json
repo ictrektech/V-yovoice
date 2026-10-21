@@ -2766,22 +2766,22 @@
     "defaultMessage": "Lyric tools"
   },
   "@yovoice.music.editWords": {
-    "defaultMessage": "Edit word timing"
+    "defaultMessage": "Adjust lyric timing"
   },
   "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Drag word blocks or tap along to adjust when each word is sung"
+    "defaultMessage": "While playing, click a line to start it at the current position; nudge whole lines or fine-tune single words"
   },
   "@yovoice.music.syncLyricsHint": {
     "defaultMessage": "Mark the start of each line while listening"
   },
   "@yovoice.music.editThisLine": {
-    "defaultMessage": "Edit this line"
+    "defaultMessage": "Click while playing: this line starts here"
   },
   "@yovoice.music.wordEditor": {
-    "defaultMessage": "Word timing editor"
+    "defaultMessage": "Lyric timing"
   },
   "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Drag a word to move it, drag its edges to resize; ←/→ nudges the selected word, Shift for finer steps; double-click to preview"
+    "defaultMessage": "While playing, click a lyric line to anchor it at the playhead; ←/→ nudges the line, ↑/↓ changes line; drag word blocks or their edges for single words"
   },
   "@yovoice.music.wordTap": {
     "defaultMessage": "Tap along"
@@ -2818,6 +2818,27 @@
   },
   "@yovoice.music.wordEnd": {
     "defaultMessage": "Adjust the end of “{word}”"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Anchor to playhead"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Start this line at the current playback position (Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n}s earlier"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n}s later"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Adjust mode"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Shift following lines"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "This line only"
   },
   "@yovoice.music.alignLyrics": {
     "defaultMessage": "Auto-align"
