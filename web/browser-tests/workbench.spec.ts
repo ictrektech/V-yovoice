@@ -85,7 +85,7 @@ test('真实 WAV 导入、播放、裁剪和空状态', async ({ page }) => {
   const originalWidth = await page.locator('.waveform').evaluate(el => el.getBoundingClientRect().width);
   await page.getByRole('button', { name: '放大音轨', exact: true }).click();
   await expect(page.getByRole('button', { name: '适应完整音轨' })).toHaveText('200%');
-  expect(await page.locator('.waveform').evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(originalWidth * 1.9);
+  await expect.poll(() => page.locator('.waveform').evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(originalWidth * 1.9);
   await lane.evaluate(el => { el.scrollLeft = el.scrollWidth; });
   expect(await lane.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
   await progress.fill('1.5');
