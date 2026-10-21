@@ -2,6 +2,14 @@
 
 各版本的重要更新记录。日常改动记入 `Unreleased`；发布前合并重复项，整理为简短的功能、改进和修复说明。
 
+## [Unreleased]
+
+### 简体中文
+- 推理请求可携带任务优先级、协作让出、请求抢占和管理员强制尝试参数；保持原生退出及模型卸载后释放预算，管理员身份仅在当前请求转交。
+
+### English
+- Carry task priority, cooperative preemption consent and verified administrator force-admission intent on inference requests. Preserve native exit and unload barriers without persisting operator credentials.
+
 ## [0.0.23] - 2026-10-21
 
 ### 简体中文

@@ -202,3 +202,17 @@ make app-run
 ## 开源协议
 
 [Apache-2.0](LICENSE)。依赖组件保留[各自的许可证](THIRD_PARTY_NOTICES.md)，IndexTTS 模型单独遵循其[模型使用许可协议](web/public/model-license.txt)。
+
+
+### 任务优先级与协作让出
+
+向本应用的推理接口发送请求时，可选传入以下请求头：
+`X-VScheduler-Priority: background|interactive|high`、
+`X-VScheduler-Preemptible: true|false`、
+`X-VScheduler-Allow-Preemption: true|false`、
+`X-VScheduler-Force-Admission: true|false`。
+默认后台优先级，三个开关均关闭。抢占需要当前任务同意让出且新任务允许抢占；
+原生执行退出、模型卸载确认前仍占用预算。同步调用停止后由调用方决定是否重新提交，
+不会自动重放。强制尝试须携带当前管理员的 Bearer 身份，由 V-Scheduler 核验，
+不突破批准预算、停止屏障或至少 1 GiB 内存余量；凭证不写入任务。
+完整流程见 [V-Scheduler 统一接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md)。

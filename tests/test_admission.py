@@ -100,3 +100,19 @@ async def test_cancelled_await_does_not_release_running_native_thread(broker):
     finally:
         finish.set()
         admission.current.reset(token)
+
+
+def test_direct_call_carries_scheduling_without_changing_native_budget(broker):
+    execution = admission.Execution({"x-vscheduler-priority": "high", "x-vscheduler-preemptible": "true", "x-vscheduler-allow-preemption": "true"})
+    execution.enter("asr")
+    assert broker[0][1]["scheduling"] == {"priority": "high", "preemptible": True, "allow_preemption": True}
+    execution.end()
+    assert broker[-1][1]["stopped"] is True
+
+
+@pytest.mark.parametrize("headers", [{"x-vscheduler-priority": "urgent"}, {"x-vscheduler-preemptible": "1"}])
+def test_invalid_scheduling_does_not_start_native_work(headers, broker):
+    with pytest.raises(HTTPException) as error:
+        admission.Execution(headers).enter("asr")
+    assert error.value.status_code == 422
+    assert not broker

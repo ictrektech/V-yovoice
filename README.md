@@ -274,3 +274,16 @@ VOS 安装后，应用通过 Scheduler 的可信绑定获得 `lifecycle_protocol
 完整流程、身份和接口见 [V-Scheduler 统一接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md#unified-lifecycle)。
 
 发布纯应用层改动时，可在对应架构构建机上使用 `VVOICE_STUDIO_BASE_IMAGE=<已核验的同 profile 发布镜像> bash docker/build_studio_image.sh --sheet <sheet> --application-only`，复用已校准的原生环境，仅更新当前 `vvoice/`、预先编译的 Go 程序和网页资产。随后用原脚本 `--publish-only` 推送并记录飞书。改变原生依赖、内核或目录契约时仍须完整构建。
+
+
+### Task priority and cooperative preemption
+
+Inference requests optionally accept `X-VScheduler-Priority: background|interactive|high`,
+`X-VScheduler-Preemptible: true|false`, `X-VScheduler-Allow-Preemption: true|false`, and
+`X-VScheduler-Force-Admission: true|false`. The default is background priority with all
+three flags off. Preemption requires consent from both requests. Resources remain
+reserved until native exit and model unload are confirmed. Synchronous requests are
+never automatically replayed. Force admission requires a current administrator Bearer
+identity verified by V-Scheduler; hard budgets, stop barriers and at least 1 GiB RAM
+headroom remain enforced. Operator credentials are never persisted in tasks.
+See the [unified integration guide](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md).

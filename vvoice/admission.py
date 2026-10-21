@@ -113,8 +113,10 @@ def configuration() -> dict:
         raise HTTPException(503, "V-Scheduler configuration required") from None
 
 
-def controller(config: dict, path: str, body: dict, key: str = "") -> dict:
+def controller(config: dict, path: str, body: dict, key: str = "", operator: str = "") -> dict:
     headers = {"Authorization": f"Bearer {config['token']}"}
+    from .scheduling_options import operator_headers
+    headers.update(operator_headers(body.get("scheduling", {}), operator))
     if key:
         headers["Idempotency-Key"] = key
     try:
@@ -197,10 +199,13 @@ class Execution:
                 if not self.executor:
                     raise HTTPException(503, "Model executor is not approved")
                 self.proof = secrets.token_hex(32)
+                from .scheduling_options import options_from_headers
+                options = options_from_headers(self.headers)
                 reply = controller(self.config, "/permits", {
                     "executor_id": self.executor, "model_id": model,
                     "upstream_url": self.config["upstream_url"], "execution_token": self.proof,
-                }, self.id)
+                    **({"scheduling": options} if options else {}),
+                }, self.id, **({"operator": self.headers.get("authorization", "")} if options.get("force_admission") else {}))
                 self.permit = str(reply.get("permit_id") or "")
                 self.owned = True
             if not self.permit:
