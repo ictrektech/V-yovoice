@@ -477,16 +477,19 @@ public partial class MainWindow : Window
                     var scoreSave = new SaveFileDialog { Filter = scoreFormat == "json" ? HostL10n.T("乐谱 JSON", "Score JSON") + "|*.json" : "MIDI|*.mid", DefaultExt = "." + scoreFormat, FileName = Path.GetFileName(data.GetProperty("name").GetString() ?? "score") + "." + scoreFormat, OverwritePrompt = true };
                     result = scoreSave.ShowDialog(this) == true ? await service.CallAsync(method, new { path = scoreSave.FileName, score = data.GetProperty("score") }) : false; break;
                 case "audio.export":
-                    string encoded = data.GetProperty("base64").GetString() ?? "";
-                    if (encoded.Length > 240_000_000) throw new ArgumentException(HostL10n.T("导出音频超过大小限制。", "The exported audio is too large."));
-                    byte[] wav = Convert.FromBase64String(encoded);
-                    if (wav.Length < 44 || System.Text.Encoding.ASCII.GetString(wav, 0, 4) != "RIFF" || System.Text.Encoding.ASCII.GetString(wav, 8, 4) != "WAVE") throw new ArgumentException(HostL10n.T("导出音频格式无效。", "The exported audio format is invalid."));
-                    var save = new SaveFileDialog { Filter = HostL10n.T("WAV 音频", "WAV Audio") + "|*.wav", DefaultExt = ".wav", FileName = Path.GetFileName(data.GetProperty("name").GetString() ?? "yovoice.wav"), OverwritePrompt = true };
-                    if (save.ShowDialog(this) != true) { result = false; break; }
-                    string temporary = save.FileName + "." + Guid.NewGuid().ToString("N") + ".tmp";
-                    try { await File.WriteAllBytesAsync(temporary, wav); File.Move(temporary, save.FileName, true); }
-                    finally { if (File.Exists(temporary)) File.Delete(temporary); }
-                    result = true; break;
+                    // 时间线合成的音频已由网页上传到本地服务的临时文件，这里只选位置并复制，用完即删。
+                    string exported = (await service.CallAsync("export.path", new { id = data.GetProperty("id").GetString() })).GetString()!;
+                    try
+                    {
+                        var save = new SaveFileDialog { Filter = HostL10n.T("WAV 音频", "WAV Audio") + "|*.wav", DefaultExt = ".wav", FileName = Path.GetFileName(data.GetProperty("name").GetString() ?? "yovoice.wav"), OverwritePrompt = true };
+                        if (save.ShowDialog(this) != true) { result = false; break; }
+                        string temporary = save.FileName + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                        try { await Task.Run(() => File.Copy(exported, temporary)); File.Move(temporary, save.FileName, true); }
+                        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+                        result = true;
+                    }
+                    finally { try { File.Delete(exported); } catch (IOException) { } }
+                    break;
                 case "text.export":
                     // 字幕（SRT/VTT）、歌词（LRC）与旋律谱（ABC）是界面生成的 UTF-8 文本，宿主只负责选位置并写文件。
                     string textFormat = data.TryGetProperty("format", out var textFormatValue) ? textFormatValue.GetString() ?? "" : "";

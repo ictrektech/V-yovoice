@@ -422,9 +422,6 @@
   "@yovoice.error.audioTooLarge": {
     "defaultMessage": "参考音频需小于 20 MB。"
   },
-  "@yovoice.error.exportTooLarge": {
-    "defaultMessage": "导出的音频超过 20 MB，请分段导出。"
-  },
   "@yovoice.error.backendUnsupported": {
     "defaultMessage": "不支持的计算设备或平台。"
   },

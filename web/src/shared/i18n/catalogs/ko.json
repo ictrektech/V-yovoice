@@ -422,9 +422,6 @@
   "@yovoice.error.audioTooLarge": {
     "defaultMessage": "참조 오디오는 20MB보다 작아야 합니다."
   },
-  "@yovoice.error.exportTooLarge": {
-    "defaultMessage": "내보낼 오디오가 20MB를 넘습니다. 나누어 내보내 주세요."
-  },
   "@yovoice.error.backendUnsupported": {
     "defaultMessage": "지원하지 않는 연산 장치 또는 플랫폼입니다."
   },

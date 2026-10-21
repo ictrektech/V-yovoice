@@ -422,9 +422,6 @@
   "@yovoice.error.audioTooLarge": {
     "defaultMessage": "Reference audio must be smaller than 20 MB."
   },
-  "@yovoice.error.exportTooLarge": {
-    "defaultMessage": "The exported audio is larger than 20 MB. Export it in shorter parts."
-  },
   "@yovoice.error.backendUnsupported": {
     "defaultMessage": "Unsupported compute device or platform."
   },

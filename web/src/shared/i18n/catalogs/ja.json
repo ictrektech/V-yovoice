@@ -422,9 +422,6 @@
   "@yovoice.error.audioTooLarge": {
     "defaultMessage": "参照音声は 20 MB 未満にしてください。"
   },
-  "@yovoice.error.exportTooLarge": {
-    "defaultMessage": "書き出す音声が 20 MB を超えています。分割して書き出してください。"
-  },
   "@yovoice.error.backendUnsupported": {
     "defaultMessage": "サポートされていない計算デバイスまたはプラットフォームです。"
   },

@@ -141,6 +141,8 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return w.ImportVoiceFrom(ctx, bytes.NewReader(b), p.Name)
 	case "media.path":
 		return w.MediaFile(p.Kind, p.ID)
+	case "export.path":
+		return w.ExportPath(p.ID)
 	case "media.rename":
 		return true, w.RenameMedia(p.Kind, p.ID, p.Name)
 	case "media.delete":
