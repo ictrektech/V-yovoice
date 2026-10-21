@@ -131,6 +131,25 @@ def controller(config: dict, path: str, body: dict, key: str = "") -> dict:
         raise HTTPException(503, "Scheduler admission unavailable") from None
 
 
+_lifecycle = None
+
+def lifecycle():
+    global _lifecycle
+    if _lifecycle is None:
+        from .scheduler_lifecycle import Lifecycle
+        journal = Path(os.getenv("VVOICE_SCHEDULER_CONFIG", "/data/scheduler.local.json")).with_name("scheduler.lifecycle.json")
+        _lifecycle = Lifecycle(configuration, journal)
+    return _lifecycle
+
+
+def lifecycle_call(method, *args):
+    from .scheduler_lifecycle import LifecycleError
+    try:
+        return getattr(lifecycle(), method)(*args)
+    except (LifecycleError, OSError):
+        raise HTTPException(503, "Application lifecycle unavailable") from None
+
+
 class Execution:
     def __init__(self, headers: dict[str, str]):
         self.headers = headers
@@ -149,6 +168,7 @@ class Execution:
         self.uncertain = False
         self.failed = False
         self.stop = threading.Event()
+        self.cancel_request = None
 
     def enter(self, model: str) -> None:
         with self.lock:
@@ -161,6 +181,8 @@ class Execution:
             self.config = configuration()
             if self.validated_binding is not None and self.validated_binding != self.config:
                 raise HTTPException(503, "Input calibration changed; retry request")
+            if self.config.get('lifecycle_protocol_version') == 1:
+                lifecycle_call("ensure", self.config)
             self.model = model
             inherited = self.headers.get("x-vscheduler-permit-id", "")
             proof = self.headers.get("x-vscheduler-execution-token", "")
@@ -183,14 +205,25 @@ class Execution:
                 self.owned = True
             if not self.permit:
                 raise HTTPException(503, "Invalid admission receipt")
+            if self.config.get('lifecycle_protocol_version') == 1:
+                lifecycle_call("attach", self.config, self.permit, self.id, self.proof, self.request_stop)
             try:
                 self.verify(claim=True)
+                if self.config.get('lifecycle_protocol_version') == 1:
+                    lifecycle_call("claimed", self.permit, self.id)
             except Exception:
                 # 未启动计算；自持许可可安全释放。网关许可仍由网关决定释放。
                 if self.owned:
                     self._release(stopped=True)
                 raise
             threading.Thread(target=self._watch, name="voice-permit", daemon=True).start()
+
+    def request_stop(self):
+        with self.lock:
+            self.failed = True
+            cancel = self.cancel_request
+        if cancel:
+            cancel()
 
     def verify(self, claim: bool = False) -> None:
         result = controller(self.config, f"/permits/{self.permit}/verify", {
@@ -219,6 +252,8 @@ class Execution:
                 "stopped": stopped,
                 "evidence": "vvoice_compute_completed_and_runtime_unloaded" if stopped else "vvoice_stop_not_confirmed",
             })
+            if stopped and self.config.get('lifecycle_protocol_version') == 1:
+                lifecycle_call("released", self.permit)
         except HTTPException:
             # 调度器继续保留预约，不伪造释放成功。
             pass
@@ -249,6 +284,8 @@ class Execution:
         from .runtime import registry
         registry.unload()
         gc.collect()
+        if self.config.get('lifecycle_protocol_version') == 1:
+            lifecycle_call("finished", self.permit, not self.uncertain)
         if self.owned:
             self._release(stopped=not self.uncertain)
 
@@ -283,6 +320,8 @@ class AdmissionMiddleware:
         if scope["type"] not in {"http", "websocket"}:
             return await self.app(scope, receive, send)
         execution = Execution({key.decode().lower(): value.decode() for key, value in scope.get("headers", [])})
+        loop, task = asyncio.get_running_loop(), asyncio.current_task()
+        execution.cancel_request = lambda: loop.call_soon_threadsafe(task.cancel)
         received_bytes = 0
 
         async def guarded_receive():

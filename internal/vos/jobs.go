@@ -22,21 +22,22 @@ import (
 
 // SchedulerConfig 只读取私有配置；令牌不下发浏览器、不写入安装包。
 type SchedulerConfig struct {
-	ProtocolVersion         int                           `json:"protocol_version,omitempty"`
-	BindingRevision         int64                         `json:"binding_revision,omitempty"`
-	AppID                   string                        `json:"app_id,omitempty"`
-	URL                     string                        `json:"url"`
-	Token                   string                        `json:"token"`
-	ExecutorToken           string                        `json:"executor_token"`
-	Models                  map[string]string             `json:"models"`
-	UpstreamURL             string                        `json:"upstream_url,omitempty"`
-	GatewayExecutors        map[string]string             `json:"gateway_executors,omitempty"`
-	SecondaryModels         map[string][]string           `json:"secondary_models,omitempty"`
-	ModelLimits             map[string]map[string]float64 `json:"model_limits,omitempty"`
-	InputLimitsVersion      int                           `json:"input_limits_version,omitempty"`
-	MixedInputLimitsVersion *int                          `json:"mixed_input_limits_version,omitempty"`
-	LegacyUnboundedModels   []string                      `json:"legacy_unbounded_models,omitempty"`
-	ExecutionSettings       map[string]any                `json:"execution_settings,omitempty"`
+	LifecycleProtocolVersion int                           `json:"lifecycle_protocol_version,omitempty"`
+	ProtocolVersion          int                           `json:"protocol_version,omitempty"`
+	BindingRevision          int64                         `json:"binding_revision,omitempty"`
+	AppID                    string                        `json:"app_id,omitempty"`
+	URL                      string                        `json:"url"`
+	Token                    string                        `json:"token"`
+	ExecutorToken            string                        `json:"executor_token"`
+	Models                   map[string]string             `json:"models"`
+	UpstreamURL              string                        `json:"upstream_url,omitempty"`
+	GatewayExecutors         map[string]string             `json:"gateway_executors,omitempty"`
+	SecondaryModels          map[string][]string           `json:"secondary_models,omitempty"`
+	ModelLimits              map[string]map[string]float64 `json:"model_limits,omitempty"`
+	InputLimitsVersion       int                           `json:"input_limits_version,omitempty"`
+	MixedInputLimitsVersion  *int                          `json:"mixed_input_limits_version,omitempty"`
+	LegacyUnboundedModels    []string                      `json:"legacy_unbounded_models,omitempty"`
+	ExecutionSettings        map[string]any                `json:"execution_settings,omitempty"`
 }
 
 type Job struct {

@@ -262,6 +262,7 @@ def scheduler_contract() -> dict:
         "mixed_input_limits_version": 1,
         "app_id": settings.app_id,
         "binding_endpoint": "/api/v1/scheduler/binding",
+        "lifecycle_protocol_version": 1,
         "executor_base_url": "http://v-voice-backend:7070",
         "upstream_url": "http://v-voice-backend:7070/v1",
         "sync_models": [{"id": row["key"], "kind": row["kind"], "task_type": "model.infer"}
@@ -1091,3 +1092,17 @@ elif frontend.is_dir():
         if candidate.is_file() and frontend.resolve() in candidate.parents:
             return FileResponse(candidate)
         return FileResponse(frontend / "index.html")
+
+
+@app.on_event("startup")
+async def start_application_lifecycle():
+    if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
+        from .admission import lifecycle
+        lifecycle().start()
+
+
+@app.on_event("shutdown")
+async def stop_application_lifecycle():
+    from . import admission
+    if admission._lifecycle is not None:
+        await asyncio.to_thread(admission._lifecycle.close)

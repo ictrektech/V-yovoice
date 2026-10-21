@@ -2,6 +2,14 @@
 
 各版本的重要更新记录。日常改动记入 `Unreleased`；发布前合并重复项，整理为简短的功能、改进和修复说明。
 
+## [0.0.23] - 2026-10-21
+
+### 简体中文
+- 自动登记 V-Scheduler 应用心跳与批准预算；支持从统一接入页面停止语音执行，确认原生退出及权重卸载后释放资源，停止回执可在重启后重试。保留原共享模型目录、输入限制和配乐任务取消机制。
+
+### English
+- Automatically register approved executors and heartbeat with V-Scheduler. Stop speech execution from the unified integration page, releasing resources only after native exit and model unloading. Persist confirmed stop receipts for retry after restart, preserving shared models, input limits and music task cancellation.
+
 ## [0.0.22] - 2026-10-20
 
 ### 简体中文
