@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- 修复 macOS 自动更新下载完成后提示“更新校验失败（codesign）……invalid requirement specification”、无法安装的问题；0.3.0 至 0.4.0 需手动下载一次修复后的版本，之后即可正常自动更新。
+
 ## [0.4.0] - 2026-10-21
 
 ### English
