@@ -12,6 +12,14 @@
 - Add `make dev-browser` to develop the browser interface with a local backend and optionally connect a running speech service.
 - Fix duplicate workbench sidebars when opening speech model and related pages in browser development mode, and correct speech service routing.
 
+## [0.0.28] - 2026-10-22
+
+### 简体中文
+- 精简 AMD64 CUDA 镜像：保留 cuDNN 符号链接，避免重复打包相同库；安装包不再留在历史镜像层中。保持现有模型、接口及 GPU 运行库版本不变。
+
+### English
+- Slim the AMD64 CUDA image by preserving cuDNN symbolic links and keeping installation wheels out of image layers, without changing supported models, APIs or GPU runtime versions.
+
 ## [0.0.27] - 2026-10-22
 
 ### 简体中文

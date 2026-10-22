@@ -9,6 +9,9 @@ COPY frontend/ ./
 RUN npm run build
 
 FROM ${CUDA_CUDNN_BASE_IMAGE} AS cudnn
+# 先在同一目录保留链接关系，避免跨阶段通配符 COPY 将链接展开为三份文件。
+RUN mkdir /cudnn-runtime \
+    && cp -a /usr/lib/x86_64-linux-gnu/libcudnn*.so* /cudnn-runtime/
 
 FROM ${CUDA_RUNTIME_BASE_IMAGE}
 ARG SHERPA_ONNX_VERSION=1.13.8
@@ -18,21 +21,21 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VVOICE_PROVIDER=cuda \
     VVOICE_PORT=7070
 WORKDIR /app
-COPY --from=cudnn /usr/lib/x86_64-linux-gnu/libcudnn*.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=cudnn /cudnn-runtime/ /usr/lib/x86_64-linux-gnu/
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl ffmpeg libgomp1 libsndfile1 python3 python3-pip \
     && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml README.md ./
 COPY vvoice ./vvoice
 COPY catalog ./catalog
-COPY --from=sherpa_wheels / /tmp/sherpa-wheels/
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
-RUN python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" --upgrade pip setuptools wheel \
+# 安装包只读挂载到安装步骤，不进入任何成品镜像层。
+RUN --mount=type=bind,from=sherpa_wheels,source=/,target=/tmp/sherpa-wheels \
+    python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" --upgrade pip setuptools wheel \
     && python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . "onnxruntime-gpu>=1.22,<2" \
     && python3 -m pip install --no-cache-dir --verbose --timeout 120 \
       "sherpa-onnx==${SHERPA_ONNX_VERSION}+cuda12.cudnn9.onnxruntime1.28.2" \
-      --no-index -f /tmp/sherpa-wheels \
-    && rm -rf /tmp/sherpa-wheels
+      --no-index -f /tmp/sherpa-wheels
 COPY --from=frontend /src/frontend/dist ./frontend/dist
 RUN python3 -c "import sherpa_onnx; assert '+cuda' in sherpa_onnx.__version__; print(sherpa_onnx.__version__)"
 EXPOSE 7070
