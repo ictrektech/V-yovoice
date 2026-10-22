@@ -90,7 +90,7 @@ if [[ "$mode" == full || "$mode" == build ]]; then
   esac
   REGISTRY="$registry" VVOICE_LEGACY_STAGE=1 bash docker/build_legacy_image.sh --sheet "$sheet" --build-only
   docker tag "$image" "$base"
-  compiler="$platform_base"
+  compiler="${VVOICE_AUDIOCPP_BUILD_BASE_IMAGE:-$platform_base}"
   docker buildx build --builder default --load --provenance=false --sbom=false \
     --build-context "studio_artifacts=${artifacts}" --build-context "audiocpp_source=${build_root}/sources" \
     --build-arg "VVOICE_BASE_IMAGE=${base}" --build-arg "AUDIOCPP_BUILD_BASE_IMAGE=${compiler}" \
