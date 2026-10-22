@@ -4,9 +4,11 @@ package vos
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,6 +24,7 @@ import (
 
 type Server struct {
 	Root, Assets, UserinfoURL, Runtime, SchedulerPath string
+	DevToken                                          string
 	Client                                            *http.Client
 	Jobs                                              *Jobs
 	mu                                                sync.Mutex
@@ -39,6 +42,14 @@ func (s *Server) verifyIdentity(r *http.Request, legacyApplication bool) (Identi
 	auth := r.Header.Get("Authorization")
 	if !strings.HasPrefix(auth, "Bearer ") {
 		return Identity{}, fmt.Errorf("VOS sign-in required")
+	}
+	if s.DevToken != "" {
+		if len(s.DevToken) < 32 || subtle.ConstantTimeCompare([]byte(auth), []byte("Bearer "+s.DevToken)) != 1 {
+			return Identity{}, fmt.Errorf("local development identity rejected")
+		}
+		subject := "local-development"
+		hash := sha256.Sum256([]byte(subject))
+		return Identity{Key: hex.EncodeToString(hash[:]), Role: "system_admin", Subject: subject}, nil
 	}
 	req, err := http.NewRequestWithContext(r.Context(), "GET", s.UserinfoURL, nil)
 	if err != nil {
@@ -123,6 +134,30 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/internal/speech" {
 		s.speech(out, r)
 		return
+	}
+	if s.DevToken != "" && r.Method == "GET" {
+		switch r.URL.Path {
+		case "/api/v1/models":
+			s.developmentModels(out, false)
+			return
+		case "/api/v1/creative-models":
+			s.developmentModels(out, true)
+			return
+		case "/v1/models":
+			s.developmentOpenAIModels(out)
+			return
+		case "/api/v1/discovery":
+			jsonReply(out, map[string]any{
+				"service_id": "v-voice-dev", "visibility": "public", "authentication": "none", "models": []any{},
+			})
+			return
+		case "/api/v1/hotwords", "/api/v1/speakers":
+			jsonReply(out, []any{})
+			return
+		case "/api/v1/music-models":
+			jsonReply(out, []any{})
+			return
+		}
 	}
 	if strings.HasPrefix(r.URL.Path, "/scheduler/executions/") {
 		if s.Jobs == nil {
@@ -263,6 +298,79 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 	default:
 		http.NotFound(out, r)
 	}
+}
+
+func (s *Server) developmentModelFile() *os.File {
+	paths := []string{
+		filepath.Join(filepath.Dir(s.SchedulerPath), "catalog", "models.json"),
+		filepath.Join("catalog", "models.json"),
+	}
+	for _, path := range paths {
+		if file, err := os.Open(path); err == nil {
+			return file
+		}
+	}
+	return nil
+}
+
+// 本地开发只展示真实目录；未加载的原生模型不能被伪装成可推理状态。
+func (s *Server) developmentModels(out http.ResponseWriter, creative bool) {
+	file := s.developmentModelFile()
+	if file == nil {
+		jsonReply(out, []any{})
+		return
+	}
+	var value struct {
+		Models []struct {
+			Key, Name, Kind, Family, Backend string
+			RemotePath                       string `json:"remote_path"`
+			ModelScopeRepo                   string `json:"modelscope_repo"`
+			Languages                        []string
+		} `json:"models"`
+	}
+	if json.NewDecoder(io.LimitReader(file, 1<<20)).Decode(&value) != nil {
+		file.Close()
+		jsonReply(out, []any{})
+		return
+	}
+	file.Close()
+	rows := make([]map[string]any, 0, len(value.Models))
+	for _, row := range value.Models {
+		key := row.Key
+		if creative {
+			key = "speech-" + row.Key
+		}
+		rows = append(rows, map[string]any{
+			"key": key, "name": row.Name, "kind": row.Kind, "family": row.Family,
+			"backend": row.Backend, "modelscope_repo": row.ModelScopeRepo,
+			"languages": row.Languages,
+			"status":    "not_installed", "loaded": false, "import_required": creative && row.RemotePath == "",
+		})
+	}
+	jsonReply(out, rows)
+}
+
+func (s *Server) developmentOpenAIModels(out http.ResponseWriter) {
+	file := s.developmentModelFile()
+	if file == nil {
+		jsonReply(out, map[string]any{"object": "list", "data": []any{}})
+		return
+	}
+	defer file.Close()
+	var value struct {
+		Models []struct {
+			Key string `json:"key"`
+		} `json:"models"`
+	}
+	if json.NewDecoder(io.LimitReader(file, 1<<20)).Decode(&value) != nil {
+		jsonReply(out, map[string]any{"object": "list", "data": []any{}})
+		return
+	}
+	rows := make([]map[string]any, 0, len(value.Models))
+	for _, row := range value.Models {
+		rows = append(rows, map[string]any{"id": "v-voice/" + row.Key, "object": "model", "owned_by": "v-voice"})
+	}
+	jsonReply(out, map[string]any{"object": "list", "data": rows})
 }
 
 func (s *Server) Close(ctx context.Context) {

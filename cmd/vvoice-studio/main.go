@@ -27,7 +27,10 @@ func main() {
 	if runtime == "" {
 		runtime = "/opt/vvoice/audiocpp/audiocpp_server"
 	}
-	handler := &vos.Server{Root: root, Assets: assets, UserinfoURL: vos.DefaultUserinfo(), Runtime: runtime}
+	handler := &vos.Server{
+		Root: root, Assets: assets, UserinfoURL: vos.DefaultUserinfo(), Runtime: runtime,
+		DevToken: os.Getenv("VVOICE_STUDIO_DEV_TOKEN"),
+	}
 	jobs := &vos.Jobs{Server: handler}
 	configPath := os.Getenv("VVOICE_SCHEDULER_CONFIG")
 	if configPath == "" {

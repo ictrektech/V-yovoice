@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### 简体中文
+- 新增 `make dev-browser`，支持使用本机后端联调浏览器界面，并可连接已运行的语音服务。
+
+### English
+- Add `make dev-browser` to develop the browser interface with a local backend and optionally connect a running speech service.
+
 ## [0.0.27] - 2026-10-22
 
 ### 简体中文

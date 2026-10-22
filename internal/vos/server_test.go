@@ -51,6 +51,63 @@ func TestBrowserRequiresEnabledValidatedIdentity(t *testing.T) {
 	}
 }
 
+func TestDevelopmentIdentityRequiresExplicitMatchingToken(t *testing.T) {
+	s := &Server{DevToken: "local-development-token-at-least-32-characters"}
+	for _, user := range []string{"", "wrong-token", "short"} {
+		r := httptest.NewRequest("POST", "/studio-api/call", nil)
+		if user != "" {
+			r.Header.Set("Authorization", "Bearer "+user)
+		}
+		if _, err := s.identity(r); err == nil {
+			t.Fatalf("development identity accepted %q", user)
+		}
+	}
+	r := httptest.NewRequest("POST", "/studio-api/call", nil)
+	r.Header.Set("Authorization", "Bearer "+s.DevToken)
+	identity, err := s.identity(r)
+	if err != nil || identity.Subject != "local-development" || identity.Role != "system_admin" {
+		t.Fatalf("development identity rejected: %#v %v", identity, err)
+	}
+	s.DevToken = "short"
+	r.Header.Set("Authorization", "Bearer "+s.DevToken)
+	if _, err := s.identity(r); err == nil {
+		t.Fatal("short development token accepted")
+	}
+}
+
+func TestDevelopmentModelsUseCatalogWithoutClaimingInstallation(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, "catalog"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	data := `{"models":[{"key":"test-asr","name":"Test ASR","kind":"asr","modelscope_repo":"org/test-asr","languages":["zh"]}]}`
+	if err := os.WriteFile(filepath.Join(root, "catalog", "models.json"), []byte(data), 0600); err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{DevToken: "local-development-token-at-least-32-characters", SchedulerPath: filepath.Join(root, "scheduler.json"), Assets: t.TempDir()}
+	for _, path := range []string{"/api/v1/models", "/api/v1/creative-models"} {
+		w := httptest.NewRecorder()
+		s.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
+		var rows []struct {
+			ModelScopeRepo string `json:"modelscope_repo"`
+			Status         string `json:"status"`
+			Loaded         bool   `json:"loaded"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &rows); w.Code != 200 || err != nil || len(rows) != 1 {
+			t.Fatalf("%s: status=%d body=%s error=%v", path, w.Code, w.Body.String(), err)
+		}
+		if rows[0].ModelScopeRepo != "org/test-asr" || rows[0].Status != "not_installed" || rows[0].Loaded {
+			t.Fatalf("%s: unexpected model: %#v", path, rows[0])
+		}
+	}
+	s.DevToken = ""
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/models", nil))
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("development catalog exposed without development token: %d", w.Code)
+	}
+}
+
 func TestIdentityUsesVosIntegerEnableContract(t *testing.T) {
 	for _, tc := range []struct {
 		name, body string

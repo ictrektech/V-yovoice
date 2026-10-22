@@ -33,6 +33,15 @@ make app-run
 
 仅开发浏览器界面时运行 `make dev`，访问 `http://127.0.0.1:5173`。本地语音生成需要桌面 App 或 CLI。
 
+需要联调保存和媒体接口时运行 `make dev-browser`，同样访问
+`http://127.0.0.1:5173`。该命令启动本机 Go 服务和 Vite；设备上的
+V-Voice 保持独立运行。默认数据写入 `/tmp/yovoice-dev-data`，可用
+`YOVOICE_DEV_DATA`、`VVOICE_SCHEDULER_CONFIG` 覆盖本机数据目录与调度配置。
+`make dev-browser` 在仅监听
+`127.0.0.1` 的本机服务上使用显式开发身份，因此普通浏览器不需要 VOS 注入的
+`window.vos_platform`；线上构建仍强制使用真实 VOS 登录。`make dev` 使用纯前端模拟数据，
+`make dev-browser` 使用真实服务链路；两者都不需要构建或安装 VOS 镜像。
+
 ## 构建与打包
 
 | 命令 | 产物 |
