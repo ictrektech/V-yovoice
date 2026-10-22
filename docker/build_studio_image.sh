@@ -60,7 +60,7 @@ if [[ "$prepare" == true && ( "$mode" == prepare || "$mode" == full || "$mode" =
   npx --yes pnpm@9.15.2 --dir web install --frozen-lockfile
   VITE_VOS=true npx --yes pnpm@9.15.2 --dir web run build
   mkdir -p "$artifacts/web"
-  rsync -a web/dist/ "$artifacts/web/"
+  rsync -a --delete web/dist/ "$artifacts/web/"
   archive="$build_root/sources/audio.cpp-v0.9.1.tar.gz"
   if [[ ! -f "$archive" ]]; then
     curl -fL --retry 4 --connect-timeout 15 --max-time 900 \
