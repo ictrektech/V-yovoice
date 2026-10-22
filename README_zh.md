@@ -7,6 +7,8 @@ MusicGen Small。安装入口为「模型管理 → 创作模型与音色库 →
 保留描述、排除词、时长、种子、BPM、调性、拍号、纯音乐以及 WAV/FLAC 试听下载；
 MusicGen 最长 30 秒，仅使用描述、种子和时长。
 
+语音生成、故事配音、音乐生成与编曲页的模型选择器直接显示所选模型是否就绪，
+可就地下载、暂停和继续下载，缺少模型时不必先打开模型管理。
 公共扩展 API 为 `POST /v1/audio/music/generations`，直接返回二进制音频；
 `GET /api/v1/music-models` 查询全部配乐模型，管理员经
 `POST /api/v1/music-models/{model}/{pull|stop|unload}` 管理共享模型。

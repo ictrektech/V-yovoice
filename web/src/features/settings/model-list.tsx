@@ -9,6 +9,7 @@ import { call } from '../../shared/lib/client';
 import { isVos } from '../../shared/lib/vos';
 import { formatSize, type Draft, type ModelPackage, type State } from '../../shared/workbench';
 import { SettingsGroup } from '../../shared/ui/settings-group';
+import type { SharedModelStatus } from '../../shared/lib/model-inventory';
 
 function downloadStatusLabel(t: (key: string) => string, downloading: boolean, received: number, size: number, status: string) {
   if (status === 'verifying') return t('@yovoice.settings.download.verifying');
@@ -30,7 +31,6 @@ function modelDescription(t: (key: string) => string, model: ModelPackage) {
 }
 
 // 模型与音色库共用：已下载的单独一组排在前面，带状态点；其余放在“可下载”组里。
-export type SharedModelStatus = { status: string; downloaded_bytes?: number; total_bytes?: number; error?: string };
 export function ModelGroups({ models, state, draft, run, shared }: { models: ModelPackage[]; state: State; draft: Draft; run: (task: () => Promise<unknown>) => void; shared?: Record<string, SharedModelStatus> }) {
   const t = useTranslator();
   // 生成等主操作与模型下载、导入互不阻塞：下载按钮只看模型安装是否空闲。

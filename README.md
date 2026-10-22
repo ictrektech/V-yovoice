@@ -10,6 +10,9 @@ The page preserves prompt/negative prompt, duration, seed, BPM, key, meter,
 instrumental mode and WAV/FLAC preview/download. MusicGen accepts up to 30 seconds
 and uses prompt, duration and seed only; other adapters support their native controls.
 
+The model selector on the speech, story-dubbing, music and score pages shows whether
+the selected model is ready and offers download, pause and resume in place, so a
+missing model no longer requires opening model management first.
 The public extension `POST /v1/audio/music/generations` returns binary WAV/FLAC.
 `GET /api/v1/music-models` reports all four models; VOS administrators can use
 `POST /api/v1/music-models/{model}/{pull|stop|unload}` for shared model management.

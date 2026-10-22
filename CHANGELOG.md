@@ -2,13 +2,15 @@
 
 各版本的重要更新记录。日常改动记入 `Unreleased`；发布前合并重复项，整理为简短的功能、改进和修复说明。
 
-## [0.0.26] - 2026-10-21
+## [0.0.26] - 2026-10-22
 
 ### 简体中文
 - 修复已校准的语音识别与说话人组合在使用不同执行器时无法自动接入的问题；继续核验调度器身份及所有模型的执行器审批。
+- 语音生成、故事配音、音乐生成和编曲页的模型选择器直接显示所选模型是否就绪，并可在当前页面下载、暂停或继续下载，无需先打开模型管理页。
 
 ### English
 - Accept calibrated speech and speaker combinations with distinct approved executors, while retaining Scheduler identity and executor approval checks.
+- Show whether the selected model is ready directly in the model selector on speech, story dubbing, music generation and score pages, with download, pause and resume actions available without opening model management.
 
 ## [0.0.25] - 2026-10-21
 
