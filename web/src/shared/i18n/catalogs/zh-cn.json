@@ -51,6 +51,8 @@
   "@vvoice.nav.hotwords": { "defaultMessage": "热词管理" },
   "@vvoice.nav.service": { "defaultMessage": "语音服务 · 模型管理" },
   "@vvoice.nav.api": { "defaultMessage": "API 文档" },
+  "@vvoice.models.prepare": { "defaultMessage": "准备模型" },
+  "@vvoice.models.prepareHint": { "defaultMessage": "在这里下载或继续准备当前页面所需模型。关闭后回到原页面，下载会在后台继续。" },
   "@vvoice.api.hint": { "defaultMessage": "标准语音 API、创作扩展、模型发现与调度接入。文档内可独立切换语言。" },
   "@vvoice.locale.auto": { "defaultMessage": "跟随 VOS" },
   "@vvoice.models.sharedHint": { "defaultMessage": "共享模型统一由 V-Scheduler 从 ModelScope 按文件安装，创作工作台只读使用；不会在每个用户目录重复下载。" },

@@ -2,6 +2,16 @@
 
 各版本的重要更新记录。日常改动记入 `Unreleased`；发布前合并重复项，整理为简短的功能、改进和修复说明。
 
+## [Unreleased]
+
+### 简体中文
+- 移除仅支持 PyTorch 的四个原生音乐模型和独立配乐接口，精简 GPU 运行镜像；保留 ONNX、GGUF 语音与音乐、编曲，已有模型文件和用户作品不删除。
+- 各功能页新增「准备模型」，在当前页面下载、暂停或继续准备所需模型，关闭后保留原页面与编辑内容。
+
+### English
+- Remove four PyTorch-only music models and the separate native music API, and slim GPU runtime images while retaining ONNX, GGUF speech/music and score workflows. Existing model files and projects are preserved.
+- Add Prepare models to feature pages for in-place model download, pause and resume without leaving the current work.
+
 ## [0.0.26] - 2026-10-22
 
 ### 简体中文

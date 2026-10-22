@@ -9,26 +9,23 @@ import soundfile as sf
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from vvoice import admission, main, music, music_catalog, runtime
+from vvoice import admission, main, runtime
 
 
 @pytest.fixture
 def mixed(monkeypatch):
-    legacy = ['kokoro-multilang', 'sensevoice-int8', 'whisper-tiny',
+    legacy = ['kokoro-multilang', 'whisper-tiny',
               'speaker-campplus-zh-en', 'kokoro-82m-q8']
     config = {'url': 'http://scheduler.invalid/api/v1', 'token': 'x' * 32,
               'upstream_url': 'http://voice.invalid/v1', 'binding_revision': 1,
               'input_limits_version': 1, 'mixed_input_limits_version': 1,
-              'models': {key: 'voice.infer' for key in [*legacy, 'musicgen-small']},
+              'models': {key: 'voice.infer' for key in [*legacy, 'sensevoice-int8']},
               'legacy_unbounded_models': legacy,
-              'model_limits': {'musicgen-small': {'duration_seconds': 30,
-                  'prompt_characters': 512, 'negative_prompt_characters': 0}},
-              'execution_settings': {'music': music_catalog.runtime_settings()}}
+              'model_limits': {'sensevoice-int8': {'duration_seconds': 60,
+                  'sample_rate': 24000, 'hotwords_characters': 0, 'input_bytes': 2097152}}}
     calls = []
     monkeypatch.setenv('VVOICE_SCHEDULER_REQUIRED', 'true')
     monkeypatch.setattr(admission, 'configuration', lambda: config)
-    monkeypatch.setattr(music, 'configuration', lambda: config)
-    monkeypatch.setattr(music, 'detect_provider', lambda: 'cuda')
     monkeypatch.setattr(admission.Execution, '_watch', lambda _: None)
     def controller(config, path, body, key=''):
         calls.append(path)
@@ -57,6 +54,9 @@ def test_real_legacy_tts_validation_and_permit_survive_mixed_binding(mixed, monk
 
 def test_legacy_large_audio_and_bounded_audio_use_their_own_limits(mixed, monkeypatch):
     config, calls = mixed
+    config['legacy_unbounded_models'].append('sensevoice-int8')
+    config['legacy_unbounded_models'].remove('kokoro-multilang')
+    config['model_limits'] = {'kokoro-multilang': {'text_characters': 512, 'speed_min': 1, 'speed_max': 1}}
     monkeypatch.setattr(runtime, 'needs_split', lambda *_: False)
     monkeypatch.setattr(runtime, '_decode_segment', lambda *_: {'text': 'fixture'})
     source = io.BytesIO()
@@ -76,11 +76,11 @@ def test_legacy_large_audio_and_bounded_audio_use_their_own_limits(mixed, monkey
     assert not calls
 
 
-def test_mixed_bounded_inputs_still_reject_before_permit(mixed):
+def test_retired_native_music_has_no_route_or_permit(mixed):
     _, calls = mixed
     client = TestClient(admission.AdmissionMiddleware(main.app))
     response = client.post('/v1/audio/music/generations', json={'model': 'musicgen-small', 'prompt': 'x' * 513, 'duration': 30})
-    assert response.status_code == 422
+    assert response.status_code == 404
     assert not calls
 
 
@@ -91,7 +91,7 @@ def test_mixed_bounded_inputs_still_reject_before_permit(mixed):
     lambda c: c.update(legacy_unbounded_models='kokoro-multilang'),
     lambda c: c['legacy_unbounded_models'].append('kokoro-multilang'),
     lambda c: c['legacy_unbounded_models'].append('missing'),
-    lambda c: c['legacy_unbounded_models'].append('musicgen-small'),
+    lambda c: c['legacy_unbounded_models'].append('sensevoice-int8'),
     lambda c: c['legacy_unbounded_models'].remove('whisper-tiny'),
 ])
 def test_malformed_mixed_snapshots_fail_closed(mixed, change):
@@ -100,16 +100,6 @@ def test_malformed_mixed_snapshots_fail_closed(mixed, change):
     with pytest.raises(HTTPException) as error:
         admission.model_limits('kokoro-multilang')
     assert error.value.status_code == 503
-
-
-@pytest.mark.parametrize('key', ['musicgen-small', 'stable-audio-3-small-music', 'stable-audio-3-medium', 'ace-step-1.5-turbo'])
-def test_native_music_can_never_use_legacy_exemption(mixed, key):
-    config, _ = mixed
-    config['models'] = {key: 'music.infer', 'kokoro-multilang': 'voice.infer'}
-    config['legacy_unbounded_models'] = [key]
-    config['model_limits'] = {'kokoro-multilang': {'text_characters': 512, 'speed_min': 1, 'speed_max': 1}}
-    with pytest.raises(HTTPException):
-        admission.model_limits(key)
 
 
 def test_creator_alias_does_not_grant_unapproved_sync_executor(mixed):

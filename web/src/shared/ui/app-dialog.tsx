@@ -8,7 +8,7 @@ import { X } from 'lucide-react';
 interface AppDialogProps {
   title: string;
   subtitle?: string;
-  width?: number;
+  width?: number | string;
   busy?: boolean;
   error?: string;
   closeLabel?: string;

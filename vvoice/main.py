@@ -41,20 +41,7 @@ from .runtime import (
 from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore
 from .transcript import normalize_transcript, subtitle
 from .admission import AdmissionMiddleware, run_blocking, admit_model
-from .music_catalog import catalog as native_music_catalog, runtime_settings as music_runtime_settings, supported as music_supported
-from .music import models as native_music_models
-
-
-async def music_discovery():
-    return [{"id": row['key'], "object": "model", "owned_by": "v-voice", "kind": "music",
-             "capabilities": row['capabilities'], "endpoints": ['audio/music/generations']}
-            for row in await native_music_models()
-            if row['status'] == 'ready' and music_supported(row, detect_provider())]
-
-
 app = FastAPI(title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
-from .music import router as music_router
-app.include_router(music_router)
 if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
     app.add_middleware(AdmissionMiddleware)
 
@@ -129,9 +116,9 @@ class SchedulerBindingDocument(BaseModel):
     secondary_models: dict[str, list[str]] = Field(default_factory=dict)
     input_limits_version: Literal[1] | None = None
     mixed_input_limits_version: Literal[1] | None = None
-    legacy_unbounded_models: list[str] | None = Field(None, description="Explicit old approvals only; disjoint from model_limits, together covering models. Native music cannot be exempted. Does not grant an executor or alter task types.")
+    legacy_unbounded_models: list[str] | None = Field(None, description="Explicit old approvals only; disjoint from model_limits, together covering models. Does not grant an executor or alter task types.")
     model_limits: dict[str, dict[str, float]] | None = None
-    execution_settings: dict | None = Field(None, description="Calibrated runtime settings advertised by the scheduler contract; native music uses the music member.")
+    execution_settings: dict | None = Field(None, description="Optional calibrated runtime settings retained for binding-document compatibility.")
 
 
 class WorkbenchCallDocument(BaseModel):
@@ -244,7 +231,7 @@ async def discovery():
         "authentication": "none",
         "base_url": "http://v-voice-backend:7070/v1",
         "health_path": "/health",
-        "models": models + await music_discovery(),
+        "models": models,
         "scheduler": scheduler_contract(),
     }
 
@@ -266,8 +253,7 @@ def scheduler_contract() -> dict:
         "executor_base_url": "http://v-voice-backend:7070",
         "upstream_url": "http://v-voice-backend:7070/v1",
         "sync_models": [{"id": row["key"], "kind": row["kind"], "task_type": "model.infer"}
-                        for row in [*catalog(), *native_music_catalog()]],
-        "execution_settings": {"music": music_runtime_settings()},
+                        for row in catalog()],
         "async_models": [{"id": row["id"], "family": row["family"], "task_type": "voice.generate",
                           "weight_bytes": row["size"]} for row in asynchronous],
         "num_threads": settings.num_threads,
@@ -286,14 +272,11 @@ async def managed_models():
 async def creative_model_inventory():
     """All creator precisions and soundfonts; management metadata, not speech discovery."""
     from .creative import models as creative_models
-    return await list_models([*creative_models(include_non_speech=True), *native_music_catalog()])
+    return await list_models(creative_models(include_non_speech=True))
 
 
 @app.post("/api/v1/models/{key}/pull", status_code=202)
 async def pull(key: str, request: Request, force: bool = False):
-    if any(row['key'] == key for row in native_music_catalog()):
-        from .music import manage
-        return await manage(key, 'pull', request, force)
     try:
         return await pull_model(key, force)
     except KeyError:
@@ -306,9 +289,6 @@ async def pull(key: str, request: Request, force: bool = False):
 
 @app.post("/api/v1/models/{key}/stop")
 async def stop(key: str, request: Request):
-    if any(row['key'] == key for row in native_music_catalog()):
-        from .music import manage
-        return await manage(key, 'stop', request)
     try:
         return await cancel_model(key)
     except KeyError:
@@ -319,9 +299,6 @@ async def stop(key: str, request: Request):
 
 @app.post("/api/v1/models/{key}/unload")
 async def unload(key: str, request: Request):
-    if any(row['key'] == key for row in native_music_catalog()):
-        from .music import manage
-        return await manage(key, 'unload', request)
     registry.unload(key)
     return {"status": "unloaded", "model": key}
 

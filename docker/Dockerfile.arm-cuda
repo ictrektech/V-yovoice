@@ -7,15 +7,24 @@ RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
-FROM ${ARM_CUDA_BASE_IMAGE}
+FROM ${ARM_CUDA_BASE_IMAGE} AS cuda-runtime
+COPY docker/collect_cuda_runtime.sh /tmp/collect_cuda_runtime.sh
+RUN bash /tmp/collect_cuda_runtime.sh
+
+FROM ubuntu:24.04
 ARG SHERPA_ONNX_VERSION=1.13.8
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ENV DEBIAN_FRONTEND=noninteractive \
+    PATH=/opt/vvoice/python/bin:${PATH} \
+    PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     VVOICE_PROVIDER=cuda \
     VVOICE_PORT=7070
 WORKDIR /app
+COPY --from=cuda-runtime /cuda-runtime/ /usr/local/lib/
+COPY --from=cuda-runtime /cuda-notices/ /opt/vvoice/notices/cuda/
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl ffmpeg libgomp1 libsndfile1 \
+    && apt-get install -y --no-install-recommends ca-certificates curl ffmpeg libgomp1 libsndfile1 python3 python3-venv \
+    && python3 -m venv /opt/vvoice/python && ldconfig \
     && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml README.md ./
 COPY vvoice ./vvoice
@@ -24,7 +33,7 @@ COPY docker/modules/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl /tmp/
 COPY --from=sherpa_wheels / /tmp/sherpa-wheels/
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 RUN python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . \
-    && (python3 -m pip uninstall -y onnxruntime onnxruntime-gpu || true) \
+    && python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" coloredlogs flatbuffers packaging protobuf sympy \
     && python3 -m pip install --force-reinstall --no-deps \
       /tmp/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl \
     && python3 -m pip install --no-cache-dir --verbose --no-deps \

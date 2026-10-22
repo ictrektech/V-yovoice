@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """在隔离镜像容器内验收品牌、旧目录、私有原生推理及未配置调度时的拒绝行为。"""
 import hashlib
+import importlib.util
 import base64
 import json
 import os
@@ -27,6 +28,8 @@ def request(path, body=None, token=""):
 def main():
     # 与镜像的 python -m 启动方式一致，读取 /app 中当前源码而非旧安装副本。
     sys.path.insert(0, "/app")
+    assert all(importlib.util.find_spec(name) is None for name in ('torch', 'torchaudio', 'transformers', 'diffusers'))
+    assert not Path('/opt/vvoice/music-python').exists()
     assert hashlib.sha256(Path("/app/catalog/models.json").read_bytes()).hexdigest() == (
         "3f5eaa724ca756ead7f711096a41a2075cba9e935cea1952138cb12241e8c835")
     assert len(json.loads(Path("/app/catalog/audio-cpp.json").read_text())) == 38
@@ -34,6 +37,7 @@ def main():
     assert len(catalog()) > 17
     from vvoice.main import app
     assert "/v1/audio/transcriptions" in {route.path for route in app.routes}
+    assert '/v1/audio/music/generations' not in {route.path for route in app.routes}
     sample = os.getenv("VVOICE_IMAGE_SEACO_SAMPLE")
     if sample:
         import soundfile

@@ -117,16 +117,16 @@ async def list_models(items: list[dict[str, Any]] | None = None) -> list[dict[st
     result = []
     # 小模型优先，避免一个大权重阻塞旧 ASR 目录和所有其他已安装模型。
     checks = {item["key"]: _shared_status(item) for item in sorted(
-        (row for row in items if row.get("backend") in {"audio.cpp", "pytorch"}),
+        (row for row in items if row.get("backend") == "audio.cpp"),
         key=lambda row: sum(file["size"] for file in row["shared_files"]))}
     for item in items:
         repo = item["modelscope_repo"]
         root = model_root(item)
         state = hub.get(repo, {})
         descriptor_installed = (root / "vvoice-model.json").is_file() or (
-            item.get("backend") in {"audio.cpp", "pytorch"} and any((root / f["path"]).is_file() for f in item.get("shared_files", []))
+            item.get("backend") == "audio.cpp" and any((root / f["path"]).is_file() for f in item.get("shared_files", []))
         )
-        ready, validation_error = (checks[item["key"]] if item.get("backend") in {"audio.cpp", "pytorch"}
+        ready, validation_error = (checks[item["key"]] if item.get("backend") == "audio.cpp"
                                    else await asyncio.to_thread(model_files_ready, item)) if descriptor_installed else (False, "")
         hub_status = str(state.get("status") or "not_installed").lower()
         # 一个共享仓库含多个模型，不能把其他已下载文件或其他任务的状态当成本模型就绪。
@@ -163,8 +163,10 @@ class ImportRequiredError(ValueError):
 
 
 def management_catalog():
-    from .music_catalog import catalog as music_catalog
-    return [*catalog(), *music_catalog()]
+    from .creative import models as creative_models
+    speech = catalog()
+    keys = {row['key'] for row in speech}
+    return [*speech, *(row for row in creative_models(include_non_speech=True) if row['key'] not in keys)]
 
 
 async def pull_model(key: str, force: bool = False) -> dict[str, Any]:

@@ -1,6 +1,6 @@
 ARG VVOICE_STUDIO_BASE_IMAGE
 FROM ${VVOICE_STUDIO_BASE_IMAGE}
-# 仅更新应用与配置交接；保留已发布的 ORT、Torch、Sherpa 和 audio.cpp 环境。
+# 仅用于应用变更；运行时依赖改变时必须完整重建镜像。
 ARG TARGETARCH
 COPY --from=studio_artifacts /linux-${TARGETARCH}/vvoice-studio /opt/vvoice/vvoice-studio
 COPY --from=studio_artifacts /web/ /opt/vvoice/web/

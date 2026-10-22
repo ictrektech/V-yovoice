@@ -1,39 +1,25 @@
 ## V-Voice for VOS
 
-VOS adds a dedicated **Background music** page alongside the song editor and score
-workflow. It retains V-Music's four native models: ACE-Step 1.5 Turbo, Stable Audio 3
-Small-Music, Stable Audio 3 Medium and MusicGen Small. Install them from
-**Model management → Creator models and soundfonts → Native background-music models**.
-V-Scheduler installs the existing ModelScope repositories into the existing shared
-directory; weights are not copied into user storage or converted to GGUF.
-The page preserves prompt/negative prompt, duration, seed, BPM, key, meter,
-instrumental mode and WAV/FLAC preview/download. MusicGen accepts up to 30 seconds
-and uses prompt, duration and seed only; other adapters support their native controls.
+VOS uses sherpa-onnx / ONNX Runtime for speech and audio.cpp for GGUF speech,
+voice cloning and music, plus native soundfont score rendering. Runtime images do
+not install PyTorch, Transformers or Diffusers. CUDA libraries are copied into a
+clean runtime stage rather than inheriting the full GPU development image.
 
-The model selector on the speech, story-dubbing, music and score pages shows whether
-the selected model is ready and offers download, pause and resume in place, so a
-missing model no longer requires opening model management first.
-The public extension `POST /v1/audio/music/generations` returns binary WAV/FLAC.
-`GET /api/v1/music-models` reports all four models; VOS administrators can use
-`POST /api/v1/music-models/{model}/{pull|stop|unload}` for shared model management.
-Only verified, hardware-compatible models appear in discovery. Native PyTorch
-dependencies use a separate Python environment; each generation exits its worker
-before releasing compute. Existing ONNX/audio.cpp paths and model IDs remain intact.
-Music builds use their own package index (`VVOICE_MUSIC_PIP_INDEX_URL`, defaulting
-to the Tsinghua mirror), retain parent-environment CUDA Torch on L4T, and reject
-GPU images that resolve a CPU-only Torch build.
-Stable Audio converts CUDA-bound weights to their final FP16 precision on the CPU
-before transferring them; CPU inference retains its original precision.
-The legacy AMD CUDA speech environment remains on Python 3.10. Music workers use
-a separately pinned, checksum-verified Python 3.12 interpreter when ACE-Step's
-Python requirements are not met; extension packages are never shared across
-different Python versions.
-New native models require **V-Voice-specific** calibration and admission, not copied
-V-Music credentials. See [the Scheduler handoff](docs/native-music-scheduler-handoff.md)
-for the required binding fields and actual-node acceptance checks.
-The handoff also documents the isolated 229 endpoint and
-`scripts/check-native-music-handoff.py`: read-only by default, real generation only
-with explicit `--generate` after calibration; never a substitute for full release QA.
+The PyTorch-only ACE-Step 1.5 Turbo (original weights), Stable Audio 3 Small-Music,
+Stable Audio 3 Medium and MusicGen Small have been removed, along with their
+separate Background music page and `/v1/audio/music/generations` /
+`/api/v1/music-models` endpoints (now 404). The audio.cpp GGUF versions of ACE-Step
+and YuE2 remain in **Music generation**; score arranging and every existing speech
+API remain available. No installed weights, shared directories, projects or audio
+are deleted. Rollback can reuse those files with the preceding release.
+
+Each feature page has a **Prepare models** button. It opens only the relevant
+speech, creator or soundfont models in a dialog on the current page, with download,
+pause, resume and verification states using V-Scheduler / ModelScope. Closing it
+returns to the same page and leaves downloads running. Model administrators are
+still required for shared downloads. The full model manager remains available.
+The optional `export-seaco` development extra uses Torch only for offline model
+export and is never installed in service images; SeACo inference remains ONNX-only.
 
 `VVOICE_CPU_MODELS` applies consistently to ASR, TTS and speaker models. Explicit
 unload and LRU eviction collect unreachable objects and attempt to return free

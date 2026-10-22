@@ -52,6 +52,8 @@
   "@vvoice.nav.service": {
     "defaultMessage": "語音服務 · 模型管理"
   },
+  "@vvoice.models.prepare": { "defaultMessage": "準備模型" },
+  "@vvoice.models.prepareHint": { "defaultMessage": "在這裡下載或繼續準備目前頁面所需模型。關閉後回到原頁面，下載會在背景繼續。" },
   "@vvoice.nav.api": {
     "defaultMessage": "API 文件"
   },

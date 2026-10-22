@@ -23,8 +23,6 @@ for (const model of JSON.parse(readFileSync(path.join(root, 'internal/catalog/ca
     description: 'Import-only model', languages: [], modelscope_repo: 'vivibit/v-voice-audiocpp-gguf', status: 'not_installed', import_required: true });
 }
 const creativeModels = JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).map(model => ({ key: `audiocpp-${model.id}`, status: 'not_installed' }));
-const nativeMusicModels = JSON.parse(readFileSync(path.join(root, 'catalog/music-models.json'))).models.map(model => ({ ...model, size: model.shared_files.reduce((sum, file) => sum + file.size, 0), status: 'ready', runtime_available: true, admission_ready: true, loaded: false }));
-let musicRequest, rejectMusic = true;
 let identities = 0;
 const identity = createServer((req, res) => {
   assert.equal(req.headers.authorization, 'Bearer isolated-browser-user');
@@ -38,19 +36,6 @@ const proxy = createServer((req, res) => {
   // 文档静态页及空目录夹具只验证多语言文档；实际推理由独立 contract 验收负责。
   if (pathname === '/api/v1/models') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(legacyModels)); return; }
   if (pathname === '/api/v1/creative-models') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(creativeModels)); return; }
-  if (pathname === '/api/v1/music-models') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(nativeMusicModels)); return; }
-  // 仅验证界面参数与二进制结果处理；夹具音频不能充当原生模型实跑证据。
-  if (pathname === '/v1/audio/music/generations') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
-      musicRequest = JSON.parse(body);
-      if (rejectMusic) { rejectMusic = false; res.writeHead(503, { 'Content-Type': 'application/json' }); res.end('{"detail":"Music calibration required"}'); return; }
-      const wav = Buffer.alloc(44 + 4800); wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(24000, 24); wav.writeUInt32LE(48000, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(4800, 40);
-      res.writeHead(200, { 'Content-Type': 'audio/wav' }); res.end(wav);
-    });
-    return;
-  }
   if (pathname === '/api/v1/hotwords' || pathname === '/api/v1/speakers') { res.setHeader('Content-Type', 'application/json'); res.end('[]'); return; }
   if (pathname.startsWith('/service/')) {
     const file = path.resolve(root, 'frontend/dist', pathname.slice('/service/'.length) || 'index.html');
@@ -137,40 +122,15 @@ try {
       assert.equal(await page.locator('[data-testid="model-management"] [role="tablist"]').count(), 0, 'duplicate top model tabs remained');
       assert.equal(await page.locator('#creative-models-panel [data-model-id]').count(), modelCount);
       await page.getByText('Administrator-provided weights required in V-Scheduler', { exact: true }).first().waitFor();
-      for (const model of nativeMusicModels) await page.getByTestId('native-music-models').getByText(model.name, { exact: true }).waitFor();
       assert(!/[\u3400-\u9fff]/.test(await page.locator('#creative-models-panel').innerText()), 'Chinese remained in English creative model manager');
       await page.screenshot({ path: path.join(build, 'v-voice-creative-models-integrated.png'), fullPage: true });
     }
   }
-  await page.getByTestId('nav-background-music').click();
-  const music = page.getByTestId('background-music');
-  await music.getByLabel('Music description', { exact: true }).fill('quiet piano');
-  await music.getByLabel('Seed (optional)', { exact: true }).fill('42');
-  await music.getByRole('button', { name: 'Generate music', exact: true }).click();
-  await music.getByRole('alert').waitFor();
-  assert((await music.getByRole('alert').innerText()).includes('V-Scheduler'));
-  await music.getByRole('button', { name: 'Generate music', exact: true }).click();
-  await music.getByRole('link', { name: 'Download music', exact: true }).waitFor();
-  assert.equal(musicRequest.model, 'stable-audio-3-small-music');
-  assert.equal(musicRequest.seed, 42);
-  assert.equal(await music.locator('audio').count(), 1);
-  await page.screenshot({ path: path.join(build, 'v-voice-background-music-en.png'), fullPage: true });
-  await page.getByTestId('nav-models-creative-category').click();
-  await page.getByTestId('nav-background-music').click();
-  assert.equal(await music.getByLabel('Music description', { exact: true }).inputValue(), 'quiet piano');
-  await music.getByRole('link', { name: 'Download music', exact: true }).waitFor();
-  for (const [locale, title] of [['zh-CN', '配乐生成'], ['zh-TW', '配樂生成'], ['en', 'Background music']]) {
-    await page.evaluate(locale => window.dispatchEvent(new CustomEvent('isolated-vos-locale', { detail: locale })), locale);
-    await page.waitForFunction(locale => document.documentElement.lang === locale, locale);
-    await music.getByRole('heading', { name: title, exact: true }).waitFor();
-  }
-  await page.setViewportSize({ width: 900, height: 800 });
-  assert(await music.evaluate(element => element.scrollWidth <= element.clientWidth + 1), 'background-music form overflowed the narrow viewport');
-  const introBox = await music.locator('header p').boundingBox();
-  const modelLabelBox = await music.getByText('Music model', { exact: true }).boundingBox();
-  assert(introBox.y + introBox.height <= modelLabelBox.y, 'music introduction overlaps the model selector label');
-  await page.screenshot({ path: path.join(build, 'v-voice-background-music-narrow.png'), fullPage: true });
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  assert.equal(await page.getByTestId('nav-background-music').count(), 0);
+  await page.getByTestId('nav-music').click();
+  await page.getByTestId('prepare-models').click();
+  await page.getByRole('dialog').getByTestId('prepare-models-panel').waitFor();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).last().click();
   await page.getByTestId('nav-api-docs').click();
   const docs = page.frameLocator('[data-testid="api-documentation"] iframe');
   await docs.getByRole('tab').first().waitFor();

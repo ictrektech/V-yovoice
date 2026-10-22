@@ -7,11 +7,9 @@ VOS 版从固定的 audio.cpp v0.9.1 源码构建 CPU/CUDA 独立进程，原始
 各 profile 的系统发行版软件包，不是下文桌面安装包中的预编译版本；具体版本、
 版权与许可保留在镜像的软件包数据库和 `/usr/share/doc/` 中。
 
-旧 AMD CUDA 镜像另为音乐子进程分发 CPython 3.12.15，来自
-[python-build-standalone 20261013](https://github.com/astral-sh/python-build-standalone/releases/tag/20261013)，
-固定归档的 SHA-256 在构建时校验。PSF 原始许可位于
-`/opt/vvoice/music-bootstrap/lib/python3.12/LICENSE.txt`，依赖许可随各包保留；
-原语音服务的系统 Python 不被替换。
+GPU 运行镜像只从原固定 SDK 提取 CUDA、cuDNN 及 ONNX Runtime 所需的独立
+Protobuf / Abseil C++ 共享库，不继承 SDK 的 PyTorch 或 Python 包；SDK 中对应
+系统软件包的版权及 NVIDIA 容器许可保留在 `/opt/vvoice/notices/cuda/`。
 
 模型不随镜像打包。ModelScope 镜像保留原始文件校验值、来源索引和独立许可；
 OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非商业协议，
@@ -34,14 +32,6 @@ OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非�
 - Weights are downloaded separately from audio.cpp GGUF repositories and are not included in yovoice installers.
 
 ## ACE-Step
-
-- VOS 原生配乐适配器从 V-Music 提取，另包含固定提交的
-  [ACE-Step-1.5](https://github.com/ACE-Step/ACE-Step-1.5/tree/ca1e85fe9430179831e6bc6be790c332190a3866)、
-  [stable-audio-3](https://github.com/Stability-AI/stable-audio-3/tree/779434a908193105335fd8d833418603625b2859)
-  及 PyTorch、Torchaudio、Transformers 等依赖。各包原始版权和许可保留在
-  `/opt/vvoice/music-python` 及继承的系统 Python 包中；这些代码的许可不代表
-  音乐模型权重获得商用授权。原生模型的模型卡、许可及上游说明随 ModelScope
-  共享文件保留，管理界面提供各仓库链接，模型不随 VOS 镜像分发。
 
 - [ACE-Step 1.5](https://huggingface.co/ACE-Step/Ace-Step1.5)：MIT，音乐生成模型。权重从 audio.cpp GGUF 仓库单独下载，不随应用安装包分发。
 

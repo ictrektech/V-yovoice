@@ -2,6 +2,12 @@
 
 The V-yovoice repository is the successor source repository for
 `com.ictrek.v-voice`, not a second app installed alongside the same service.
+
+The current runtime is ONNX / audio.cpp / soundfont only. PyTorch-native ACE-Step,
+Stable Audio 3 and MusicGen models and their standalone music API are retired.
+Existing weights and user data are not removed, and previous releases remain a
+rollback option. GGUF music remains available in the music editor. Prepare models
+on each feature page opens its relevant model controls without navigating away.
 Existing ASR, translation, streaming, hotwords, speaker recognition, TTS,
 discovery and management routes remain compatible. The original console remains
 available alongside the voice-creation workbench.

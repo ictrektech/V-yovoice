@@ -1,5 +1,0 @@
-ARG VVOICE_STUDIO_BASE_IMAGE
-FROM ${VVOICE_STUDIO_BASE_IMAGE}
-# 只更新配乐管理元数据和界面，不修改已校准的原生推理环境。
-COPY vvoice/music.py /app/vvoice/music.py
-COPY --from=studio_artifacts /web/ /opt/vvoice/web/

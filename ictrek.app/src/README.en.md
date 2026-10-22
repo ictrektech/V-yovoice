@@ -1,12 +1,11 @@
 # V-Voice
 
-The unified workbench includes speech, songs, scores and a Background music page.
-Native music supports ACE-Step 1.5 Turbo, Stable Audio 3 Small-Music / Medium and
-MusicGen Small. Install them in Model management → Creator models and soundfonts
-through V-Scheduler / ModelScope, then preview and download WAV/FLAC.
-The public music extension is `POST /v1/audio/music/generations`; MusicGen supports
-up to 30 seconds. Installed models still require V-Voice-specific resource
-calibration and scheduling approval. Existing song, score and speech features remain.
+The workbench uses ONNX and audio.cpp GGUF backends, without a PyTorch runtime.
+The four PyTorch-only music models and their separate Background music page/API
+are removed; GGUF music generation, speech, voice cloning and scores remain.
+Existing model files, projects and audio are preserved.
+Use **Prepare models** on each feature page to download, pause or resume the
+relevant models through V-Scheduler / ModelScope without leaving your work.
 
 The additional `seaco-paraformer-zh` model is installed through V-Scheduler from
 `vivibit/v-voice-seaco-paraformer-zh-int8`. It uses CPU ONNX Runtime on every profile,

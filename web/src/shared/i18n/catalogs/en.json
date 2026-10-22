@@ -51,6 +51,8 @@
   "@vvoice.nav.hotwords": { "defaultMessage": "Hotword management" },
   "@vvoice.nav.service": { "defaultMessage": "Speech service · Models" },
   "@vvoice.nav.api": { "defaultMessage": "API documentation" },
+  "@vvoice.models.prepare": { "defaultMessage": "Prepare models" },
+  "@vvoice.models.prepareHint": { "defaultMessage": "Download or resume the models for this page. Close to return; downloads continue in the background." },
   "@vvoice.api.hint": { "defaultMessage": "Standard speech APIs, creative extensions, discovery and scheduling. The documentation has its own language selector." },
   "@vvoice.locale.auto": { "defaultMessage": "Follow VOS" },
   "@vvoice.models.sharedHint": { "defaultMessage": "V-Scheduler installs selected shared files from ModelScope. The workbench uses read-only shared weights without per-user copies." },

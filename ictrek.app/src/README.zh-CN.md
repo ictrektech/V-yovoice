@@ -1,11 +1,10 @@
 # V-Voice
 
-统一工作台提供语音、歌曲生成、编曲和「配乐生成」。原生配乐支持 ACE-Step 1.5
-Turbo、Stable Audio 3 Small-Music / Medium、MusicGen Small，在「模型管理 →
-创作模型与音色库」经 V-Scheduler / ModelScope 安装，保留 WAV/FLAC 试听下载。
-公共配乐扩展 API 为 `POST /v1/audio/music/generations`；MusicGen 最长 30 秒。
-模型就绪不等于计算已批准：新音乐模型须取得 V-Voice 自己的资源校准与调度绑定。
-原有歌曲、编曲和以下语音服务功能继续保留。
+工作台采用 ONNX 与 audio.cpp GGUF 后端，不再安装 PyTorch 运行时。
+移除四个仅支持 PyTorch 的音乐模型及独立配乐页面/API；GGUF 音乐生成、语音、
+声音克隆和编曲继续保留。已安装模型文件、作品和音频不删除。
+各功能页面的「准备模型」按钮可原地下载、暂停或继续准备对应模型，
+仍统一通过 V-Scheduler / ModelScope 管理，无需离开当前页面寻找模型。
 
 V-Voice 保留基于 ONNX 的公共 ASR / 流式 ASR / TTS / 声纹服务。模型由 V-Scheduler 内置模型仓库安装并由所有用户共享；其统一网关通过发现接口接入公共能力，无需独立安装 Model Hub 或 V-Router。
 

@@ -23,9 +23,6 @@ ENV VVOICE_STUDIO_ENABLED=true VVOICE_SHARED_MODELS=true VVOICE_SCHEDULER_REQUIR
     LD_LIBRARY_PATH=/opt/vvoice/audiocpp:${LD_LIBRARY_PATH}
 ARG TARGETARCH
 ARG AUDIOCPP_BACKEND=cpu
-COPY docker/install_music_runtime.sh docker/inherit_parent_packages.py /opt/vvoice/
-RUN bash /opt/vvoice/install_music_runtime.sh
-ENV VVOICE_MUSIC_PYTHON=/opt/vvoice/music-python/bin/python
 COPY --from=studio_artifacts /linux-${TARGETARCH}/vvoice-studio /opt/vvoice/vvoice-studio
 COPY --from=studio_artifacts /web/ /opt/vvoice/web/
 COPY --from=audio /opt/audiocpp/ /opt/vvoice/audiocpp/
@@ -44,5 +41,6 @@ COPY internal/catalog/catalog.json /app/catalog/audio-cpp.json
 COPY internal/catalog/vos.json /app/catalog/audio-cpp-vos.json
 COPY LICENSE THIRD_PARTY_NOTICES.md /opt/vvoice/notices/
 COPY scripts/licenses/espeak-ng-COPYING.txt /opt/vvoice/tools/kokoro/
+RUN python3 -c "import importlib.util; assert all(importlib.util.find_spec(name) is None for name in ('torch', 'torchaudio', 'transformers', 'diffusers'))"
 WORKDIR /app
 CMD ["python3", "-m", "vvoice.server"]

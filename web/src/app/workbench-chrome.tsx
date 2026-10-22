@@ -42,7 +42,7 @@ import type { DraftSession } from './use-draft-session';
 import { SpeechService, type SpeechPage } from '../features/api/speech-service';
 import { SchedulerStatus } from '../features/api/scheduler-status';
 import { ModelManagement } from '../features/api/model-management';
-import { BackgroundMusic } from '../features/music/background-music';
+import { PrepareModels } from '../features/api/prepare-models';
 const Settings = lazy(() => import('../features/settings/settings').then(module => ({ default: module.Settings })));
 const ApiDocumentation = lazy(() => import('../features/api/api-documentation').then(module => ({ default: module.ApiDocumentation })));
 const VoicePicker = lazy(() => import('../features/media/voice-picker').then(module => ({ default: module.VoicePicker })));
@@ -79,8 +79,9 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   // 作品只在编辑页和版本记录页处于打开状态。
   useEffect(() => setActive(page === 'create' || page === 'history'), [page, setActive]);
   const [settingsFocus, setSettingsFocus] = useState<{ tab: string; modelId: string; request: number } | undefined>();
+  const [prepareOpen, setPrepareOpen] = useState(false);
   // 缺的是音色库时打开独立的音色库页，其余模型在“模型”页。
-  const openSettings = (modelId = draft.modelId, requested = 'models') => { const tab = requested === 'models' && catalog.find(m => m.id === modelId)?.family === 'soundfont' ? 'soundfonts' : requested; setSettingsFocus({ tab, modelId, request: performance.now() }); setPage('settings'); };
+  const openSettings = (modelId = draft.modelId, requested = 'models') => { if (isVos && requested === 'models') { setPrepareOpen(true); return; } const tab = requested === 'models' && catalog.find(m => m.id === modelId)?.family === 'soundfont' ? 'soundfonts' : requested; setSettingsFocus({ tab, modelId, request: performance.now() }); setPage('settings'); };
   const [voicePicker, setVoicePicker] = useState<'voice' | 'emotion' | 'add' | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [previewTrack, setPreviewTrack] = useState<Track | null>(null);
@@ -277,6 +278,9 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   return <VStack className={`workbench ${isDesktop ? 'desktop' : 'preview'}`} style={{ '--app-nav': `${navigation.size}px` } as CSSProperties} gap={0}>
     {!isDesktop ? <HStack as="header" className="browser-titlebar" gap={2} vAlign="center"><Button label={navigation.isCollapsed ? t('@yovoice.app.expandSidebar') : t('@yovoice.app.collapseSidebar')} isIconOnly variant="ghost" size="sm" icon={<PanelLeft size={17} />} aria-expanded={!navigation.isCollapsed} onClick={toggleSidebar} />{isVos ? <img src="./v-voice.png" alt="" style={{ width: 'var(--spacing-6)', height: 'var(--spacing-6)' }} /> : null}<b>{isVos ? 'V-Voice' : 'yovoice'}</b><small>{isVos ? 'ASR · TTS · Studio' : t('@yovoice.app.browserPreview')}</small>{page === 'create' ? <Button label={inspectorCollapsed ? t('@yovoice.app.expandInspector') : t('@yovoice.app.collapseInspector')} isIconOnly variant="ghost" size="sm" icon={<PanelRight size={17} />} aria-expanded={!inspectorCollapsed} onClick={toggleInspectorPanel} /> : null}{isVos ? <Button size="sm" variant="ghost" icon={<Info size={16} />} label={t('@yovoice.app.about')} aria-haspopup="dialog" onClick={() => setAboutOpen(true)} /> : null}</HStack> : null}
     {isVos ? <SchedulerStatus /> : null}
+    {isVos && page !== 'models' && page !== 'models-creative' ? <HStack paddingInline={4} paddingBlock={2} hAlign="end">
+      <Button data-testid="prepare-models" size="sm" label={t('@vvoice.models.prepare')} aria-haspopup="dialog" onClick={() => setPrepareOpen(true)} />
+    </HStack> : null}
     <AppShell variant="elevated" sideNav={navigation.isCollapsed ? undefined : sidebar} mobileNav={{ breakpoint: 'none' }} height="fill"><VStack className="app-sheet" gap={0}>
       {characterEditor ? <VStack style={{ display: page === 'characters' ? 'flex' : 'none', height: '100%', minHeight: 0 }} gap={0}><PageBoundary name="character-editor"><CharacterEditor active={page === 'characters'} initial={characterEditor} state={state} catalog={catalog} settings={openSettings} apply={characterOrigin.current ? async saved => { const origin = characterOrigin.current!; await applyToTarget(saved, origin.draftId, origin.speakerId); setCharacterEditor(null); } : undefined} close={() => { setCharacterEditor(null); setPage(characterReturnPage.current); }} /></PageBoundary></VStack> : null}
       <VStack className="page-panel" style={{ display: characterActive ? 'none' : 'flex' }} gap={0}><Layout height="fill" footer={<VStack gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="timeline" resetKey={draft.id}>{scoring ? <ScoreDock key={draft.id} draft={draft} change={change} playhead={track ? playback : undefined} seek={time => setSeekRequest({ time, nonce: performance.now() })} /> : null}{draft.timeline || projectKind(draft) === 'story' ? <TimelineEditor exportProject={async () => { await persistDraft(draft); await call('project.export', { id: draft.id, name: draft.title }); }} key={draft.id} selectedCue={selectedCue} cueSelectionRevision={cueSelection?.revision ?? 0} playbackCue={setPlayingCue} selectCue={selectCue} draft={draft} busy={busy} regenerate={async (cueId, clipId) => { await persistDraft(draft); await call('generation.cue', { draft, cueId, clipId }); }} value={draft.timeline ?? { tracks: [] }} history={state.history} change={timeline => change({ timeline })} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget} onError={onError} /> : <Player onProgress={scoring ? (time, playing) => setPlayback({ time, playing }) : undefined} seekRequest={scoring ? seekRequest : undefined} laneActions={instrumental ? undefined : <Button size="sm" variant="secondary" icon={<Plus />} label={t('@yovoice.timeline.add')} onClick={() => { const source = state.history.find(g => g.id === track?.id); change({ timeline: { tracks: [{ id: crypto.randomUUID(), name: t('@yovoice.timeline.track', { n: 1 }), muted: false, clips: source ? [{ id: crypto.randomUUID(), generationId: source.id, start: 0, offset: 0, duration: source.duration }] : [] }, ...(source ? [{ id: crypto.randomUUID(), name: t('@yovoice.timeline.track', { n: 2 }), muted: false, clips: [] }] : [])] } }); }} />} actions={instrumental ? undefined : <Button label={t('@yovoice.character.saveAs')} size="sm" onClick={() => openCharacter()} />} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget} track={track} onError={onError} historyControl={projectKind(draft) !== 'story' && generations.length ? <HStack gap={1} vAlign="center">
@@ -313,13 +317,13 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
               reuse={item => run(() => newDraft({ ...structuredClone(item.settings), id: crypto.randomUUID().replaceAll('-', ''), title: (item.title + t('@yovoice.draft.copySuffix')).slice(0, 120), createdAt: undefined, updatedAt: undefined }))} />
           </PageBoundary></VStack>)}
         </>}
-        {isVos ? <VStack className="page-panel" gap={0} style={{ display: page === 'background-music' ? 'flex' : 'none' }}><PageBoundary name="background-music"><BackgroundMusic active={page === 'background-music'} openModels={() => setPage('models-creative')} /></PageBoundary></VStack> : null}
 
       </VStack>} /></VStack>
     </VStack></AppShell>
     <Notifications error={error} clearError={() => setError('')} activity={activity} modelActivity={state.modelActivity} draftId={draft.id} page={page} cancel={() => run(() => call('operation.cancel'))} cancelModel={() => run(() => call('model.cancel'))}
       aiTask={state.aiTask} aiTitle={state.drafts.find(item => item.id === state.aiTask?.projectId)?.title} openAITask={() => { const target = state.drafts.find(item => item.id === state.aiTask?.projectId); if (target) selectDraft(target); }}><UpdateNotice /></Notifications>
     <UpdateDialogHost />
+    {prepareOpen ? <PrepareModels page={page} state={state} catalog={catalog} draft={draft} run={run} close={() => setPrepareOpen(false)} /> : null}
     {ready && !draft.subtitles && !instrumental && !isKokoroModel(draft.modelId) && !isVoxModel(draft.modelId) && !isReferenceModel(draft.modelId) && !isBreezeModel(draft.modelId) && page === 'create' && !voicePicker && !pronunciation && !deleteTarget ? <SelectionAction key={draft.id} editor={editor} onEdit={annotate} /> : null}
 
     {voiceTarget ? <VoiceTarget voice={voiceTarget} drafts={projectList} apply={applyToTarget} close={() => setVoiceTarget(null)} /> : null}

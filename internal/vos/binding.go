@@ -9,9 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 	"yovoice/internal/catalog"
@@ -75,7 +73,7 @@ func validateBinding(config SchedulerConfig) error {
 			return fmt.Errorf("too many model bindings")
 		}
 		for model, executor := range models {
-			if !bindingID.MatchString(model) || !bindingID.MatchString(executor) {
+			if !bindingID.MatchString(model) || !bindingID.MatchString(executor) || retiredMusicModel(model) {
 				return fmt.Errorf("invalid model binding")
 			}
 		}
@@ -91,7 +89,7 @@ func validateBinding(config SchedulerConfig) error {
 		legacy := map[string]bool{}
 		for _, model := range config.LegacyUnboundedModels {
 			_, bounded := config.ModelLimits[model]
-			if !bindingID.MatchString(model) || config.Models[model] == "" || legacy[model] || bounded || nativeMusicModel(model) {
+			if !bindingID.MatchString(model) || config.Models[model] == "" || legacy[model] || bounded {
 				return fmt.Errorf("invalid legacy input exemption")
 			}
 			legacy[model] = true
@@ -110,11 +108,6 @@ func validateBinding(config SchedulerConfig) error {
 			fields := []string{"text_characters", "speed_min", "speed_max"}
 			if model == "sensevoice-int8" {
 				fields = []string{"duration_seconds", "sample_rate", "hotwords_characters", "input_bytes"}
-			} else if nativeMusicModel(model) {
-				fields = []string{"duration_seconds", "prompt_characters", "negative_prompt_characters"}
-				if !validMusicSettings(config.ExecutionSettings) {
-					return fmt.Errorf("music execution settings require calibration")
-				}
 			} else if model != "kokoro-multilang" {
 				return fmt.Errorf("unsupported calibrated model")
 			}
@@ -146,26 +139,9 @@ func validateBinding(config SchedulerConfig) error {
 	return nil
 }
 
-// 原生配乐使用独立权重和线程参数，不能继承旧 V-Music 或 audio.cpp 的预算。
-func nativeMusicModel(id string) bool {
+// 已移除的 Torch 模型不能继续被新审批绑定；GGUF 模型 ID 不受影响。
+func retiredMusicModel(id string) bool {
 	return id == "ace-step-1.5-turbo" || id == "stable-audio-3-small-music" || id == "stable-audio-3-medium" || id == "musicgen-small"
-}
-
-func validMusicSettings(settings map[string]any) bool {
-	threads := func(key string, fallback int) float64 {
-		if n, err := strconv.Atoi(os.Getenv(key)); err == nil && n > 0 {
-			return float64(n)
-		}
-		return float64(fallback)
-	}
-	provider := os.Getenv("VVOICE_PROVIDER")
-	if provider == "" {
-		provider = "auto"
-	}
-	want := map[string]any{"provider": provider, "torch_threads": threads("VVOICE_MUSIC_TORCH_THREADS", 4),
-		"torch_interop_threads": threads("VVOICE_MUSIC_TORCH_INTEROP_THREADS", 1), "max_concurrent_jobs": float64(1),
-		"max_loaded_models": float64(1), "steps": float64(8), "runtime": "pytorch-music-v1"}
-	return reflect.DeepEqual(settings["music"], want)
 }
 
 func (s *Server) verifyBinding(r *http.Request, config SchedulerConfig) error {

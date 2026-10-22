@@ -122,15 +122,15 @@ func TestBindingPreservesCalibratedInputLimits(t *testing.T) {
 	}
 }
 
-func TestNativeMusicRequiresMatchingExecutionCalibration(t *testing.T) {
+func TestRetiredMusicCannotBeBound(t *testing.T) {
 	server, config := bindingFixture(t)
 	t.Setenv("VVOICE_PROVIDER", "cuda")
 	config.Models["musicgen-small"] = "voice.infer"
 	config.InputLimitsVersion = 1
 	config.ModelLimits = map[string]map[string]float64{"musicgen-small": {"duration_seconds": 10, "prompt_characters": 128, "negative_prompt_characters": 128}}
 	config.ExecutionSettings = map[string]any{"music": map[string]any{"provider": "cuda", "torch_threads": float64(4), "torch_interop_threads": float64(1), "max_concurrent_jobs": float64(1), "max_loaded_models": float64(1), "steps": float64(8), "runtime": "pytorch-music-v1"}}
-	if response := bindRequest(server, schedulerAppID, config); response.Code != 200 {
-		t.Fatalf("native music binding rejected: %d %s", response.Code, response.Body.String())
+	if response := bindRequest(server, schedulerAppID, config); response.Code == 200 {
+		t.Fatal("retired Torch model binding accepted")
 	}
 	config.ExecutionSettings["music"].(map[string]any)["torch_threads"] = float64(8)
 	if validateBinding(config) == nil {

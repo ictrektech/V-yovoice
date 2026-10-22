@@ -3,7 +3,6 @@ import { useTranslator } from '@astryxdesign/core/i18n';
 import type { Draft, ModelPackage, State } from '../../shared/workbench';
 import { ModelGroups } from '../settings/model-list';
 import { SpeechService } from './speech-service';
-import { NativeMusicModels } from '../music/background-music';
 import { useSharedModelInventory } from '../../shared/lib/model-inventory';
 
 // 同一管理入口覆盖旧语音模型与全部创作精度/音色库；状态以共享文件校验结果为准。
@@ -15,7 +14,6 @@ export function ModelManagement({ category, state, catalog, draft, run }: { cate
       : <VStack id="creative-models-panel" className="settings-page" gap={6} style={{ overflowY: 'auto' }}>
         <VStack as="header" gap={2} style={{ height: 'auto', alignItems: 'stretch' }}><h1>{t('@vvoice.models.creativeTab')}</h1><p>{t('@vvoice.models.sharedHint')}</p><a href="https://modelscope.cn/models/vivibit/v-voice-audiocpp-gguf" target="_blank" rel="noreferrer">ModelScope · vivibit/v-voice-audiocpp-gguf</a></VStack>
         {failed ? <p role="alert">{t('@vvoice.models.inventoryError')}</p> : null}
-        <NativeMusicModels />
         <ModelGroups models={catalog} state={state} draft={draft} run={run} shared={shared} />
       </VStack>}
   </VStack>;
