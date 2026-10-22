@@ -32,7 +32,7 @@ COPY catalog ./catalog
 COPY docker/modules/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl /tmp/
 COPY --from=sherpa_wheels / /tmp/sherpa-wheels/
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
-RUN python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . \
+RUN python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . "numpy==1.26.4" \
     && python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" coloredlogs flatbuffers packaging protobuf sympy \
     && python3 -m pip install --force-reinstall --no-deps \
       /tmp/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl \
@@ -43,6 +43,6 @@ RUN python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . \
     && rm /tmp/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl \
     && rm -rf /tmp/sherpa-wheels
 COPY --from=frontend /src/frontend/dist ./frontend/dist
-RUN python3 -c "import sherpa_onnx; assert '+cuda' in sherpa_onnx.__version__; print(sherpa_onnx.__version__)"
+RUN python3 -c "import sherpa_onnx, onnxruntime; assert '+cuda' in sherpa_onnx.__version__; assert 'CUDAExecutionProvider' in onnxruntime.get_available_providers(); print(sherpa_onnx.__version__)"
 EXPOSE 7070
 CMD ["python3", "-m", "uvicorn", "vvoice.main:app", "--host", "0.0.0.0", "--port", "7070"]
