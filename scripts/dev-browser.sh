@@ -13,6 +13,7 @@ fi
 
 # 空资源目录让 Vite 提供页面；Go 只负责真实 RPC、媒体和 VOS 鉴权边界。
 mkdir -p "$studio_assets" "$studio_data"
+npm --prefix frontend run build
 go build -o "$studio_build" ./cmd/vvoice-studio
 
 run_web() {

@@ -42,6 +42,12 @@ V-Voice 保持独立运行。默认数据写入 `/tmp/yovoice-dev-data`，可用
 `window.vos_platform`；线上构建仍强制使用真实 VOS 登录。`make dev` 使用纯前端模拟数据，
 `make dev-browser` 使用真实服务链路；两者都不需要构建或安装 VOS 镜像。
 
+首次运行 `make dev-browser` 前执行 `npm --prefix frontend ci`。启动时会构建
+内嵌的语音管理页面，模型、识别、合成、声纹、热词和 API 文档共用该页面。
+本机服务提供真实目录及空的热词、声纹、配乐管理接口；模型状态显示为未安装，
+不伪造本机推理。可通过 `VITE_VOS_SPEECH_SERVICE_BASE` 指向已运行的 Python
+语音服务或设备 `http://<VOS-IP>:22700`，从而联调真实推理。
+
 ## 构建与打包
 
 | 命令 | 产物 |
