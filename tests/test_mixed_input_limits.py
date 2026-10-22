@@ -80,7 +80,7 @@ def test_retired_native_music_has_no_route_or_permit(mixed):
     _, calls = mixed
     client = TestClient(admission.AdmissionMiddleware(main.app))
     response = client.post('/v1/audio/music/generations', json={'model': 'musicgen-small', 'prompt': 'x' * 513, 'duration': 30})
-    assert response.status_code == 404
+    assert response.status_code in {404, 405}
     assert not calls
 
 

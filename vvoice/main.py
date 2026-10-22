@@ -1059,12 +1059,16 @@ if os.getenv("VVOICE_STUDIO_ENABLED") == "true":
 
     @app.api_route("/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "DELETE"], include_in_schema=False)
     async def studio_transport(request: Request, path: str):
+        if path.startswith(("api/", "v1/")):
+            raise HTTPException(404, "API endpoint not found")
         return await studio_proxy(request, path)
 elif frontend.is_dir():
     app.mount("/assets", StaticFiles(directory=frontend / "assets"), name="assets")
 
     @app.get("/{path:path}", include_in_schema=False)
     async def spa(path: str):
+        if path.startswith(("api/", "v1/")):
+            raise HTTPException(404, "API endpoint not found")
         candidate = (frontend / path).resolve()
         if candidate.is_file() and frontend.resolve() in candidate.parents:
             return FileResponse(candidate)

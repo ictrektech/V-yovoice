@@ -7,7 +7,7 @@ VOS 版从固定的 audio.cpp v0.9.1 源码构建 CPU/CUDA 独立进程，原始
 各 profile 的系统发行版软件包，不是下文桌面安装包中的预编译版本；具体版本、
 版权与许可保留在镜像的软件包数据库和 `/usr/share/doc/` 中。
 
-GPU 运行镜像只从原固定 SDK 提取 CUDA、cuDNN 及 ONNX Runtime 所需的独立
+ARM GPU 运行镜像只从原固定 SDK 提取 CUDA、cuDNN 及 ONNX Runtime 所需的独立
 Protobuf / Abseil C++ 共享库，不继承 SDK 的 PyTorch 或 Python 包；SDK 中对应
 系统软件包的版权及 NVIDIA 容器许可保留在 `/opt/vvoice/notices/cuda/`。
 

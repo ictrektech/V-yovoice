@@ -8,7 +8,7 @@ clean runtime stage rather than inheriting the full GPU development image.
 The PyTorch-only ACE-Step 1.5 Turbo (original weights), Stable Audio 3 Small-Music,
 Stable Audio 3 Medium and MusicGen Small have been removed, along with their
 separate Background music page and `/v1/audio/music/generations` /
-`/api/v1/music-models` endpoints (now 404). The audio.cpp GGUF versions of ACE-Step
+`/api/v1/music-models` endpoints. The audio.cpp GGUF versions of ACE-Step
 and YuE2 remain in **Music generation**; score arranging and every existing speech
 API remain available. No installed weights, shared directories, projects or audio
 are deleted. Rollback can reuse those files with the preceding release.
