@@ -4,6 +4,9 @@ VOS uses sherpa-onnx / ONNX Runtime for speech and audio.cpp for GGUF speech,
 voice cloning and music, plus native soundfont score rendering. Runtime images do
 not install PyTorch, Transformers or Diffusers. CUDA libraries are copied into a
 clean runtime stage rather than inheriting the full GPU development image.
+AMD64 CUDA builds preserve cuDNN symbolic links and mount Sherpa installation
+wheels read-only during installation, avoiding duplicate libraries and archived
+installers in the shipped layers without changing runtime versions or features.
 
 The PyTorch-only ACE-Step 1.5 Turbo (original weights), Stable Audio 3 Small-Music,
 Stable Audio 3 Medium and MusicGen Small have been removed, along with their
