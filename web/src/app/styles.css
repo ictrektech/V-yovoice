@@ -91,6 +91,9 @@
   .app-dialog-header > div > div { align-items: center; }
   .app-dialog-header > div > div > div { margin-block: 0; }
   .dialog-error { padding: var(--spacing-3); border-radius: var(--radius-element); background: var(--color-error-muted); color: var(--color-text-primary); font-size: var(--app-ui-font); }
+  /* 关于对话框：字段名在左，值靠右并允许长 ID 换行。 */
+  .about-row .settings-row-title { color: var(--app-muted); font-weight: var(--font-weight-normal); }
+  .about-value { margin: 0; text-align: right; overflow-wrap: anywhere; font-family: var(--app-mono); font-size: var(--font-size-sm); color: var(--app-ink); }
   .astryx-selector { border-radius: var(--radius-element); }
   [popover]:has(> .astryx-selector-popup) { width: anchor-size(width); min-width: calc(var(--spacing-10) * 5.75); }
   .astryx-selector-popup { box-sizing: border-box; width: 100%; min-width: 0; }

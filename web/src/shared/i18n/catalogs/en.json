@@ -139,6 +139,39 @@
   "@yovoice.activity.verifying": {
     "defaultMessage": "Verifying model"
   },
+  "@yovoice.app.about": {
+    "defaultMessage": "About"
+  },
+  "@yovoice.app.aboutAppId": {
+    "defaultMessage": "App ID"
+  },
+  "@yovoice.app.aboutGateway": {
+    "defaultMessage": "Model gateway"
+  },
+  "@yovoice.app.aboutGatewayConnected": {
+    "defaultMessage": "connected"
+  },
+  "@yovoice.app.aboutGatewayMissing": {
+    "defaultMessage": "not configured"
+  },
+  "@yovoice.app.aboutInference": {
+    "defaultMessage": "Inference"
+  },
+  "@yovoice.app.aboutProfile": {
+    "defaultMessage": "Profile"
+  },
+  "@yovoice.app.aboutSubtitle": {
+    "defaultMessage": "VOS voice workbench"
+  },
+  "@yovoice.app.aboutTitle": {
+    "defaultMessage": "About V-Voice"
+  },
+  "@yovoice.app.aboutUnavailable": {
+    "defaultMessage": "Runtime details are unavailable."
+  },
+  "@yovoice.app.aboutVersion": {
+    "defaultMessage": "Version"
+  },
   "@yovoice.app.audition": {
     "defaultMessage": "Preview {name}"
   },
@@ -890,7 +923,7 @@
     "defaultMessage": "Diagnostics"
   },
   "@yovoice.settings.download.failed": {
-    "defaultMessage": "Download incomplete"
+    "defaultMessage": "Download failed"
   },
   "@yovoice.settings.download.paused": {
     "defaultMessage": "Paused"

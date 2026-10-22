@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -95,15 +97,39 @@ func PullSharedModel(ctx context.Context, id string) error {
 	for _, f := range selected.PackageFiles() {
 		files = append(files, f.Path)
 	}
-	body, err := json.Marshal(map[string]any{"source": "ms", "model_id": SharedRepository, "files": files, "append": true})
-	if err != nil {
-		return err
-	}
 	base := os.Getenv("MODEL_HUB_API_URL")
 	if base == "" {
 		base = "http://v-scheduler-model-hub:6005"
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", base+"/api/v1/models/pull", bytes.NewReader(body))
+	body := map[string]any{"source": "ms", "model_id": SharedRepository, "files": files, "append": true}
+	err := postPull(ctx, base, body)
+	var hubErr *modelHubError
+	// 共享仓库上次下载失败后记录不是 ready，追加下载会被拒绝；改为只下载本模型文件，让失败可以重试。
+	if errors.As(err, &hubErr) && hubErr.Status == http.StatusBadRequest && strings.Contains(hubErr.Detail, "append requires a ready model") {
+		body["append"] = false
+		err = postPull(ctx, base, body)
+	}
+	return err
+}
+
+type modelHubError struct {
+	Status int
+	Detail string
+}
+
+func (e *modelHubError) Error() string {
+	if e.Detail != "" {
+		return e.Detail
+	}
+	return fmt.Sprintf("Model Hub HTTP %d", e.Status)
+}
+
+func postPull(ctx context.Context, base string, body map[string]any) error {
+	data, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", base+"/api/v1/models/pull", bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
@@ -113,10 +139,24 @@ func PullSharedModel(ctx context.Context, id string) error {
 		return err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusConflict && (res.StatusCode < 200 || res.StatusCode >= 300) {
-		return fmt.Errorf("Model Hub HTTP %d", res.StatusCode)
+	if res.StatusCode == http.StatusConflict || (res.StatusCode >= 200 && res.StatusCode < 300) {
+		return nil
 	}
-	return nil
+	payload, _ := io.ReadAll(io.LimitReader(res.Body, 64<<10))
+	var reply struct {
+		Detail string `json:"detail"`
+		Error  struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if json.Unmarshal(payload, &reply) != nil {
+		return &modelHubError{Status: res.StatusCode}
+	}
+	detail := reply.Detail
+	if detail == "" {
+		detail = reply.Error.Message
+	}
+	return &modelHubError{Status: res.StatusCode, Detail: detail}
 }
 
 // CancelSharedModel 只取消同一共享仓库且包含选中模型文件的活动任务。

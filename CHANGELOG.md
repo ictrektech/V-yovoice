@@ -70,24 +70,30 @@
 
 ## [Unreleased]
 
-- AI 写作栏（写谱、写歌词）未配置时移除快捷连接按钮，统一通过“设置 AI”进入配置；打开 AI 设置时默认聚焦服务列表首项；右侧检查器移除“返回正文”按钮，窄屏下展开时保持与宽屏一致的面板宽度浮出，不再全屏覆盖正文。
-- 音频读不到（如文件已被删除）时，播放器与故事时间线直接标出不可用，不再主动弹出“音频无法播放”，只在试听或播放时说明原因；打开作品只预读音频时长，再次试听同一段音频不再重新读取；弹窗背景去掉模糊，修复 macOS 上弹窗背后出现一圈边线的问题。
-- 作品、音色、模型和设置改为保存在数据目录的 SQLite 数据库 `yovoice.db`：每次保存在一个事务中只写入改动的内容，断电或崩溃不会留下写了一半的数据，作品较多时保存也不再越来越慢；每次启动自动备份为 `yovoice.backup.db`，数据库损坏时自动从备份恢复并保留损坏原件。升级后首次启动自动导入原来的 `state.json`（原文件改名为 `state.migrated.json` 保留），本机接口设置和 AI 密钥也一并移入数据库，迁移数据目录后不再丢失。
-- 数据安全：删除作品、历史、音频和清理残留统一按同一份引用登记判断文件是否仍在使用，共享的素材不会被误删；接口生成的历史 24 小时内不再被自动修剪；启动自检只在确认文件不存在时才移除时间线片段和素材，外置盘或目录暂时读不到时不再删除，修复前自动留存快照；迁移数据目录复制期间可以继续编辑和保存作品；存储配置损坏时明确提示而不是静默回到默认目录；连续迁移多次时每个旧目录都会被清理，清理只删除应用创建的内容，旧目录里用户自己放的文件保留。
-- 修复迁移数据目录超过 2 分钟（如跨盘复制模型）时界面误报未知错误、Windows 也不提示重启的问题；修复模型失败与生成失败提示互相恢复已关闭提示、离开角色页后右上角面板开关偶尔无效的问题；CLI 与 `yovoice mcp` 默认使用桌面应用迁移后的数据目录，不再回到会被删除的 `~/.yovoice`。
-- 修复 Windows 退出时本地服务未及时结束导致窗口卡在无法使用的状态、服务启动超时后残留进程的问题；Windows 关到托盘后原窗口位置不再拦截鼠标；macOS 退出时本地服务无响应可选择仍要退出。
-- 本机接口与桌面界面同时生成时，接口不再误报失败或误取消界面里的生成；存储与本机接口设置读取失败时显示原因和重试，不再整组消失；更改数据目录时，选择文件夹期间不再提前弹出迁移进度。
-- 创作区较窄时右侧面板自动收起，由窗口右上角开关展开或收回，正文不再显示额外的面板按钮；“填入示例”“AI 写作”和 OrcaRouter 连接改用更贴切的图标。
-- 修复 Windows 窗口最小化后，原窗口位置仍拦截鼠标、桌面右键菜单无法弹出的问题；从托盘打开最小化的窗口时会直接还原。
-- 下载或导入模型可与生成同时进行：模型进度单独显示并可单独暂停，生成不再被下载阻塞；正在下载的模型不能被移除或用于生成。
-- 单个页面渲染出错时只显示该页的错误提示（可重试或重新加载，重新加载前先保存正文），不再整个窗口白屏。
-- 本地服务意外停止时可在应用内一键重新启动，重启后自动补存停止前未保存的修改，补存失败可另存备份（Windows 与 macOS）。
-- 应用异常退出后推理进程不再残留：Windows 随应用自动结束，下次启动也会清理上次遗留的推理进程。
-- 推理与本地服务日志改为追加写入同一文件、每次启动写一行分隔，超过 5MB 才滚动为 `.1`；崩溃后重启时上一轮的出错原因仍保留在文件中。
-- 更换模型目录时自动识别新目录中已有的完整模型（按应用下载的目录布局），无需重新下载或手动导入。
-- 窗口最小宽度提高到 960；创作区宽度不足（如侧栏拖宽）时右侧面板自动改为与正文切换显示，正文和面板不再被挤压变形。
-- 磁盘空间不足时明确提示“磁盘已满”，不再显示难以理解的系统错误。
-- Windows 原生菜单、托盘、对话框与错误提示支持英文，跟随设置中的界面语言即时切换。
+## [0.0.27] - 2026-10-22
+
+### 简体中文
+- VOS 窗口右上角新增“关于”按钮，显示应用版本、App ID、运行配置、推理后端及 V-Scheduler 模型网关连接状态。
+- 修复未下载过的模型错误显示“下载未完成”：整仓下载失败不再影响其他精度，只有本模型自己的文件失败才提示。
+- 修复共享仓库下载失败后“继续下载”永远被拒绝的问题：改为按当前模型文件重新下载，失败原因直接显示在创建页。
+- 模型下载与生成互不阻塞：下载进度单独显示并可单独暂停，正在下载的模型不能移除或用于生成；更换模型目录后自动识别已有完整模型。
+- 作品、音色、模型和设置改用 SQLite 数据库保存在数据目录，逐项写入并自动备份；升级时自动导入原 `state.json`，迁移数据目录期间可继续编辑，接口设置与 AI 密钥一并保留。
+- 删除作品、历史、音频和清理残留统一按引用登记判断，共享素材不会被误删；启动自检只在确认文件不存在时才移除内容，修复前自动留存快照；存储配置损坏或磁盘已满时明确提示。
+- 音频读不到时播放器与时间线直接标出不可用，不再主动弹窗；打开作品只预读音频时长，弹窗背景去掉模糊并修复 macOS 弹窗背后出现边线。
+- 本地服务意外停止时可一键重启并补存修改；应用异常退出后不再残留推理进程；修复 Windows 退出、托盘与菜单行为，原生菜单和错误提示支持英文。
+- 界面修复：AI 写作栏未配置时统一从“设置 AI”进入；窄屏检查器保持宽屏宽度、不再全屏覆盖正文；创作区变窄时右侧面板自动收起；单页渲染出错只提示该页。
+
+### English
+- Add an About button in the top-right VOS titlebar showing the app version, App ID, profile, inference backend and V-Scheduler model gateway connection state.
+- Stop reporting never-downloaded models as an incomplete download: a failed whole-repository task no longer affects every precision, only that model's own failed files are reported.
+- Fix resume being rejected forever after a shared repository download failed by downloading the selected model files again, and show the failure reason on the creation page.
+- Let model downloads and generation run independently, with separate progress and pause, and prevent removing or using a model that is still downloading; recognize complete models after changing the model directory.
+- Store works, voices, models and settings in a SQLite database in the data directory with incremental writes and automatic backups; import the previous `state.json` on upgrade, keep editing during a data directory migration, and retain local API settings and AI keys.
+- Decide file usage from one reference registry when deleting works, history, audio and leftovers so shared assets are never removed; remove timeline content only when startup checks confirm a file is missing, taking a snapshot before repair; report corrupt storage configuration or a full disk explicitly.
+- Mark unavailable audio directly in the player and story timeline instead of popping up a notice, pre-read only the duration when opening a work, and remove the blurred dialog backdrop and the macOS edge line behind dialogs.
+- Restart a stopped local service in place and save pending edits, remove leftover inference processes after an abnormal exit, fix Windows exit, tray and menu behavior, and localize native menus and error messages to English.
+- Interface fixes: route AI writing setup through AI settings, keep narrow-screen inspectors at desktop width instead of covering the text, collapse the side panel when the creation area is narrow, and show render errors only for the affected page.
+
 - Windows 自动更新在应用已签名时校验更新包的发行者签名，签名不一致时拒绝安装；正式发布配置证书后自动签名应用、服务与安装包。
 - 自定义数据目录被删除、改名或所在磁盘未连接时，启动不再静默新建空目录，而是提示重试、退出或新建空目录；运行中数据目录丢失时保存会明确提示目录不存在；迁移后的新目录若是空的不再自动删除旧目录，避免误删唯一一份数据；Windows 退出时作品保存失败也可选择不备份直接退出。
 - 新增 Breeze TTS 2（中英，Q4 / Q8 / BF16）：可用文字描述设计音色，或用参考音频和原文克隆并以描述调整语速、情绪和语气；默认缩短分段、限制单段生成长度并在显卡上使用 bf16 推理，减少拖音和长段静音。模型需要 v0.9.1 内核，权重仅限非商业用途。

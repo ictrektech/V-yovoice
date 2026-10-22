@@ -2,6 +2,7 @@ package workbench
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -78,5 +79,64 @@ func TestSharedCatalogRetainsEveryUpstreamModelVariant(t *testing.T) {
 				t.Fatal("shared mapping changed file integrity")
 			}
 		}
+	}
+}
+
+// 共享仓库失败后不能追加，补下载应改为仅下载当前模型文件，保证“继续下载”能重试。
+func TestPullSharedModelRetriesWithoutAppendWhenRepositoryFailed(t *testing.T) {
+	original := catalog.Models
+	catalog.Models = []catalog.ModelPackage{{ID: "selected", RemotePath: "selected.gguf", Size: 4}}
+	defer func() { catalog.Models = original }()
+	var bodies []map[string]any
+	hub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		if json.NewDecoder(r.Body).Decode(&body) != nil {
+			t.Errorf("invalid pull body")
+		}
+		bodies = append(bodies, body)
+		if body["append"] == true {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"code":"BAD_REQUEST","detail":"append requires a ready model","error":{"message":"append requires a ready model"}}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"task_id":"task-1"}`))
+	}))
+	defer hub.Close()
+	t.Setenv("MODEL_HUB_API_URL", hub.URL)
+
+	if err := PullSharedModel(context.Background(), "selected"); err != nil {
+		t.Fatalf("pull failed: %v", err)
+	}
+	if len(bodies) != 2 {
+		t.Fatalf("expected append and fallback pulls, got %d", len(bodies))
+	}
+	if bodies[1]["append"] != false {
+		t.Fatalf("fallback should not append: %v", bodies[1])
+	}
+	if files, ok := bodies[1]["files"].([]any); !ok || len(files) != 1 || files[0] != "selected.gguf" {
+		t.Fatalf("fallback must keep selected files: %v", bodies[1])
+	}
+}
+
+// 其他失败原因不应重复下载，直接返回服务端说明。
+func TestPullSharedModelReportsOtherErrors(t *testing.T) {
+	original := catalog.Models
+	catalog.Models = []catalog.ModelPackage{{ID: "selected", RemotePath: "selected.gguf", Size: 4}}
+	defer func() { catalog.Models = original }()
+	calls := 0
+	hub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"detail":"selected file is absent from repository"}`))
+	}))
+	defer hub.Close()
+	t.Setenv("MODEL_HUB_API_URL", hub.URL)
+
+	err := PullSharedModel(context.Background(), "selected")
+	if err == nil || err.Error() != "selected file is absent from repository" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if calls != 1 {
+		t.Fatalf("unexpected retry: %d calls", calls)
 	}
 }

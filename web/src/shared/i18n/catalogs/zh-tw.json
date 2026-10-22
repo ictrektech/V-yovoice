@@ -157,6 +157,39 @@
   "@yovoice.activity.verifying": {
     "defaultMessage": "正在校驗模型"
   },
+  "@yovoice.app.about": {
+    "defaultMessage": "關於"
+  },
+  "@yovoice.app.aboutAppId": {
+    "defaultMessage": "App ID"
+  },
+  "@yovoice.app.aboutGateway": {
+    "defaultMessage": "模型閘道"
+  },
+  "@yovoice.app.aboutGatewayConnected": {
+    "defaultMessage": "已連線"
+  },
+  "@yovoice.app.aboutGatewayMissing": {
+    "defaultMessage": "未設定"
+  },
+  "@yovoice.app.aboutInference": {
+    "defaultMessage": "推理後端"
+  },
+  "@yovoice.app.aboutProfile": {
+    "defaultMessage": "執行組態"
+  },
+  "@yovoice.app.aboutSubtitle": {
+    "defaultMessage": "VOS 語音工作臺"
+  },
+  "@yovoice.app.aboutTitle": {
+    "defaultMessage": "關於 V-Voice"
+  },
+  "@yovoice.app.aboutUnavailable": {
+    "defaultMessage": "暫時無法讀取執行資訊。"
+  },
+  "@yovoice.app.aboutVersion": {
+    "defaultMessage": "應用版本"
+  },
   "@yovoice.app.audition": {
     "defaultMessage": "試聽{name}"
   },
@@ -908,7 +941,7 @@
     "defaultMessage": "診斷日誌"
   },
   "@yovoice.settings.download.failed": {
-    "defaultMessage": "下載未完成"
+    "defaultMessage": "下載失敗"
   },
   "@yovoice.settings.download.paused": {
     "defaultMessage": "已暫停"

@@ -139,6 +139,39 @@
   "@yovoice.activity.verifying": {
     "defaultMessage": "正在校验模型"
   },
+  "@yovoice.app.about": {
+    "defaultMessage": "关于"
+  },
+  "@yovoice.app.aboutAppId": {
+    "defaultMessage": "App ID"
+  },
+  "@yovoice.app.aboutGateway": {
+    "defaultMessage": "模型网关"
+  },
+  "@yovoice.app.aboutGatewayConnected": {
+    "defaultMessage": "已连接"
+  },
+  "@yovoice.app.aboutGatewayMissing": {
+    "defaultMessage": "未配置"
+  },
+  "@yovoice.app.aboutInference": {
+    "defaultMessage": "推理后端"
+  },
+  "@yovoice.app.aboutProfile": {
+    "defaultMessage": "运行配置"
+  },
+  "@yovoice.app.aboutSubtitle": {
+    "defaultMessage": "VOS 语音工作台"
+  },
+  "@yovoice.app.aboutTitle": {
+    "defaultMessage": "关于 V-Voice"
+  },
+  "@yovoice.app.aboutUnavailable": {
+    "defaultMessage": "暂时无法读取运行信息。"
+  },
+  "@yovoice.app.aboutVersion": {
+    "defaultMessage": "应用版本"
+  },
   "@yovoice.app.audition": {
     "defaultMessage": "试听{name}"
   },
@@ -890,7 +923,7 @@
     "defaultMessage": "诊断日志"
   },
   "@yovoice.settings.download.failed": {
-    "defaultMessage": "下载未完成"
+    "defaultMessage": "下载失败"
   },
   "@yovoice.settings.download.paused": {
     "defaultMessage": "已暂停"

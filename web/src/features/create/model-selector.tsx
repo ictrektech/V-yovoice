@@ -69,6 +69,7 @@ export function ModelSelector({ label, models, state, value, isDisabled, manage,
           : <Button size="sm" variant="ghost" label={failed ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={14} />} isLoading={busy} isDisabled={verifying} onClick={() => void download('model.download')} />}
       </HStack>
       {downloading || verifying ? <progress aria-label={t('@yovoice.settings.downloadModel')} value={verifying ? undefined : received} max={total || 1} /> : null}
+      {failed && hub?.error ? <small role="alert">{hub.error}</small> : null}
       {error ? <small role="alert">{error}</small> : null}
     </VStack> : null}
   </VStack>;

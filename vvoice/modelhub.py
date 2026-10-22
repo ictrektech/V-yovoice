@@ -72,6 +72,18 @@ def _clean_id(value: Any) -> str:
     return str(value or "").removeprefix("ms://").removeprefix("hf://")
 
 
+def _error_detail(response) -> str:
+    try:
+        body = response.json() or {}
+    except ValueError:
+        return ""
+    if not isinstance(body, dict):
+        return ""
+    error = body.get("error")
+    message = error.get("message") if isinstance(error, dict) else ""
+    return str(body.get("detail") or message or "")
+
+
 async def states() -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
     try:
@@ -119,17 +131,21 @@ async def list_models(items: list[dict[str, Any]] | None = None) -> list[dict[st
         hub_status = str(state.get("status") or "not_installed").lower()
         # 一个共享仓库含多个模型，不能把其他已下载文件或其他任务的状态当成本模型就绪。
         selected = state.get("files")
-        relevant_task = not selected or bool(set(selected) & {file["path"] for file in item.get("shared_files", [])})
+        paths = {file["path"] for file in item.get("shared_files", [])}
+        # 整仓任务未记录文件范围时会下载仓库内全部模型；但失败无法归因到某个精度，
+        # 只有本地已有该模型文件或任务明确包含其文件时才报告未完成。
+        active_task = not selected or bool(set(selected) & paths)
+        failed_task = descriptor_installed or (hub_status == "failed" and bool(selected) and bool(set(selected) & paths))
         if ready:
             status = "ready"
         elif ready is None:
             status = "verifying"
-        elif hub_status in {"downloading", "pending", "verifying"} and relevant_task:
+        elif hub_status in {"downloading", "pending", "verifying"} and active_task:
             status = "downloading"
-        elif descriptor_installed and (not item.get("shared_files") or all((root / file["path"]).is_file() for file in item["shared_files"])):
+        elif failed_task:
             status = "failed"
         else:
-            status = "failed" if hub_status == "failed" and relevant_task else "not_installed"
+            status = "not_installed"
         result.append({
             **{key: value for key, value in item.items() if key != "runtime"},
             "status": status,
@@ -168,11 +184,18 @@ async def pull_model(key: str, force: bool = False) -> dict[str, Any]:
     if item.get("shared_files"):
         payload.update(files=[file["path"] for file in item["shared_files"]], append=True, force=False)
     async with httpx.AsyncClient(timeout=30) as client:
+        pull_url = f"{settings.model_hub_api_url}/api/v1/models/pull"
         if item.get("shared_files") and force:
             # 更新保留整个仓库已下载的文件范围，不以一个精度替换其他已安装模型。
             response = await client.post(f"{settings.model_hub_api_url}/api/v1/models/update", params={"model_id": f"ms://{item['modelscope_repo']}"})
+            if response.status_code == 400 and "only ready models can be updated" in _error_detail(response):
+                # 上次失败后整个仓库不是 ready，无法更新；改为只补下载当前模型文件。
+                response = await client.post(pull_url, json={key: value for key, value in payload.items() if key != "append"})
         else:
-            response = await client.post(f"{settings.model_hub_api_url}/api/v1/models/pull", json=payload)
+            response = await client.post(pull_url, json=payload)
+            if response.status_code == 400 and payload.get("append") and "append requires a ready model" in _error_detail(response):
+                # 共享仓库上次失败后不能追加；改为只下载当前模型文件，让失败可以重试。
+                response = await client.post(pull_url, json={key: value for key, value in payload.items() if key != "append"})
     if response.status_code == 409:
         return {"status": "active", "detail": response.json().get("detail", "")}
     response.raise_for_status()

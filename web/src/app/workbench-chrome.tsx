@@ -5,7 +5,7 @@ import { TabList, Tab } from '@astryxdesign/core/TabList';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack, Layout } from '@astryxdesign/core/Layout';
 import { useLocale, useTranslator } from '@astryxdesign/core/i18n';
-import { PanelLeft, PanelRight, Check, Plus, LoaderCircle } from 'lucide-react';
+import { PanelLeft, PanelRight, Check, Plus, Info, LoaderCircle } from 'lucide-react';
 import { NewProject, Projects } from '../features/library/projects';
 import { VoiceTarget } from '../features/library/voice-target';
 import { MediaLibrary } from '../features/library/media-library';
@@ -36,6 +36,7 @@ import { PageBoundary } from '../shared/ui/page-boundary';
 import { Notifications } from './notifications';
 import { UpdateDialogHost } from '../features/update/update-dialog';
 import { UpdateNotice } from '../features/update/update-notice';
+import { AboutDialog } from './about-dialog';
 import { PronunciationDialog, type Pronunciation } from './pronunciation-dialog';
 import type { DraftSession } from './use-draft-session';
 import { SpeechService, type SpeechPage } from '../features/api/speech-service';
@@ -81,6 +82,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   // 缺的是音色库时打开独立的音色库页，其余模型在“模型”页。
   const openSettings = (modelId = draft.modelId, requested = 'models') => { const tab = requested === 'models' && catalog.find(m => m.id === modelId)?.family === 'soundfont' ? 'soundfonts' : requested; setSettingsFocus({ tab, modelId, request: performance.now() }); setPage('settings'); };
   const [voicePicker, setVoicePicker] = useState<'voice' | 'emotion' | 'add' | null>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [previewTrack, setPreviewTrack] = useState<Track | null>(null);
   const [track, setTrack] = useState<Track | null>(null);
   // 编曲视图与底部播放器共用播放位置：播放器上报进度，点标尺发出跳转请求。
@@ -273,7 +275,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   const collapsedAction = busy ? <Button size="sm" icon={<LoaderCircle className="generation-spinner" />} label={t('@yovoice.create.cancelGenerate')} onClick={() => run(() => call('operation.cancel'))} />
     : <Button size="sm" variant="primary" label={generateLabel} aria-keyshortcuts="Control+Enter" isDisabled={!generateReady} onClick={generate} />;
   return <VStack className={`workbench ${isDesktop ? 'desktop' : 'preview'}`} style={{ '--app-nav': `${navigation.size}px` } as CSSProperties} gap={0}>
-    {!isDesktop ? <HStack as="header" className="browser-titlebar" gap={2} vAlign="center"><Button label={navigation.isCollapsed ? t('@yovoice.app.expandSidebar') : t('@yovoice.app.collapseSidebar')} isIconOnly variant="ghost" size="sm" icon={<PanelLeft size={17} />} aria-expanded={!navigation.isCollapsed} onClick={toggleSidebar} />{isVos ? <img src="./v-voice.png" alt="" style={{ width: 'var(--spacing-6)', height: 'var(--spacing-6)' }} /> : null}<b>{isVos ? 'V-Voice' : 'yovoice'}</b><small>{isVos ? 'ASR · TTS · Studio' : t('@yovoice.app.browserPreview')}</small>{page === 'create' ? <Button label={inspectorCollapsed ? t('@yovoice.app.expandInspector') : t('@yovoice.app.collapseInspector')} isIconOnly variant="ghost" size="sm" icon={<PanelRight size={17} />} aria-expanded={!inspectorCollapsed} onClick={toggleInspectorPanel} /> : null}</HStack> : null}
+    {!isDesktop ? <HStack as="header" className="browser-titlebar" gap={2} vAlign="center"><Button label={navigation.isCollapsed ? t('@yovoice.app.expandSidebar') : t('@yovoice.app.collapseSidebar')} isIconOnly variant="ghost" size="sm" icon={<PanelLeft size={17} />} aria-expanded={!navigation.isCollapsed} onClick={toggleSidebar} />{isVos ? <img src="./v-voice.png" alt="" style={{ width: 'var(--spacing-6)', height: 'var(--spacing-6)' }} /> : null}<b>{isVos ? 'V-Voice' : 'yovoice'}</b><small>{isVos ? 'ASR · TTS · Studio' : t('@yovoice.app.browserPreview')}</small>{page === 'create' ? <Button label={inspectorCollapsed ? t('@yovoice.app.expandInspector') : t('@yovoice.app.collapseInspector')} isIconOnly variant="ghost" size="sm" icon={<PanelRight size={17} />} aria-expanded={!inspectorCollapsed} onClick={toggleInspectorPanel} /> : null}{isVos ? <Button size="sm" variant="ghost" icon={<Info size={16} />} label={t('@yovoice.app.about')} aria-haspopup="dialog" onClick={() => setAboutOpen(true)} /> : null}</HStack> : null}
     {isVos ? <SchedulerStatus /> : null}
     <AppShell variant="elevated" sideNav={navigation.isCollapsed ? undefined : sidebar} mobileNav={{ breakpoint: 'none' }} height="fill"><VStack className="app-sheet" gap={0}>
       {characterEditor ? <VStack style={{ display: page === 'characters' ? 'flex' : 'none', height: '100%', minHeight: 0 }} gap={0}><PageBoundary name="character-editor"><CharacterEditor active={page === 'characters'} initial={characterEditor} state={state} catalog={catalog} settings={openSettings} apply={characterOrigin.current ? async saved => { const origin = characterOrigin.current!; await applyToTarget(saved, origin.draftId, origin.speakerId); setCharacterEditor(null); } : undefined} close={() => { setCharacterEditor(null); setPage(characterReturnPage.current); }} /></PageBoundary></VStack> : null}
@@ -326,5 +328,6 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
     {voiceEditor ? <VoiceEditor item={voiceEditor} close={() => setVoiceEditor(null)} /> : null}
     {voicePicker ? <Suspense fallback={<p role="status">{t('@yovoice.app.loadingVoicePicker')}</p>}><VoicePicker adding={voicePicker === 'add'} voices={state.voices} onClose={() => setVoicePicker(null)} onSelect={voice => { if ((activeSpeaker || draft.performance) && voicePicker !== 'add') { changeSpeaker(voicePicker === 'emotion' ? { emotionVoiceId: voice.id } : { voiceId: voice.id, referenceText: voice.referenceText ?? '' }); setVoicePicker(null); } else selectVoice(voice); }} /></Suspense> : null}
     {pronunciation ? <PronunciationDialog pronunciation={pronunciation} setPronunciation={setPronunciation} draft={draft} change={change} editor={editor} /> : null}
+    {isVos && aboutOpen ? <AboutDialog onClose={() => setAboutOpen(false)} /> : null}
   </VStack>;
 }
