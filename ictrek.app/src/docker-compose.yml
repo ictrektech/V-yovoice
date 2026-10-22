@@ -12,7 +12,7 @@ x-vvoice-env: &vvoice-env
   VVOICE_MAX_CONCURRENT_INFERENCE: ${VVOICE_MAX_CONCURRENT_INFERENCE:-2}
   VVOICE_MAX_CONCURRENT_PER_MODEL: ${VVOICE_MAX_CONCURRENT_PER_MODEL:-2}
   MODEL_HUB_SHARED_MODELS_PATH: /modelhub
-  MODEL_HUB_API_URL: ${MODEL_HUB_API_URL:-http://v-scheduler:6005}
+  MODEL_HUB_API_URL: http://v-scheduler:6005
 
 x-vvoice-base: &vvoice-base
   restart: unless-stopped
