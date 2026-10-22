@@ -5,11 +5,13 @@
 ## [Unreleased]
 
 ### 简体中文
-- 新增 `make dev-browser`，支持使用本机后端联调浏览器界面，并可连接已运行的语音服务。
+- 完善 `make dev-browser`：直接用本地源码运行语音服务，复用同机 V-Scheduler 的共享权重与调度，无需构建镜像或安装 VOS 应用；保留已校准的模型和输入范围。
+- 修复开发页面无法通过局域网地址访问的问题；端口冲突或开发凭据无效时在启动阶段明确报错。
 - 修复浏览器开发模式下打开语音模型等页面时重复显示工作台侧栏的问题，并纠正语音服务连接。
 
 ### English
-- Add `make dev-browser` to develop the browser interface with a local backend and optionally connect a running speech service.
+- Run speech services from local source with `make dev-browser`, reusing the same host’s V-Scheduler weights and scheduling without image rebuilds or VOS app installation, while retaining calibrated model and input limits.
+- Allow LAN access to the development page and report occupied ports or invalid development credentials at startup.
 - Fix duplicate workbench sidebars when opening speech model and related pages in browser development mode, and correct speech service routing.
 
 ## [0.0.28] - 2026-10-22

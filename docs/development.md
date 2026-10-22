@@ -33,6 +33,55 @@ Run all following commands from the repository root. `app-run` builds and starts
 
 For browser-only UI development, run `make dev` and open `http://127.0.0.1:5173`. Local speech generation requires the desktop app or CLI.
 
+For real speech development on the Orin / JetPack 6 host running V-Scheduler:
+
+```bash
+npm --prefix frontend ci  # first setup of the compatibility speech pages
+make dev-browser
+# The previous same-host command also works:
+VITE_VOS_SPEECH_SERVICE_BASE=http://192.168.1.207:22700 make dev-browser
+```
+
+Open `http://192.168.1.207:5173`, replacing the IP with your development host's
+LAN address. Vite listens on `0.0.0.0:5173` and forwards same-origin requests to
+local Python speech and Go services on loopback ports 22700 and 7080. No VOS login
+bridge is needed, and port 22700 does not need LAN exposure.
+
+The launcher uses an already cached `v-voice:l4t_*` runtime image; select a cached
+image with `VVOICE_DEV_IMAGE` if needed. It never pulls or rebuilds an image.
+Current source is mounted read-only, and Go is compiled on startup. Restart the
+command after backend changes; the frontend retains Vite hot reload. V-Voice need
+not be installed in VOS. Weights are mounted read-only from the local Scheduler
+container's `/data` host mount, without copying or downloading them again. Model
+downloads still go through Scheduler's model repository API.
+
+The first start registers an independent `com.ictrek.v-voice.dev` service identity
+and executor through Scheduler's management API, retaining the local
+`orin-voice-native-bounded-v1` calibration. Existing VOS app credentials and
+executors are preserved. Every inference acquires and claims a permit and releases
+it after native computation stops and weights unload. Resource shortages return
+429. Kokoro supports at most 512 characters at speed 1; SenseVoice supports at most
+20 seconds, 24 kHz, a 1 MiB request body, and no hotwords. CAM++ weights may appear
+ready but this calibration does not approve its inference. GGUF creation and music
+also require their own calibrations and approvals.
+
+Data and private Scheduler configuration default to `/tmp/yovoice-dev-data`;
+set `YOVOICE_DEV_DATA` to a persistent directory if desired. Submitter credentials
+stay in a backend-only 0600 file and are reused on restart. `VVOICE_DEV_TOKEN` is a
+separate browser development credential: custom values need at least 32 letters,
+digits, underscores or hyphens. Production VOS authentication is unchanged.
+
+Ctrl+C stops the development services. Occupied ports 5173, 7080 or 22700 cause a
+clear startup error. For `Local compute resources are busy`, inspect Scheduler's
+state and available memory: the speech budget is 2304 MiB plus the system safety
+reserve, even when the GPU is idle.
+
+On other development machines, use `VVOICE_DEV_SPEECH=off make dev-browser` for
+Go and UI development without inference. To forward speech requests to an
+**already running** remote V-Voice, use
+`VVOICE_DEV_SPEECH=external VITE_VOS_SPEECH_SERVICE_BASE=http://<service-IP>:22700 make dev-browser`.
+External mode does not grant local creation tasks scheduling approval.
+
 ## Build and package
 
 | Command | Output |

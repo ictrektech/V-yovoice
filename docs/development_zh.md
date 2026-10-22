@@ -33,20 +33,46 @@ make app-run
 
 仅开发浏览器界面时运行 `make dev`，访问 `http://127.0.0.1:5173`。本地语音生成需要桌面 App 或 CLI。
 
-需要联调保存和媒体接口时运行 `make dev-browser`，同样访问
-`http://127.0.0.1:5173`。该命令启动本机 Go 服务和 Vite；设备上的
-V-Voice 保持独立运行。默认数据写入 `/tmp/yovoice-dev-data`，可用
-`YOVOICE_DEV_DATA`、`VVOICE_SCHEDULER_CONFIG` 覆盖本机数据目录与调度配置。
-`make dev-browser` 在仅监听
-`127.0.0.1` 的本机服务上使用显式开发身份，因此普通浏览器不需要 VOS 注入的
-`window.vos_platform`；线上构建仍强制使用真实 VOS 登录。`make dev` 使用纯前端模拟数据，
-`make dev-browser` 使用真实服务链路；两者都不需要构建或安装 VOS 镜像。
+在安装了 V-Scheduler 的 Orin / JetPack 6 本机联调真实语音服务：
 
-首次运行 `make dev-browser` 前执行 `npm --prefix frontend ci`。启动时会构建
-内嵌的语音管理页面，模型、识别、合成、声纹、热词和 API 文档共用该页面。
-本机服务提供真实目录及空的热词、声纹、配乐管理接口；模型状态显示为未安装，
-不伪造本机推理。可通过 `VITE_VOS_SPEECH_SERVICE_BASE` 指向已运行的 Python
-语音服务或设备 `http://<VOS-IP>:22700`，从而联调真实推理。
+```bash
+npm --prefix frontend ci  # 首次安装兼容语音页面依赖
+make dev-browser
+# 也兼容原来的同机地址：
+VITE_VOS_SPEECH_SERVICE_BASE=http://192.168.1.207:22700 make dev-browser
+```
+
+访问 `http://192.168.1.207:5173`（换成开发机实际 IP），无需 VOS 登录桥。
+Vite 监听 `0.0.0.0:5173`；Python 语音服务和 Go 后端仅监听本机 `22700`、`7080`，
+浏览器 API 全部由 Vite 同源转发。本地 22700 无需对局域网开放。
+
+启动器复用本机已缓存的 `v-voice:l4t_*` 运行镜像，按需通过 `VVOICE_DEV_IMAGE`
+选择已有镜像，不拉取或构建镜像。当前源码只读挂载到开发容器，Go 在启动时重新编译，
+修改后端后 Ctrl+C 再运行命令即可；前端保留 Vite 热更新。不要求 VOS 安装 V-Voice。
+模型目录自动从本机 Scheduler 容器的 `/data` 挂载解析，只读共享，不复制或重复下载；
+模型下载操作仍由 Scheduler 的模型仓库 API 负责。
+
+首次启动通过 Scheduler 管理 API 登记独立的 `com.ictrek.v-voice.dev` 身份和执行器，
+只沿用同机已有的 `orin-voice-native-bounded-v1` 校准，不改变原 VOS 应用的凭据和执行器。
+每次推理仍申请、认领并在原生计算停止及卸载后释放许可；资源不足返回 429，不能绕过。
+当前支持 Kokoro（最多 512 字符、速度 1）和 SenseVoice（最多 20 秒、24 kHz、
+请求体最多 1 MiB、不支持热词）。CAM++ 等模型文件可显示就绪，但此校准未批准其推理；
+GGUF 创作与音乐任务也需要各自校准和批准，不能继承这两个模型的预算。
+
+开发数据和私有调度配置默认保存在 `/tmp/yovoice-dev-data`，可通过 `YOVOICE_DEV_DATA`
+指定持久目录。提交凭据仅存后端 `0600` 配置文件，重启复用，不发给浏览器。
+`VVOICE_DEV_TOKEN` 是单独的浏览器开发凭据，如需自定义，应为至少 32 位的字母、数字、
+下划线或连字符。正式 VOS 登录不受影响。
+
+按 Ctrl+C 停止整套开发服务。5173、7080 或 22700 已占用时启动器明确报错。
+如果看到 `Local compute resources are busy`，检查 Scheduler 调度状态及可用内存；
+这台设备的语音预算为 2304 MiB，另有系统安全余量，不能只看 GPU 是否空闲。
+
+其他开发机只联调 Go 和页面时使用 `VVOICE_DEV_SPEECH=off make dev-browser`；
+这时语音页提供未安装的源代码目录，不启动推理。如果要连接另一台机器上**已运行的**
+V-Voice，显式使用
+`VVOICE_DEV_SPEECH=external VITE_VOS_SPEECH_SERVICE_BASE=http://<服务IP>:22700 make dev-browser`；
+external 模式只转发语音请求，不为本机创作任务授予调度权限。
 
 ## 构建与打包
 

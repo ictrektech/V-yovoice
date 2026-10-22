@@ -1,5 +1,13 @@
 ## VOS 版 V-Voice
 
+在运行 VOS 的 Orin 本机执行 `make dev-browser`，局域网访问
+`http://192.168.1.207:5173`（或开发机的实际 IP）。该命令用当前源码启动本地
+Python 语音服务和 Go 后端，复用已缓存的 V-Voice 运行镜像、V-Scheduler 的共享权重
+及调度服务，无需重建镜像或在 VOS 安装 V-Voice。原命令
+`VITE_VOS_SPEECH_SERVICE_BASE=http://192.168.1.207:22700 make dev-browser` 同样可用。
+SenseVoice 和 Kokoro 保留这台设备已校准的输入限制，其他模型仍需各自批准。
+详细说明见[开发指南](docs/development_zh.md)。
+
 VOS 侧栏新增「配乐生成」，与原有歌曲生成、编曲并列，保留 V-Music 的
 ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music、Stable Audio 3 Medium 和
 MusicGen Small。安装入口为「模型管理 → 创作模型与音色库 → 原生配乐模型」。
