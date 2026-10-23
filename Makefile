@@ -2,7 +2,7 @@ PNPM ?= pnpm
 GO ?= go
 CONFIGURATION ?= debug
 
-.PHONY: help install dev dev-browser build check check-web check-core app-build app-run app-package macos windows
+.PHONY: help install dev build check check-web check-core app-build app-run app-package macos windows
 
 help: ## 查看常用命令
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / && !seen[$$1]++ {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -12,9 +12,6 @@ install: ## 安装锁定版本的前端依赖
 
 dev: ## 启动浏览器开发预览
 	$(PNPM) --dir web run dev
-
-dev-browser: ## 启动真实后端与浏览器热更新
-	scripts/dev-browser.sh
 
 build: ## 构建前端
 	$(PNPM) --dir web run build

@@ -27,34 +27,28 @@ func main() {
 	if runtime == "" {
 		runtime = "/opt/vvoice/audiocpp/audiocpp_server"
 	}
-	handler := &vos.Server{
-		Root: root, Assets: assets, UserinfoURL: vos.DefaultUserinfo(), Runtime: runtime,
-		DevToken: os.Getenv("VVOICE_STUDIO_DEV_TOKEN"),
+	handler := &vos.Server{Root: root, Assets: assets, UserinfoURL: vos.DefaultUserinfo(), Runtime: runtime}
+	jobs := &vos.Jobs{Server: handler}
+	configPath := os.Getenv("VVOICE_SCHEDULER_CONFIG")
+	if configPath == "" {
+		configPath = "/data/scheduler.local.json"
 	}
-	// 网关开发模式只保存作品；不能恢复或执行历史本地推理任务。
-	if handler.DevToken == "" || os.Getenv("VVOICE_GATEWAY_BASE") == "" {
-		jobs := &vos.Jobs{Server: handler}
-		configPath := os.Getenv("VVOICE_SCHEDULER_CONFIG")
-		if configPath == "" {
-			configPath = "/data/scheduler.local.json"
+	handler.SchedulerPath = configPath
+	jobs.ConfigPath = configPath
+	if info, err := os.Stat(configPath); err == nil {
+		if info.Mode().Perm()&0077 != 0 {
+			log.Fatal("scheduler.local.json must be private (0600)")
 		}
-		handler.SchedulerPath = configPath
-		jobs.ConfigPath = configPath
-		if info, err := os.Stat(configPath); err == nil {
-			if info.Mode().Perm()&0077 != 0 {
-				log.Fatal("scheduler.local.json must be private (0600)")
-			}
-			b, err := os.ReadFile(configPath)
-			if err != nil {
-				log.Fatal("Scheduler configuration unreadable")
-			}
-			if json.Unmarshal(b, &jobs.Config) != nil {
-				log.Fatal("Scheduler configuration invalid")
-			}
+		b, err := os.ReadFile(configPath)
+		if err != nil {
+			log.Fatal("Scheduler configuration unreadable")
 		}
-		handler.Jobs = jobs
-		go jobs.Run(ctx)
+		if json.Unmarshal(b, &jobs.Config) != nil {
+			log.Fatal("Scheduler configuration invalid")
+		}
 	}
+	handler.Jobs = jobs
+	go jobs.Run(ctx)
 	server := &http.Server{Addr: "127.0.0.1:7080", Handler: handler, ReadHeaderTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second}
 	go func() {
 		<-ctx.Done()

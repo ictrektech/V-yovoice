@@ -20,11 +20,8 @@ export type Model = {
   downloaded_bytes?: number
   total_bytes?: number
   error?: string
-  service_error?: string
   preferred?: boolean
   loaded?: boolean
-  files_ready?: boolean
-  inference_key?: string
   import_required?: boolean
   hotwords?: {
     supported: boolean

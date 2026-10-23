@@ -1,16 +1,7 @@
 ## V-Voice for VOS
 
-For browser development, run
-`VVOICE_GATEWAY_BASE=http://192.168.1.207:22888 make dev-browser` and open
-`http://<development-host-IP>:5173`. The local page calls existing model services
-through V-Scheduler's unified gateway. It does not start a local inference
-container, mount weights, or register executors. The default gateway is
-`http://127.0.0.1:22888`. Model management shows the complete supported catalog
-and downloads files through the platform repository, without requiring V-Voice
-to be installed in VOS. `MODEL_HUB_API_URL` defaults to port `36005` on the gateway
-host. Prepared files and callable services are distinct: ASR/TTS still require
-a corresponding platform inference service. See
-[development instructions](docs/development.md) for gateway credentials and limits.
+Open V-Voice from the VOS app drawer to use platform models and inference.
+The experimental `make dev-browser` local service workflow has been removed.
 
 VOS uses sherpa-onnx / ONNX Runtime for speech and audio.cpp for GGUF speech,
 voice cloning and music, plus native soundfont score rendering. Runtime images do

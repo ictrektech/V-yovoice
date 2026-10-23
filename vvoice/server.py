@@ -19,8 +19,7 @@ def main() -> None:
             os.kill(os.getpid(), signal.SIGTERM)
     threading.Thread(target=supervise, daemon=True).start()
     try:
-        uvicorn.run("vvoice.main:app", host=os.getenv("VVOICE_HOST", "0.0.0.0"),
-                    port=int(os.getenv("VVOICE_PORT", "7070")))
+        uvicorn.run("vvoice.main:app", host="0.0.0.0", port=7070)
     finally:
         stopping.set()
         if studio.poll() is None:

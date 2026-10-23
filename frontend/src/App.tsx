@@ -12,11 +12,11 @@ function RawText({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
-const statusNames: Record<string, string> = { ready: '已就绪', verifying: '校验中', downloading: '下载中', not_installed: '未安装', failed: '失败', downloaded: '文件已准备', unknown: '状态未知' }
+const statusNames: Record<string, string> = { ready: '已就绪', verifying: '校验中', downloading: '下载中', not_installed: '未安装', failed: '失败' }
 
 function EmptyReady({ kind }: { kind: 'ASR' | 'TTS' }) {
   const message = kind === 'ASR' ? '暂无已就绪的 ASR 模型' : '暂无已就绪的 TTS 模型'
-  return <Localized><div className="empty-ready"><strong>{message}</strong><span>{window.__VVOICE_GATEWAY__ ? '可先在模型管理中下载文件；识别和合成还需要平台有已接入网关的推理服务。' : '请先到“模型”页面安装一个模型，完成后即可在下拉列表中选择。'}</span></div></Localized>
+  return <Localized><div className="empty-ready"><strong>{message}</strong><span>请先到“模型”页面安装一个模型，完成后即可在下拉列表中选择。</span></div></Localized>
 }
 
 function AboutDialog({ onClose }: { onClose: () => void }) {
@@ -52,8 +52,7 @@ function Models({ models, loading, refresh }: { models: Model[]; loading: boolea
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const filtered = useMemo(() => kind === 'all' ? models : models.filter(model => model.kind === kind), [kind, models])
-  const displayError = error || models.find(model => model.service_error)?.service_error
-  const counts = useMemo(() => ({ all: models.length, asr: models.filter(model => model.kind === 'asr').length, tts: models.filter(model => model.kind === 'tts').length, speaker: models.filter(model => model.kind === 'speaker').length, ready: models.filter(model => model.files_ready ?? model.status === 'ready').length }), [models])
+  const counts = useMemo(() => ({ all: models.length, asr: models.filter(model => model.kind === 'asr').length, tts: models.filter(model => model.kind === 'tts').length, speaker: models.filter(model => model.kind === 'speaker').length, ready: models.filter(model => model.status === 'ready').length }), [models])
 
   async function act(model: Model, action: 'pull' | 'force' | 'stop' | 'unload') {
     setBusy(`${model.key}:${action}`); setError('')
@@ -67,12 +66,12 @@ function Models({ models, loading, refresh }: { models: Model[]; loading: boolea
   }
 
   return <Localized><>
-    <section className="section-heading"><div><p className="eyebrow">MODEL HUB</p><h1>模型管理</h1><p>{window.__VVOICE_GATEWAY__ ? '显示完整支持目录；模型文件下载到 V-Scheduler，推理由平台服务提供。' : '显示公共 ONNX / GGUF 模型与校验状态，仅就绪模型对 V-Router 公开。'}</p></div><button className="secondary-button" onClick={refresh}>刷新状态</button></section>
+    <section className="section-heading"><div><p className="eyebrow">MODEL HUB</p><h1>模型管理</h1><p>显示公共 ONNX / GGUF 模型与校验状态，仅就绪模型对 V-Router 公开。</p></div><button className="secondary-button" onClick={refresh}>刷新状态</button></section>
     <section className="summary-strip" aria-label="模型统计"><div><strong>{counts.all}</strong><span>支持模型</span></div><div><strong>{counts.asr}</strong><span>ASR</span></div><div><strong>{counts.tts}</strong><span>TTS</span></div><div><strong>{counts.speaker}</strong><span>声纹</span></div><div><strong>{counts.ready}</strong><span>已安装</span></div></section>
     <div className="catalog-tabs" role="tablist" aria-label="模型类型">{([['all', '全部模型', counts.all], ['asr', '语音识别 ASR', counts.asr], ['tts', '语音合成 TTS', counts.tts], ['speaker', '声纹识别', counts.speaker]] as const).map(([value, label, count]) => <button role="tab" aria-selected={kind === value} className={kind === value ? 'active' : ''} onClick={() => setKind(value)} key={value}><span>{label}</span><b>{count}</b></button>)}</div>
-    {displayError ? <div className="alert" data-i18n="off">{displayError}</div> : null}
+    {error ? <div className="alert" data-i18n="off">{error}</div> : null}
     {loading ? <div className="loading-card">正在读取模型目录…</div> : null}
-    {!loading && !filtered.length ? <div className="loading-card">{window.__VVOICE_GATEWAY__ ? 'V-Scheduler 未提供此分类的模型服务。' : '该分类暂无模型。'}</div> : null}
+    {!loading && !filtered.length ? <div className="loading-card">该分类暂无模型。</div> : null}
     <div className="model-grid">{filtered.map(model => {
       const progress = Math.round((model.progress || 0) * 100)
       const voiceCount = Object.keys(model.voices || {}).length
@@ -80,15 +79,14 @@ function Models({ models, loading, refresh }: { models: Model[]; loading: boolea
         <div className="model-top"><span className={`kind ${model.kind}`}>{model.kind === 'asr' ? '语音识别' : model.kind === 'speaker' ? '声纹识别' : '语音合成'}</span>{model.streaming ? <span className="streaming-badge">流式</span> : null}<span className={`status ${model.status}`}><i />{statusNames[model.status] || model.status}</span></div>
         <div className="model-title"><div><h2 data-i18n="off">{model.name}</h2><code>{model.key}</code></div>{model.preferred ? <span className="recommended">推荐</span> : null}</div>
         <p className="description" data-i18n="off">{model.description}</p>
-        <dl className="model-details"><div><dt>推理后端</dt><dd>{model.backend || 'sherpa-onnx'}{model.streaming ? ' · Online' : ''}</dd></div><div><dt>运行时</dt><dd>{window.__VVOICE_GATEWAY__ ? model.status === 'ready' ? '由平台服务管理' : '等待平台推理服务' : model.loaded ? '已热加载' : '按请求热加载'}</dd></div><div><dt>模型族</dt><dd>{model.family}</dd></div><div><dt>{model.kind === 'tts' ? 'Voice' : '接口'}</dt><dd>{model.kind === 'tts' ? `${voiceCount} 个预设音色` : model.kind === 'speaker' ? '注册 / 识别 / 验证' : `${model.translation === false ? '转写' : '转写 / 翻译'}${model.hotwords?.supported ? ' / 热词增强' : ''}${model.streaming ? ' / 实时流式' : ''}`}</dd></div><div className="wide"><dt>语言</dt><dd>{model.languages.map(language => languageNames[language] || language).join('、')}</dd></div>{model.backend !== 'gateway' ? <div className="wide"><dt>ModelScope</dt><dd><a href={`https://modelscope.cn/models/${model.modelscope_repo}`} target="_blank" rel="noreferrer">{model.modelscope_repo}</a></dd></div> : null}</dl>
+        <dl className="model-details"><div><dt>推理后端</dt><dd>{model.backend || 'sherpa-onnx'}{model.streaming ? ' · Online' : ''}</dd></div><div><dt>运行时</dt><dd>{model.loaded ? '已热加载' : '按请求热加载'}</dd></div><div><dt>模型族</dt><dd>{model.family}</dd></div><div><dt>{model.kind === 'tts' ? 'Voice' : '接口'}</dt><dd>{model.kind === 'tts' ? `${voiceCount} 个预设音色` : model.kind === 'speaker' ? '注册 / 识别 / 验证' : `${model.translation === false ? '转写' : '转写 / 翻译'}${model.hotwords?.supported ? ' / 热词增强' : ''}${model.streaming ? ' / 实时流式' : ''}`}</dd></div><div className="wide"><dt>语言</dt><dd>{model.languages.map(language => languageNames[language] || language).join('、')}</dd></div><div className="wide"><dt>ModelScope</dt><dd><a href={`https://modelscope.cn/models/${model.modelscope_repo}`} target="_blank" rel="noreferrer">{model.modelscope_repo}</a></dd></div></dl>
         {model.status === 'downloading' ? <div className="progress"><i style={{ width: `${progress}%` }} /><small>{progress}% · {formatBytes(model.downloaded_bytes)} / {formatBytes(model.total_bytes)}</small></div> : null}
         {model.error ? <small className="error" data-i18n="off">{model.error}</small> : null}
         <div className="actions">
-          {model.status === 'downloaded' ? <small>模型文件已准备；推理服务尚未接入网关。</small> : null}
-          {model.import_required ? <small>{model.backend === 'gateway' ? '请在 V-Scheduler 管理此模型服务' : '需管理员在 V-Scheduler 提供原始权重'}</small> : null}
-          {(model.status === 'ready' || model.status === 'downloaded') && model.backend !== 'gateway' ? <>{!window.__VVOICE_GATEWAY__ ? <button onClick={() => act(model, 'unload')} disabled={!!busy || !model.loaded}>卸载推理实例</button> : null}{!model.import_required ? <button onClick={() => act(model, 'force')} disabled={!!busy}>重新下载</button> : null}</> : null}
+          {model.import_required ? <small>需管理员在 V-Scheduler 提供原始权重</small> : null}
+          {model.status === 'ready' ? <><button onClick={() => act(model, 'unload')} disabled={!!busy || !model.loaded}>卸载推理实例</button>{!model.import_required ? <button onClick={() => act(model, 'force')} disabled={!!busy}>重新下载</button> : null}</> : null}
           {model.status === 'downloading' ? <button onClick={() => act(model, 'stop')} disabled={!!busy}>停止下载</button> : null}
-          {!model.import_required && model.status !== 'ready' && model.status !== 'downloaded' && model.status !== 'downloading' ? <button className="primary" onClick={() => act(model, 'pull')} disabled={!!busy || model.status === 'verifying'}>{window.__VVOICE_GATEWAY__ ? '下载至平台' : '从 V-Scheduler 安装'}</button> : null}
+          {!model.import_required && model.status !== 'ready' && model.status !== 'downloading' ? <button className="primary" onClick={() => act(model, 'pull')} disabled={!!busy || model.status === 'verifying'}>从 V-Scheduler 安装</button> : null}
         </div>
       </article>
     })}</div>
@@ -172,14 +170,14 @@ function SpeakerConsole({ models }: { models: Model[] }) {
         <label className="wide">注册音频<input type="file" accept="audio/*" onChange={event => setEnrollFile(event.target.files?.[0] || null)} /><small>建议 10 秒以上清晰单人语音；服务端提取声纹向量后不再保存音频</small></label>
         <button className="primary" disabled={busy || !enrollName.trim() || !enrollFile}>提取声纹并注册</button>
       </form>
-      <form onSubmit={event => { event.preventDefault(); if (!identifyFile || !selectedModel) return; void run(async () => setIdentifyResult(await api.identifySpeaker(selectedModel.inference_key || selectedModel.key, identifyFile, threshold))) }}>
+      <form onSubmit={event => { event.preventDefault(); if (!identifyFile || !selectedModel) return; void run(async () => setIdentifyResult(await api.identifySpeaker(selectedModel.key, identifyFile, threshold))) }}>
         <h2>识别说话人（1:N 归属）</h2>
         <label className="wide">待识别音频<input type="file" accept="audio/*" onChange={event => setIdentifyFile(event.target.files?.[0] || null)} /><small>返回与全部已注册声纹的余弦相似度排名，最高分超过阈值即判定归属</small></label>
         {thresholdInput}
         <button className="primary" disabled={busy || !identifyFile}>开始识别</button>
       </form>
     </div>
-    <form className="verify-form" onSubmit={event => { event.preventDefault(); if (!verifyFile || !verifySpeakerId || !selectedModel) return; void run(async () => setVerifyResult(await api.verifySpeaker(selectedModel.inference_key || selectedModel.key, verifySpeakerId, verifyFile, threshold))) }}>
+    <form className="verify-form" onSubmit={event => { event.preventDefault(); if (!verifyFile || !verifySpeakerId || !selectedModel) return; void run(async () => setVerifyResult(await api.verifySpeaker(selectedModel.key, verifySpeakerId, verifyFile, threshold))) }}>
       <h2>验证说话人（1:1 比对）</h2>
       <label>已注册说话人<select aria-label="验证说话人" value={verifySpeakerId} onChange={event => setVerifySpeakerId(event.target.value)}><option value="">选择说话人</option>{speakers.map(item => <option value={item.id} key={item.id}>{item.name} · {item.id}</option>)}</select><small>{`${speakers.length} 个已注册声纹`}</small></label>
       <label>待验证音频<input type="file" accept="audio/*" onChange={event => setVerifyFile(event.target.files?.[0] || null)} /></label>
@@ -208,7 +206,7 @@ function AsrPlayground({ models, sets }: { models: Model[]; sets: HotwordSet[] }
   async function submit(event: FormEvent) {
     event.preventDefault(); if (!file || !selected) return
     setBusy(true); setResult('')
-    const form = new FormData(); form.append('file', file); form.append('model', selectedModel?.inference_key || selected); form.append('response_format', 'verbose_json')
+    const form = new FormData(); form.append('file', file); form.append('model', selected); form.append('response_format', 'verbose_json')
     if (selectedModel?.hotwords?.supported) {
       if (hotwordSetId) form.append('hotwords_set', hotwordSetId)
       if (hotwords.trim()) form.append('hotwords', hotwords)
@@ -230,7 +228,7 @@ function TtsPlayground({ models }: { models: Model[] }) {
   async function submit(event: FormEvent) {
     event.preventDefault(); if (!selectedModel || !selectedVoice) return
     setBusy(true); setError('')
-    try { const blob = await api.speech({ model: selectedModel.inference_key || selectedModel.key, input: text, voice: selectedVoice, response_format: 'mp3' }); if (source) URL.revokeObjectURL(source); setSource(URL.createObjectURL(blob)) } catch (value) { setError(value instanceof Error ? value.message : String(value)) } finally { setBusy(false) }
+    try { const blob = await api.speech({ model: selectedModel.key, input: text, voice: selectedVoice, response_format: 'mp3' }); if (source) URL.revokeObjectURL(source); setSource(URL.createObjectURL(blob)) } catch (value) { setError(value instanceof Error ? value.message : String(value)) } finally { setBusy(false) }
   }
   const downloadName = `vvoice-${selectedModel?.key || 'tts'}-${selectedVoice || 'voice'}.mp3`
   return <Localized><section className="playground"><p className="eyebrow">TEXT TO SPEECH</p><h1>语音合成</h1><p className="intro">模型和 Voice 均来自当前目录，切换模型后自动更新可用音色。</p>{!ready.length ? <EmptyReady kind="TTS" /> : <form onSubmit={submit}><label>模型<select aria-label="TTS 模型" value={selectedModel?.key || ''} onChange={event => selectModel(event.target.value)}>{ready.map(item => <option value={item.key} key={item.key}>{item.name} · {item.key}</option>)}</select><small>{ready.length} 个已就绪模型</small></label><label>Voice<select aria-label="Voice" value={selectedVoice} onChange={event => setVoice(event.target.value)}>{voices.map(([key, value]) => <option value={key} key={key}>{key} · {languageNames[value.language] || value.language} · SID {value.sid}</option>)}</select><small>{voices.length} 个可用音色</small></label><label className="wide">文本<textarea value={text} onChange={event => setText(event.target.value)} rows={6} maxLength={20000} /><small>{`${text.length} / 20000 字符`}</small></label><button className="primary" disabled={!selectedModel || !selectedVoice || !text.trim() || busy}>{busy ? '合成中…' : '生成语音'}</button></form>}{error ? <div className="alert" data-i18n="off">{error}</div> : null}{source ? <div className="audio-result"><audio src={source} controls autoPlay /><a className="download-button" href={source} download={downloadName}>下载音频 · {downloadName}</a></div> : null}</section></Localized>

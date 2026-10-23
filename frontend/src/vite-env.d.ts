@@ -2,5 +2,4 @@
 
 interface Window {
   __APP_VERSION__?: string
-  __VVOICE_GATEWAY__?: boolean
 }

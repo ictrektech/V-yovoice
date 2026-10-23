@@ -6,15 +6,13 @@
 
 ### 简体中文
 - 原生推理先进入 V-Scheduler 请求级优先队列，等待不重复预约权重；支持有界等待、授权强制申请和原生停止核验。
-- 开发模式恢复完整模型目录及平台下载、暂停和重新下载，无需在 VOS 安装 V-Voice；区分文件准备与服务可调用，推理复用 V-Scheduler 网关，不启动本地推理。
-- 修复开发页面无法通过局域网地址访问的问题；端口冲突或开发凭据无效时在启动阶段明确报错。
-- 修复浏览器开发模式下打开语音模型等页面时重复显示工作台侧栏的问题，并纠正语音服务连接。
+- 移除实验性的 `make dev-browser` 本地服务与网关开发模式，恢复以 VOS 应用为入口的使用流程。
+- 保留接口返回的详细错误提示，便于定位平台服务调用失败。
 
 ### English
 - Queue native inference by request priority before local execution locks, without duplicate weight reservations; preserve bounded waits, authorized force admission and native-stop verification.
-- Restore the complete model catalog and platform download, pause and re-download actions in browser development, without requiring V-Voice to be installed in VOS. Distinguish prepared files from callable services and reuse the V-Scheduler gateway without local inference.
-- Allow LAN access to the development page and report occupied ports or invalid development credentials at startup.
-- Fix duplicate workbench sidebars when opening speech model and related pages in browser development mode, and correct speech service routing.
+- Remove the experimental `make dev-browser` local service and gateway development workflow; use the installed VOS app for platform features.
+- Preserve detailed API error messages to help diagnose platform service failures.
 
 ## [0.0.28] - 2026-10-22
 

@@ -3,16 +3,8 @@ import { parseCallError } from './call-error';
 import { sha256 } from '@noble/hashes/sha2.js';
 
 // VOS 构建只使用真实服务；普通上游浏览器预览仍使用模拟后端。
-const configured = import.meta.env.VITE_VOS === 'true';
-const serviceBase = import.meta.env.DEV
-  ? (import.meta.env.VITE_VOS_SERVICE_BASE as string | undefined)?.replace(/\/+$/, '') ?? ''
-  : '';
-const devToken = import.meta.env.DEV
-  ? (import.meta.env.VITE_VOS_DEV_TOKEN as string | undefined) ?? ''
-  : '';
-// 开发模式经 Vite 同源代理，线上 VOS 才保留应用前缀。
-export const isVos = configured || !!serviceBase;
-const base = configured ? '/app/com.ictrek.v-voice' : '';
+export const isVos = import.meta.env.VITE_VOS === 'true';
+const base = '/app/com.ictrek.v-voice';
 type OAuth = {
   authorize: (input: Record<string, string>) => Promise<{ code: string; state: string }>;
   token: (input: Record<string, string>) => Promise<{ access_token: string; expires_in?: number }>;
@@ -30,10 +22,6 @@ function base64url(value: Uint8Array) {
 }
 
 async function signIn(): Promise<string> {
-  if (devToken) {
-    session = { token: devToken, expires: Date.now() + 24 * 60 * 60 * 1000 };
-    return devToken;
-  }
   let oauth: OAuth | undefined;
   for (let i = 0; i < 100; i++) {
     oauth = window.vos_platform?.api?.v1000?.oauth2;
