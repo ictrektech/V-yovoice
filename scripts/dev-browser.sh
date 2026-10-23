@@ -5,24 +5,21 @@ studio_build="/tmp/yovoice-studio-dev"
 studio_assets="/tmp/yovoice-studio-assets"
 studio_data="${YOVOICE_DEV_DATA:-/tmp/yovoice-dev-data}"
 dev_token="${VVOICE_DEV_TOKEN:-yovoice-local-development-token-0001}"
-speech_mode="${VVOICE_DEV_SPEECH:-local}"
+export VVOICE_GATEWAY_BASE="${VVOICE_GATEWAY_BASE:-http://127.0.0.1:22888}"
 
 if [[ ! "$dev_token" =~ ^[a-zA-Z0-9_-]{32,}$ ]]; then
   echo 'VVOICE_DEV_TOKEN 至少需要 32 个字符，且只能包含字母、数字、下划线和连字符。' >&2
   exit 1
 fi
-case "$speech_mode" in local|external|off) ;; *) echo 'VVOICE_DEV_SPEECH 仅支持 local、external、off。' >&2; exit 1 ;; esac
-if [[ "$speech_mode" == external && -z "${VITE_VOS_SPEECH_SERVICE_BASE:-}" ]]; then
-  echo 'external 模式需要 VITE_VOS_SPEECH_SERVICE_BASE 指向已运行的 V-Voice。' >&2
+if [[ -n "${VITE_VOS_SPEECH_SERVICE_BASE:-}" || -n "${VVOICE_DEV_SPEECH:-}" ]]; then
+  echo '开发模式现使用平台模型网关，请改用 VVOICE_GATEWAY_BASE=http://<VOS-IP>:22888 make dev-browser。' >&2
   exit 1
 fi
-export VVOICE_DEV_TOKEN="$dev_token" YOVOICE_DEV_DATA="$studio_data" VVOICE_DEV_SPEECH="$speech_mode"
 
 # 已有开发进程占用端口时立即退出，不能把旧后端的健康响应当成本次启动成功。
 node --input-type=module <<'JS'
 import { createServer } from 'node:net';
-const ports = process.env.VVOICE_DEV_SPEECH === 'local' ? [5173, 7080, 22700] : [5173, 7080];
-await Promise.all(ports.map(port => new Promise((resolve, reject) => {
+await Promise.all([5173, 7080].map(port => new Promise((resolve, reject) => {
   const server = createServer();
   server.once('error', () => reject(new Error(`端口 ${port} 不可用，请先停止占用端口的开发进程。`)));
   server.listen(port, '0.0.0.0', () => server.close(resolve));
@@ -48,9 +45,6 @@ cleanup() {
     wait "$web_pid" 2>/dev/null || true
   fi
   if [[ -n "$studio_pid" ]]; then
-    if [[ "$speech_mode" == local ]]; then
-      docker stop --time 45 "vvoice-dev-$(id -u)" >/dev/null 2>&1 || true
-    fi
     kill "$studio_pid" 2>/dev/null || true
     wait "$studio_pid" 2>/dev/null || true
   fi
@@ -59,25 +53,15 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-if [[ "$speech_mode" == local ]]; then
-  mkdir -p .local/dev
-  cp "$studio_build" .local/dev/vvoice-studio
-  python3 scripts/dev-speech.py &
-  studio_pid=$!
-  # 本机语音服务只监听回环地址；局域网浏览器统一经过 Vite。
-  export VITE_VOS_SPEECH_SERVICE_BASE=http://127.0.0.1:22700
-  backend_health=http://127.0.0.1:22700/health
-else
-  VVOICE_STUDIO_ASSETS="$studio_assets" \
-  VVOICE_STUDIO_DATA_DIR="$studio_data" \
-  VVOICE_STUDIO_DEV_TOKEN="$dev_token" \
-  VVOICE_SCHEDULER_CONFIG="${VVOICE_SCHEDULER_CONFIG:-$studio_data/absent-scheduler.json}" \
-  VOS_USERINFO_URL="${VOS_USERINFO_URL:-https://192.168.1.207:1180/v1000/oauth2/userinfo}" \
-  MODEL_HUB_SHARED_MODELS_PATH="${MODEL_HUB_SHARED_MODELS_PATH:-$studio_data/modelhub}" \
-  "$studio_build" &
-  studio_pid=$!
-  backend_health=http://127.0.0.1:7080/health
-fi
+VVOICE_STUDIO_ASSETS="$studio_assets" \
+VVOICE_STUDIO_DATA_DIR="$studio_data" \
+VVOICE_STUDIO_DEV_TOKEN="$dev_token" \
+VVOICE_SCHEDULER_CONFIG="${VVOICE_SCHEDULER_CONFIG:-$studio_data/absent-scheduler.json}" \
+VOS_USERINFO_URL="${VOS_USERINFO_URL:-https://192.168.1.207:1180/v1000/oauth2/userinfo}" \
+VVOICE_SHARED_MODELS=false \
+"$studio_build" &
+studio_pid=$!
+backend_health=http://127.0.0.1:7080/health
 
 for _ in {1..120}; do
   if ! kill -0 "$studio_pid" 2>/dev/null; then

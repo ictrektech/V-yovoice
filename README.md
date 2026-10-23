@@ -1,13 +1,13 @@
 ## V-Voice for VOS
 
-For browser development on the VOS Orin host, run `make dev-browser` and open
-`http://192.168.1.207:5173` (or your host's LAN IP). This starts local Python and
-Go services from the current source, using an already cached V-Voice runtime image,
-V-Scheduler's shared weights and an independent development scheduling identity.
-No image rebuild or VOS app installation is needed. The existing command
-`VITE_VOS_SPEECH_SERVICE_BASE=http://192.168.1.207:22700 make dev-browser` also works
-on that host. SenseVoice and Kokoro retain the host's calibrated input limits;
-other models require their own approvals. See [development instructions](docs/development.md).
+For browser development, run
+`VVOICE_GATEWAY_BASE=http://192.168.1.207:22888 make dev-browser` and open
+`http://<development-host-IP>:5173`. The local page calls existing model services
+through V-Scheduler's unified gateway. It does not start a local inference
+container, mount weights, or register executors. The default gateway is
+`http://127.0.0.1:22888`. Speech models must already be exposed by that gateway;
+chat and embedding models are not shown as speech services. See
+[development instructions](docs/development.md) for gateway credentials and limits.
 
 VOS uses sherpa-onnx / ONNX Runtime for speech and audio.cpp for GGUF speech,
 voice cloning and music, plus native soundfont score rendering. Runtime images do

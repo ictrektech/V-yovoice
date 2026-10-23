@@ -33,54 +33,65 @@ Run all following commands from the repository root. `app-run` builds and starts
 
 For browser-only UI development, run `make dev` and open `http://127.0.0.1:5173`. Local speech generation requires the desktop app or CLI.
 
-For real speech development on the Orin / JetPack 6 host running V-Scheduler:
+To reuse model services already running in VOS from a local development page:
 
 ```bash
-npm --prefix frontend ci  # first setup of the compatibility speech pages
-make dev-browser
-# The previous same-host command also works:
-VITE_VOS_SPEECH_SERVICE_BASE=http://192.168.1.207:22700 make dev-browser
+npm --prefix frontend ci  # first setup of the speech pages
+VVOICE_GATEWAY_BASE=http://192.168.1.207:22888 make dev-browser
 ```
 
-Open `http://192.168.1.207:5173`, replacing the IP with your development host's
-LAN address. Vite listens on `0.0.0.0:5173` and forwards same-origin requests to
-local Python speech and Go services on loopback ports 22700 and 7080. No VOS login
-bridge is needed, and port 22700 does not need LAN exposure.
+Open `http://<development-host-IP>:5173`; no VOS login bridge is required.
+The development machine need not host VOS; it only needs access to the gateway.
+The default is `http://127.0.0.1:22888`; a base ending in `/v1` is also accepted.
+Port 22700 belongs to the native V-Voice service and is not the gateway.
+The previous `VITE_VOS_SPEECH_SERVICE_BASE` and `VVOICE_DEV_SPEECH` options are removed.
 
-The launcher uses an already cached `v-voice:l4t_*` runtime image; select a cached
-image with `VVOICE_DEV_IMAGE` if needed. It never pulls or rebuilds an image.
-Current source is mounted read-only, and Go is compiled on startup. Restart the
-command after backend changes; the frontend retains Vite hot reload. V-Voice need
-not be installed in VOS. Weights are mounted read-only from the local Scheduler
-container's `/data` host mount, without copying or downloading them again. Model
-downloads still go through Scheduler's model repository API.
+Requests follow browser → local Vite → V-Scheduler `/v1/*` → existing platform
+inference service. Vite listens on `0.0.0.0:5173`; Go handles local project storage
+and media on loopback port 7080. The launcher starts no Python/Docker inference,
+mounts no weights, registers no executors, and acquires no duplicate permits.
+Platform routing and execution retain responsibility for resource admission and
+release. Occupied ports 5173 or 7080 fail startup. Ctrl+C stops local development
+services without stopping platform model services.
 
-The first start registers an independent `com.ictrek.v-voice.dev` service identity
-and executor through Scheduler's management API, retaining the local
-`orin-voice-native-bounded-v1` calibration. Existing VOS app credentials and
-executors are preserved. Every inference acquires and claims a permit and releases
-it after native computation stops and weights unload. Resource shortages return
-429. Kokoro supports at most 512 characters at speed 1; SenseVoice supports at most
-20 seconds, 24 kHz, a 1 MiB request body, and no hotwords. CAM++ weights may appear
-ready but this calibration does not approve its inference. GGUF creation and music
-also require their own calibrations and approvals.
+`/v1/models` retains the full platform catalog and qualified IDs. Speech pages
+filter explicit ASR/TTS/speaker capabilities. Anonymous OpenAI catalogs lack those
+fields, so only exact known `v-voice/<model>` IDs are mapped; unknown model names
+are never treated as proof of speech capability. Missing speech services are
+shown as unavailable. Downloaded weights do not prove an inference service exists;
+Qwen chat, embedding and reranking models cannot supply ASR/TTS. Inference retains
+qualified model IDs and forwards audio uploads, audio responses and platform errors.
 
-Data and private Scheduler configuration default to `/tmp/yovoice-dev-data`;
-set `YOVOICE_DEV_DATA` to a persistent directory if desired. Submitter credentials
-stay in a backend-only 0600 file and are reused on restart. `VVOICE_DEV_TOKEN` is a
-separate browser development credential: custom values need at least 32 letters,
-digits, underscores or hyphens. Production VOS authentication is unchanged.
+If the gateway requires authentication, or to read full capabilities and private
+models, create a local 0600 file containing a valid VOS user access token or gateway
+Key (an optional `Bearer ` prefix is accepted), then run:
 
-Ctrl+C stops the development services. Occupied ports 5173, 7080 or 22700 cause a
-clear startup error. For `Local compute resources are busy`, inspect Scheduler's
-state and available memory: the speech budget is 2304 MiB plus the system safety
-reserve, even when the GPU is idle.
+```bash
+VVOICE_GATEWAY_BASE=http://192.168.1.207:22888 \
+VVOICE_GATEWAY_TOKEN_FILE=/absolute/private/gateway-token \
+make dev-browser
+```
 
-On other development machines, use `VVOICE_DEV_SPEECH=off make dev-browser` for
-Go and UI development without inference. To forward speech requests to an
-**already running** remote V-Voice, use
-`VVOICE_DEV_SPEECH=external VITE_VOS_SPEECH_SERVICE_BASE=http://<service-IP>:22700 make dev-browser`.
-External mode does not grant local creation tasks scheduling approval.
+Only the Vite server reads this credential; it is not bundled into the frontend.
+Browser development credentials and cookies are not forwarded. Capability discovery
+requires permission to read gateway `/api/v1/models`; inference-only application
+credentials do not replace that identity. Invalid credentials produce an auth
+error rather than an empty catalog. Anonymous inference follows platform policy.
+
+This mode does not implement native V-Voice model installation, hotword/speaker
+library management or local creation executors. Manage these in the corresponding
+platform service. Unsupported management requests return 501. Platform 429 responses,
+input limits and model readiness remain effective.
+
+Data defaults to `/tmp/yovoice-dev-data`; use `YOVOICE_DEV_DATA` for a persistent
+location. `VVOICE_DEV_TOKEN` is a separate local project API credential; custom
+values require at least 32 letters, digits, underscores or hyphens. Production VOS
+authentication and inference are unchanged.
+
+Run focused gateway checks with
+`node --experimental-strip-types --test tests/dev-gateway*.test.ts`.
+Controlled upstreams verify proxy contracts; real speech inference is only verified
+when an existing platform ASR/TTS service successfully handles a request.
 
 ## Build and package
 

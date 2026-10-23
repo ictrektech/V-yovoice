@@ -33,46 +33,53 @@ make app-run
 
 仅开发浏览器界面时运行 `make dev`，访问 `http://127.0.0.1:5173`。本地语音生成需要桌面 App 或 CLI。
 
-在安装了 V-Scheduler 的 Orin / JetPack 6 本机联调真实语音服务：
+通过本地页面复用 VOS 平台中已有的模型服务：
 
 ```bash
-npm --prefix frontend ci  # 首次安装兼容语音页面依赖
-make dev-browser
-# 也兼容原来的同机地址：
-VITE_VOS_SPEECH_SERVICE_BASE=http://192.168.1.207:22700 make dev-browser
+npm --prefix frontend ci  # 首次安装语音页面依赖
+VVOICE_GATEWAY_BASE=http://192.168.1.207:22888 make dev-browser
 ```
 
-访问 `http://192.168.1.207:5173`（换成开发机实际 IP），无需 VOS 登录桥。
-Vite 监听 `0.0.0.0:5173`；Python 语音服务和 Go 后端仅监听本机 `22700`、`7080`，
-浏览器 API 全部由 Vite 同源转发。本地 22700 无需对局域网开放。
+访问 `http://<开发机IP>:5173`，无需 VOS 注入登录桥。开发机不必是 VOS 宿主机，
+只需能访问平台网关。省略 `VVOICE_GATEWAY_BASE` 时连接 `http://127.0.0.1:22888`；
+也可填写以 `/v1` 结尾的 API base。`22700` 是 V-Voice 原生服务端口，不能替代网关。
+旧的 `VITE_VOS_SPEECH_SERVICE_BASE`、`VVOICE_DEV_SPEECH` 选项已移除。
 
-启动器复用本机已缓存的 `v-voice:l4t_*` 运行镜像，按需通过 `VVOICE_DEV_IMAGE`
-选择已有镜像，不拉取或构建镜像。当前源码只读挂载到开发容器，Go 在启动时重新编译，
-修改后端后 Ctrl+C 再运行命令即可；前端保留 Vite 热更新。不要求 VOS 安装 V-Voice。
-模型目录自动从本机 Scheduler 容器的 `/data` 挂载解析，只读共享，不复制或重复下载；
-模型下载操作仍由 Scheduler 的模型仓库 API 负责。
+调用链为：浏览器 → 本地 Vite → V-Scheduler `/v1/*` → 平台已有推理服务。
+Vite 监听 `0.0.0.0:5173`，Go 仅在 `127.0.0.1:7080` 保存作品和提供媒体接口。
+启动器不会启动 Python/Docker 推理、读取共享权重、登记执行器或申请第二份调度许可；
+准入、路由、执行与释放由平台已有链路负责。端口 5173 或 7080 被占用会明确报错。
+按 Ctrl+C 停止页面和 Go 服务，不影响平台模型服务。
 
-首次启动通过 Scheduler 管理 API 登记独立的 `com.ictrek.v-voice.dev` 身份和执行器，
-只沿用同机已有的 `orin-voice-native-bounded-v1` 校准，不改变原 VOS 应用的凭据和执行器。
-每次推理仍申请、认领并在原生计算停止及卸载后释放许可；资源不足返回 429，不能绕过。
-当前支持 Kokoro（最多 512 字符、速度 1）和 SenseVoice（最多 20 秒、24 kHz、
-请求体最多 1 MiB、不支持热词）。CAM++ 等模型文件可显示就绪，但此校准未批准其推理；
-GGUF 创作与音乐任务也需要各自校准和批准，不能继承这两个模型的预算。
+`/v1/models` 保留平台完整目录与模型 ID。语音页只显示网关声明了 ASR/TTS/声纹能力的
+模型；匿名 OpenAI 目录没有能力字段时，仅识别明确的 `v-voice/<已知模型>` 映射，
+不会根据名字猜测未知模型的能力。平台没有相应语音服务时显示不可用；共享仓库中
+已有模型文件不等于已经运行语音服务。仅有 Qwen、Embedding 或 Rerank 时不能转写或合成。
+推理请求始终保留完整网关模型 ID，音频上传、音频响应与平台错误原样转发。
 
-开发数据和私有调度配置默认保存在 `/tmp/yovoice-dev-data`，可通过 `YOVOICE_DEV_DATA`
-指定持久目录。提交凭据仅存后端 `0600` 配置文件，重启复用，不发给浏览器。
-`VVOICE_DEV_TOKEN` 是单独的浏览器开发凭据，如需自定义，应为至少 32 位的字母、数字、
-下划线或连字符。正式 VOS 登录不受影响。
+如果网关需要登录，或需要读取完整能力目录及私有模型，在本机创建 `0600` 凭据文件，
+写入有效的 VOS 用户 access token 或网关 Key（可带 `Bearer ` 前缀），再运行：
 
-按 Ctrl+C 停止整套开发服务。5173、7080 或 22700 已占用时启动器明确报错。
-如果看到 `Local compute resources are busy`，检查 Scheduler 调度状态及可用内存；
-这台设备的语音预算为 2304 MiB，另有系统安全余量，不能只看 GPU 是否空闲。
+```bash
+VVOICE_GATEWAY_BASE=http://192.168.1.207:22888 \
+VVOICE_GATEWAY_TOKEN_FILE=/absolute/private/gateway-token \
+make dev-browser
+```
 
-其他开发机只联调 Go 和页面时使用 `VVOICE_DEV_SPEECH=off make dev-browser`；
-这时语音页提供未安装的源代码目录，不启动推理。如果要连接另一台机器上**已运行的**
-V-Voice，显式使用
-`VVOICE_DEV_SPEECH=external VITE_VOS_SPEECH_SERVICE_BASE=http://<服务IP>:22700 make dev-browser`；
-external 模式只转发语音请求，不为本机创作任务授予调度权限。
+凭据仅由 Vite 服务端读取，不进入前端构建。浏览器开发凭据和 Cookie 不会转发给平台。
+读取能力目录需要获准访问网关 `/api/v1/models` 的身份；仅支持推理的应用凭据不能代替。
+凭据失效时返回鉴权错误，不伪装成空列表。网关匿名调用策略由平台本身决定。
+
+本模式不提供 V-Voice 原生模型安装、热词库、声纹库管理或本地创作执行器。
+模型装卸和业务库管理应在平台对应服务中完成；不支持的管理请求明确返回 501。
+网关返回的 429、输入边界和模型就绪状态继续有效，不在开发模式绕过。
+
+开发数据默认保存在 `/tmp/yovoice-dev-data`，可用 `YOVOICE_DEV_DATA` 指定持久目录。
+`VVOICE_DEV_TOKEN` 是本地作品接口的开发凭据，和网关凭据不同；自定义值至少 32 位，
+仅包含字母、数字、下划线和连字符。正式 VOS 安装的鉴权和推理流程保持原样。
+
+定向验证开发网关适配器：`node --experimental-strip-types --test tests/dev-gateway*.test.ts`。
+测试用受控上游验证代理契约；只有平台已有真实 ASR/TTS 服务并完成调用后，才能认定真实语音推理通过。
 
 ## 构建与打包
 

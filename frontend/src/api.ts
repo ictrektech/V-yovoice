@@ -94,7 +94,7 @@ export function resolveApiPath(path: string, pathname = window.location.pathname
 function readableError(response: Response, body: string) {
   try {
     const parsed = JSON.parse(body)
-    return parsed.detail || parsed.message || `${response.status} ${response.statusText}`
+    return parsed.detail || parsed.error?.message || parsed.message || `${response.status} ${response.statusText}`
   } catch {
     const contentType = response.headers.get('content-type') || ''
     if (contentType.includes('text/html') || /<html[\s>]/i.test(body)) {

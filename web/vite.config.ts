@@ -3,9 +3,11 @@ import react from '@vitejs/plugin-react';
 import { readFile } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { ClientRequest } from 'node:http';
+import { gatewayConfig, gatewayMiddleware } from './dev-gateway';
+import speechCatalog from '../catalog/models.json';
 const serviceBase = process.env.VITE_VOS_SERVICE_BASE?.replace(/\/+$/, '') ?? '';
-// 空白表示与工作台共用本机服务；设备开发可显式指向它的 22700 端口。
-const speechServiceBase = (process.env.VITE_VOS_SPEECH_SERVICE_BASE ?? '').replace(/\/+$/, '');
+const gateway = process.env.VVOICE_GATEWAY_BASE ? gatewayConfig(process.env.VVOICE_GATEWAY_BASE, process.env.VVOICE_GATEWAY_TOKEN_FILE) : undefined;
 const speechAssets = resolve(fileURLToPath(new URL('../frontend/dist/', import.meta.url)));
 
 export default defineConfig({
@@ -17,11 +19,12 @@ export default defineConfig({
         : html;
     },
     configureServer(server) {
+      if (gateway) server.middlewares.use(gatewayMiddleware(gateway, speechCatalog.models));
       // 兼容页必须使用独立入口，不能被 Vite 的工作台首页回退接管。
       server.middlewares.use('/service', async (request, response) => {
         const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
         if (pathname === '/runtime-config.js') {
-          response.writeHead(200, { 'Content-Type': 'text/javascript' }).end('window.__APP_VERSION__="development";');
+          response.writeHead(200, { 'Content-Type': 'text/javascript' }).end(`window.__APP_VERSION__="development";window.__VVOICE_GATEWAY__=${!!gateway};`);
           return;
         }
         let file: string;
@@ -45,9 +48,19 @@ export default defineConfig({
     // 浏览器同源访问本地 Go 服务，Cookie、事件流和媒体请求保留现有安全边界。
     proxy: serviceBase ? {
       '/studio-api': { target: serviceBase, changeOrigin: true },
-      '/api/v1/scheduler/binding': { target: serviceBase, changeOrigin: true },
-      '/api': { target: speechServiceBase || serviceBase, changeOrigin: true },
-      '/v1': { target: speechServiceBase || serviceBase, changeOrigin: true },
+      '/api': { target: serviceBase, changeOrigin: true },
+      '/v1': { target: gateway?.base || serviceBase, changeOrigin: true, ws: true, configure(proxy) {
+        if (!gateway) return;
+        const authenticate = (upstream: ClientRequest) => {
+          // 浏览器开发凭据不是网关身份；真实网关凭据仅由 Vite 服务端持有。
+          upstream.removeHeader('authorization');
+          upstream.removeHeader('x-api-key');
+          upstream.removeHeader('cookie');
+          if (gateway.token) upstream.setHeader('authorization', `Bearer ${gateway.token}`);
+        };
+        proxy.on('proxyReq', authenticate);
+        proxy.on('proxyReqWs', authenticate);
+      } },
     } : undefined,
   },
   build: {

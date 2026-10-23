@@ -27,7 +27,7 @@ test('本地工作台提供语音模型目录而不进入登录', async ({ reque
   expect(Array.isArray(await models.json())).toBe(true);
   const discovery = await request.get('/api/v1/discovery');
   expect(discovery.status()).toBe(200);
-  expect((await discovery.json()).authentication).toBe('none');
+  expect((await discovery.json()).authentication).toBe(process.env.VVOICE_GATEWAY_BASE ? 'gateway' : 'none');
 });
 
 test('语音模型及相关导航只显示一套工作台侧栏', async ({ page }) => {

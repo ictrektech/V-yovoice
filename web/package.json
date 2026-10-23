@@ -8,8 +8,9 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "test": "playwright test",
+    "test:gateway": "node --experimental-strip-types --test ../tests/dev-gateway*.test.ts",
     "lint": "eslint .",
-    "check": "pnpm run lint && pnpm run build && pnpm test"
+    "check": "pnpm run lint && pnpm run build && pnpm run test:gateway && pnpm test"
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",

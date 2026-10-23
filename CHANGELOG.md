@@ -5,12 +5,12 @@
 ## [Unreleased]
 
 ### 简体中文
-- 完善 `make dev-browser`：直接用本地源码运行语音服务，复用同机 V-Scheduler 的共享权重与调度，无需构建镜像或安装 VOS 应用；保留已校准的模型和输入范围。
+- 开发模式通过 V-Scheduler 统一模型网关调用平台已有服务，不启动本地推理或重复登记调度身份；语音目录按实际能力显示，平台缺少 ASR/TTS 时明确提示。
 - 修复开发页面无法通过局域网地址访问的问题；端口冲突或开发凭据无效时在启动阶段明确报错。
 - 修复浏览器开发模式下打开语音模型等页面时重复显示工作台侧栏的问题，并纠正语音服务连接。
 
 ### English
-- Run speech services from local source with `make dev-browser`, reusing the same host’s V-Scheduler weights and scheduling without image rebuilds or VOS app installation, while retaining calibrated model and input limits.
+- Call existing platform model services through the V-Scheduler gateway in browser development, without local inference or duplicate scheduling identities; filter speech capabilities and clearly report missing ASR/TTS services.
 - Allow LAN access to the development page and report occupied ports or invalid development credentials at startup.
 - Fix duplicate workbench sidebars when opening speech model and related pages in browser development mode, and correct speech service routing.
 
