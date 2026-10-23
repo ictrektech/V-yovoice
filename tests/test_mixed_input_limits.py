@@ -27,7 +27,7 @@ def mixed(monkeypatch):
     monkeypatch.setenv('VVOICE_SCHEDULER_REQUIRED', 'true')
     monkeypatch.setattr(admission, 'configuration', lambda: config)
     monkeypatch.setattr(admission.Execution, '_watch', lambda _: None)
-    def controller(config, path, body, key=''):
+    def controller(config, path, body, key='', **kwargs):
         calls.append(path)
         return {'permit_id': 'fixture', 'state': 'active', 'lease_seconds': 30}
     monkeypatch.setattr(admission, 'controller', controller)
