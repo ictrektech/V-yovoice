@@ -4,10 +4,17 @@ import { readFile } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ClientRequest } from 'node:http';
+import { execFileSync } from 'node:child_process';
 import { gatewayConfig, gatewayMiddleware } from './dev-gateway';
+import { modelManagement } from './dev-models';
 import speechCatalog from '../catalog/models.json';
 const serviceBase = process.env.VITE_VOS_SERVICE_BASE?.replace(/\/+$/, '') ?? '';
 const gateway = process.env.VVOICE_GATEWAY_BASE ? gatewayConfig(process.env.VVOICE_GATEWAY_BASE, process.env.VVOICE_GATEWAY_TOKEN_FILE) : undefined;
+const supported = gateway ? JSON.parse(execFileSync('python3', [fileURLToPath(new URL('../scripts/dev-catalog.py', import.meta.url))], { encoding: 'utf8' })) : undefined;
+const hubURL = gateway ? new URL(gateway.base) : undefined;
+if (hubURL) { hubURL.port = '36005'; hubURL.pathname = '/'; }
+const hub = hubURL ? gatewayConfig(process.env.MODEL_HUB_API_URL || hubURL.href) : undefined;
+if (hub && gateway && new URL(hub.base).origin === new URL(gateway.base).origin) hub.token = gateway.token;
 const speechAssets = resolve(fileURLToPath(new URL('../frontend/dist/', import.meta.url)));
 
 export default defineConfig({
@@ -19,6 +26,7 @@ export default defineConfig({
         : html;
     },
     configureServer(server) {
+      if (gateway && hub && supported) server.middlewares.use(modelManagement(hub, gateway, supported));
       if (gateway) server.middlewares.use(gatewayMiddleware(gateway, speechCatalog.models));
       // 兼容页必须使用独立入口，不能被 Vite 的工作台首页回退接管。
       server.middlewares.use('/service', async (request, response) => {

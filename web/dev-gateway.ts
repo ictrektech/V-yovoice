@@ -5,7 +5,7 @@ type CatalogModel = {
   key: string; name: string; kind: string; family?: string; languages?: string[];
   voices?: Record<string, { sid: number; language: string } | undefined>;
 };
-type GatewayModel = { id: string; qualified?: string; kind?: string; capabilities?: string[]; endpoints?: string[] };
+export type GatewayModel = { id: string; qualified?: string; kind?: string; capabilities?: string[]; endpoints?: string[] };
 
 export function gatewayConfig(base: string, tokenFile?: string) {
   const url = new URL(base);
@@ -44,9 +44,21 @@ export function speechModels(rows: GatewayModel[], catalog: CatalogModel[]) {
   });
 }
 
-class GatewayError extends Error {
+export class GatewayError extends Error {
   status: number;
   constructor(status: number, message: string) { super(message); this.status = status; }
+}
+
+export async function gatewayModels(config: { base: string; token: string }): Promise<GatewayModel[]> {
+  let response: Response;
+  try { response = await fetch(config.base + (config.token ? '/api/v1/models' : '/v1/models'), {
+    headers: config.token ? { Authorization: `Bearer ${config.token}` } : {}, signal: AbortSignal.timeout(10_000), redirect: 'error',
+  }); } catch { throw new GatewayError(502, '无法连接 V-Scheduler 模型网关，请检查 VVOICE_GATEWAY_BASE。'); }
+  if (!response.ok) throw new GatewayError(response.status, `模型网关请求失败（HTTP ${response.status}），请检查网关地址与凭据。`);
+  const value = await response.json();
+  const rows = config.token ? value.models : value.data;
+  if (!Array.isArray(rows) || rows.some(row => !row || typeof row.id !== 'string')) throw new GatewayError(502, '模型网关目录格式无效。');
+  return rows;
 }
 
 export function gatewayMiddleware(config: { base: string; token: string }, catalog: CatalogModel[]) {
@@ -89,8 +101,6 @@ export function gatewayMiddleware(config: { base: string; token: string }, catal
         send(501, { detail: '网关客户端不管理模型文件、热词或声纹库，请在 VOS 对应服务中管理。' }); return;
       }
       switch (path) {
-        case '/api/v1/models': send(200, await models()); return;
-        case '/api/v1/creative-models': send(200, []); return;
         case '/api/v1/scheduler/binding':
           await get('/v1/models');
           send(200, { mode: 'gateway', configured: true, approved_model_count: 0 }); return;

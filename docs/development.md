@@ -54,13 +54,24 @@ Platform routing and execution retain responsibility for resource admission and
 release. Occupied ports 5173 or 7080 fail startup. Ctrl+C stops local development
 services without stopping platform model services.
 
-`/v1/models` retains the full platform catalog and qualified IDs. Speech pages
-filter explicit ASR/TTS/speaker capabilities. Anonymous OpenAI catalogs lack those
-fields, so only exact known `v-voice/<model>` IDs are mapped; unknown model names
-are never treated as proof of speech capability. Missing speech services are
-shown as unavailable. Downloaded weights do not prove an inference service exists;
-Qwen chat, embedding and reranking models cannot supply ASR/TTS. Inference retains
-qualified model IDs and forwards audio uploads, audio responses and platform errors.
+Model management uses the complete source catalog (currently 45 models: 9 ASR,
+35 TTS and 1 speaker model), without requiring V-Voice to be installed in VOS.
+Startup uses only Python's standard library to export metadata, not to run inference.
+Downloads, cancellation and re-downloads go to the platform model repository;
+shared GGUF downloads remain limited to the selected model's files.
+`MODEL_HUB_API_URL` defaults to port `36005` on the gateway host, for example
+`http://192.168.1.207:36005`, and can instead point to the gateway's `/model-hub`
+path. Same-origin gateway requests reuse the server-side gateway credential;
+direct repository requests do not receive that credential.
+
+“Files prepared” means the required files are downloaded on the platform, not
+that an inference service is running. ASR/TTS selectors only offer services
+available through the gateway. Deploy inference services on the platform;
+V-Voice is not a prerequisite for viewing the catalog or downloading files.
+Chat, embedding and reranking services cannot supply ASR/TTS.
+`/v1/models` retains the full platform service catalog and qualified IDs.
+Inference retains qualified model IDs and forwards audio uploads, audio responses
+and platform errors.
 
 If the gateway requires authentication, or to read full capabilities and private
 models, create a local 0600 file containing a valid VOS user access token or gateway
@@ -75,11 +86,11 @@ make dev-browser
 Only the Vite server reads this credential; it is not bundled into the frontend.
 Browser development credentials and cookies are not forwarded. Capability discovery
 requires permission to read gateway `/api/v1/models`; inference-only application
-credentials do not replace that identity. Invalid credentials produce an auth
-error rather than an empty catalog. Anonymous inference follows platform policy.
+credentials do not replace that identity. Invalid credentials produce a service auth
+error while preserving the supported catalog. Anonymous inference follows platform policy.
 
-This mode does not implement native V-Voice model installation, hotword/speaker
-library management or local creation executors. Manage these in the corresponding
+This mode does not implement hotword/speaker library management or local creation
+executors. Manage inference instances and business libraries in the corresponding
 platform service. Unsupported management requests return 501. Platform 429 responses,
 input limits and model readiness remain effective.
 

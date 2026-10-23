@@ -65,11 +65,11 @@ before(async () => {
 });
 after(async () => { await Promise.all([new Promise(resolve => client.close(resolve)), new Promise(resolve => upstream.close(resolve))]); });
 
-test('仅有聊天服务时返回空语音列表，网关连接仍成功', async () => {
+test('仅有聊天服务时发现结果为空，不代表完整支持目录为空', async () => {
   authorization = '';
-  const response = await fetch(clientBase + '/api/v1/models');
+  const response = await fetch(clientBase + '/api/v1/discovery');
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), []);
+  assert.deepEqual((await response.json()).models, []);
   const status = await fetch(clientBase + '/api/v1/scheduler/binding').then(response => response.json());
   assert.equal(status.mode, 'gateway');
   assert.equal(status.configured, true);
@@ -78,16 +78,16 @@ test('仅有聊天服务时返回空语音列表，网关连接仍成功', async
 
 test('私有目录使用服务端凭据，输出不泄露凭据或上游地址', async () => {
   authorization = 'server-only-key';
-  const response = await fetch(clientBase + '/api/v1/models');
+  const response = await fetch(clientBase + '/api/v1/discovery');
   const body = await response.text();
-  assert.equal(JSON.parse(body)[0].key, 'registered/transcriber');
+  assert.equal(JSON.parse(body).models[0].key, 'registered/transcriber');
   assert.equal(received.at(-1)?.authorization, 'Bearer server-only-key');
   assert.ok(!body.includes('server-only-key') && !body.includes('private-url'));
 });
 
 test('鉴权失败不会伪装成空目录，管理请求不转发到平台', async () => {
   authorization = 'rejected';
-  assert.equal((await fetch(clientBase + '/api/v1/models')).status, 401);
+  assert.equal((await fetch(clientBase + '/api/v1/discovery')).status, 401);
   const count = received.length;
   assert.equal((await fetch(clientBase + '/api/v1/models/asr/pull', { method: 'POST' })).status, 501);
   assert.equal(received.length, count);

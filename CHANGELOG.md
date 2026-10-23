@@ -5,12 +5,12 @@
 ## [Unreleased]
 
 ### 简体中文
-- 开发模式通过 V-Scheduler 统一模型网关调用平台已有服务，不启动本地推理或重复登记调度身份；语音目录按实际能力显示，平台缺少 ASR/TTS 时明确提示。
+- 开发模式恢复完整模型目录及平台下载、暂停和重新下载，无需在 VOS 安装 V-Voice；区分文件准备与服务可调用，推理复用 V-Scheduler 网关，不启动本地推理。
 - 修复开发页面无法通过局域网地址访问的问题；端口冲突或开发凭据无效时在启动阶段明确报错。
 - 修复浏览器开发模式下打开语音模型等页面时重复显示工作台侧栏的问题，并纠正语音服务连接。
 
 ### English
-- Call existing platform model services through the V-Scheduler gateway in browser development, without local inference or duplicate scheduling identities; filter speech capabilities and clearly report missing ASR/TTS services.
+- Restore the complete model catalog and platform download, pause and re-download actions in browser development, without requiring V-Voice to be installed in VOS. Distinguish prepared files from callable services and reuse the V-Scheduler gateway without local inference.
 - Allow LAN access to the development page and report occupied ports or invalid development credentials at startup.
 - Fix duplicate workbench sidebars when opening speech model and related pages in browser development mode, and correct speech service routing.
 
