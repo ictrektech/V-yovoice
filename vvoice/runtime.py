@@ -80,14 +80,14 @@ class RuntimeRegistry:
     def inference(self, key: str):
         with self._lock:
             gate = self._model_gates.setdefault(key, threading.BoundedSemaphore(self._per_model_limit))
+        if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
+            from .admission import current
+            execution = current.get()
+            if execution is None:
+                from fastapi import HTTPException
+                raise HTTPException(503, "Inference requires a scheduled request context")
+            execution.enter(key)
         with self._global_gate, gate:
-            if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
-                from .admission import current
-                execution = current.get()
-                if execution is None:
-                    from fastapi import HTTPException
-                    raise HTTPException(503, "Inference requires a scheduled request context")
-                execution.enter(key)
             yield
 
     def unload(self, key: str | None = None) -> None:

@@ -16,7 +16,7 @@ def broker(monkeypatch):
     monkeypatch.setattr(admission, "configuration", lambda: config)
     monkeypatch.setattr(admission.Execution, "_watch", lambda self: None)
 
-    def controller(config, path, body, key=""):
+    def controller(config, path, body, key="", **kwargs):
         calls.append((path, body, key))
         return {"permit_id": "fixture-permit", "state": "active", "lease_seconds": 30}
 

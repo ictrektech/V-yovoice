@@ -107,14 +107,21 @@ def configuration() -> dict:
         raise HTTPException(503, "V-Scheduler configuration required") from None
 
 
-def controller(config: dict, path: str, body: dict, key: str = "", operator: str = "") -> dict:
+def controller(config: dict, path: str, body: dict, key: str = "", operator: str = "", body_headers=None) -> dict:
     headers = {"Authorization": f"Bearer {config['token']}"}
     from .scheduling_options import operator_headers
     headers.update(operator_headers(body.get("scheduling", {}), operator))
     if key:
         headers["Idempotency-Key"] = key
+    timeout = 8
+    if path == "/permits":
+        from .scheduling_options import queue_wait_seconds
+        wait = queue_wait_seconds(body_headers or {})
+        path, body, timeout = "/permits/wait", {"request": body, "wait_seconds": wait}, wait + 8
     try:
-        response = httpx.post(config["url"].rstrip("/") + path, json=body, headers=headers, timeout=8)
+        response = httpx.post(config["url"].rstrip("/") + path, json=body, headers=headers, timeout=timeout)
+        if response.status_code == 403:
+            raise HTTPException(403, "Scheduler authorization rejected")
         if response.status_code == 429:
             raise HTTPException(429, "Local compute resources are busy", headers={"Retry-After": "1"})
         if response.status_code != 200:
@@ -199,7 +206,7 @@ class Execution:
                     "executor_id": self.executor, "model_id": model,
                     "upstream_url": self.config["upstream_url"], "execution_token": self.proof,
                     **({"scheduling": options} if options else {}),
-                }, self.id, **({"operator": self.headers.get("authorization", "")} if options.get("force_admission") else {}))
+                }, self.id, body_headers=self.headers, **({"operator": self.headers.get("authorization", "")} if options.get("force_admission") else {}))
                 self.permit = str(reply.get("permit_id") or "")
                 self.owned = True
             if not self.permit:
