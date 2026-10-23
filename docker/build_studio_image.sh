@@ -42,8 +42,8 @@ if [[ "$mode" == assets || "$mode" == application ]]; then
   fi
   docker run --rm --pull never --entrypoint test "$source_image" -f /opt/vvoice/web/index.html
   docker run --rm --pull never --entrypoint python3 "$source_image" -c "import importlib.util; from pathlib import Path; assert all(importlib.util.find_spec(name) is None for name in ('torch', 'torchaudio', 'transformers', 'diffusers')) and not Path('/opt/vvoice/music-python').exists(), 'Runtime changed: use a full rebuild, not an overlay'"
-  assets_base="v-voice-assets-base:${tag}"
-  docker tag "$source_image" "$assets_base"
+  # Preserve the published repository identity so containerd can retrieve lazy layers.
+  assets_base="$source_image"
   dockerfile="$root/docker/Dockerfile.studio-assets"
   if [[ "$mode" == application ]]; then dockerfile="$root/docker/Dockerfile.application"; fi
   docker buildx build --builder default --load --provenance=false --sbom=false \
