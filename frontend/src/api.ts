@@ -3,6 +3,13 @@ export type Voice = {
   language: string
 }
 
+export type AsrInputLimits = {
+  duration_seconds: number
+  sample_rate: number
+  input_bytes: number
+  hotwords_characters: number
+}
+
 export type Model = {
   key: string
   name: string
@@ -162,8 +169,9 @@ export const api = {
     form.append('file', file)
     return json<VerifyResult>('/v1/audio/speakers/verify', { method: 'POST', body: form })
   },
-  transcribe: async (form: FormData) => {
-    const response = await request('/v1/audio/transcriptions', { method: 'POST', body: form })
+  inputLimits: (model: string, signal?: AbortSignal) => json<{ limits: AsrInputLimits | null; max_upload_bytes: number }>(`/api/v1/models/${encodeURIComponent(model)}/input-limits`, { signal }),
+  transcribe: async (form: FormData, signal?: AbortSignal): Promise<{ text: string }> => {
+    const response = await request('/v1/audio/transcriptions', { method: 'POST', body: form, signal })
     return response.json()
   },
   speech: async (payload: Record<string, unknown>) => {

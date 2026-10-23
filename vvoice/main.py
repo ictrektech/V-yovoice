@@ -268,6 +268,15 @@ async def managed_models():
     return [{**row, "loaded": registry.is_loaded(row["key"])} for row in await list_models()]
 
 
+@app.get("/api/v1/models/{key}/input-limits")
+async def input_limits(key: str):
+    try:
+        find_model(key, "asr")
+    except KeyError:
+        raise HTTPException(404, "ASR model not found") from None
+    return {"limits": model_limits(key), "max_upload_bytes": settings.max_upload_mb * 1024 * 1024}
+
+
 @app.get("/api/v1/creative-models")
 async def creative_model_inventory():
     """All creator precisions and soundfonts; management metadata, not speech discovery."""

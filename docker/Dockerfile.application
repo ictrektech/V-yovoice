@@ -4,5 +4,6 @@ FROM ${VVOICE_STUDIO_BASE_IMAGE}
 ARG TARGETARCH
 COPY --from=studio_artifacts /linux-${TARGETARCH}/vvoice-studio /opt/vvoice/vvoice-studio
 COPY --from=studio_artifacts /web/ /opt/vvoice/web/
+COPY --from=studio_artifacts /frontend/ /app/frontend/dist/
 COPY vvoice/ /app/vvoice/
 RUN python3 -m compileall -q /app/vvoice

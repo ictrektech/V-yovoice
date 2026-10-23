@@ -6,7 +6,7 @@ import soundfile as sf
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from vvoice import admission, audio, runtime
+from vvoice import admission, audio, main, runtime
 from vvoice.main import app
 
 
@@ -92,3 +92,54 @@ def test_calibration_rotation_before_acquire_fails_closed(calibrated):
             execution.enter("kokoro-multilang")
     finally:
         admission.current.reset(token)
+
+
+def test_input_limits_exposes_only_validated_asr_limits(calibrated):
+    calibrated.update(token="private-submitter", executor_token="private-executor")
+    client = TestClient(admission.AdmissionMiddleware(app))
+    response = client.get("/api/v1/models/sensevoice-int8/input-limits")
+    assert response.status_code == 200
+    assert response.json() == {"limits": calibrated["model_limits"]["sensevoice-int8"],
+                               "max_upload_bytes": main.settings.max_upload_mb * 1024 * 1024}
+    assert "private" not in response.text
+    assert client.get("/api/v1/models/unknown/input-limits").status_code == 404
+    assert client.get("/api/v1/models/whisper-tiny/input-limits").status_code == 503
+    calibrated.pop("model_limits")
+    calibrated.pop("input_limits_version")
+    assert client.get("/api/v1/models/sensevoice-int8/input-limits").json()["limits"] is None
+
+
+@pytest.mark.parametrize("forwarded", [False, True])
+@pytest.mark.parametrize("path", ["/v1/audio/transcriptions", "/transcribe"])
+def test_larger_approved_audio_reaches_inference_without_a_legacy_exemption(calibrated, monkeypatch, forwarded, path):
+    calibrated["model_limits"]["sensevoice-int8"].update(duration_seconds=60, input_bytes=2 * 1048576)
+    source = io.BytesIO()
+    sf.write(source, np.zeros(40 * 16000), 16000, format="WAV", subtype="PCM_16")
+    assert 1048576 + 65536 < len(source.getvalue()) < 2 * 1048576
+    calls = []
+    async def admit(model):
+        calls.append(model)
+    def transcribe(model, samples, rate, *args):
+        assert len(samples) == 40 * 16000 and rate == 16000
+        return {"text": "complete"}
+    monkeypatch.setattr(main, "admit_model", admit)
+    monkeypatch.setattr(main, "transcribe", transcribe)
+    headers = {"X-VScheduler-Permit-ID": "forwarded", "X-VScheduler-Execution-Token": "x" * 32,
+               "X-VScheduler-Executor-ID": "router.voice"} if forwarded else {}
+    client = TestClient(admission.AdmissionMiddleware(app))
+    if path == "/transcribe":
+        response = client.post(path, content=source.getvalue(), headers={**headers, "Content-Type": "application/octet-stream"})
+    else:
+        response = client.post(path, data={"model": "sensevoice-int8"},
+                               files={"file": ("audio.wav", source.getvalue(), "audio/wav")}, headers=headers)
+    assert response.status_code == 200, response.text
+    assert response.json()["text"] == "complete" and calls == ["sensevoice-int8"]
+    calls.clear()
+    oversized = b"x" * (2 * 1048576 + 65537)
+    if path == "/transcribe":
+        response = client.post(path, content=oversized, headers={**headers, "Content-Type": "application/octet-stream"})
+    else:
+        response = client.post(path, data={"model": "sensevoice-int8"},
+                               files={"file": ("audio.wav", oversized, "audio/wav")}, headers=headers)
+    assert response.status_code == 413
+    assert not calls

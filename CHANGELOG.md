@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### 简体中文
+- 语音识别页面自动转换并按模型批准范围分段上传音频，显示进度并支持取消；修复已批准的大文件仍被固定 1 MiB 请求体限制拦截的问题，保留逐段调度与输入检查。
+
+### English
+- Prepare and split ASR uploads within approved model limits, with progress and cancellation. Honor approved upload sizes instead of a fixed 1 MiB request cap, while preserving per-part scheduling and validation.
+
 ## [0.0.29] - 2026-10-23
 
 ### 简体中文

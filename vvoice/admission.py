@@ -338,9 +338,15 @@ class AdmissionMiddleware:
                 if "model_limits" in config:
                     received_bytes += len(message.get("body", b""))
                     maximum = 1048576
+                    from .config import settings
                     if _mixed_legacy_models(config):
-                        from .config import settings
                         maximum = settings.max_upload_mb * 1024 * 1024
+                    else:
+                        # 请求体尚未解析模型；先容纳所有已批准模型，再由接口检查所选模型。
+                        for model in config["model_limits"]:
+                            limits = model_limits(model)
+                            maximum = max(maximum, int(limits.get("input_bytes", 0)))
+                        maximum = min(maximum, settings.max_upload_mb * 1024 * 1024)
                     if received_bytes > maximum + 65536:
                         raise HTTPException(413, "Request exceeds calibrated upload limit")
             return message

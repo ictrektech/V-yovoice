@@ -55,6 +55,18 @@ credentials stay in this app's private storage and reload without restarting.
 New node approvals declare input-limit protocol v1 and enforce their measured text,
 speed, encoded-audio size, source sample rate and duration before native model loading.
 Audio decoding is bounded; oversized direct and gateway requests do not acquire a compute permit.
+The ASR page reads `/api/v1/models/{key}/input-limits` before submitting calibrated
+models. It uses the upstream browser audio helpers to resample to 16 kHz, mix down
+to mono PCM WAV, and send consecutive parts within both duration and byte limits.
+Each part uses the existing public endpoint and its own scheduling permit; progress
+and cancellation are available. Original files must fit `VVOICE_MAX_UPLOAD_MB`
+(default 200 MiB), and their format must be supported by the browser. Legacy
+approvals keep the original upload path. Public API clients must still prepare
+their own parts; the strict per-request checks remain in effect. The request-body
+cap now follows approved encoded-audio sizes, bounded by the configured upload cap.
+Image preparation also builds the service console into `artifacts/frontend`;
+application and asset overlays copy it along with `artifacts/web`, so console
+fixes reach installed apps without retaining an older frontend from the base image.
 See [the Scheduler-side handoff and actual-node acceptance gates](docs/scheduler-auto-binding.md).
 
 This fork is the successor to `com.ictrek.v-voice`. It preserves the existing

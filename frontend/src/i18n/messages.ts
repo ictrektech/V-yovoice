@@ -6,6 +6,16 @@ export const languageNames: Record<string, string> = { auto: '自动检测', zh:
 const languageLabels = new Set(Object.values(languageNames))
 
 export const messages: Record<string, Translation> = {
+  '上传音频并选择模型，自动转换格式并按模型限制分段识别。': ['上傳音訊並選擇模型，自動轉換格式並按模型限制分段辨識。', 'Choose an audio file and model. Audio is converted and split to fit the model limits.'],
+  '请选择音频和模型。': ['請選擇音訊和模型。', 'Choose an audio file and model.'],
+  '音频文件超过上传上限，请先拆分文件。': ['音訊檔案超過上傳上限，請先拆分檔案。', 'The audio file exceeds the upload limit. Split the file before trying again.'],
+  '模型输入限制不支持音频分段，请重新校准模型。': ['模型輸入限制不支援音訊分段，請重新校準模型。', 'The approved model limits do not support audio preparation. Recalibrate the model.'],
+  '正在转换音频…': ['正在轉換音訊…', 'Preparing audio…'],
+  '浏览器无法解码此音频，请转换为 WAV 或 MP3 后重试。': ['瀏覽器無法解碼此音訊，請轉換為 WAV 或 MP3 後重試。', 'This browser cannot decode the audio. Convert it to WAV or MP3 and try again.'],
+  '音频文件为空。': ['音訊檔案為空。', 'The audio file is empty.'],
+  '未识别到语音。': ['未辨識到語音。', 'No speech was recognized.'],
+  '取消识别': ['取消辨識', 'Cancel transcription'],
+  '已取消识别。': ['已取消辨識。', 'Transcription cancelled.'],
   "原生配乐生成": ["原生配樂生成", "Native background-music generation"],
   "配乐模型管理": ["配樂模型管理", "Music model management"],
   "公共音乐扩展接口，返回 WAV 或 FLAC 二进制音频；不是 OpenAI 标准接口。直接调用与统一网关转发都受 V-Scheduler 准入控制，不复用旧 V-Music 凭据。": ["公共音樂擴充介面，傳回 WAV 或 FLAC 二進位音訊；不是 OpenAI 標準介面。直接呼叫與統一閘道轉發都受 V-Scheduler 准入控制，不重用舊 V-Music 憑證。", "Public music extension returning binary WAV or FLAC; not an OpenAI standard endpoint. Direct and gateway calls require V-Scheduler admission and do not reuse V-Music credentials."],
@@ -412,6 +422,7 @@ export const messages: Record<string, Translation> = {
 }
 
 const dynamicMessages: Array<[RegExp, (match: RegExpMatchArray, locale: Locale) => string]> = [
+  [/^正在识别第 (\d+) 段，共 (\d+) 段…$/, (m, l) => l === 'zh-TW' ? `正在辨識第 ${m[1]} 段，共 ${m[2]} 段…` : `Transcribing part ${m[1]} of ${m[2]}…`],
   [/^转写 \/ 翻译( \/ 热词增强)?( \/ 实时流式)?$/, (m, l) => [translateText('转写 / 翻译', l), ...(m[1] ? [translateText('/ 热词增强', l)] : []), ...(m[2] ? [translateText('/ 实时流式', l)] : [])].join(' ')],
   [/^(.* · )(自动检测|中文|粤语|英语|日语|韩语|德语|法语|西班牙语|俄语|葡萄牙语|意大利语)( · SID \d+)$/, (m, l) => `${m[1]}${translateText(m[2], l)}${m[3]}`],
   [/^(\d+) 个预设音色$/, (m, l) => l === 'zh-TW' ? `${m[1]} 個預設音色` : `${m[1]} preset voices`],

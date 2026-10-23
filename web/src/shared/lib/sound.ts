@@ -1,8 +1,20 @@
 import { CallError } from './call-error';
 
+// 复用上游实现：在指定采样率下解码，结束后释放音频上下文。
+export async function decodeAudio(data: ArrayBuffer | Blob, sampleRate?: number): Promise<AudioBuffer> {
+  const context = new AudioContext(sampleRate ? { sampleRate } : undefined);
+  try { return await context.decodeAudioData(data instanceof Blob ? await data.arrayBuffer() : data); }
+  finally { await context.close(); }
+}
+
 export function encodeWav(buffer: AudioBuffer, start = 0, end = buffer.duration): Blob {
   const first = Math.max(0, Math.floor(start * buffer.sampleRate));
   const last = Math.min(buffer.length, Math.floor(end * buffer.sampleRate));
+  return encodeWavFrames(buffer, first, last);
+}
+
+// 分段按整数采样位置编码，避免秒数换算舍入后丢失边界采样。
+export function encodeWavFrames(buffer: AudioBuffer, first = 0, last = buffer.length): Blob {
   const frames = last - first;
   if (frames <= 0) throw new CallError('@yovoice.error.cropRangeInvalid');
   const bytes = new ArrayBuffer(44 + frames * 2); const view = new DataView(bytes);
