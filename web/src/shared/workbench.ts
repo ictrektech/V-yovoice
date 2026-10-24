@@ -52,13 +52,19 @@ export function performanceSettings(base: SynthesisSettings, performance?: Chara
 export function cueSettings(draft: Draft, cue: SubtitleCue): SynthesisSettings {
   return performanceSettings(draft.subtitles?.speakers.find(s => s.id === cue.speakerId)?.settings ?? synthesisSettings(draft), cue.performance);
 }
-export function cueAudioStatus(draft: Draft, history: Generation[], cue: SubtitleCue): 'missing' | 'stale' | 'ready' {
+/** 时间轴上正在使用的这一句的版本；还没放上时间轴时为空。 */
+export function cueGeneration(draft: Draft, history: Generation[], cue: SubtitleCue): Generation | undefined {
   const ids = new Set(draft.timeline?.tracks.flatMap(t => t.clips.map(c => c.generationId)) ?? []);
-  const generation = history.find(g => ids.has(g.id) && g.segment?.cueId === cue.id);
+  return history.find(g => ids.has(g.id) && g.segment?.cueId === cue.id);
+}
+export function cueAudioStatus(draft: Draft, history: Generation[], cue: SubtitleCue): 'missing' | 'stale' | 'ready' {
+  const generation = cueGeneration(draft, history, cue);
   if (!generation) return 'missing';
   return generation.settings.text === cue.text && generation.segment?.speakerId === cue.speakerId && stableJSON(comparableSettings(synthesisSettings(generation.settings))) === stableJSON(comparableSettings(cueSettings(draft, cue))) ? 'ready' : 'stale';
 }
-export interface Voice { referenceText?: string; source?: string; sourceGenerationId?: string; id: string; name: string; fileName: string; duration: number }
+export interface Voice { referenceText?: string; source?: string; sourceGenerationId?: string; id: string; name: string; fileName: string; duration: number; excerpt?: VoiceExcerpt }
+/** 导入的录音过长时自动截取的片段：start/end 为在原录音里的秒数，total 为原录音时长。 */
+export interface VoiceExcerpt { start: number; end: number; total: number }
 export interface ModelFile { path: string; size: number; sha256: string }
 export interface ModelPackage { voices?: string[]; variant?: string; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
 export interface InstalledModel { id: string; path: string; managed: boolean }
@@ -70,7 +76,12 @@ export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 export interface LogEntry { time: string; level: LogLevel; event: string; fields?: Record<string, unknown> }
 export interface LogFilter { level?: string; module?: string; text?: string; since?: string; offset?: number; limit?: number }
 export interface LogPage { entries: LogEntry[]; total: number; modules: string[] }
-export interface Generation { segment?: GenerationSegment; id: string; title: string; fileName: string; createdAt: string; duration: number; settings: Draft; lyricTimes?: number[]; lyricWords?: AlignedWord[] }
+export interface Generation { segment?: GenerationSegment; id: string; title: string; fileName: string; createdAt: string; duration: number; settings: Draft; lyricTimes?: number[]; lyricWords?: AlignedWord[]; check?: AudioCheck }
+/** 生成后的测量体检：整体响度（LUFS）、真峰值（dBTP）与发现的问题。 */
+export interface AudioCheck { loudness: number; peak: number; issues?: AudioIssue[] }
+/** 体检发现的一处问题；at/end 为秒。 */
+export interface AudioIssue { code: AudioIssueCode; at: number; end?: number; count?: number }
+export type AudioIssueCode = 'clipping' | 'clicks' | 'cutoff' | 'silence' | 'silent' | 'quiet' | 'dc';
 /** 歌词对齐模型给出的逐字时间（秒），和逐行校准互斥，以最近一次为准。 */
 export interface AlignedWord { word: string; start: number; end: number }
 /** UI chrome locale. Distinct from Draft.language (TTS). */

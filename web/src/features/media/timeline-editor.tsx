@@ -18,6 +18,7 @@ import { SpeakerAvatar } from '../create/subtitles';
 import { encodeWav } from '../../shared/lib/sound';
 import { isDesktop, mediaUrl, saveAudio, saveText, importTimelineFile, releaseMediaUrl } from '../../shared/lib/client';
 import { noticeMessage } from '../../shared/lib/call-error';
+import { readLocal, writeLocal } from '../../shared/lib/local-store';
 import { formatTime, projectKind, type AudioLane, type AudioAsset, type AudioClip, type AudioTimeline, type Generation, type Draft } from '../../shared/workbench';
 import { Timeline, TimelineHistory } from './timeline';
 import { resamplePeaks, waveform as readWaveform, type Waveform } from './waveform';
@@ -55,6 +56,8 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
   const [exportFormat, setExportFormat] = useState<'wav' | 'srt' | 'vtt'>('wav');
   const [captionSpeaker, setCaptionSpeaker] = useState(false);
   const [preventClipping, setPreventClipping] = useState(true);
+  // 目标响度（LUFS）由本地服务整体调整，记住上次的选择；浏览器预览不调整。
+  const [loudness, setLoudness] = useState(() => { const value = readLocal('yovoice.exportLoudness') ?? ''; return isDesktop && ['-18', '-16', '-14'].includes(value) ? value : ''; });
   const [peakDb, setPeakDb] = useState<number>();
 
   const [edits] = useState(() => new TimelineHistory(value));
@@ -419,11 +422,14 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
         const audio = context.current ??= new AudioContext();
         const result = await Timeline.render(snapshot, id => load(id, audio), exportScope === 'range' ? range : undefined);
         const peak = Timeline.peak(result); setPeakDb(peak ? 20 * Math.log10(peak) : -Infinity);
-        if (peak > 1 && preventClipping) for (let channel = 0; channel < result.numberOfChannels; channel++) { const samples = result.getChannelData(channel); for (let i = 0; i < samples.length; i++) samples[i] *= 0.99 / peak; }
-        if (peak > 1 && !preventClipping && peakDb === undefined) { setExportError(t('@yovoice.timeline.clipping')); return; }
-        if (await saveAudio(encodeWav(result), exportName)) setExportOpen(false);
+        // 选了目标响度时先压到满幅以内再交给本地服务调整，避免 16 位编码时先削掉峰值。
+        if (peak > 1 && (preventClipping || loudness)) for (let channel = 0; channel < result.numberOfChannels; channel++) { const samples = result.getChannelData(channel); for (let i = 0; i < samples.length; i++) samples[i] *= 0.99 / peak; }
+        if (peak > 1 && !preventClipping && !loudness && peakDb === undefined) { setExportError(t('@yovoice.timeline.clipping')); return; }
+        if (await saveAudio(encodeWav(result), exportName, loudness ? Number(loudness) : undefined)) setExportOpen(false);
       } catch (error) { setExportError((error as Error).message); } finally { setExporting(false); }
-    }} />}><TextInput label={t('@yovoice.timeline.exportName')} value={exportName} onChange={setExportName} /><Selector label={t('@yovoice.timeline.exportType')} value={exportFormat} onChange={v => { setExportFormat(v as typeof exportFormat); setExportError(''); setPeakDb(undefined); }} options={[{ value: 'wav', label: t('@yovoice.timeline.formatWav') }, { value: 'srt', label: t('@yovoice.timeline.formatSrt') }, { value: 'vtt', label: t('@yovoice.timeline.formatVtt') }]} /><Selector label={t('@yovoice.timeline.exportScope')} value={exportScope} onChange={v => { setExportScope(v); setExportError(''); setPeakDb(undefined); }} options={[{ value: 'all', label: t('@yovoice.timeline.all') }, ...(range ? [{ value: 'range', label: t('@yovoice.timeline.range') }] : []), ...value.tracks.map(t => ({ value: `track:${t.id}`, label: t.name })), ...(draft.subtitles?.speakers ?? []).map((s, i) => ({ value: `role:${s.id}`, label: s.sourceName || t('@yovoice.subtitle.speaker', { n: i + 1 }) }))]} />{exportFormat === 'wav' ? <><label><input type="checkbox" checked={preventClipping} onChange={e => { setPreventClipping(e.target.checked); setPeakDb(undefined); }} /> {t('@yovoice.timeline.preventClipping')}</label>{peakDb !== undefined ? <small>{t('@yovoice.timeline.peak')}: {Number.isFinite(peakDb) ? peakDb.toFixed(1) : '−∞'} dBFS</small> : null}</> : <><label><input type="checkbox" checked={captionSpeaker} onChange={e => setCaptionSpeaker(e.target.checked)} /> {t('@yovoice.timeline.captionSpeaker')}</label><small>{t('@yovoice.timeline.captionHint')}</small></>}</AppDialog> : null}
+    }} />}><TextInput label={t('@yovoice.timeline.exportName')} value={exportName} onChange={setExportName} /><Selector label={t('@yovoice.timeline.exportType')} value={exportFormat} onChange={v => { setExportFormat(v as typeof exportFormat); setExportError(''); setPeakDb(undefined); }} options={[{ value: 'wav', label: t('@yovoice.timeline.formatWav') }, { value: 'srt', label: t('@yovoice.timeline.formatSrt') }, { value: 'vtt', label: t('@yovoice.timeline.formatVtt') }]} /><Selector label={t('@yovoice.timeline.exportScope')} value={exportScope} onChange={v => { setExportScope(v); setExportError(''); setPeakDb(undefined); }} options={[{ value: 'all', label: t('@yovoice.timeline.all') }, ...(range ? [{ value: 'range', label: t('@yovoice.timeline.range') }] : []), ...value.tracks.map(t => ({ value: `track:${t.id}`, label: t.name })), ...(draft.subtitles?.speakers ?? []).map((s, i) => ({ value: `role:${s.id}`, label: s.sourceName || t('@yovoice.subtitle.speaker', { n: i + 1 }) }))]} />{exportFormat === 'wav' ? <>{isDesktop ? <Selector label={t('@yovoice.timeline.loudness')} value={loudness} onChange={value => { setLoudness(value); writeLocal('yovoice.exportLoudness', value); setExportError(''); setPeakDb(undefined); }} description={loudness ? t('@yovoice.timeline.loudnessHint') : undefined}
+        options={[{ value: '', label: t('@yovoice.timeline.loudnessOff') }, { value: '-18', label: t('@yovoice.timeline.loudnessAudiobook') }, { value: '-16', label: t('@yovoice.timeline.loudnessPodcast') }, { value: '-14', label: t('@yovoice.timeline.loudnessVideo') }]} /> : null}
+        {loudness ? null : <label><input type="checkbox" checked={preventClipping} onChange={e => { setPreventClipping(e.target.checked); setPeakDb(undefined); }} /> {t('@yovoice.timeline.preventClipping')}</label>}{peakDb !== undefined ? <small>{t('@yovoice.timeline.peak')}: {Number.isFinite(peakDb) ? peakDb.toFixed(1) : '−∞'} dBFS</small> : null}</> : <><label><input type="checkbox" checked={captionSpeaker} onChange={e => setCaptionSpeaker(e.target.checked)} /> {t('@yovoice.timeline.captionSpeaker')}</label><small>{t('@yovoice.timeline.captionHint')}</small></>}</AppDialog> : null}
     <ContextMenu items={menuItems} size="sm" menuWidth="max-content" label={t('@yovoice.timeline.more')} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
     <VStack ref={scrollRef} className="multitrack-scroll" gap={0} {...pointerHandlers} onContextMenu={e => {
       const id = (e.target as Element).closest('[data-clip-id]')?.getAttribute('data-clip-id');

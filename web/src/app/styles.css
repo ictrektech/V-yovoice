@@ -589,6 +589,9 @@
 .cue-audio-status { align-self: center; flex-shrink: 0; width: var(--spacing-2); height: var(--spacing-2); border-radius: 50%; background: var(--color-text-secondary); }
 .cue-audio-status[data-status="failed"] { background: var(--color-text-red); }
 .cue-audio-status[data-status="stale"] { background: var(--color-text-orange); }
+/* 音频体检提醒：橙色警告图标，故事台词里与状态点对齐。 */
+.audio-check.astryx-button { color: var(--color-text-orange); }
+.cue-audio-check.astryx-button { align-self: center; flex-shrink: 0; }
 
 /* 片段边界与裁剪柄必须重合，禁用普通按钮的按压缩放。 */
 .multitrack-clip.astryx-button, .multitrack-trim.astryx-button { transform: none; }

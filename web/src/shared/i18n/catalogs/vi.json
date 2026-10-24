@@ -390,7 +390,7 @@
     "defaultMessage": "Không thể giải mã âm thanh. Kiểm tra xem tệp có bị hỏng, mã hóa hoặc thiếu rãnh âm thanh không."
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "Chọn âm thanh tham chiếu dài từ 1 đến 60 giây."
+    "defaultMessage": "Chọn âm thanh dài từ 1 giây đến 10 phút. Bản ghi dài hơn 60 giây sẽ tự động được cắt lấy đoạn rõ nhất."
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "Chọn tệp WAV PCM / Float mono hoặc stereo hợp lệ."
@@ -3958,5 +3958,59 @@
   },
   "@yovoice.settings.featureAssistantHint": {
     "defaultMessage": "Trợ lý nổi, lối vào trên thanh tiêu đề và các gợi ý. Khi tắt cả tạo nhạc, cài đặt dịch vụ AI và phân vai bằng AI cho sách cũng bị ẩn."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "Âm thanh này có thể có vấn đề: {issues}. Hãy nghe thử và tạo lại nếu cần."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "bị vỡ tiếng ở {count} chỗ, lần đầu tại {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "{count} tiếng lách cách, lần đầu tại {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "phần cuối bị cắt cụt"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "im lặng lâu từ {at} đến {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "gần như không có tiếng"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "âm lượng nhỏ ({loudness} LUFS); chọn độ lớn mục tiêu khi xuất"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "lệch DC"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Độ lớn"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Không điều chỉnh"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Sách nói (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Podcast (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Nền tảng video (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Chỉ điều chỉnh âm lượng tổng thể, không nén dải động; đỉnh luôn dưới −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Tự chọn"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Chọn 5–15 giây giọng nói rõ nhất, không vỡ tiếng và không ngắt quãng dài"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "Bản ghi dài {total} nên đoạn rõ nhất ({start}–{end}) được dùng làm mẫu. Dùng Cắt để điều chỉnh."
   }
 }

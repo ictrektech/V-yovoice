@@ -403,3 +403,34 @@ test('窄屏下展开检查器：保持宽屏时的固定宽度，不覆盖全�
   expect(box!.width).toBeLessThan(400);
   expect(box!.width).toBeGreaterThan(300);
 });
+
+test('生成结果体检有问题时，播放栏显示提醒和问题位置', async ({ page }) => {
+  const state = emptyState();
+  const draft = state.drafts[0];
+  state.history = [{
+    id: 'checked', title: draft.title, fileName: 'checked.wav', createdAt: '2026-09-15T10:00:00Z', duration: 1, settings: { ...draft },
+    check: { loudness: -20, peak: 0, issues: [{ code: 'clipping', at: 0.5, count: 3 }, { code: 'cutoff', at: 0.9 }, { code: 'dc', at: 0 }] },
+  }];
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const bytes = new Uint8Array(32044); const view = new DataView(bytes.buffer);
+    const text = (offset: number, value: string) => bytes.set(new TextEncoder().encode(value), offset);
+    text(0, 'RIFF'); view.setUint32(4, 32036, true); text(8, 'WAVEfmt '); view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, 16000, true); view.setUint32(28, 32000, true);
+    view.setUint16(32, 2, true); view.setUint16(34, 16, true); text(36, 'data'); view.setUint32(40, 32000, true);
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('voice-workbench-audio', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('audio');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => { const db = request.result; const tx = db.transaction('audio', 'readwrite'); tx.objectStore('audio').put(new Blob([bytes], { type: 'audio/wav' }), 'checked.wav'); tx.oncomplete = () => { db.close(); resolve(); }; };
+    });
+  });
+  await seedState(page, state); await page.reload();
+  // 直流偏移只给助手看；削波和截断写进提醒，附带时间位置。
+  const badge = page.locator('.player').getByTestId('audio-check');
+  await expect(badge).toBeVisible();
+  const label = await badge.getAttribute('aria-label');
+  expect(label).toContain('爆音（削波）3 处');
+  expect(label).toContain('结尾被截断');
+  expect(label).not.toContain('偏离中线');
+});

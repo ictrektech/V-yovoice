@@ -51,6 +51,7 @@ import { UpdateNotice } from '../features/update/update-notice';
 import { PronunciationDialog, type Pronunciation } from './pronunciation-dialog';
 import type { DraftSession } from './use-draft-session';
 import { watchAssistantLive } from '../shared/lib/assistant-live';
+import { AudioCheckBadge } from '../features/media/audio-check';
 import { readLocal, writeLocal } from '../shared/lib/local-store';
 const Settings = lazy(() => import('../features/settings/settings').then(module => ({ default: module.Settings })));
 const VoicePicker = lazy(() => import('../features/media/voice-picker').then(module => ({ default: module.VoicePicker })));
@@ -417,6 +418,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   // 播放器工具栏右侧：打开当前音频所在位置（导出在“更多”菜单里），查看历史（语音生成是“历史生成”，音乐与编曲是本作品的“版本记录”），删除在历史里处理；音乐另有播放页。
   const historyLabel = t(projectKind(draft) === 'text' ? '@yovoice.history.generations' : '@yovoice.history.versions');
   const playerActions = projectKind(draft) === 'story' ? undefined : <HStack gap={2} vAlign="center">
+    {currentVersion ? <AudioCheckBadge check={currentVersion.check} /> : null}
     {currentVersion ? <Button className="player-tool" label={t('@yovoice.player.reveal')} tooltip={t('@yovoice.player.reveal')} size="sm" icon={<FolderOpen />} onClick={() => { void call('media.reveal', { kind: 'outputs', id: currentVersion.id }).catch(e => onError(noticeMessage(e))); }} /> : null}
     {currentVersion && music ? <Button className="player-tool" label={t('@yovoice.music.nowPlaying')} tooltip={t('@yovoice.music.nowPlaying')} size="sm" variant="ghost" icon={<Disc3 />} onClick={() => setNowPlaying(currentVersion)} /> : null}
     {/* 历史入口始终保留：还没生成过时也能进入历史页查看其他作品的生成记录。 */}

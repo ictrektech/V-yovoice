@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"yovoice/internal/msg"
@@ -68,10 +69,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	switch {
 	case r.URL.Path == "/api/export-audio" && r.Method == "POST":
+		// loudness 为目标响度（LUFS），不带时原样保存。
+		loudness, _ := strconv.ParseFloat(r.URL.Query().Get("loudness"), 64)
 		s.calls.RLock()
-		id, err := s.Workbench.SaveExport(r.Body)
+		id, normalized, err := s.Workbench.SaveExport(r.Body, loudness)
 		s.calls.RUnlock()
 		reply := map[string]any{"id": id}
+		if normalized != nil {
+			reply["normalized"] = normalized
+		}
 		if err != nil {
 			reply = map[string]any{"error": msg.Encode(err)}
 		}

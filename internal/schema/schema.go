@@ -168,6 +168,15 @@ type Voice struct {
 	Name               string  `json:"name"`
 	FileName           string  `json:"fileName"`
 	Duration           float64 `json:"duration"`
+	// Excerpt 记录导入的录音过长时自动截取的片段。
+	Excerpt *VoiceExcerpt `json:"excerpt,omitempty"`
+}
+
+// VoiceExcerpt 是从较长录音里自动挑出的参考片段：Start/End 为片段在原录音里的秒数，Total 为原录音时长。
+type VoiceExcerpt struct {
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
+	Total float64 `json:"total"`
 }
 type InstalledModel struct {
 	ID      string `json:"id"`
@@ -186,6 +195,24 @@ type Generation struct {
 	LyricTimes []float64 `json:"lyricTimes,omitempty"`
 	// LyricWords 是强制对齐得到的逐字时间，按歌词顺序排列；与 LyricTimes 只保留较新的一份。
 	LyricWords []LyricWord `json:"lyricWords,omitempty"`
+	// Check 是生成后对音频的测量体检；导入旧版本或文件丢失时为空。
+	Check *AudioCheck `json:"check,omitempty"`
+}
+
+// AudioCheck 是不用模型的音频体检：整体响度、真峰值与发现的问题。
+type AudioCheck struct {
+	Loudness float64      `json:"loudness"` // LUFS，静音为 -70
+	Peak     float64      `json:"peak"`     // 真峰值 dBTP
+	Issues   []AudioIssue `json:"issues,omitempty"`
+}
+
+// AudioIssue 是体检发现的一处问题，At/End 为秒。Code：
+// clipping 削波（爆音），clicks 咔哒声，cutoff 结尾被截断，silence 长时间静音，silent 整段几乎无声，quiet 音量过小，dc 直流偏移。
+type AudioIssue struct {
+	Code  string  `json:"code"`
+	At    float64 `json:"at"`
+	End   float64 `json:"end,omitempty"`
+	Count int     `json:"count,omitempty"`
 }
 
 // LyricWord 是对齐到音频上的一个字（拉丁文为一个词），时间以秒计。

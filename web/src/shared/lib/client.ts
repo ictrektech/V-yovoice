@@ -74,11 +74,12 @@ async function logged(format: string, save: () => Promise<boolean>): Promise<boo
 
 // 界面合成的音频（时间线导出）：桌面端先直接上传给本地服务落成临时文件，宿主再弹保存框复制，
 // 不经宿主消息通道传音频字节，长音频不受消息大小限制；浏览器预览直接下载。
-export async function saveAudio(blob: Blob, name: string): Promise<boolean> {
+// loudness 为目标响度（LUFS）时由本地服务整体调整音量后再保存；浏览器预览没有本地服务，原样下载。
+export async function saveAudio(blob: Blob, name: string, loudness?: number): Promise<boolean> {
   const fileName = `${exportName(name)}.wav`;
   return logged('wav', async () => {
     if (!isDesktop) { download(blob, fileName); return true; }
-    const response = await fetch('/api/export-audio', { method: 'POST', body: blob });
+    const response = await fetch(loudness ? `/api/export-audio?loudness=${loudness}` : '/api/export-audio', { method: 'POST', body: blob });
     const reply = await response.json().catch(() => ({})) as { id?: string; error?: unknown };
     if (!response.ok || !reply.id) throw reply.error ? parseCallError(reply.error) : new CallError('@yovoice.error.unknown', { detail: `export upload ${response.status}` });
     return call<boolean>('audio.export', { id: reply.id, name: fileName });

@@ -84,7 +84,7 @@ curl --fail-with-body -H "Authorization: Bearer $YOVOICE_API_TOKEN" "$YOVOICE_UR
 curl --fail-with-body -H "Authorization: Bearer $YOVOICE_API_TOKEN" -H 'Content-Type: application/octet-stream' --data-binary @reference.wav "$YOVOICE_URL/v1/voices?name=narrator"
 ```
 
-参考音频需为 1–60 秒、不超过 20 MB，常见格式会自动转换。保存返回的音色 `id`，然后创建 `request.json`：
+参考音频需为 1 秒到 10 分钟、不超过 20 MB（超过 60 秒时自动截取最清楚的 5–15 秒），常见格式会自动转换。保存返回的音色 `id`，然后创建 `request.json`：
 
 ```json
 {"text":"你好，欢迎收听。","modelId":"index-2.5-q8","voiceId":"你的音色ID"}

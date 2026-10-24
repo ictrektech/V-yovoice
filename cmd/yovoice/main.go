@@ -149,7 +149,7 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 		fs.StringVar(&d.Speaker, "speaker", "", "Qwen3 CustomVoice 或 Kokoro 内置音色 ID")
 		fs.StringVar(&d.Text, "text", "", "正文")
 		fs.StringVar(&textFile, "text-file", "", "UTF-8 文本文件")
-		fs.StringVar(&reference, "reference", "", "1–60 秒参考音频，常见格式自动转换")
+		fs.StringVar(&reference, "reference", "", "参考音频（1 秒到 10 分钟，超过 60 秒自动截取最清楚的一段），常见格式自动转换")
 		fs.StringVar(&voice, "voice", "", "已有音色 ID")
 		fs.StringVar(&output, "output", "", "输出 WAV 路径，不覆盖已有文件")
 		fs.StringVar(&d.ModelID, "model", d.ModelID, "模型 ID")

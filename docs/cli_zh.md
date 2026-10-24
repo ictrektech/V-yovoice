@@ -51,7 +51,7 @@ yovoice generate --model index-2.5-q8 --text-file narration.txt --reference voic
 
 - 正文使用 `--text TEXT` 或 `--text-file FILE`，二选一。
 - 克隆音色时，使用 `--reference FILE`，或从 `yovoice voices list` 获取 ID 后使用 `--voice ID`。
-- 参考音频需为 1–60 秒、不超过 20 MB。支持 WAV、MP3、M4A/AAC、FLAC、OGG/Opus、AIFF、WMA、WebM，格式自动转换。
+- 参考音频需为 1 秒到 10 分钟、不超过 20 MB；超过 60 秒时自动截取最清楚的 5–15 秒。支持 WAV、MP3、M4A/AAC、FLAC、OGG/Opus、AIFF、WMA、WebM，格式自动转换。
 - 输出路径需以 `.wav` 结尾，不覆盖已有文件。
 - 命令等待生成完成，Ctrl-C 可取消。重复运行 `generate` 会重新加载模型；需要常驻引擎时使用[远程服务](api_zh.md)。
 

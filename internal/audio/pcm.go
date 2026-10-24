@@ -4,72 +4,15 @@ import (
 	"encoding/binary"
 	"math"
 	"os"
-	"yovoice/internal/msg"
 )
 
 // ReadMono 读取 PCM（16/24/32 位整数或 32 位浮点）WAV，多声道取平均，返回 -1~1 的采样与采样率。
 func ReadMono(path string) ([]float32, int, error) {
-	b, e := os.ReadFile(path)
+	channels, rate, e := Read(path)
 	if e != nil {
 		return nil, 0, e
 	}
-	bad := msg.Err(msg.ErrAudioFormat, nil)
-	if len(b) < 12 || string(b[:4]) != "RIFF" || string(b[8:12]) != "WAVE" {
-		return nil, 0, bad
-	}
-	var format, channels, bits uint16
-	var rate uint32
-	var data []byte
-	for pos := 12; pos+8 <= len(b); {
-		size := int(binary.LittleEndian.Uint32(b[pos+4:]))
-		body := pos + 8
-		if size < 0 || body+size > len(b) {
-			// 流式写出的 WAV 可能把 data 长度写成 0 或超出文件，按到文件末尾处理。
-			if string(b[pos:pos+4]) != "data" {
-				return nil, 0, bad
-			}
-			size = len(b) - body
-		}
-		switch string(b[pos : pos+4]) {
-		case "fmt ":
-			if size < 16 {
-				return nil, 0, bad
-			}
-			format, channels = binary.LittleEndian.Uint16(b[body:]), binary.LittleEndian.Uint16(b[body+2:])
-			rate, bits = binary.LittleEndian.Uint32(b[body+4:]), binary.LittleEndian.Uint16(b[body+14:])
-			// WAVE_FORMAT_EXTENSIBLE 的真实格式在子格式 GUID 的前两个字节。
-			if format == 0xFFFE && size >= 26 {
-				format = binary.LittleEndian.Uint16(b[body+24:])
-			}
-		case "data":
-			data = b[body : body+size]
-		}
-		pos = body + size + size%2
-	}
-	width := int(bits / 8)
-	if channels == 0 || rate == 0 || data == nil || width == 0 || !(format == 1 && (bits == 16 || bits == 24 || bits == 32) || format == 3 && bits == 32) {
-		return nil, 0, bad
-	}
-	frame := width * int(channels)
-	samples := make([]float32, len(data)/frame)
-	for i := range samples {
-		var sum float64
-		for c := 0; c < int(channels); c++ {
-			at := data[i*frame+c*width:]
-			switch {
-			case format == 3:
-				sum += float64(math.Float32frombits(binary.LittleEndian.Uint32(at)))
-			case bits == 16:
-				sum += float64(int16(binary.LittleEndian.Uint16(at))) / 32768
-			case bits == 24:
-				sum += float64(int32(uint32(at[0])<<8|uint32(at[1])<<16|uint32(at[2])<<24)>>8) / 8388608
-			default:
-				sum += float64(int32(binary.LittleEndian.Uint32(at))) / 2147483648
-			}
-		}
-		samples[i] = float32(sum / float64(channels))
-	}
-	return samples, int(rate), nil
+	return mix(channels), rate, nil
 }
 
 // Resample 线性插值改变采样率；降采样时先按比例做滑动平均，压住混叠。只用于分析（分离人声、对齐歌词），不用于输出。

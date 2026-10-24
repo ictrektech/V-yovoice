@@ -51,7 +51,7 @@ yovoice generate --model index-2.5-q8 --text-file narration.txt --reference voic
 
 - Use either `--text TEXT` or `--text-file FILE`.
 - For voice cloning, use either `--reference FILE` or `--voice ID` from `yovoice voices list`.
-- Reference audio must be 1–60 seconds and no larger than 20 MB. Supported formats include WAV, MP3, M4A/AAC, FLAC, OGG/Opus, AIFF, WMA, and WebM. Conversion is automatic.
+- Reference audio must be 1 second to 10 minutes and no larger than 20 MB; recordings over 60 seconds are trimmed automatically to their clearest 5–15 seconds. Supported formats include WAV, MP3, M4A/AAC, FLAC, OGG/Opus, AIFF, WMA, and WebM. Conversion is automatic.
 - Output must use a `.wav` extension. Existing files are not overwritten.
 - Commands wait for completion. Ctrl-C cancels generation. Repeated `generate` commands reload the model; use the [remote service](api.md) for a persistent engine.
 

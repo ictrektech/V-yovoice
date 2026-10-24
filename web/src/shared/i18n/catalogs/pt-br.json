@@ -390,7 +390,7 @@
     "defaultMessage": "Não foi possível decodificar o áudio. Verifique se o arquivo está danificado, criptografado ou sem faixa de áudio."
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "Escolha um áudio de referência entre 1 e 60 segundos."
+    "defaultMessage": "Escolha um áudio entre 1 segundo e 10 minutos. Gravações com mais de 60 segundos são cortadas automaticamente no trecho mais claro."
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "Escolha um arquivo WAV PCM / Float válido, mono ou estéreo."
@@ -3958,5 +3958,59 @@
   },
   "@yovoice.settings.featureAssistantHint": {
     "defaultMessage": "O assistente flutuante, seu atalho na barra de título e as sugestões. Com a geração de música também desativada, as configurações do serviço de IA e a distribuição de papéis por IA em livros também ficam ocultas."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "Este áudio pode ter problemas: {issues}. Ouça e gere novamente se precisar."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "saturação em {count} pontos, a primeira em {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "{count} cliques, o primeiro em {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "o final está cortado"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "silêncio longo de {at} a {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "quase sem som"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "volume baixo ({loudness} LUFS); escolha uma loudness alvo ao exportar"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "deslocamento DC"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Loudness"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Sem ajuste"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Audiolivro (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Podcast (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Plataformas de vídeo (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Ajusta só o volume geral, sem comprimir a dinâmica; os picos ficam abaixo de −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Escolher automaticamente"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Seleciona os 5–15 s de voz mais claros, sem saturação nem pausas longas"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "A gravação tem {total}, então o trecho mais claro ({start}–{end}) foi usado como referência. Use Cortar para ajustar."
   }
 }

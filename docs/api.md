@@ -84,7 +84,7 @@ curl --fail-with-body -H "Authorization: Bearer $YOVOICE_API_TOKEN" "$YOVOICE_UR
 curl --fail-with-body -H "Authorization: Bearer $YOVOICE_API_TOKEN" -H 'Content-Type: application/octet-stream' --data-binary @reference.wav "$YOVOICE_URL/v1/voices?name=narrator"
 ```
 
-Reference audio must be 1–60 seconds and no larger than 20 MB. Common formats are converted automatically. Save the returned voice `id`, then create `request.json`:
+Reference audio must be 1 second to 10 minutes and no larger than 20 MB; recordings over 60 seconds are trimmed automatically to their clearest 5–15 seconds. Common formats are converted automatically. Save the returned voice `id`, then create `request.json`:
 
 ```json
 {"text":"Hello, welcome.","modelId":"index-2.5-q8","voiceId":"YOUR_VOICE_ID"}

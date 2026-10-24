@@ -4,6 +4,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
+	"yovoice/internal/audio"
+	"yovoice/internal/diag"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
 )
@@ -16,8 +19,32 @@ func (w *Workbench) exportFile(id string) string {
 	return filepath.Join(w.Store.Root, "downloads", exportPrefix+id+".wav")
 }
 
+// LoudnessTargets 是导出时可选的目标响度（LUFS）：有声书 -18、播客 -16、视频平台 -14。
+var LoudnessTargets = []float64{-18, -16, -14}
+
+// exportCeiling 是归一化后允许的最高真峰值（dBTP），给后续转码留余量。
+const exportCeiling = -1.0
+
 // SaveExport 校验 WAV 文件头后写入临时文件，返回宿主取文件用的 ID。
-func (w *Workbench) SaveExport(r io.Reader) (string, error) {
+// loudness 为 0 时原样保存；否则就地调整到目标响度，峰值受 exportCeiling 限制，结果随 ID 一起返回。
+func (w *Workbench) SaveExport(r io.Reader, loudness float64) (string, *audio.Normalized, error) {
+	if loudness != 0 && !slices.Contains(LoudnessTargets, loudness) {
+		return "", nil, msg.Err(msg.ErrRequestInvalid, nil)
+	}
+	id, e := w.saveExport(r)
+	if e != nil || loudness == 0 {
+		return id, nil, e
+	}
+	result, e := audio.Normalize(w.exportFile(id), loudness, exportCeiling)
+	if e != nil {
+		_ = os.Remove(w.exportFile(id))
+		return "", nil, e
+	}
+	diag.Log(w.Store.Root, "export.normalized", "target", loudness, "before", result.Before, "after", result.After, "peak", result.Peak, "limited", result.Limited)
+	return id, &result, nil
+}
+
+func (w *Workbench) saveExport(r io.Reader) (string, error) {
 	head := make([]byte, 12)
 	if _, e := io.ReadFull(r, head); e != nil || string(head[:4]) != "RIFF" || string(head[8:]) != "WAVE" {
 		return "", msg.Err(msg.ErrAudioFormat, nil)
