@@ -3716,6 +3716,18 @@
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "Исходный проект удалён"
   },
+  "@yovoice.assets.more": {
+    "defaultMessage": "Другие действия: {name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "Открыть проект «{name}»"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "Показать в папке"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "Удалить"
+  },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
   },

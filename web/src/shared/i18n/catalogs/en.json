@@ -3716,6 +3716,18 @@
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "Source project deleted"
   },
+  "@yovoice.assets.more": {
+    "defaultMessage": "More actions for {name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "Open project “{name}”"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "Show in folder"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "Delete"
+  },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
   },

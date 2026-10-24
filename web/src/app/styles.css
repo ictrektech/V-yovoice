@@ -371,7 +371,7 @@
   /* 资源页：整页滚动，试听播放器贴在底部；名称过长时截断，状态与辅助文字用次要色。 */
   /* 资源页在设置里占满剩余高度：工具栏固定，只有表格区域滚动，表头吸顶。 */
   .settings-page > .assets-page, .settings-page > .log-panel { overflow: hidden; scrollbar-gutter: auto; padding-block-end: var(--spacing-5); }
-  .asset-table { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .asset-table { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
   .asset-table thead th { position: sticky; top: 0; z-index: 1; background: var(--color-background-surface, var(--app-surface)); }
   .asset-muted { color: var(--app-muted); }
   .log-event { font-family: var(--font-family-code); }
