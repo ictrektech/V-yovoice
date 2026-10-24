@@ -390,7 +390,7 @@
     "defaultMessage": "Audio konnte nicht dekodiert werden. Prüfen Sie, ob die Datei beschädigt, verschlüsselt oder ohne Tonspur ist."
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "Wählen Sie Referenzaudio mit 1 bis 60 Sekunden Länge."
+    "defaultMessage": "Wählen Sie Audio zwischen 1 Sekunde und 10 Minuten. Aufnahmen über 60 Sekunden werden automatisch auf den klarsten Abschnitt gekürzt."
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "Wählen Sie eine gültige Mono- oder Stereo-WAV-Datei (PCM / Float)."
@@ -3958,5 +3958,59 @@
   },
   "@yovoice.settings.featureAssistantHint": {
     "defaultMessage": "Der schwebende Assistent, sein Eintrag in der Titelleiste und seine Vorschläge. Ist auch die Musikgenerierung aus, werden die KI-Dienst-Einstellungen und die KI-Rollenvergabe für Bücher ebenfalls ausgeblendet."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "Dieses Audio hat möglicherweise Probleme: {issues}. Anhören und bei Bedarf neu generieren."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "Übersteuerung an {count} Stellen, zuerst bei {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "{count} Klicks, zuerst bei {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "das Ende ist abgeschnitten"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "lange Stille von {at} bis {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "fast kein Ton"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "leise ({loudness} LUFS); beim Export eine Ziellautheit wählen"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "Gleichspannungsversatz"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Lautheit"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Unverändert"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Hörbuch (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Podcast (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Videoplattformen (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Passt nur die Gesamtlautstärke an, ohne die Dynamik zu komprimieren; Spitzen bleiben unter −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Automatisch wählen"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Wählt die klarsten 5–15 s Sprache ohne Übersteuerung und lange Pausen"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "Die Aufnahme ist {total} lang, daher wurde der klarste Teil ({start}–{end}) als Referenz verwendet. Mit Zuschneiden anpassen."
   }
 }

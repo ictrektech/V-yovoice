@@ -56,7 +56,7 @@ yovoice generate --model breeze-tts-2-q8 --text-file narration.txt --reference v
 
 For VoxCPM2, omit `--reference-text` for ordinary cloning. For Qwen3-TTS Base, adding an accurate transcript enables transcript-guided cloning. OmniVoice and Breeze TTS 2 cloning always require a matching transcript. For Breeze, `--voice-description` acts as voice direction when cloning: it keeps the voice and steers pace, emotion and tone.
 
-Use a clear recording with one speaker and little background noise. Reference audio must be 1–60 seconds and no larger than 20 MB.
+Use a clear recording with one speaker and little background noise. Reference audio must be 1 second to 10 minutes and no larger than 20 MB; recordings over 60 seconds are trimmed automatically to their clearest 5–15 seconds.
 
 ## Voice design and built-in voices
 

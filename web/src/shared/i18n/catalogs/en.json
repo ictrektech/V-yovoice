@@ -390,7 +390,7 @@
     "defaultMessage": "Could not decode audio. Check whether the file is damaged, encrypted, or missing a track."
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "Choose reference audio between 1 and 60 seconds."
+    "defaultMessage": "Choose audio between 1 second and 10 minutes. Recordings over 60 seconds are trimmed to their clearest part automatically."
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "Choose a valid mono or stereo PCM / Float WAV file."
@@ -3958,5 +3958,59 @@
   },
   "@yovoice.settings.featureAssistantHint": {
     "defaultMessage": "The floating assistant, its title bar entry and suggestions. With music generation also off, AI service settings and AI casting for books are hidden too."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "This audio may have problems: {issues}. Listen to check and regenerate if needed."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "clipping at {count} points, first at {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "{count} clicks, first at {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "the ending is cut off"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "long silence from {at} to {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "almost no sound"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "quiet ({loudness} LUFS); pick a target loudness when exporting"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "DC offset"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Loudness"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Unchanged"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Audiobook (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Podcast (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Video platforms (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Adjusts the overall volume without compressing dynamics; peaks stay below −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Auto pick"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Select the clearest 5–15 s of speech without clipping or long pauses"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "The recording is {total} long, so its clearest part ({start}–{end}) was used as the reference. Use Crop to adjust."
   }
 }

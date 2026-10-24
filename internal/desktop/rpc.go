@@ -139,6 +139,10 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			return w.ImportTimelineFrom(ctx, bytes.NewReader(b), p.Name)
 		}
 		return w.ImportVoiceFrom(ctx, bytes.NewReader(b), p.Name)
+	case "voice.suggest":
+		return w.SuggestVoiceRange(p.ID)
+	case "generation.check":
+		return w.CheckGeneration(p.ID)
 	case "media.path":
 		return w.MediaFile(p.Kind, p.ID)
 	case "export.path":

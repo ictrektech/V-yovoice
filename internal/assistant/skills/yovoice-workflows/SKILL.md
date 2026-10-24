@@ -27,6 +27,7 @@ Everything in the right-hand inspector is editable with `update_work` {"id","set
 2. `list_voices` for uploaded reference voices. Assign one voice per character when the user wants specific voices.
 3. `update_work` {"id","subtitles":{"speakers":[{"name":..., "voiceId":...}],"cues":[{"speaker":...,"text":...}]}} — speaker matches by name or 1-based index; every cue needs a speaker.
 4. `generate_work` when every speaker's model is installed. Generation runs cue by cue; `get_generation_status` reports progress.
+5. When it finishes, `inspect_audio` {"id"} lists only the lines with problems (cut-off endings, clipping, clicks, long silences). Regenerate just those with `generate_work` {"id","cueId"} — once each — then tell the user what was fixed and what still sounds off.
 
 ## Write a song and generate it (写一首歌并生成)
 
@@ -46,5 +47,6 @@ Everything in the right-hand inspector is editable with `update_work` {"id","set
 
 - One intent per turn; after finishing, answer in one or two sentences in the user's language.
 - `generate_work` returns immediately. Never claim audio exists until `get_generation_status` shows a completed `latest`.
+- You cannot hear audio; `inspect_audio` (and `latest.check` in `get_generation_status`) are your ears. Check before saying a take is good, and mention measured problems instead of guessing.
 - Modifying a work the user has open? Just update it — the editor refreshes by itself (`open_work` is only for switching to another work).
 - Unknown id or voice: `list_works` / `list_voices` first instead of guessing.

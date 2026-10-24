@@ -390,7 +390,7 @@
     "defaultMessage": "音声をデコードできません。ファイルが破損・暗号化されていないか、トラックがあるか確認してください。"
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "1〜60 秒の参照音声を選択してください。"
+    "defaultMessage": "1 秒〜10 分の音声を選択してください。60 秒を超える録音は最も明瞭な部分が自動で切り出されます。"
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "有効なモノラルまたはステレオの PCM / Float WAV ファイルを選択してください。"
@@ -3958,5 +3958,59 @@
   },
   "@yovoice.settings.featureAssistantHint": {
     "defaultMessage": "フローティングアシスタント、タイトルバーの入口、提案。音楽生成もオフにすると、AI サービスの設定と書籍の AI 配役も隠れます。"
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "音声に問題がある可能性があります：{issues}。試聴して、必要なら再生成してください。"
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "、"
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "クリッピング {count} か所（最初は {at}）"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "クリック音 {count} か所（最初は {at}）"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "語尾が途切れています"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "{at}–{end} に長い無音"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "ほとんど音がありません"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "音量が小さい（{loudness} LUFS）。書き出し時に目標ラウドネスを選べます"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "DC オフセット"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "ラウドネス"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "調整しない"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "オーディオブック（-18 LUFS）"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "ポッドキャスト（-16 LUFS）"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "動画プラットフォーム（-14 LUFS）"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "ダイナミクスを圧縮せず全体の音量だけを調整し、ピークは -1 dBTP 以下に抑えます。"
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "自動選択"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "クリッピングや長い間のない、最も明瞭な 5〜15 秒を選びます"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "録音が {total} あるため、最も明瞭な {start}–{end} を参照音声にしました。「トリミング」で調整できます。"
   }
 }

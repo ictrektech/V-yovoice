@@ -139,3 +139,27 @@ test('磁吸移动把后续片段视为整体，前后移动不传递间隙', ()
   expect(Timeline.moveGroup(value, ['b'], 1).tracks[0].clips.map(c => c.start)).toEqual([0, 4, 6]);
   expect(Timeline.following(value, ['b'])).toEqual(['b', 'c']);
 });
+
+test('背景压低在说话前让位、句间短停顿保持压低、说完后平滑回来', () => {
+  const voice = (id: string, start: number, duration: number) => ({ id, generationId: id, start, offset: 0, duration });
+  const tracks = [
+    { id: 'v', name: '旁白', muted: false, clips: [voice('a', 2, 2), voice('b', 4.8, 2), voice('c', 10, 1)] },
+    { id: 'm', name: '配乐', muted: false, duckDb: 12, clips: [{ id: 'bgm', assetId: 'bgm', start: 0, offset: 0, duration: 12 }] },
+  ];
+  const duck = Timeline.ducking(tracks);
+  expect(duck(1)).toBe(0);
+  expect(duck(1.8)).toBeGreaterThan(0);
+  expect(duck(1.8)).toBeLessThan(1);
+  expect(duck(2)).toBe(1);
+  // 两句之间 0.8 秒的停顿不让音乐回升。
+  expect(duck(4.4)).toBe(1);
+  // 说完后 0.6 秒内平滑回到原音量。
+  expect(duck(7.1)).toBeGreaterThan(0);
+  expect(duck(7.1)).toBeLessThan(1);
+  expect(duck(7.5)).toBe(0);
+  // 相隔较远的下一句重新压低。
+  expect(duck(9)).toBe(0);
+  expect(duck(10.5)).toBe(1);
+  // 压低轨自己的片段不算说话。
+  expect(Timeline.ducking([tracks[1]])(5)).toBe(0);
+});

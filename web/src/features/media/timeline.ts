@@ -171,17 +171,7 @@ export class Timeline {
       const buffer = buffers.get(Timeline.sourceKey(clip));
       if (!buffer || clip.offset + clip.duration > buffer.duration + 0.02) throw new Error('@yovoice.timeline.invalid');
     }
-    const speech: { start: number; end: number }[] = [];
-    for (const c of tracks.filter(t => !t.duckDb).flatMap(t => t.clips.filter(c => !!c.generationId)).sort((a, b) => a.start - b.start)) {
-      const previous = speech.at(-1);
-      if (previous && c.start <= previous.end) previous.end = Math.max(previous.end, c.start + c.duration);
-      else speech.push({ start: c.start, end: c.start + c.duration });
-    }
-    const duckAt = (time: number) => {
-      let lo = 0, hi = speech.length;
-      while (lo < hi) { const mid = (lo + hi) >>> 1; if (speech[mid].start <= time) lo = mid + 1; else hi = mid; }
-      return Math.max(0, ...speech.slice(Math.max(0, lo - 1), lo + 1).map(c => Math.min(1, (time - c.start + 0.08) / 0.08, (c.end + 0.2 - time) / 0.2)));
-    };
+    const duckAt = Timeline.ducking(tracks);
     const nodes: AudioBufferSourceNode[] = [];
     for (const track of tracks) for (const clip of track.clips) {
       const begin = Math.max(from, clip.start), end = Math.min(to, clip.start + clip.duration);
@@ -201,6 +191,27 @@ export class Timeline {
       source.start(when + begin - from, clip.offset + begin - clip.start, end - begin); nodes.push(source);
     }
     return nodes;
+  }
+
+  /**
+   * 背景压低的曲线：返回某一时刻的压低程度（0 不压、1 压满）。参照专业混音的做法：
+   * 音乐在说话前 0.25 秒开始让位、说完后 0.6 秒内回来；两句之间不到 1.2 秒的停顿保持压低，
+   * 避免音乐随每一句忽高忽低（“抽吸”）。过渡用余弦曲线，比直线更不易察觉。
+   */
+  static ducking(tracks: AudioLane[]): (time: number) => number {
+    const lead = 0.25, release = 0.6, bridge = 1.2;
+    const speech: { start: number; end: number }[] = [];
+    for (const c of tracks.filter(t => !t.duckDb).flatMap(t => t.clips.filter(c => !!c.generationId)).sort((a, b) => a.start - b.start)) {
+      const previous = speech.at(-1);
+      if (previous && c.start <= previous.end + bridge) previous.end = Math.max(previous.end, c.start + c.duration);
+      else speech.push({ start: c.start, end: c.start + c.duration });
+    }
+    const ease = (x: number) => x <= 0 ? 0 : x >= 1 ? 1 : (1 - Math.cos(Math.PI * x)) / 2;
+    return (time: number) => {
+      let lo = 0, hi = speech.length;
+      while (lo < hi) { const mid = (lo + hi) >>> 1; if (speech[mid].start - lead <= time) lo = mid + 1; else hi = mid; }
+      return Math.max(0, ...speech.slice(Math.max(0, lo - 1), lo + 1).map(c => ease(Math.min((time - c.start + lead) / lead, (c.end + release - time) / release))));
+    };
   }
 
   static async render(value: AudioTimeline, load: (id: string) => Promise<AudioBuffer>, range?: { start: number; end: number }): Promise<AudioBuffer> {

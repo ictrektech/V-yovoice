@@ -390,7 +390,7 @@
     "defaultMessage": "Не удалось декодировать аудио. Проверьте, не повреждён ли файл, не зашифрован ли он и есть ли в нём дорожка."
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "Выберите референсное аудио длительностью от 1 до 60 секунд."
+    "defaultMessage": "Выберите аудио длительностью от 1 секунды до 10 минут. Из записей длиннее 60 секунд автоматически вырезается самый чистый фрагмент."
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "Выберите корректный WAV-файл (PCM / Float, моно или стерео)."
@@ -3958,5 +3958,59 @@
   },
   "@yovoice.settings.featureAssistantHint": {
     "defaultMessage": "Плавающий помощник, его кнопка в заголовке окна и подсказки. Если отключена и генерация музыки, скрываются также настройки ИИ-сервиса и распределение ролей ИИ для книг."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "Возможно, с аудио есть проблемы: {issues}. Прослушайте и при необходимости сгенерируйте заново."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "клиппинг в {count} местах, впервые в {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "щелчки: {count}, первый в {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "конец обрезан"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "долгая тишина с {at} до {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "почти нет звука"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "тихо ({loudness} LUFS); выберите целевую громкость при экспорте"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "смещение постоянной составляющей"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Громкость"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Без изменений"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Аудиокнига (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Подкаст (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Видеоплатформы (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Меняется только общая громкость, без сжатия динамики; пики остаются ниже −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Подобрать"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Выбирает самые чистые 5–15 с речи без клиппинга и длинных пауз"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "Запись длится {total}, поэтому в качестве образца взят самый чистый фрагмент ({start}–{end}). Его можно изменить через «Обрезать»."
   }
 }

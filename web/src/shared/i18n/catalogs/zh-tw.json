@@ -390,7 +390,7 @@
     "defaultMessage": "無法解碼音訊，請檢查檔案是否損毀、加密或缺少音軌。"
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "請選擇 1–60 秒的參考音訊。"
+    "defaultMessage": "請選擇 1 秒到 10 分鐘的音訊；超過 60 秒的錄音會自動擷取最清楚的一段。"
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "請選擇有效的單聲道或立體聲 PCM / Float WAV 音訊。"
@@ -3958,5 +3958,59 @@
   },
   "@yovoice.settings.featureAssistantHint": {
     "defaultMessage": "浮窗助手、標題列入口和主動提示。與音樂生成都關閉時，AI 服務設定和有聲書的 AI 分配角色也一併隱藏。"
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "音訊可能有問題：{issues}。請試聽確認，需要時重新生成。"
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "；"
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "爆音（削波）{count} 處，首次在 {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "喀噠聲 {count} 處，首次在 {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "結尾被截斷"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "{at}–{end} 有長時間靜音"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "幾乎沒有聲音"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "音量偏小（{loudness} LUFS），匯出時可選目標響度"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "波形偏離中線"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "響度"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "不調整"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "有聲書（-18 LUFS）"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Podcast（-16 LUFS）"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "影音平台（-14 LUFS）"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "整體調整音量，不壓縮動態，峰值不超過 -1 dBTP。"
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "自動挑選"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "挑出人聲最清楚、沒有爆音和長停頓的 5–15 秒"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "錄音長 {total}，已自動擷取最清楚的 {start}–{end} 作為參考，可用「裁剪」調整。"
   }
 }

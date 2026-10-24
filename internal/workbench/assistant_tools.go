@@ -18,7 +18,7 @@ import (
 // 作品工具（list/get/create/update/generate/open）立即反映在界面上；删除、下载模型、改设置
 // 只能经 propose_action 提议，由用户在确认卡片上执行；不提供导入导出。
 var assistantTools = []string{
-	"list_works", "get_work", "create_work", "update_work", "generate_work", "get_generation_status",
+	"list_works", "get_work", "create_work", "update_work", "generate_work", "get_generation_status", "inspect_audio",
 	"plan_melody", "cover_melody", "transform_melody",
 	"open_work", "open_page", "list_models", "list_voices", "list_characters", "save_character", "status",
 	"get_app_status", "get_recent_errors", "remember_preference", "forget_preference", "propose_action",
@@ -42,6 +42,7 @@ func (w *Workbench) newAssistantServer() *mcp.Server {
 	mcp.AddTool(server, &mcp.Tool{Name: "open_work", Description: "让界面打开某个作品。"}, w.openWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "open_page", Description: "让界面切换页面：text（语音生成）、story（故事配音）、music（音乐生成）、score（编曲）、characters（声音库）、settings（设置）。"}, w.openPageTool)
 	w.registerMusicTools(server)
+	w.registerAudioTools(server)
 	w.registerAgentTools(server)
 	return server
 }
@@ -553,6 +554,7 @@ func applySpeakerVoices(d *schema.Draft, assignments []workSpeakerVoice) error {
 type generateWorkInput struct {
 	ID           string `json:"id" jsonschema:"作品 ID"`
 	WithoutScore bool   `json:"withoutScore,omitempty" jsonschema:"仅当用户明确说不看谱、直接生成时为 true：YuE2 生成时自己写谱，生成后填入作品"`
+	CueID        string `json:"cueId,omitempty" jsonschema:"故事配音只重新生成这一句（inspect_audio 给出的 cueId），新版本在时间轴上原地替换旧版本"`
 }
 
 // needsScoreReview 判断 YuE2 作品是否选了按旋律谱生成（或纯音乐）但还没有谱：这时助手应先出谱让用户确认。
@@ -578,6 +580,16 @@ func (w *Workbench) generateWorkTool(ctx context.Context, req *mcp.CallToolReque
 		action, actionEN = "生成音乐", "generate music"
 	case "score":
 		action, actionEN = "渲染配乐", "render the arrangement"
+	}
+	if in.CueID != "" {
+		if workKindOf(d) != "story" || d.Subtitles == nil || !slices.ContainsFunc(d.Subtitles.Cues, func(c schema.SubtitleCue) bool { return c.ID == in.CueID }) {
+			return nil, nil, fmt.Errorf("cueId 只用于故事配音，且必须是这个作品里的一句；先用 inspect_audio 或 get_work 查看")
+		}
+		w.chatCard("generate_work", fmt.Sprintf("正在重新生成《%s》的一句…", d.Title), fmt.Sprintf("Regenerating one line of %q…", d.Title), "running")
+		if err = w.GenerateCue(d, in.CueID, cueClip(w.Store.Read(), d, in.CueID)); err != nil {
+			return nil, nil, err
+		}
+		return nil, map[string]any{"started": true, "hint": "这一句在后台重新生成，用 get_generation_status 查询，完成后再用 inspect_audio 检查"}, nil
 	}
 	w.chatCard("generate_work", fmt.Sprintf("正在%s《%s》…", action, d.Title), fmt.Sprintf("%s for %q…", actionEN, d.Title), "running")
 	if err = w.Generate(d); err != nil {
@@ -611,7 +623,12 @@ func (w *Workbench) getGenerationStatusTool(ctx context.Context, req *mcp.CallTo
 	}
 	for _, g := range s.History {
 		if g.Settings.ID == d.ID {
-			out["latest"] = map[string]any{"id": g.ID, "title": g.Title, "duration": g.Duration, "createdAt": g.CreatedAt}
+			latest := map[string]any{"id": g.ID, "title": g.Title, "duration": g.Duration, "createdAt": g.CreatedAt}
+			// 带上体检结果，助手不用另外调用就能知道这一版有没有截断、爆音等问题。
+			if g.Check != nil {
+				latest["check"] = checkSummary(*g.Check)
+			}
+			out["latest"] = latest
 			break
 		}
 	}
