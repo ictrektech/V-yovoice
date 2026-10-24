@@ -157,6 +157,9 @@ export interface AITask {
 }
 export const aiTimeoutDefault = 600;
 export interface AIProvider { id: string; preset: string; name: string; format: string; baseURL: string; modelsPath: string; model: string; models?: string[]; keyMask?: string; lastTest?: AITest }
+// ChatGPT 订阅经 Codex CLI 调用，没有接口地址与密钥，Ocho 用不了；助手只认接口类服务。
+export const codexProvider = (p?: AIProvider) => p?.format === 'codex_cli';
+export const assistantUsable = (p?: AIProvider) => !!p?.model && !codexProvider(p);
 
 // 助手会话记录与实时状态，与 Go 的 schema.Assistant* 一致。
 export type AssistantMessageRole = 'user' | 'assistant';
