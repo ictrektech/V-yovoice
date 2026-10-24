@@ -36,7 +36,7 @@ import { dismissSplash } from '../shared/lib/splash';
 import { IntroScreen } from './intro-screen';
 import { GuideTour } from './guide-tour';
 import { formatNotice } from '../shared/i18n/format';
-import { isAligner, isKokoroModel, isYuE, isReferenceModel, isBreezeModel, modelEngineReady, runtimeStatus, runtimeUsable, isVoxModel, requiresVoice, projectKind, createDraft, synthesisSettings, performanceSettings, cueSettings, type Character, type Draft, type EngineInfo, type State, type ModelPackage, type Voice, type Generation, type Track, type AssistantContext, modelTab, preferredModel, featureHidden } from '../shared/workbench';
+import { isAligner, isKokoroModel, isYuE, isReferenceModel, isBreezeModel, modelEngineReady, runtimeStatus, runtimeUsable, isVoxModel, requiresVoice, projectKind, createDraft, synthesisSettings, performanceSettings, cueSettings, type Character, type Draft, type EngineInfo, type State, type ModelPackage, type Voice, type Generation, type Track, type AssistantContext, modelTab, preferredModel, featureHidden, assistantUsable } from '../shared/workbench';
 // 助手（含形象与点阵动画）首屏后再加载，不占主包。
 const AssistantDock = lazy(() => import('../features/assistant/assistant-dock').then(module => ({ default: module.AssistantDock })));
 const AssistantTitleButton = lazy(() => import('../features/assistant/assistant-dock').then(module => ({ default: module.AssistantTitleButton })));
@@ -282,7 +282,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   const assistantContext: AssistantContext = { page: assistantPage, workId: page === 'create' ? draft.id : '', workTitle: page === 'create' ? draft.title : '', workKind: page === 'create' ? projectKind(draft) : '', locale: state.preferences.uiLocale, cue: focusCue };
   useEffect(() => trackAssistantFocus(), []);
   // 主动提示：面板关着、开着主动提示且助手可用时，生成或下载结束会在右下角冒出建议。
-  const assistantReady = !state.assistantMissing && !!state.aiProviders?.find(item => item.id === state.aiProviderID)?.model;
+  const assistantReady = !state.assistantMissing && assistantUsable(state.aiProviders?.find(item => item.id === state.aiProviderID));
   const [nudge, dismissNudge] = useAssistantNudge(state, assistantReady && !assistantHidden && !assistantOpen && !state.preferences.assistantQuiet);
   const actOnNudge = (next: Nudge) => {
     dismissNudge();

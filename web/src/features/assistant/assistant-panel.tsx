@@ -8,7 +8,7 @@ import { Token } from '@astryxdesign/core/Token';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { ChevronDown, ChevronLeft, Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen, SquarePen, TextQuote, Trash2 } from 'lucide-react';
 import { call, mediaUrl, releaseMediaUrl } from '../../shared/lib/client';
-import type { AssistantBlock, AssistantContext, State, Generation } from '../../shared/workbench';
+import { assistantUsable, codexProvider, type AssistantBlock, type AssistantContext, type State, type Generation } from '../../shared/workbench';
 import { messageBlocks, turnCards } from './assistant-model';
 import { AssistantTurn } from './assistant-turn';
 import type { usePanelFrame } from './assistant-frame';
@@ -46,7 +46,9 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
   const current = sessions.find(session => session.id === state.assistantSessions?.currentId);
   const messages = current?.messages ?? [];
   const provider = state.aiProviders?.find(p => p.id === state.aiProviderID);
-  const configured = !!provider?.model;
+  // 当前服务是 ChatGPT 订阅时提前说明，不等发送后才报错。
+  const codex = codexProvider(provider);
+  const configured = assistantUsable(provider);
   const runtimeMissing = !!state.assistantMissing;
   const [draft, setDraft] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -103,6 +105,10 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
   const modelOptions = (state.aiProviders ?? []).filter(p => p.model || p.models?.length)
     .map(p => ({ type: 'section' as const, title: p.name, options: [...new Set([p.model, ...(p.models ?? [])].filter(Boolean))].map(model => ({ value: choice(p.id, model), label: model })) }));
   const pickModel = (value: string) => { const [id, model] = value.split('\n'); void call('ai.provider.use', { id, model }).catch(() => undefined); };
+  // 写作与助手共用当前服务，这里也是切换服务的入口，ChatGPT 订阅照样列出；选中它时面板给出说明并保留选择，方便切回。
+  const modelPicker = provider ? <Selector label={t('@yovoice.ai.model')} isLabelHidden size="sm" variant="ghost" className="assistant-model" data-testid="assistant-model"
+    value={provider.model ? choice(provider.id, provider.model) : undefined} options={modelOptions} onChange={pickModel}
+    hasSearch={modelOptions.reduce((n, section) => n + section.options.length, 0) > 12} searchPlaceholder={t('@yovoice.ai.searchModels')} /> : undefined;
   const empty = messages.length === 0 && !running;
   const title = current?.title || t('@yovoice.assistant.title');
   const banner = emptyArt[context.workKind || context.page || ''] ?? emptyArt.text;
@@ -163,7 +169,10 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
     </VStack>
     {runtimeMissing ? <HStack className="assistant-notice" role="alert" gap={2} vAlign="center">
       <Text type="inherit" color="inherit" className="grow">{t('@yovoice.ai.assistantMissing')}</Text>
-    </HStack> : !configured ? <HStack className="assistant-notice" gap={2} vAlign="center">
+    </HStack> : codex ? <VStack className="assistant-notice" gap={2} data-testid="assistant-codex">
+      <Text type="inherit" color="inherit">{t('@yovoice.error.assistantProvider')}</Text>
+      {modelPicker}
+    </VStack> : !configured ? <HStack className="assistant-notice" gap={2} vAlign="center">
       <Text type="inherit" color="inherit" className="grow">{t('@yovoice.assistant.setup')}</Text>
       <Button size="sm" variant="secondary" label={t('@yovoice.ai.configure')} onClick={actions.openSettings} />
     </HStack> : <VStack className="assistant-dock-bottom" gap={0}>
@@ -174,9 +183,7 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
         // 编辑区里选中的文字会随下一条消息带给 Ocho：以引用标签放在输入框里，点 × 不带。
         headerActions={selection ? <Token data-testid="assistant-selection" className="assistant-selection" size="sm" icon={<TextQuote size={12} />}
           label={selection.replace(/\s+/g, ' ')} description={t('@yovoice.assistant.selectionHint')} onRemove={clearAssistantSelection} /> : undefined}
-        footerActions={provider ? <Selector label={t('@yovoice.ai.model')} isLabelHidden size="sm" variant="ghost" className="assistant-model" data-testid="assistant-model"
-          value={provider.model ? choice(provider.id, provider.model) : undefined} options={modelOptions} onChange={pickModel}
-          hasSearch={modelOptions.reduce((n, section) => n + section.options.length, 0) > 12} searchPlaceholder={t('@yovoice.ai.searchModels')} /> : undefined} />
+        footerActions={modelPicker} />
     </VStack>}
     {/* 历史是从左侧滑出的抽屉，右边留一条遮罩露出当前对话，点遮罩或返回即收起。 */}
     {historyOpen ? <>
