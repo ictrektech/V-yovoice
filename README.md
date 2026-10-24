@@ -6,8 +6,11 @@
 <p align="center">Give your words a voice. Compose your ideas into songs.</p>
 <p align="center">
   <a href="https://yovoice.leemysw.com"><img src="https://img.shields.io/badge/website-yovoice.leemysw.com-10b981?style=flat-square" alt="Website" /></a>
-  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.4.1-blue?style=flat-square" alt="Version 0.4.1" /></a>
+  <a href="https://github.com/leemysw/yovoice/releases/latest"><img src="https://img.shields.io/github/v/release/leemysw/yovoice?style=flat-square&label=release&color=blue" alt="Latest release" /></a>
+  <a href="https://github.com/leemysw/yovoice/releases"><img src="https://img.shields.io/github/downloads/leemysw/yovoice/total?style=flat-square&color=8b5cf6" alt="Downloads" /></a>
+  <a href="https://github.com/leemysw/yovoice/actions/workflows/check.yml"><img src="https://img.shields.io/github/actions/workflow/status/leemysw/yovoice/check.yml?branch=main&style=flat-square" alt="Build status" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-orange?style=flat-square" alt="License: Apache-2.0" /></a>
+  <a href="https://glama.ai/mcp/servers/leemysw/yovoice"><img src="https://glama.ai/mcp/servers/leemysw/yovoice/badges/score.svg" alt="Glama MCP server score" /></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-black?style=flat-square" alt="macOS 14+ (Apple Silicon)" />
   <img src="https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square" alt="Windows 10/11 (x64)" />
   <img src="https://img.shields.io/badge/Linux-x64-FCC624?style=flat-square" alt="Linux (x64)" />
@@ -117,6 +120,8 @@ The agent runs the standalone CLI without opening the desktop app. See the [CLI 
 ---
 
 Run `yovoice serve` to provide an authenticated HTTP API and MCP inference service for other machines. See the [API / MCP deployment guide](docs/api.md) for deployment and client examples.
+
+<a href="https://glama.ai/mcp/servers/leemysw/yovoice"><img width="380" height="200" src="https://glama.ai/mcp/servers/leemysw/yovoice/badges/card.svg" alt="yovoice MCP server on Glama" /></a>
 
 ## Development
 
