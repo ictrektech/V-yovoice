@@ -1,3 +1,5 @@
+[![Glama MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/leemysw/yovoice/badges/card.svg)](https://glama.ai/mcp/servers/leemysw/yovoice)
+
 <p align="center">
   <img src="web/public/icon/voice-workbench-app-icon-v1.png" width="96" alt="yovoice" />
 </p>
