@@ -3716,6 +3716,18 @@
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "来源作品已删除"
   },
+  "@yovoice.assets.more": {
+    "defaultMessage": "更多操作：{name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "打开作品「{name}」"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "打开所在位置"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "删除"
+  },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
   },

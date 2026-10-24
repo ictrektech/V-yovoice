@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@astryxdesign/core/Button';
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
 import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { Pagination } from '@astryxdesign/core/Pagination';
@@ -8,7 +9,7 @@ import { Table, pixel, proportional, useTableSelection, useTableSortable, type T
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Token } from '@astryxdesign/core/Token';
 import { useLocale, useTranslator } from '@astryxdesign/core/i18n';
-import { FolderOpen, Image as ImageIcon, Play, RefreshCw, Trash2 } from 'lucide-react';
+import { FileText, FolderOpen, Image as ImageIcon, MoreHorizontal, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { call, isDesktop } from '../../shared/lib/client';
 import { noticeMessage } from '../../shared/lib/call-error';
 import { formatCallError } from '../../shared/i18n/format';
@@ -109,30 +110,35 @@ export function AssetsPage({ state, active, run, onError, openProject }: {
   const listen = (a: Asset) => setTrack({ id: a.id, name: a.name, fileName: a.fileName, kind: a.media === 'voices' ? 'voices' : 'outputs', subtitle: kindLabel(a.kind), playRequest: performance.now() });
   const preview = (a: Asset) => run(async () => setImage({ name: a.name, src: await call<string>('assets.image', { id: a.id }) }));
   const columns: TableColumn<Row>[] = [
-    { key: 'name', header: t('@yovoice.assets.col.name'), width: proportional(2), sortable: true, renderCell: ({ asset: a }) => <HStack gap={2} vAlign="center">
+    { key: 'name', header: t('@yovoice.assets.col.name'), width: proportional(1), sortable: true, renderCell: ({ asset: a }) => <HStack gap={2} vAlign="center">
       {a.kind === 'image'
         ? <Button size="sm" variant="ghost" isIconOnly icon={<ImageIcon size={15} />} label={t('@yovoice.assets.preview', { name: a.name })} isDisabled={a.bytes < 0} onClick={() => preview(a)} />
         : <Button size="sm" variant="ghost" isIconOnly icon={<Play size={15} />} label={t('@yovoice.assets.play', { name: a.name })} isDisabled={a.bytes < 0} onClick={() => listen(a)} />}
-      <small className="asset-name" title={a.name}>{a.name}</small>
+      <small className="asset-name" title={a.projectTitle ? `${a.name} · ${a.projectTitle}` : a.name}>{a.name}</small>
     </HStack> },
-    { key: 'kind', header: t('@yovoice.assets.col.kind'), width: pixel(104), align: 'center', renderCell: ({ asset: a }) => <Token size="sm" color={a.kind === 'voice' ? 'teal' : a.kind === 'image' ? 'purple' : a.kind === 'material' ? 'orange' : 'default'} label={kindLabel(a.kind)} /> },
-    { key: 'project', header: t('@yovoice.assets.col.project'), width: proportional(1), align: 'center', renderCell: ({ asset: a }) => a.projectId
-      ? a.projectTitle ? <Button size="sm" variant="ghost" label={a.projectTitle} onClick={() => openProject(a.projectId!)} /> : <small className="asset-muted">{t('@yovoice.assets.sourceMissing')}</small>
-      : <small className="asset-muted">—</small> },
-    { key: 'duration', header: t('@yovoice.assets.col.duration'), width: pixel(76), align: 'center', sortable: true, renderCell: ({ asset: a }) => <small>{a.duration ? formatTime(a.duration) : '—'}</small> },
-    { key: 'bytes', header: t('@yovoice.assets.col.size'), width: pixel(92), align: 'center', sortable: true, renderCell: ({ asset: a }) => <small>{a.bytes < 0 ? '—' : formatBytes(a.bytes)}</small> },
-    { key: 'createdAt', header: t('@yovoice.assets.col.created'), width: pixel(136), align: 'center', sortable: true, renderCell: ({ asset: a }) => <small>{time(a.createdAt)}</small> },
-    { key: 'status', header: t('@yovoice.assets.col.status'), width: proportional(1), align: 'center', renderCell: ({ asset: a }) => a.bytes < 0
-      ? <HStack gap={2} vAlign="center" hAlign="center"><StatusDot variant="error" label={t('@yovoice.assets.status.missing')} /><small>{t('@yovoice.assets.status.missing')}</small></HStack>
-      : isUsed(a)
-        ? <HStack gap={2} vAlign="center" hAlign="center"><StatusDot variant="warning" label={t('@yovoice.assets.status.used')} /><small className="asset-name" title={t('@yovoice.assets.status.usedBy', { names: a.users!.join('、') })}>{t('@yovoice.assets.status.usedBy', { names: a.users!.join('、') })}</small></HStack>
-        : <HStack gap={2} vAlign="center" hAlign="center"><StatusDot variant="neutral" label={t('@yovoice.assets.status.unused')} /><small>{t('@yovoice.assets.status.unused')}</small></HStack> },
-    { key: 'actions', header: '', width: pixel(76), renderCell: ({ asset: a }) => <HStack gap={1}>
-      {isDesktop && a.media !== 'images' && a.bytes >= 0 ? <Button size="sm" variant="ghost" isIconOnly icon={<FolderOpen size={15} />} label={t('@yovoice.media.reveal', { name: a.name })}
-        onClick={() => { void call('media.reveal', { kind: a.media, id: a.id }).catch(e => onError(noticeMessage(e))); }} /> : null}
-      {canDelete(a) ? <Button size="sm" variant="ghost" isIconOnly icon={<Trash2 size={15} />} label={t('@yovoice.assets.deleteOne', { name: a.name })}
-        onClick={() => { setSelected(new Set([rowKey(a)])); setConfirming(true); }} /> : null}
-    </HStack> },
+    { key: 'kind', header: t('@yovoice.assets.col.kind'), width: pixel(96), align: 'center', renderCell: ({ asset: a }) => <Token size="sm" color={a.kind === 'voice' ? 'teal' : a.kind === 'image' ? 'purple' : a.kind === 'material' ? 'orange' : 'default'} label={kindLabel(a.kind)} /> },
+    { key: 'duration', header: t('@yovoice.assets.col.duration'), width: pixel(64), align: 'center', sortable: true, renderCell: ({ asset: a }) => <small>{a.duration ? formatTime(a.duration) : '—'}</small> },
+    { key: 'bytes', header: t('@yovoice.assets.col.size'), width: pixel(84), align: 'center', sortable: true, renderCell: ({ asset: a }) => <small>{a.bytes < 0 ? '—' : formatBytes(a.bytes)}</small> },
+    { key: 'createdAt', header: t('@yovoice.assets.col.created'), width: pixel(128), align: 'center', sortable: true, renderCell: ({ asset: a }) => <small>{time(a.createdAt)}</small> },
+    // 状态只写短词，引用它的角色或作品放进悬停提示，避免撑宽表格。
+    { key: 'status', header: t('@yovoice.assets.col.status'), width: pixel(92), align: 'center', renderCell: ({ asset: a }) => {
+      const [variant, label, tooltip] = a.bytes < 0 ? ['error', t('@yovoice.assets.status.missing'), undefined] as const
+        : isUsed(a) ? ['warning', t('@yovoice.assets.status.used'), t('@yovoice.assets.status.usedBy', { names: a.users!.join('、') })] as const
+          : ['neutral', t('@yovoice.assets.status.unused'), undefined] as const;
+      return <HStack gap={2} vAlign="center" hAlign="center"><StatusDot variant={variant} label={tooltip ?? label} tooltip={tooltip} /><small title={tooltip}>{label}</small></HStack>;
+    } },
+    // 所属作品、打开位置和删除收进“更多”菜单，表格在设置页宽度内一屏放下。
+    { key: 'actions', header: '', width: pixel(56), align: 'center', renderCell: ({ asset: a }) => {
+      const items = [
+        ...(a.projectId && a.projectTitle ? [{ id: 'project', label: t('@yovoice.assets.openProject', { name: a.projectTitle }), icon: <FileText size={16} strokeWidth={1.5} />, onClick: () => openProject(a.projectId!) }] : []),
+        ...(isDesktop && a.media !== 'images' && a.bytes >= 0 ? [{ id: 'reveal', label: t('@yovoice.assets.reveal'), icon: <FolderOpen size={16} strokeWidth={1.5} />,
+          onClick: () => { void call('media.reveal', { kind: a.media, id: a.id }).catch(e => onError(noticeMessage(e))); } }] : []),
+        ...(canDelete(a) ? [{ id: 'delete', label: t('@yovoice.assets.delete'), icon: <Trash2 size={16} strokeWidth={1.5} />, variant: 'destructive' as const,
+          onClick: () => { setSelected(new Set([rowKey(a)])); setConfirming(true); } }] : []),
+      ];
+      return items.length ? <DropdownMenu presentation="popover" alignment="end" hasChevron={false} menuWidth="max-content" items={items}
+        button={{ size: 'sm', variant: 'ghost', isIconOnly: true, icon: <MoreHorizontal size={15} />, label: t('@yovoice.assets.more', { name: a.name }) }} /> : null;
+    } },
   ];
 
   const remove = () => run(async () => {

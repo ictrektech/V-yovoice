@@ -3716,6 +3716,18 @@
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "원본 프로젝트가 삭제됨"
   },
+  "@yovoice.assets.more": {
+    "defaultMessage": "{name} 추가 작업"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "작품 “{name}” 열기"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "폴더에서 보기"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "삭제"
+  },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
   },

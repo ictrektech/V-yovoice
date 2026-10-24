@@ -3716,6 +3716,18 @@
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "元の作品は削除されました"
   },
+  "@yovoice.assets.more": {
+    "defaultMessage": "{name} のその他の操作"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "作品「{name}」を開く"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "フォルダーに表示"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "削除"
+  },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
   },

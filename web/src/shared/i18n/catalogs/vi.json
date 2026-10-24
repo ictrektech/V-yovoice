@@ -3716,6 +3716,18 @@
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "Dự án nguồn đã bị xóa"
   },
+  "@yovoice.assets.more": {
+    "defaultMessage": "Thao tác khác cho {name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "Mở tác phẩm “{name}”"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "Hiện trong thư mục"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "Xóa"
+  },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
   },

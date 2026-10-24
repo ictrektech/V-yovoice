@@ -37,7 +37,7 @@ test('资源页汇总各类资源，筛选、统计，并只能批量删除未�
   await expect(rows).toHaveCount(7);
   // 被时间轴引用的版本、被角色引用的参考音频、时间轴素材都不能勾选。
   await expect(rows.filter({ hasText: '被引用的版本' }).getByRole('checkbox')).toBeDisabled();
-  await expect(rows.filter({ hasText: '我的声音' }).getByText('使用中：林夕')).toBeVisible();
+  await expect(rows.filter({ hasText: '我的声音' }).getByLabel('使用中：林夕')).toBeVisible();
   await expect(rows.filter({ hasText: '我的声音' }).getByRole('checkbox')).toBeDisabled();
   await expect(rows.filter({ hasText: '雨声' }).getByRole('checkbox')).toBeDisabled();
   await expect(rows.filter({ hasText: '天亮了' }).getByText('配音片段')).toBeVisible();
@@ -68,7 +68,7 @@ test('资源页汇总各类资源，筛选、统计，并只能批量删除未�
   expect(saved.voices.map((v: { name: string }) => v.name)).toEqual(['我的声音']);
 });
 
-test('资源页按大小排序，并能跳到所属作品', async ({ page }) => {
+test('资源页按大小排序，并能从更多菜单跳到所属作品', async ({ page }) => {
   await seed(page);
   await page.goto('/');
   await page.getByTestId('nav-settings').click();
@@ -79,6 +79,8 @@ test('资源页按大小排序，并能跳到所属作品', async ({ page }) => 
   await expect(assets.locator('tbody tr').first()).toContainText('天亮了');
   await assets.getByRole('button', { name: '大小' }).click();
   await expect(assets.locator('tbody tr').first()).toContainText('长篇试读');
-  await assets.locator('tbody tr').filter({ hasText: '长篇试读' }).getByRole('button', { name: '旁白练习' }).click();
+  // 所属作品收在每行的“更多”菜单里。
+  await assets.locator('tbody tr').filter({ hasText: '长篇试读' }).getByRole('button', { name: '更多操作：长篇试读' }).click();
+  await page.getByRole('menuitem', { name: '打开作品「旁白练习」' }).click();
   await expect(page.getByLabel('作品名称')).toHaveValue('旁白练习');
 });

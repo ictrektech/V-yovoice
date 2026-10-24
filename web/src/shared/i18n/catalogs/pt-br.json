@@ -3716,6 +3716,18 @@
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "Projeto de origem excluído"
   },
+  "@yovoice.assets.more": {
+    "defaultMessage": "Mais ações para {name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "Abrir o projeto “{name}”"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "Mostrar na pasta"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "Excluir"
+  },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
   },
