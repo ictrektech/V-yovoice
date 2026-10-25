@@ -56,7 +56,7 @@ Turn text into expressive speech, natural cloned voices, complete vocal songs, a
 
 - **Speech, voice design and cloning** — clone a reference voice, design a voice from a description, adjust emotion and delivery, and edit takes on a timeline.
 - **Story dubbing** — import text or subtitle files, assign a character to each line, and generate line by line.
-- **Music** — write a style and lyrics with section markers, then generate songs or instrumentals with ACE-Step 1.5, or songs and score-based instrumentals with YuE2; the playback page syncs lyrics to the vocals.
+- **Music** — write a style and lyrics with section markers, then generate songs or instrumentals with ACE-Step 1.5, or songs and score-based instrumentals with YuE2, or instrumental music and sound effects from an English description with Stable Audio 3; the playback page syncs lyrics to the vocals.
 - **Score** — write parts by bar and beat, import MIDI or let an Agent compose, render with a General MIDI sound font, and export MIDI and stems. See [Score](docs/score.md).
 - **Optional AI service** — the built-in assistant panel chats with DeepSeek, Qwen, Kimi, OpenAI, Anthropic, Ollama or any compatible API and acts on your works: it writes arrangements and lyrics, edits text, assigns voices and starts generation; keys stay on this computer. See [AI service](docs/ai.md).
 - **12 interface languages** — English, 简体中文, 繁體中文, 日本語, 한국어, Español, Français, Deutsch, Português (Brasil), Русский, Italiano and Tiếng Việt; switch anytime in Settings, no restart needed.
@@ -71,8 +71,9 @@ Turn text into expressive speech, natural cloned voices, complete vocal songs, a
 | Voice design and cloning | VoxCPM2, OmniVoice, Qwen3-TTS VoiceDesign, Breeze TTS 2 |
 | Built-in voices | Kokoro-82M, Qwen3-TTS CustomVoice |
 | Songs and instrumentals | ACE-Step 1.5 Turbo / XL Turbo, YuE2 3B |
+| Instrumentals and sound effects | Stable Audio 3 Small Music / Small SFX / Medium |
 
-All models are downloaded inside the App or with the CLI. See [model selection](docs/models.md) for file sizes, hardware requirements, inputs and examples. OmniVoice, YuE2 and Breeze TTS 2 weights are restricted to non-commercial use.
+All models are downloaded inside the App or with the CLI. See [model selection](docs/models.md) for file sizes, hardware requirements, inputs and examples. OmniVoice, YuE2 and Breeze TTS 2 weights are restricted to non-commercial use; Stable Audio 3 is free below USD 1M annual revenue under the Stability AI Community License.
 
 ---
 
@@ -158,6 +159,7 @@ Bug reports, feature suggestions, and pull requests are welcome. Include your pl
 - [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) — voice cloning, built-in voices, and text-guided voice design.
 - [ACE-Step](https://github.com/ace-step/ACE-Step-1.5) — music generation from style prompts and lyrics.
 - [YuE](https://github.com/multimodal-art-projection/YuE) — full vocal song generation from lyrics.
+- [Stable Audio 3](https://huggingface.co/stabilityai/stable-audio-3-medium) by Stability AI — instrumental music and sound effects from text. Powered by Stability AI.
 - [Breeze TTS 2](https://huggingface.co/BreezeBlue/Breeze-TTS-2) — Chinese and English voice design and cloning.
 - [go-meltysynth](https://github.com/sinshu/go-meltysynth), [MuseScore General](https://musescore.org/en/handbook/3/soundfonts-and-sfz-files#gm_soundfonts), [GeneralUser GS](https://www.schristiancollins.com/generaluser) and SGM-V2.01 by David Shan — the SoundFont synthesizer and sound fonts behind score rendering.
 - Kokoro — lightweight speech synthesis with built-in voices: [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) and [Kokoro-82M-v1.1-zh](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh).

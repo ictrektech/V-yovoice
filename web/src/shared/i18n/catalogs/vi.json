@@ -1902,7 +1902,7 @@
     "defaultMessage": "Lời bài hát tối đa 4000 ký tự."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "Thời lượng phải từ 10–300 giây và nhịp độ từ 30–300 BPM."
+    "defaultMessage": "Thiết lập âm nhạc vượt quá giới hạn của mô hình này: hãy kiểm tra thời lượng, nhịp độ hoặc đoạn cần vẽ lại."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Tạo nhạc"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "Bản ghi dài {total} nên đoạn rõ nhất ({start}–{end}) được dùng làm mẫu. Dùng Cắt để điều chỉnh."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Hãy chọn một bản đã tạo của tác phẩm này để phối lại hoặc vẽ lại một đoạn, hoặc chuyển về tạo từ văn bản."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Tạo nhạc không lời từ mô tả tiếng Anh, có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo; tối đa 2 phút. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Tạo hiệu ứng âm thanh từ mô tả tiếng Anh, có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo; tối đa 2 phút. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "Mô hình Stable Audio 3 lớn hơn: nhạc không lời chất lượng cao hơn và bản nhạc dài hơn (khoảng 6 phút); có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "Từ văn bản"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Phối lại"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Vẽ lại đoạn"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Bản gốc"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Hãy tạo một bản trước, sau đó mới có thể phối lại hoặc vẽ lại."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Mức thay đổi"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: càng nhỏ càng gần bản gốc."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Vẽ lại từ (giây)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Vẽ lại đến (giây)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio chỉ hiểu mô tả tiếng Anh và không hát lời."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Mô tả âm thanh, ví dụ footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Tạo âm thanh"
   }
 }

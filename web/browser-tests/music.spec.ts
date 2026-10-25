@@ -99,6 +99,52 @@ test('选中 YuE2：长度由歌词决定，纯音乐先写谱再交给乐器，
   await page.screenshot({ path: testInfo.outputPath('music-yue2.png') });
 });
 
+test('选中 Stable Audio：只写英文描述，没有歌词与演唱语言；可在已有版本上改编或局部重绘', async ({ page }, testInfo) => {
+  const draft = { ...createMusicDraft('zh-CN'), id: 'a'.repeat(32), modelId: 'ace-step-1.5-turbo-q8' };
+  const state = emptyState();
+  state.drafts = [draft];
+  state.models = [
+    { id: 'ace-step-1.5-turbo-q8', path: 'ace-step-1.5-turbo-q8_0.gguf', managed: true },
+    { id: 'stable-audio-3-small-music-q8', path: 'stable-audio-3-small-music-q8_0.gguf', managed: true },
+    { id: 'stable-audio-3-small-sfx-q8', path: 'stable-audio-3-small-sfx-q8_0.gguf', managed: true },
+  ];
+  state.history = [{ id: 'take1', title: draft.title, fileName: 'take1.wav', createdAt: '2026-10-20T10:00:00Z', duration: 30, settings: draft }];
+  await page.addInitScript(value => { if (!localStorage.getItem('voice-workbench-v1')) localStorage.setItem('voice-workbench-v1', value); }, JSON.stringify(state));
+  await page.goto('/');
+  await page.getByRole('combobox', { name: '模型' }).click();
+  await page.getByRole('option', { name: /^Stable Audio 3 Small Music/ }).click();
+  // 没有歌词区与演唱语言，提示只理解英文；Small 最长 2 分钟，没有 03:00。
+  await expect(page.getByLabel('歌词', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: '演唱语言' })).toHaveCount(0);
+  await expect(page.getByText('Stable Audio 只理解英文描述')).toBeVisible();
+  await expect(page.getByRole('radio', { name: '00:30' })).toBeChecked();
+  await expect(page.getByRole('radio', { name: '03:00' })).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: '文字生成' })).toBeChecked();
+  await expect(page.getByRole('button', { name: '生成音频', exact: true })).toBeEnabled();
+  // 改编：默认以最新版本为起点，改动幅度 0.7。
+  await page.getByRole('radio', { name: '改编' }).click();
+  await expect(page.getByRole('combobox', { name: '起点版本' })).toContainText('版本 1 · 00:30');
+  await expect(page.getByLabel('改动幅度')).toHaveValue('0.7');
+  // 局部重绘：默认重绘开头 5 秒。
+  await page.getByRole('radio', { name: '局部重绘' }).click();
+  await expect(page.getByLabel('重绘开始（秒）')).toHaveValue('0');
+  await expect(page.getByLabel('重绘结束（秒）')).toHaveValue('5');
+  await page.getByLabel('重绘结束（秒）').fill('0');
+  await expect(page.getByRole('button', { name: '生成音频', exact: true })).toBeDisabled();
+  await page.getByLabel('重绘结束（秒）').fill('8');
+  await expect(page.getByRole('button', { name: '生成音频', exact: true })).toBeEnabled();
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1') ?? '{}').drafts?.[0]);
+  await expect.poll(async () => { const d = await saved(); return [d?.instrumental, d?.sourceGenerationId, d?.modelOptions?.stable_audio?.edit, d?.modelOptions?.stable_audio?.inpaint_end]; }).toEqual([true, 'take1', 'inpaint_audio', 8]);
+  await page.locator('details.advanced > summary').click();
+  await expect(page.getByLabel('引导强度')).toHaveValue('1');
+  await expect(page.getByLabel('推理步数')).toHaveValue('8');
+  await page.screenshot({ path: testInfo.outputPath('music-stable-audio.png') });
+  // 音效模型不套用歌曲风格预设。
+  await page.getByRole('combobox', { name: '模型' }).click();
+  await page.getByRole('option', { name: /^Stable Audio 3 Small SFX/ }).click();
+  await expect(page.getByRole('heading', { name: '风格预设' })).toHaveCount(0);
+});
+
 const melodyABC = `X:1
 T:
 M:4/4

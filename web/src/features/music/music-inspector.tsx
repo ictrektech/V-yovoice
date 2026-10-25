@@ -7,12 +7,13 @@ import { Check, ChevronRight, ChevronUp, LoaderCircle } from 'lucide-react';
 import { Selector } from '../../shared/selector';
 import definitions from '../../shared/lib/generation-options.json';
 import { formatActivity } from '../../shared/i18n/format';
-import { formatTime, isMusicModel, isYuE, modelEngineReady, type Draft, type ModelPackage, type State } from '../../shared/workbench';
+import { formatTime, isMusicModel, isStableAudio, isYuE, modelEngineReady, type Draft, type ModelPackage, type State } from '../../shared/workbench';
 import { AdvancedSettings, SeedInput } from '../create/shared-controls';
 import { ModelSelector } from '../create/model-selector';
 import { ModelOptions } from '../create/model-options';
 import { applyPresetTags, durationPresets, isPresetActive, musicLanguages, splitTags, stylePresets, styleTags, tagHintKey } from './music-draft';
 import { useElapsed } from '../../shared/lib/use-elapsed';
+import { StableAudioControls, stableAudioOptions, stableAudioReady } from './stable-audio-controls';
 
 const optionValues = (key: string) => definitions.ace_step.find(spec => spec.key === key)?.values ?? [];
 
@@ -39,6 +40,9 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
   // 已装内核过旧时提前说明原因，生成按钮仍可点击并跳转到内核设置。
   // YuE2 由歌词决定长度、也不接受 ACE-Step 的规划参数，只保留种子。
   const yue = isYuE(draft.modelId);
+  // Stable Audio 只按英文描述生成，没有歌词与演唱语言；音效模型也不套用歌曲风格预设。
+  const stable = isStableAudio(draft.modelId);
+  const sfx = stable && model?.variant === 'sfx';
   const engineOutdated = !!state.runtimePath && !modelEngineReady(state, model);
   const tags = splitTags(draft.text);
   const groups = Object.keys(styleTags) as (keyof typeof styleTags)[];
@@ -49,7 +53,7 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
   return <VStack as="aside" className="inspector music-inspector" gap={0}>
     <VStack className="generation-action" gap={3}>
       {generating ? <Button label={t('@yovoice.create.cancelGenerate')} onClick={cancel} width="100%" />
-        : <Button label={t(yue && draft.abc?.trim() ? '@yovoice.music.generateFromMelody' : '@yovoice.music.generate')} variant="primary" width="100%" aria-keyshortcuts="Control+Enter" isDisabled={busy || !draft.text.trim() || (yue && !draft.instrumental && !draft.lyrics?.trim())} onClick={generate} />}
+        : <Button label={t(stable ? '@yovoice.music.generateAudio' : yue && draft.abc?.trim() ? '@yovoice.music.generateFromMelody' : '@yovoice.music.generate')} variant="primary" width="100%" aria-keyshortcuts="Control+Enter" isDisabled={busy || !draft.text.trim() || (yue && !draft.instrumental && !draft.lyrics?.trim()) || (stable && !stableAudioReady(draft, state.history))} onClick={generate} />}
       {generating ? <HStack className="generation-status" gap={2} vAlign="center">
         <LoaderCircle size={14} className="generation-spinner" aria-hidden="true" />
         <small className="grow" role="status">{state.activity ? formatActivity(t, state.activity) : ''}</small>
@@ -60,9 +64,9 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
       {header}
       <VStack className="inspector-actions" gap={3}>
         <h2 className="inspector-section-title">{t('@yovoice.create.model')}</h2>
-        <ModelSelector label={t('@yovoice.create.model')} models={models} state={state} value={draft.modelId} isDisabled={generating} manage={settings} onChange={modelId => change({ modelId })} />
+        <ModelSelector label={t('@yovoice.create.model')} models={models} state={state} value={draft.modelId} isDisabled={generating} manage={settings} onChange={modelId => change(isStableAudio(modelId) ? { modelId, instrumental: true } : { modelId })} />
       </VStack>
-      {yue ? <>
+      {stable ? <StableAudioControls draft={draft} model={model} history={state.history} change={change} /> : yue ? <>
       {/* 生成方式：按旋律谱（有谱按谱、没谱先写谱）或不经过谱自由发挥；纯音乐必须经过谱。 */}
       {draft.instrumental ? null : <VStack gap={2}>
         <h3>{t('@yovoice.music.mode')}</h3>
@@ -83,6 +87,7 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
       </HStack>
       </>}
       {/* 风格预设（类似情绪预设 UI，纯文字无 emoji） */}
+      {sfx ? null : <>
       <VStack gap={2} className="style-presets">
         <HStack className="style-presets-header" hAlign="between" vAlign="center">
           <h3>{t('@yovoice.music.presets')}</h3>
@@ -168,8 +173,12 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
           </VStack>
         ) : null}
       </VStack>
+      </>}
       <AdvancedSettings open={advanced} onOpenChange={setAdvanced}>
-        {yue ? <ModelOptions draft={draft} family="yue2" change={change} omit={['cot']} /> : <>
+        {stable ? <>
+        <label className="number-field">{t('@yovoice.music.duration')}<input type="number" min={1} max={model?.maxDuration ?? 120} step={1} value={stableAudioOptions(draft).duration} onChange={event => { if (event.target.value) change({ modelOptions: { ...draft.modelOptions, stable_audio: { ...stableAudioOptions(draft).values, duration_seconds: Number(event.target.value) } } }); }} /></label>
+        <ModelOptions draft={draft} family="stable_audio" change={change} omit={['duration_seconds', 'edit', 'init_noise_level', 'inpaint_start', 'inpaint_end']} />
+        </> : yue ? <ModelOptions draft={draft} family="yue2" change={change} omit={['cot']} /> : <>
         <label className="number-field">{t('@yovoice.music.duration')}<input type="number" min={0} max={300} step={1} value={duration || ''} placeholder={t('@yovoice.music.auto')} onChange={event => update('duration_seconds', event.target.value ? Number(event.target.value) : 0)} /></label>
         <label className="number-field">{t('@yovoice.music.bpm')}<input type="number" min={30} max={300} step={1} value={Number(option('bpm', 0)) || ''} placeholder={t('@yovoice.music.auto')} onChange={event => update('bpm', event.target.value ? Number(event.target.value) : 0)} /></label>
         <Selector label={t('@yovoice.music.keyscale')} value={String(option('keyscale', 'auto'))} options={optionValues('keyscale').map(value => ({ value, label: value === 'auto' ? t('@yovoice.music.auto') : value }))} onChange={value => update('keyscale', value)} />

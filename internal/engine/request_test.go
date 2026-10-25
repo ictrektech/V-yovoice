@@ -329,6 +329,89 @@ func TestMusicRequest(t *testing.T) {
 	}
 }
 
+// Stable Audio：英文描述直接作为正文，不带歌词和演唱语言；时长换成两个内核版本都接受的 duration_sec。
+// 改编把起点版本作为 audio 传入，局部重绘带上区间，其余界面选项不下发。
+func TestStableAudioRequest(t *testing.T) {
+	d := schema.DefaultDraft()
+	d.Kind, d.ModelID, d.Text, d.Lyrics, d.SynthesisLanguage = "music", "stable-audio-3-small-music-q8", " uplifting house, bright synths ", "[verse]\n不会被唱出来", "zh"
+	d.ModelOptions = map[string]map[string]any{"stable_audio": {"duration_seconds": float64(45), "num_inference_steps": float64(12), "edit": "off", "init_noise_level": 0.5}}
+	seed := 3
+	d.Seed = &seed
+	p, err := BuildRequest(d, "", "")
+	must(t, err)
+	r := p["request"].(map[string]any)
+	o := r["options"].(map[string]any)
+	if r["text"] != "uplifting house, bright synths" || o["duration_sec"] != float64(45) || o["num_inference_steps"] != float64(12) || o["seed"] != 3 {
+		t.Fatal(r)
+	}
+	for _, key := range []string{"duration_seconds", "edit", "init_noise_level", "audio_input_kind", "lyrics", "route"} {
+		if _, ok := o[key]; ok {
+			t.Fatal("不应下发", key, o)
+		}
+	}
+	if _, ok := r["audio"]; ok || r["language"] != nil || d.RequiresVoice() {
+		t.Fatal(r)
+	}
+	// 未设置时长时用 30 秒，而不是内核默认的 120 秒。
+	delete(d.ModelOptions["stable_audio"], "duration_seconds")
+	p, _ = BuildRequest(d, "", "")
+	if p["request"].(map[string]any)["options"].(map[string]any)["duration_sec"] != float64(30) {
+		t.Fatal(p)
+	}
+
+	d.ModelOptions["stable_audio"]["edit"] = "init_audio"
+	if _, err = BuildRequest(d, "", ""); err == nil || !strings.Contains(err.Error(), string(msg.ErrMusicSourceRequired)) {
+		t.Fatal("改编需要起点版本", err)
+	}
+	d.SourceGenerationID = "take1"
+	p, err = BuildRequest(d, "/data/outputs/take1.wav", "")
+	must(t, err)
+	r = p["request"].(map[string]any)
+	o = r["options"].(map[string]any)
+	if r["audio"] != "/data/outputs/take1.wav" || o["audio_input_kind"] != "init_audio" || o["init_noise_level"] != 0.5 {
+		t.Fatal(r)
+	}
+
+	d.ModelOptions["stable_audio"]["edit"] = "inpaint_audio"
+	d.ModelOptions["stable_audio"]["inpaint_start"] = 2.5
+	d.ModelOptions["stable_audio"]["inpaint_end"] = float64(8)
+	p, err = BuildRequest(d, "/data/outputs/take1.wav", "")
+	must(t, err)
+	o = p["request"].(map[string]any)["options"].(map[string]any)
+	if o["audio_input_kind"] != "inpaint_audio" || o["inpaint_mask_start_sec"] != "2.5" || o["inpaint_mask_end_sec"] != "8" {
+		t.Fatal(o)
+	}
+	if _, ok := o["init_noise_level"]; ok {
+		t.Fatal("重绘不需要改编幅度", o)
+	}
+
+	for _, patch := range []func(*schema.Draft){
+		func(d *schema.Draft) { d.Text = " " },
+		func(d *schema.Draft) { d.ModelOptions["stable_audio"]["duration_seconds"] = float64(0) },
+		// Small 系列最长 120 秒，Medium 才能更长。
+		func(d *schema.Draft) { d.ModelOptions["stable_audio"]["duration_seconds"] = float64(121) },
+		func(d *schema.Draft) { d.ModelOptions["stable_audio"]["init_noise_level"] = 1.5 },
+		func(d *schema.Draft) { d.ModelOptions["stable_audio"]["edit"] = "variation" },
+		func(d *schema.Draft) { d.ModelOptions["stable_audio"]["inpaint_end"] = 2.5 },
+		func(d *schema.Draft) { d.ModelOptions["stable_audio"]["inpaint_end"] = float64(130) },
+		func(d *schema.Draft) { d.ModelOptions["stable_audio"]["audio_input_kind"] = "init_audio" },
+	} {
+		invalid := d
+		invalid.ModelOptions = map[string]map[string]any{"stable_audio": {}}
+		for k, v := range d.ModelOptions["stable_audio"] {
+			invalid.ModelOptions["stable_audio"][k] = v
+		}
+		patch(&invalid)
+		if schema.Validate(invalid) == nil {
+			t.Fatal("应拒绝无效 Stable Audio 参数", invalid.ModelOptions)
+		}
+	}
+	d.ModelID = "stable-audio-3-medium-q8"
+	d.ModelOptions["stable_audio"]["duration_seconds"] = float64(300)
+	d.ModelOptions["stable_audio"]["inpaint_end"] = float64(200)
+	must(t, schema.Validate(d))
+}
+
 func TestBreezeRequest(t *testing.T) {
 	d := schema.DefaultDraft()
 	d.ModelID = "breeze-tts-2-q8"

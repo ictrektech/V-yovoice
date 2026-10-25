@@ -34,6 +34,9 @@ Use `yovoice models list --json` for model IDs, available precisions, file sizes
 | Kokoro-82M 1.1-zh | 82M | Q8 · 255.32 MB | 100 Chinese and 3 English voices; experimental |
 | ACE-Step 1.5 Turbo | — | Q8 · 6.19 GB<br>BF16 · 10.09 GB | Songs and instrumentals from a style prompt and lyrics, 50+ vocal languages; requires engine v0.9.1 |
 | ACE-Step 1.5 XL Turbo | — | Q8 · 10.71 GB<br>BF16 · 15.28 GB | Larger ACE-Step model for higher-quality songs and instrumentals; requires engine v0.9.1 |
+| Stable Audio 3 Small Music | — | Q8 · 1.68 GB<br>F16 · 2.36 GB | Instrumental music from an English description, up to 2 minutes; rework or inpaint an existing take; requires engine v0.9.1 |
+| Stable Audio 3 Small SFX | — | Q8 · 1.68 GB<br>F16 · 2.36 GB | Sound effects from an English description, up to 2 minutes; rework or inpaint an existing take; requires engine v0.9.1 |
+| Stable Audio 3 Medium | — | Q8 · 3.58 GB<br>F16 · 5.83 GB | Larger Stable Audio model for higher-quality, longer instrumentals (about 6 minutes); requires engine v0.9.1 |
 | YuE2 3B | 3B | Q4 · 2.93 GB<br>Q8 · 4.53 GB<br>BF16 · 7.53 GB | Full vocal songs from lyrics and style, length follows the lyrics; instrumentals via a melody score; requires engine v0.9.1 |
 | SheetSage2 | — | F32 · 2.71 GB | Transcribes a song's melody and chords into a score, used for YuE2 covers; requires engine v0.9.1 |
 | Lyric Aligner (optional) | 0.6B | Q8 · 1.30 GB | BS-RoFormer vocal separation plus Qwen3 Forced Aligner: aligns lyrics word by word to a generated song for the playback page and word LRC export; requires engine v0.9.1 |
@@ -137,12 +140,19 @@ Kokoro does not support voice cloning or text-guided emotion control. Keep the C
 
 ## Music generation
 
-Music projects in the desktop app use ACE-Step 1.5 Turbo or XL Turbo for songs and instrumentals, or YuE2 3B for songs and score-based instrumentals. All need inference engine v0.9.1 or later.
+Music projects in the desktop app use ACE-Step 1.5 Turbo or XL Turbo for songs and instrumentals, YuE2 3B for songs and score-based instrumentals, or Stable Audio 3 for instrumental music and sound effects. All need inference engine v0.9.1 or later.
 
 - **Style**: a short description plus tags such as `city pop, warm synths, chill, female vocals`, up to 512 characters.
 - **Lyrics**: mark sections with `[verse]`, `[chorus]`, `[bridge]` and so on, up to 4000 characters. Turn on Instrumental to generate music without vocals; your lyrics are kept.
 - **Duration and language**: choose Auto or 10–300 seconds, and a vocal language that matches the lyrics.
 - **Arrangement**: tempo (30–300 BPM), key and time signature are planned by the model unless you set them.
+
+Stable Audio 3 (Small Music, Small SFX, Medium) generates instrumental music or sound effects from an English description only; there are no lyrics or vocal language. Small models make up to 2 minutes and Medium up to about 6 minutes (default 30 seconds). Under **Generation mode** you can also start from an existing take of the same work:
+
+- **Rework**: regenerates the whole take with the new description; *Amount of change* (0–1) keeps lower values closer to the original.
+- **Inpaint**: regenerates only the chosen time range and keeps the rest of the take.
+
+Stable Audio 3 weights use the Stability AI Community License: free while your yearly revenue stays under USD 1M.
 
 YuE2 needs lyrics for a vocal song, and the song length follows the lyrics. It can also work from an editable melody score:
 

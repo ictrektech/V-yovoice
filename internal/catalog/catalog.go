@@ -29,6 +29,8 @@ type ModelPackage struct {
 	EngineMinimum string   `json:"engineMinimum,omitempty"`
 	Voices        []string `json:"voices,omitempty"`
 	Variant       string   `json:"variant,omitempty"`
+	// MaxDuration 是模型单次能生成的最长秒数，例如 Stable Audio 3 Small 为 120 秒；0 表示不限制或由其他参数决定。
+	MaxDuration int `json:"maxDuration,omitempty"`
 	// LoadOptions、SessionOptions 是启动内核时随模型传入的参数，例如 ACE-Step XL 需要指定 DiT 变体，
 	// YuE2 需要指定主模型文件。
 	LoadOptions    map[string]string `json:"loadOptions,omitempty"`
@@ -193,8 +195,10 @@ func ServerBackend(backend string) string {
 	return backend
 }
 
-// IsMusic 判断模型家族是否为整首歌曲生成（风格 + 歌词）。
-func IsMusic(family string) bool { return family == "ace_step" || family == "yue2" }
+// IsMusic 判断模型家族是否用于音乐作品：歌曲（风格 + 歌词）或 Stable Audio 的纯音乐与音效。
+func IsMusic(family string) bool {
+	return family == "ace_step" || family == "yue2" || family == "stable_audio"
+}
 
 // PackageFiles 返回需要下载的文件；单文件模型只有主模型一项。
 func (m ModelPackage) PackageFiles() []ModelFile {
