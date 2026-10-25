@@ -336,7 +336,8 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
     if (!preset) throw new CallError('@yovoice.error.aiProviderInvalid');
     const editable = preset.endpoint !== 'fixed';
     const next: AIProvider = { id: input.id || crypto.randomUUID().replaceAll('-', ''), preset: preset.key, name: input.name?.trim() || preset.name, format: preset.endpoint === 'custom' ? input.format : preset.format, baseURL: editable ? input.baseURL.trim() : preset.baseURL, modelsPath: preset.endpoint === 'custom' ? input.modelsPath : preset.modelsPath, model: input.model?.trim() ?? '' };
-    if (!/^https?:\/\/[^/]+/.test(next.baseURL)) throw new CallError('@yovoice.error.aiProviderInvalid');
+    // ChatGPT 订阅经本机 Codex CLI，没有服务地址。
+    if (next.format !== 'codex_cli' && !/^https?:\/\/[^/]+/.test(next.baseURL)) throw new CallError('@yovoice.error.aiProviderInvalid');
     const providers = state.aiProviders ?? [];
     const old = providers.find(p => p.id === next.id);
     next.keyMask = input.key == null ? old?.keyMask : input.key.trim() ? '••••••••' : undefined;
