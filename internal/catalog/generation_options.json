@@ -499,5 +499,65 @@
       "max": 3,
       "step": 0.05
     }
+  ],
+  "stable_audio": [
+    {
+      "key": "duration_seconds",
+      "type": "number",
+      "default": 30,
+      "min": 1,
+      "max": 380,
+      "step": 1
+    },
+    {
+      "key": "num_inference_steps",
+      "type": "number",
+      "default": 8,
+      "min": 1,
+      "max": 50,
+      "step": 1
+    },
+    {
+      "key": "guidance_scale",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 10,
+      "step": 0.1
+    },
+    {
+      "key": "edit",
+      "type": "select",
+      "default": "off",
+      "values": [
+        "off",
+        "init_audio",
+        "inpaint_audio"
+      ]
+    },
+    {
+      "key": "init_noise_level",
+      "type": "number",
+      "default": 0.7,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "key": "inpaint_start",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 380,
+      "step": 0.1
+    },
+    {
+      "key": "inpaint_end",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 380,
+      "step": 0.1
+    }
   ]
 }

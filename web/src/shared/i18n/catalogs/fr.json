@@ -1902,7 +1902,7 @@
     "defaultMessage": "Les paroles peuvent comporter jusqu’à 4000 caractères."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "La durée doit être de 10 à 300 secondes et le tempo de 30 à 300 BPM."
+    "defaultMessage": "Les réglages musicaux dépassent les limites de ce modèle : vérifiez la durée, le tempo ou la plage à repeindre."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Génération musicale"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "L’enregistrement dure {total} : son passage le plus net ({start}–{end}) sert de référence. Utilisez Rogner pour l’ajuster."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Choisissez une prise déjà générée de cette œuvre à retravailler ou à repeindre, ou revenez à la génération par texte."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Génère de la musique instrumentale à partir d’une description en anglais et peut retravailler ou repeindre une prise existante ; jusqu’à 2 minutes. Licence communautaire Stability AI : gratuite sous 1 M USD de revenus annuels."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Génère des effets sonores à partir d’une description en anglais et peut retravailler ou repeindre une prise existante ; jusqu’à 2 minutes. Licence communautaire Stability AI : gratuite sous 1 M USD de revenus annuels."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "Le plus grand modèle Stable Audio 3 : musique instrumentale de meilleure qualité et morceaux plus longs (jusqu’à environ 6 minutes) ; peut retravailler ou repeindre une prise existante. Licence communautaire Stability AI : gratuite sous 1 M USD de revenus annuels."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "Depuis le texte"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Retravailler"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Repeindre"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Prise de départ"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Générez d’abord une prise pour pouvoir la retravailler ou la repeindre."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Ampleur du changement"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1 : plus c’est bas, plus on reste proche de la prise d’origine."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Repeindre de (s)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Repeindre jusqu’à (s)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio ne comprend que les descriptions en anglais et ne chante pas de paroles."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Décrivez le son, par ex. footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Générer l’audio"
   }
 }

@@ -1902,7 +1902,7 @@
     "defaultMessage": "Lyrics can be up to 4000 characters."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "Duration must be 10–300 seconds and tempo 30–300 BPM."
+    "defaultMessage": "Music settings are out of range for this model: check the duration, tempo or inpaint range."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Music generation"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "The recording is {total} long, so its clearest part ({start}–{end}) was used as the reference. Use Crop to adjust."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Choose an existing take of this work to rework or inpaint, or switch back to text generation."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Generates instrumental music from an English description and can rework or inpaint an existing take; up to 2 minutes. Stability AI Community License: free below USD 1M annual revenue."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Generates sound effects from an English description and can rework or inpaint an existing take; up to 2 minutes. Stability AI Community License: free below USD 1M annual revenue."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "The larger Stable Audio 3 model for higher-quality instrumental music and longer pieces (up to about 6 minutes); can rework or inpaint an existing take. Stability AI Community License: free below USD 1M annual revenue."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "From text"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Rework"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Inpaint"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Starting take"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Generate a take first, then rework or inpaint it."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Amount of change"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: lower stays closer to the original take."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Inpaint from (s)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Inpaint to (s)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio only understands English descriptions; no lyrics are sung."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Describe the sound, e.g. footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Generate audio"
   }
 }

@@ -55,7 +55,7 @@ func modelKind(id string) string {
 		return ""
 	}
 	switch m.Family {
-	case "ace_step", "yue2":
+	case "ace_step", "yue2", "stable_audio":
 		return "music"
 	case "soundfont":
 		return "score"
@@ -678,8 +678,8 @@ func (w *Workbench) assistantModelCheck(model, kind string) error {
 	if e != nil {
 		return fmt.Errorf("未知模型 %s，请用 list_models 查询可用模型", model)
 	}
-	// 目录 family：语音类各不相同，音乐是 ace_step/yue2，编曲渲染用 soundfont。
-	music, soundfont := definition.Family == "ace_step" || definition.Family == "yue2", definition.Family == "soundfont"
+	// 目录 family：语音类各不相同，音乐见 catalog.IsMusic，编曲渲染用 soundfont。
+	music, soundfont := catalog.IsMusic(definition.Family), definition.Family == "soundfont"
 	if kind == "score" && !soundfont || kind == "music" && !music || (kind == "text" || kind == "story") && (music || soundfont) {
 		return fmt.Errorf("模型 %s（%s）不适用于%s作品", model, definition.Family, kind)
 	}

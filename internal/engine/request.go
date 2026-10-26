@@ -45,6 +45,9 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 	if m.Family == "yue2" {
 		return yue2Request(d)
 	}
+	if m.Family == "stable_audio" {
+		return stableAudioRequest(d, voice), nil
+	}
 	if m.Family == "kokoro_tts" {
 		o, _ := d.GenerationOptions(m.Family)
 		if _, ok := o["text_chunk_size"]; !ok {
@@ -281,6 +284,54 @@ func yue2Request(d schema.Draft) (map[string]any, error) {
 		o["seed"] = *d.Seed
 	}
 	return map[string]any{"model": "index", "request": map[string]any{"text": lyrics, "options": o}}, nil
+}
+
+// stableAudioRequest 构建 Stable Audio 请求：正文是英文描述，没有歌词与演唱语言。
+// 改编时 source 是起点版本的音频：init_audio 按 init_noise_level 保留原曲的程度整体重写，
+// inpaint_audio 只重绘 [inpaint_start, inpaint_end] 区间，其余部分保持原样。
+// 参数名用 v0.9.1 与 v0.9.2 都接受的 duration_sec、inpaint_mask_*_sec。
+func stableAudioRequest(d schema.Draft, source string) map[string]any {
+	options, _ := d.GenerationOptions("stable_audio")
+	edit, _ := options["edit"].(string)
+	start, end := options["inpaint_start"], options["inpaint_end"]
+	strength := options["init_noise_level"]
+	for _, key := range []string{"edit", "inpaint_start", "inpaint_end", "init_noise_level"} {
+		delete(options, key)
+	}
+	o := map[string]any{}
+	for key, value := range options {
+		o[key] = value
+	}
+	duration, ok := o["duration_seconds"].(float64)
+	if !ok {
+		duration = 30
+	}
+	delete(o, "duration_seconds")
+	o["duration_sec"] = duration
+	if d.Seed != nil {
+		o["seed"] = *d.Seed
+	}
+	r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
+	switch edit {
+	case "init_audio":
+		r["audio"] = source
+		o["audio_input_kind"] = "init_audio"
+		if strength == nil {
+			strength = 0.7
+		}
+		o["init_noise_level"] = strength
+	case "inpaint_audio":
+		r["audio"] = source
+		o["audio_input_kind"] = "inpaint_audio"
+		o["inpaint_mask_start_sec"] = strconv.FormatFloat(number(start), 'f', -1, 64)
+		o["inpaint_mask_end_sec"] = strconv.FormatFloat(number(end), 'f', -1, 64)
+	}
+	return map[string]any{"model": "index", "request": r}
+}
+
+func number(v any) float64 {
+	f, _ := v.(float64)
+	return f
 }
 
 // instrumentalScore 返回纯音乐实际演奏的谱：人声旋律已移到器乐声部。

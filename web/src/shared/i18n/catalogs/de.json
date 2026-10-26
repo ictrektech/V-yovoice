@@ -1902,7 +1902,7 @@
     "defaultMessage": "Songtexte dürfen bis zu 4000 Zeichen lang sein."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "Die Dauer muss 10–300 Sekunden und das Tempo 30–300 BPM betragen."
+    "defaultMessage": "Die Musikeinstellungen liegen außerhalb des Bereichs dieses Modells: Prüfe Dauer, Tempo oder den Neumal-Bereich."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Musikgenerierung"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "Die Aufnahme ist {total} lang, daher wurde der klarste Teil ({start}–{end}) als Referenz verwendet. Mit Zuschneiden anpassen."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Wähle eine bereits erzeugte Version dieses Werks zum Umarbeiten oder Neumalen, oder wechsle zurück zur Erzeugung aus Text."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Erzeugt Instrumentalmusik aus einer englischen Beschreibung und kann eine vorhandene Version umarbeiten oder teilweise neu malen; bis zu 2 Minuten. Stability AI Community License: kostenlos unter 1 Mio. USD Jahresumsatz."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Erzeugt Soundeffekte aus einer englischen Beschreibung und kann eine vorhandene Version umarbeiten oder teilweise neu malen; bis zu 2 Minuten. Stability AI Community License: kostenlos unter 1 Mio. USD Jahresumsatz."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "Das größere Stable-Audio-3-Modell für hochwertigere Instrumentalmusik und längere Stücke (bis etwa 6 Minuten); kann eine vorhandene Version umarbeiten oder teilweise neu malen. Stability AI Community License: kostenlos unter 1 Mio. USD Jahresumsatz."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "Aus Text"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Umarbeiten"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Teilweise neu"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Ausgangsversion"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Erzeuge zuerst eine Version, dann kannst du sie umarbeiten oder teilweise neu malen."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Stärke der Änderung"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: Je kleiner, desto näher an der Ausgangsversion."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Neu malen ab (s)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Neu malen bis (s)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio versteht nur englische Beschreibungen und singt keine Texte."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Beschreibe den Klang, z. B. footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Audio erzeugen"
   }
 }

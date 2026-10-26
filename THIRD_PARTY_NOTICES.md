@@ -21,6 +21,10 @@
 
 - [ACE-Step 1.5](https://huggingface.co/ACE-Step/Ace-Step1.5)：MIT，音乐生成模型。权重从 audio.cpp GGUF 仓库单独下载，不随应用安装包分发。
 
+## Stable Audio 3
+
+- [Stable Audio 3 Small Music](https://huggingface.co/stabilityai/stable-audio-3-small-music)、[Small SFX](https://huggingface.co/stabilityai/stable-audio-3-small-sfx)、[Medium](https://huggingface.co/stabilityai/stable-audio-3-medium)：[Stability AI Community License](https://huggingface.co/stabilityai/stable-audio-3-small-sfx/blob/main/LICENSE.md)，使用者及其关联方年收入低于 100 万美元时可免费使用（含商用），超过需向 Stability AI 申请企业许可；商用须向 Stability AI 登记并标注“Powered by Stability AI”。文本编码器 T5Gemma 另受 Gemma 使用条款约束。权重从 audio.cpp GGUF 仓库单独下载，不随应用安装包分发。Powered by Stability AI.
+
 ## 编曲
 
 - [go-meltysynth](https://github.com/sinshu/go-meltysynth)（提交 05d311382fc4）：MIT，Copyright (C) 2021–2022 Nobuaki Tanaka，纯 Go SoundFont 合成器，编译进 yovoice 服务与 CLI，见[原始许可](https://github.com/sinshu/go-meltysynth/blob/main/LICENSE.txt)。

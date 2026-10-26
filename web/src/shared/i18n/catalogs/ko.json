@@ -1902,7 +1902,7 @@
     "defaultMessage": "가사는 최대 4000자까지 입력할 수 있습니다."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "길이는 10~300초, 템포는 30~300 BPM이어야 합니다."
+    "defaultMessage": "음악 설정이 이 모델의 범위를 벗어났습니다. 길이, 템포 또는 재생성 구간을 확인하세요."
   },
   "@yovoice.project.music": {
     "defaultMessage": "음악 생성"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "녹음이 {total}이라 가장 깨끗한 {start}–{end} 구간을 참조로 사용했습니다. '자르기'로 조정할 수 있습니다."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "편곡하거나 부분 재생성할 이 작품의 생성된 테이크를 선택하거나 텍스트 생성으로 돌아가세요."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "영어 설명으로 연주곡을 생성하고, 생성된 테이크를 편곡하거나 부분 재생성할 수 있습니다(최대 2분). Stability AI 커뮤니티 라이선스: 연 매출 100만 달러 미만은 무료."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "영어 설명으로 효과음을 생성하고, 생성된 테이크를 편곡하거나 부분 재생성할 수 있습니다(최대 2분). Stability AI 커뮤니티 라이선스: 연 매출 100만 달러 미만은 무료."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "더 큰 Stable Audio 3 모델로, 더 높은 품질의 연주곡과 긴 곡(약 6분 이내)을 생성하며 생성된 테이크를 편곡하거나 부분 재생성할 수 있습니다. Stability AI 커뮤니티 라이선스: 연 매출 100만 달러 미만은 무료."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "텍스트로"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "편곡"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "부분 재생성"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "시작 테이크"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "먼저 테이크를 생성해야 이를 바탕으로 편곡하거나 재생성할 수 있습니다."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "변화 정도"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: 작을수록 원래 테이크에 가깝습니다."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "재생성 시작(초)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "재생성 끝(초)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio는 영어 설명만 이해하며 가사를 부르지 않습니다."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "원하는 효과음을 설명하세요. 예: footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "오디오 생성"
   }
 }

@@ -5,7 +5,7 @@ description: Write song style tags, song form and lyrics for the ACE-Step and Yu
 
 # Writing songs
 
-You write songs for ACE-Step or YuE2, the music generation models. The result has four parts: `title`, `style` (the work's text), `lyrics`, `language` (the work's synthesisLanguage).
+You write songs for ACE-Step or YuE2, the music generation models. Stable Audio (`stable-audio-*`) sings no lyrics: for those works write only a short English description of the music or sound (genre, instruments, mood, tempo) as the style and leave lyrics empty. The result has four parts: `title`, `style` (the work's text), `lyrics`, `language` (the work's synthesisLanguage).
 
 Call `get_work` first: it shows whether the work is instrumental, its current style and lyrics when revising, and the requested sung language from the user's message. Use a music work (create_work {"kind":"music"}).
 

@@ -1902,7 +1902,7 @@
     "defaultMessage": "Il testo può contenere fino a 4000 caratteri."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "La durata deve essere di 10–300 secondi e il tempo di 30–300 BPM."
+    "defaultMessage": "Le impostazioni musicali sono fuori dai limiti di questo modello: controlla durata, tempo o tratto da ridipingere."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Generazione musicale"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "La registrazione dura {total}, quindi è stata usata la parte più nitida ({start}–{end}) come riferimento. Usa Ritaglia per modificarla."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Scegli una versione già generata di quest’opera da rielaborare o ridipingere, oppure torna alla generazione da testo."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Genera musica strumentale da una descrizione in inglese e può rielaborare o ridipingere una versione esistente; fino a 2 minuti. Licenza comunitaria Stability AI: gratuita sotto 1 milione di USD di ricavi annui."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Genera effetti sonori da una descrizione in inglese e può rielaborare o ridipingere una versione esistente; fino a 2 minuti. Licenza comunitaria Stability AI: gratuita sotto 1 milione di USD di ricavi annui."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "Il modello Stable Audio 3 più grande: musica strumentale di qualità superiore e brani più lunghi (fino a circa 6 minuti); può rielaborare o ridipingere una versione esistente. Licenza comunitaria Stability AI: gratuita sotto 1 milione di USD di ricavi annui."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "Da testo"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Rielabora"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Ridipingi"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Versione di partenza"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Genera prima una versione, poi potrai rielaborarla o ridipingerla."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Entità del cambiamento"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: più è basso, più resta vicino alla versione originale."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Ridipingi da (s)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Ridipingi fino a (s)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio capisce solo descrizioni in inglese e non canta testi."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Descrivi il suono, ad es. footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Genera audio"
   }
 }

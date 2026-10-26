@@ -28,6 +28,8 @@ type SynthesisSettings struct {
 	Instrumental bool   `json:"instrumental,omitempty"`
 	// Abc 是 YuE2 的旋律谱（受限 ABC 方言）：有谱时按谱演唱，随版本快照一起保存。
 	Abc string `json:"abc,omitempty"`
+	// SourceGenerationID 是 Stable Audio 改编（edit 选项）时作为起点的版本，必须是同一作品已生成的音频。
+	SourceGenerationID string `json:"sourceGenerationId,omitempty"`
 
 	VoiceMode         string    `json:"voiceMode"`
 	VoxMode           string    `json:"voxMode"`

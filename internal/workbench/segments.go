@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"yovoice/internal/audio"
+	"yovoice/internal/catalog"
 	"yovoice/internal/diag"
 	"yovoice/internal/engine"
 	"yovoice/internal/msg"
@@ -59,6 +60,13 @@ func (w *Workbench) prepareSynthesis(d schema.Draft, state schema.State) ([]synt
 		if draft.EmotionVoiceID != nil {
 			part.emotion, _ = w.MediaFile("voices", *draft.EmotionVoiceID)
 		}
+		// Stable Audio 改编时，起点版本的音频走参考音频的位置传给内核。
+		if source, err := w.stableAudioSource(&draft, state); err != nil {
+			return nil, err
+		} else if source != "" {
+			part.voice = source
+		}
+		part.draft = draft
 		if _, err = engine.BuildRequest(draft, part.voice, part.emotion); err != nil {
 			return nil, err
 		}
@@ -68,6 +76,29 @@ func (w *Workbench) prepareSynthesis(d schema.Draft, state schema.State) ([]synt
 		return nil, msg.Err(msg.ErrTextRequired, nil)
 	}
 	return parts, nil
+}
+
+// stableAudioSource 处理 Stable Audio 作品：生成结果没有人声，版本记为纯音乐；
+// 改编时返回起点版本的音频路径，起点必须是同一作品已生成且文件仍在的版本。
+func (w *Workbench) stableAudioSource(d *schema.Draft, state schema.State) (string, error) {
+	m, err := catalog.Lookup(d.ModelID)
+	if err != nil || m.Family != "stable_audio" {
+		return "", nil
+	}
+	d.Instrumental = true
+	if edit, _ := d.ModelOptions["stable_audio"]["edit"].(string); edit == "" || edit == "off" {
+		return "", nil
+	}
+	for _, g := range state.History {
+		if g.ID == d.SourceGenerationID && g.Settings.ID == d.ID && g.Segment == nil {
+			if path, err := w.Store.MediaPath("outputs", g.FileName); err == nil {
+				if _, err = os.Stat(path); err == nil {
+					return path, nil
+				}
+			}
+		}
+	}
+	return "", msg.Err(msg.ErrMusicSourceRequired, nil)
 }
 
 // generateSegments 逐句落盘。取消或失败保留已经完成的句子，不创建合并文件。

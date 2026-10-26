@@ -200,6 +200,7 @@
           "lyrics": { "type": "string", "description": "Lyrics with section markers for music models" },
           "instrumental": { "type": "boolean", "description": "Generate music without vocals" },
           "abc": { "type": "string", "description": "YuE2 melody score in its native ABC dialect; with chords the song follows the harmony, melody only lets the model arrange freely" },
+          "sourceGenerationId": { "type": "string", "description": "Stable Audio rework or inpaint: an earlier take of the same work to start from (modelOptions.stable_audio.edit)" },
           "emotionVoiceId": { "type": "string", "nullable": true, "description": "Voice whose emotion is copied" },
           "emotionText": { "type": "string", "description": "Emotion described in text" },
           "inferEmotion": { "type": "boolean", "description": "Infer emotion from the text" },
