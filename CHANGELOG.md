@@ -5,9 +5,11 @@
 ## [Unreleased]
 
 ### 简体中文
+- 合入上游 v0.2.1：改进音乐播放与歌词校准、历史版本操作、音频导出命名和长文克隆稳定性；保留现有模型、导入方式、语音历史保留策略及 VOS 调度与模型管理。
 - 语音识别页面自动转换并按模型批准范围分段上传音频，显示进度并支持取消；修复已批准的大文件仍被固定 1 MiB 请求体限制拦截的问题，保留逐段调度与输入检查。
 
 ### English
+- Integrate upstream v0.2.1 with improved music playback, lyric timing, history actions, audio export names and long-text cloning. Preserve existing models, imports, speech history retention, and VOS scheduling and model management.
 - Prepare and split ASR uploads within approved model limits, with progress and cancellation. Honor approved upload sizes instead of a fixed 1 MiB request cap, while preserving per-part scheduling and validation.
 
 ## [0.0.29] - 2026-10-23

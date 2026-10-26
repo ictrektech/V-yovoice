@@ -58,6 +58,8 @@ IndexTTS 可通过 `--emotion-text`、`--emotion-reference` 或 `--emotion-vecto
 
 VoxCPM2 通过声音描述表达语速、情绪和方言，也可使用 `--guidance-scale`、`--inference-steps`、`--seed` 调整生成。精细克隆沿用参考音频的演绎，不叠加设计描述。
 
+VoxCPM2 以每秒 6.25 帧自回归生成，整段过长时音色会发散甚至爆音，长段内音高和音量也会逐渐下沉。YoVoice 默认每段 200 字、上限 400 字；默认的续写策略会把上一段作为下一段的提示，保持前后衔接。克隆时希望每段都直接对齐参考音频，可把“长文生成策略”改为“独立生成”（`stateless`）。
+
 OmniVoice 支持 `--speed`、`--language`、`--guidance-scale`、`--inference-steps`，正文可插入 `[laughter]`、`[sigh]` 等声音标签。Qwen3-TTS 支持 `--language auto|zh|en|ja|ko|de|fr|ru|pt|es|it`。
 
 ### Breeze TTS 2 与拖音
@@ -90,7 +92,7 @@ Kokoro 使用内置音色生成语音，不需要参考录音。
 | `kokoro-1.0-q8` | 约 933 MB | 54 个音色，包含日语 | 导入兼容的 GGUF |
 | `kokoro-1.1-zh-q8` | 约 255 MB | 100 个中文和 3 个英文音色，实验性支持 | 导入兼容的 GGUF |
 
-可下载模型支持中文、英语（美式与英式）、西班牙语、法语、印地语、意大利语和巴西葡萄牙语。1.1-zh 的音色 ID 与 1.0 不通用。
+官方模型支持中文、英语（美式与英式）、西班牙语、法语、印地语、意大利语和巴西葡萄牙语。1.1-zh 的音色 ID 与 1.0 不通用。
 
 ### 生成语音
 

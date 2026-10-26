@@ -4,6 +4,9 @@ import { SubtitleParser } from '../src/features/create/subtitle-parser';
 import { Timeline } from '../src/features/media/timeline';
 import { CallError, noticeMessage, parseCallError } from '../src/shared/lib/call-error';
 import { formatCallError, formatNotice } from '../src/shared/i18n/format';
+import { alignLyrics, vocalActivity } from '../src/features/music/lyric-align';
+import { activeLyric, lyricRows, lyricTimeline } from '../src/features/music/lyric-timing';
+import { songLyrics, syntheticSong } from './synthetic-song';
 import { createDraft, previewStale, projectKind, requiresVoice, synthesisSettings, normalizeDraft, formatBytes, type Character, type Draft } from '../src/shared/workbench';
 
 // 不打开页面，直接校验界面依赖的纯逻辑。
@@ -113,4 +116,46 @@ test('存储容量格式化正确支持字节单位换算', () => {
   expect(formatBytes(1024)).toBe('1.00 KB');
   expect(formatBytes(1024 * 1024 * 5)).toBe('5.00 MB');
   expect(formatBytes(1024 * 1024 * 1024 * 2.5)).toBe('2.50 GB');
+});
+
+test('播放页歌词时间：按音节分配整首时长，空段落是器乐间隔，并补前奏', () => {
+  const lines = lyricTimeline('[intro]\n\n[verse]\n一二三四五六\nhello world\n\n[chorus]\n七八九', 100);
+  expect(lines.map(line => line.instrumental ? '…' : line.text)).toEqual(['…', '一二三四五六', 'hello world', '七八九']);
+  expect(lines[0].start).toBe(0);
+  expect(lines.at(-1)!.end).toBeCloseTo(100);
+  // 时间连续、单调递增，字多的句子更长。
+  lines.slice(1).forEach((line, i) => expect(line.start).toBeCloseTo(lines[i].end));
+  expect(lines[1].end - lines[1].start).toBeGreaterThan(lines[2].end - lines[2].start);
+  expect(activeLyric(lines, 0)).toBe(0);
+  expect(activeLyric(lines, lines[2].start + 0.01)).toBe(2);
+  expect(activeLyric(lines, 1000)).toBe(3);
+  // 开头直接是歌词时补一段前奏；没有歌词或时长未知时不显示歌词。
+  expect(lyricTimeline('第一句', 10)[0].instrumental).toBe(true);
+  expect(lyricTimeline('[instrumental]', 10)).toEqual([]);
+  expect(lyricTimeline('第一句', 0)).toEqual([]);
+  // 校准过的时间按行使用：第一句前补前奏，每行持续到下一行开始；行数对不上时退回估算。
+  const lyrics = '[verse]\n第一句\n第二句';
+  expect(lyricRows(lyrics)).toEqual([{ text: '第一句' }, { text: '第二句' }]);
+  expect(lyricTimeline(lyrics, 20, [4, 9])).toEqual([{ text: '', start: 0, end: 4, instrumental: true }, { text: '第一句', start: 4, end: 9 }, { text: '第二句', start: 9, end: 20 }]);
+  expect(lyricTimeline(lyrics, 20, [4]).map(line => line.start)).not.toContain(4);
+});
+
+test('歌词按音频自动定位：人声片段的开头对上每一行，没有人声时退回估算', () => {
+  const song = syntheticSong(songLyrics, .3);
+  const times = alignLyrics(song.rows, vocalActivity(song.left, song.right, song.rate), song.duration);
+  expect(times).not.toBeNull();
+  // 每行开始时间非递减；演唱行误差多在 0.3 秒内，被乐器起音带偏的也不超过 0.6 秒（按时长估算时差 3～5 秒）。
+  const errors = (result: number[] | null) => song.rows.flatMap((row, index) => row.instrumental ? [] : [Math.abs(result![index] - song.starts[index])]).sort((a, b) => a - b);
+  times!.forEach((time, index) => { if (index) expect(time).toBeGreaterThanOrEqual(times![index - 1]); });
+  expect(errors(times).at(-1)).toBeLessThan(.6);
+  expect(errors(times)[3]).toBeLessThan(.3);
+  // 单声道也能靠能量起伏定位。
+  const mono = song.left.map((value, i) => (value + song.right[i]) / 2);
+  const monoTimes = alignLyrics(song.rows, vocalActivity(mono, mono, song.rate), song.duration);
+  expect(errors(monoTimes).at(-1)).toBeLessThan(.6);
+  // 只有伴奏、或者全是静音时判断不可靠，返回 null。
+  const accompaniment = syntheticSong(songLyrics, 0);
+  expect(alignLyrics(accompaniment.rows, vocalActivity(accompaniment.left, accompaniment.right, accompaniment.rate), accompaniment.duration)).toBeNull();
+  const silence = new Float32Array(16000 * 20);
+  expect(alignLyrics(song.rows, vocalActivity(silence, silence, 16000), 20)).toBeNull();
 });

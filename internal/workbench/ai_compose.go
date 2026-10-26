@@ -1,6 +1,7 @@
 package workbench
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -23,10 +24,10 @@ type ScoreBrief struct {
 const scorePrompt = `You are a film and video composer who writes arrangements as JSON for yovoice. yovoice renders every track with a General MIDI sound font and mixes tracks by role.
 
 Return ONLY one JSON object, no prose, no Markdown:
-{"tempo":100,"timeSignature":[4,4],"key":"D minor","sections":[{"name":"Intro","start":1,"end":4}],
+{"title":"Night Drive","tempo":100,"timeSignature":[4,4],"key":"D minor","sections":[{"name":"Intro","start":1,"end":4}],
  "tracks":[{"id":"piano","name":"Piano","role":"piano","program":0,"reverb":0.3,"pan":-0.1,
    "humanize":{"velocity":8,"timingMs":6},"dynamics":[{"start":1,"end":4,"from":0.5,"to":1}],
-   "notes":[[1,1,62,1,80],[1,2,65,0.5,72]]}]}
+   "notes":[[1,1,62,1,80],[1,2,65,0.5,72]],"repeats":[{"from":1,"to":4,"at":[9,13]}]}]}
 
 Rules:
 - notes are arrays [bar, beat, pitch, length, velocity]. bar and beat start at 1; beat may be fractional (1.5 = the off-beat of beat 1); beats are quarter notes (6/8 has 3 beats per bar); length is in beats; pitch is MIDI (60 = C4); velocity 1-127.
@@ -34,9 +35,11 @@ Rules:
 - role is one of melody, piano, strings, bass, drums, pad, arp, other; it sets the default level (melody and piano in front, pad and arp behind). Do not set level unless needed.
 - One instrument per track, 3-8 tracks, unique ids. Optional: pan -1..1, reverb 0..1, humanize {velocity 0-40, timingMs 0-50}, dynamics ramps {start bar, end bar, from 0-1, to 0-1}. Sections may set their own tempo for a slowdown.
 - Plan a chord progression first, then write bass, pad, melody and rhythm parts that follow it. Shape the piece with sections: introduce and drop parts, use dynamics for builds.
-- Keep it compact: at most 1500 notes in total. Sustained pads and long notes are cheaper than many short ones.
-- Seconds = bars x beats per bar x 60 / tempo. Match the requested length within about 10%%.
-- Write section and track names in %s.`
+- Keep it compact: write at most 1500 notes in total. Sustained pads and long notes are cheaper than many short ones.
+- repeats copy a track's own notes from bars from..to so the copy starts at each bar listed in at. Write a loop, groove or recurring phrase once and repeat it instead of writing it again; this is how long pieces stay within the note budget. Notes written directly in the target bars are kept too.
+- Seconds = bars x beats per bar x 60 / tempo. Match the requested length within about 10%%, and never exceed %d seconds.
+- title is a short name for the piece, at most 20 characters.
+- Write the title, section and track names in %s.`
 
 func scoreLanguage(locale schema.UiLocale) string {
 	if locale == schema.UiLocaleZhCN {
@@ -45,26 +48,74 @@ func scoreLanguage(locale schema.UiLocale) string {
 	return "English"
 }
 
+// ComposedScore 是 AI 写谱的结果：乐谱和顺带起的曲名，曲名只在作品尚未命名时由界面采用。
+type ComposedScore struct {
+	schema.Score
+	Title string `json:"title,omitempty"`
+}
+
 // aiScore 接受紧凑的数组音符和完整的对象音符两种写法。
 type aiScore struct {
 	schema.Score
+	Title  string `json:"title"`
 	Tracks []struct {
 		schema.ScoreTrack
-		Notes []json.RawMessage `json:"notes"`
+		Notes   []json.RawMessage `json:"notes"`
+		Repeats []scoreRepeat     `json:"repeats"`
 	} `json:"tracks"`
 }
 
-func decodeScore(text string) (schema.Score, error) {
+// scoreRepeat 让模型只写一遍循环段落，由这里展开成音符，长曲子不必逐个写出。
+type scoreRepeat struct {
+	From int   `json:"from"`
+	To   int   `json:"to"`
+	At   []int `json:"at"`
+}
+
+// expandRepeats 把 From..To 小节的音符复制到每个 At 起点；展开后的总数仍受乐谱音符上限约束。
+func expandRepeats(track *schema.ScoreTrack, repeats []scoreRepeat, budget int) error {
+	written := track.Notes
+	for _, r := range repeats {
+		if r.From < 1 || r.To < r.From || r.To > schema.ScoreMaxBars {
+			return fmt.Errorf("track %q: repeats need 1 <= from <= to <= %d", track.ID, schema.ScoreMaxBars)
+		}
+		for _, at := range r.At {
+			if at < 1 || at > schema.ScoreMaxBars {
+				return fmt.Errorf("track %q: repeat targets must be bars 1-%d", track.ID, schema.ScoreMaxBars)
+			}
+			for _, n := range written {
+				if n.Bar < r.From || n.Bar > r.To {
+					continue
+				}
+				if len(track.Notes) >= budget {
+					return fmt.Errorf("score needs 1-%d notes after repeats", schema.ScoreMaxNotes)
+				}
+				n.Bar += at - r.From
+				track.Notes = append(track.Notes, n)
+			}
+		}
+	}
+	slices.SortStableFunc(track.Notes, func(a, b schema.ScoreNote) int {
+		if a.Bar != b.Bar {
+			return a.Bar - b.Bar
+		}
+		return cmp.Compare(a.Beat, b.Beat)
+	})
+	return nil
+}
+
+func decodeScore(text string) (ComposedScore, error) {
 	raw := llm.ExtractJSON(text)
 	if raw == "" {
-		return schema.Score{}, errors.New("no JSON object found")
+		return ComposedScore{}, errors.New("no JSON object found")
 	}
 	var v aiScore
 	if e := json.Unmarshal([]byte(raw), &v); e != nil {
-		return schema.Score{}, fmt.Errorf("invalid JSON: %v", e)
+		return ComposedScore{}, fmt.Errorf("invalid JSON: %v", e)
 	}
 	s := v.Score
 	s.Tracks = nil
+	notes := 0
 	for _, t := range v.Tracks {
 		track := t.ScoreTrack
 		track.Notes = make([]schema.ScoreNote, 0, len(t.Notes))
@@ -73,20 +124,24 @@ func decodeScore(text string) (schema.Score, error) {
 			var values []float64
 			if json.Unmarshal(n, &values) == nil {
 				if len(values) != 5 {
-					return schema.Score{}, fmt.Errorf("track %q: each note array needs exactly 5 numbers [bar, beat, pitch, length, velocity]", track.ID)
+					return ComposedScore{}, fmt.Errorf("track %q: each note array needs exactly 5 numbers [bar, beat, pitch, length, velocity]", track.ID)
 				}
 				note = schema.ScoreNote{Bar: int(values[0]), Beat: values[1], Pitch: int(values[2]), Length: values[3], Velocity: int(values[4])}
 			} else if e := json.Unmarshal(n, &note); e != nil {
-				return schema.Score{}, fmt.Errorf("track %q: invalid note %s", track.ID, string(n))
+				return ComposedScore{}, fmt.Errorf("track %q: invalid note %s", track.ID, string(n))
 			}
 			track.Notes = append(track.Notes, note)
 		}
+		if e := expandRepeats(&track, t.Repeats, schema.ScoreMaxNotes-notes); e != nil {
+			return ComposedScore{}, e
+		}
+		notes += len(track.Notes)
 		s.Tracks = append(s.Tracks, track)
 	}
 	if issue := schema.ScoreIssue(&s); issue != "" {
-		return schema.Score{}, errors.New(issue)
+		return ComposedScore{}, errors.New(issue)
 	}
-	return s, nil
+	return ComposedScore{Score: s, Title: truncateRunes(strings.TrimSpace(v.Title), 120)}, nil
 }
 
 func (in ScoreBrief) valid() bool {
@@ -102,24 +157,24 @@ func (w *Workbench) StartScore(in ScoreBrief) (schema.AITask, error) {
 	return w.startAI("score", in.ProjectID, strings.TrimSpace(in.Brief), func(ctx context.Context) (any, error) { return w.ComposeScore(ctx, in) })
 }
 
-// ComposeScore 让模型写出乐谱并校验；不合规时把问题发回让模型修正一次。
-func (w *Workbench) ComposeScore(ctx context.Context, in ScoreBrief) (schema.Score, error) {
+// ComposeScore 让模型写出乐谱和曲名并校验；不合规时把问题发回让模型修正一次。
+func (w *Workbench) ComposeScore(ctx context.Context, in ScoreBrief) (ComposedScore, error) {
 	if !in.valid() {
-		return schema.Score{}, msg.Err(msg.ErrRequestInvalid, nil)
+		return ComposedScore{}, msg.Err(msg.ErrRequestInvalid, nil)
 	}
 	brief := strings.TrimSpace(in.Brief)
 	ask := "Brief: " + brief
 	if in.Seconds > 0 {
 		ask += fmt.Sprintf("\nTarget length: about %d seconds.", in.Seconds)
 	}
-	request := llm.Request{System: fmt.Sprintf(scorePrompt, scoreLanguage(in.Locale)), Messages: []llm.Message{{Role: "user", Content: ask}}, MaxTokens: 16000, Temperature: 0.7}
+	request := llm.Request{System: fmt.Sprintf(scorePrompt, int(schema.ScoreMaxSeconds), scoreLanguage(in.Locale)), Messages: []llm.Message{{Role: "user", Content: ask}}, MaxTokens: 16000, Temperature: 0.7}
 	var issue string
 	for attempt := 0; attempt < 2; attempt++ {
 		result, e := w.complete(ctx, request)
 		if e != nil {
-			return schema.Score{}, e
+			return ComposedScore{}, e
 		}
-		var s schema.Score
+		var s ComposedScore
 		if result.Truncated {
 			e = errors.New("output was cut off by the length limit")
 		} else {
@@ -139,7 +194,7 @@ func (w *Workbench) ComposeScore(ctx context.Context, in ScoreBrief) (schema.Sco
 		}
 		request.Messages = append(request.Messages, llm.Message{Role: "assistant", Content: result.Text}, llm.Message{Role: "user", Content: fix})
 	}
-	return schema.Score{}, msg.Err(msg.ErrAIResultInvalid, msg.Params{"detail": issue})
+	return ComposedScore{}, msg.Err(msg.ErrAIResultInvalid, msg.Params{"detail": issue})
 }
 
 // LyricsBrief 是“AI 写歌词”的输入。

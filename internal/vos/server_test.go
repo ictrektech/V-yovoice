@@ -51,6 +51,46 @@ func TestBrowserRequiresEnabledValidatedIdentity(t *testing.T) {
 	}
 }
 
+// 歌词校准只修改当前用户的历史元数据，不能操作其他用户的生成版本。
+func TestBrowserLyricTimingIsUserScoped(t *testing.T) {
+	s := testServer(t)
+	request := httptest.NewRequest("POST", "/studio-api/call", nil)
+	request.Header.Set("Authorization", "Bearer alice")
+	identity, err := s.identity(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := s.user(identity.Key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := schema.NewID()
+	if err = os.WriteFile(filepath.Join(w.Store.Root, "outputs", id+".wav"), []byte("audio"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err = w.Store.Update(func(state *schema.State) {
+		state.History = []schema.Generation{{ID: id, FileName: id + ".wav", Duration: 3, Settings: schema.DefaultDraft()}}
+	}, true); err != nil {
+		t.Fatal(err)
+	}
+	data := `{"id":"` + id + `","times":[0,1,2]}`
+	if got := rpc(s, "", "generation.lyricTimes", data); got.Code != 401 {
+		t.Fatalf("未登录请求 status=%d", got.Code)
+	}
+	if got := rpc(s, "bob", "generation.lyricTimes", data); !strings.Contains(got.Body.String(), `"error"`) {
+		t.Fatal("允许跨用户校准", got.Body.String())
+	}
+	if got := rpc(s, "alice", "generation.lyricTimes", data); got.Code != 200 || !strings.Contains(got.Body.String(), `"result":true`) {
+		t.Fatal("歌词校准失败", got.Body.String())
+	}
+	if got := w.Store.Read().History[0].LyricTimes; len(got) != 3 || got[1] != 1 {
+		t.Fatal("歌词校准未保存", got)
+	}
+	if got := rpc(s, "alice", "generation.lyricTimes", `{"id":"`+id+`","times":[2,1]}`); !strings.Contains(got.Body.String(), `"error"`) {
+		t.Fatal("允许倒序校准", got.Body.String())
+	}
+}
+
 func TestIdentityUsesVosIntegerEnableContract(t *testing.T) {
 	for _, tc := range []struct {
 		name, body string

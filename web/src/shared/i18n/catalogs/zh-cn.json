@@ -117,9 +117,6 @@
   "@yovoice.activity.generate": {
     "defaultMessage": "准备生成"
   },
-  "@yovoice.activity.import": {
-    "defaultMessage": "正在识别并校验模型"
-  },
   "@yovoice.activity.interrupted": {
     "defaultMessage": "上次操作已中断，可重新开始"
   },
@@ -201,14 +198,8 @@
   "@yovoice.app.expandSidebar": {
     "defaultMessage": "展开侧栏"
   },
-  "@yovoice.app.historyPlaceholder": {
-    "defaultMessage": "历史版本"
-  },
   "@yovoice.app.historyVersion": {
     "defaultMessage": "版本 {n}"
-  },
-  "@yovoice.app.historyVersions": {
-    "defaultMessage": "当前作品历史"
   },
   "@yovoice.app.loading": {
     "defaultMessage": "正在打开工作台…"
@@ -648,9 +639,6 @@
   "@yovoice.error.modelForgetBlocked": {
     "defaultMessage": "此模型暂不可移除，请先结束相关操作。"
   },
-  "@yovoice.error.modelImportNone": {
-    "defaultMessage": "没有识别到兼容的 GGUF，请选择模型列表中列出的 audio.cpp 模型包。"
-  },
   "@yovoice.error.modelMoved": {
     "defaultMessage": "模型文件已移动，请重新导入。"
   },
@@ -947,9 +935,6 @@
   },
   "@yovoice.settings.importDirectory": {
     "defaultMessage": "指定目录"
-  },
-  "@yovoice.settings.importGguf": {
-    "defaultMessage": "导入 GGUF"
   },
   "@yovoice.settings.inUse": {
     "defaultMessage": "正在使用"
@@ -1499,9 +1484,6 @@
   },
   "@yovoice.reference.omniTranscriptHelp": {
     "defaultMessage": "原文须与参考音频一致。"
-  },
-  "@yovoice.error.modelImportRequired": {
-    "defaultMessage": "该模型包尚未发布到下载源，请导入已验证的 Kokoro 多语言 GGUF 包。"
   },
   "@yovoice.settings.modelDesc.kokoro": {
     "defaultMessage": "内置音色 · 多语言"
@@ -2169,6 +2151,36 @@
   "@yovoice.music.stylePlaceholder": {
     "defaultMessage": "描述你想要的声音，例如 city pop, warm synths, chill, female vocals"
   },
+  "@yovoice.music.presets": {
+    "defaultMessage": "风格预设"
+  },
+  "@yovoice.music.moreStyles": {
+    "defaultMessage": "更多风格"
+  },
+  "@yovoice.music.collapseStyles": {
+    "defaultMessage": "收起风格"
+  },
+  "@yovoice.music.tuneElements": {
+    "defaultMessage": "微调元素"
+  },
+  "@yovoice.music.collapseElements": {
+    "defaultMessage": "收起微调"
+  },
+  "@yovoice.music.selectedTags": {
+    "defaultMessage": "已选 {count} 个标签"
+  },
+  "@yovoice.music.clearTags": {
+    "defaultMessage": "清空"
+  },
+  "@yovoice.music.elements": {
+    "defaultMessage": "微调元素"
+  },
+  "@yovoice.music.addTag": {
+    "defaultMessage": "添加风格标签"
+  },
+  "@yovoice.music.addTagPlaceholder": {
+    "defaultMessage": "输入标签或描述，按回车添加…"
+  },
   "@yovoice.music.tags": {
     "defaultMessage": "风格标签"
   },
@@ -2198,18 +2210,6 @@
   },
   "@yovoice.music.lyricsPlaceholder": {
     "defaultMessage": "写下歌词，用 [verse]、[chorus] 等标记段落。留空时由模型自由哼唱。"
-  },
-  "@yovoice.music.takes": {
-    "defaultMessage": "版本"
-  },
-  "@yovoice.music.takeCount": {
-    "defaultMessage": "{count} 个版本"
-  },
-  "@yovoice.music.take": {
-    "defaultMessage": "版本 {n}"
-  },
-  "@yovoice.music.noTakes": {
-    "defaultMessage": "每次生成都会在这里留下一个版本，方便对比和挑选。"
   },
   "@yovoice.music.generate": {
     "defaultMessage": "生成歌曲"
@@ -2282,6 +2282,9 @@
   },
   "@yovoice.error.scoreInvalid": {
     "defaultMessage": "乐谱格式不正确：请检查速度、拍号、声部和音符位置（最多 512 小节、32 个声部、20000 个音符、10 分钟）。"
+  },
+  "@yovoice.error.scoreTooLong": {
+    "defaultMessage": "乐谱太长：最多 {minutes} 分钟、{bars} 小节，请删减小节或调快速度后再试。"
   },
   "@yovoice.error.midiInvalid": {
     "defaultMessage": "无法读取这个 MIDI 文件，请使用含音符的标准类型 0 或 1 MIDI。"
@@ -2533,7 +2536,7 @@
     "defaultMessage": "收起标签"
   },
   "@yovoice.settings.tabSoundfonts": {
-    "defaultMessage": "音色库"
+    "defaultMessage": "编曲音色库"
   },
   "@yovoice.settings.downloads": {
     "defaultMessage": "下载"
@@ -2543,12 +2546,6 @@
   },
   "@yovoice.settings.available": {
     "defaultMessage": "可下载"
-  },
-  "@yovoice.settings.importLocal": {
-    "defaultMessage": "导入本地模型"
-  },
-  "@yovoice.settings.importLocalHint": {
-    "defaultMessage": "已有 GGUF 文件时可直接导入，无需下载。"
   },
   "@yovoice.settings.soundfontIntro": {
     "defaultMessage": "编曲渲染配乐时使用的 General MIDI 音色库，和语音、音乐模型分开管理。"
@@ -2693,9 +2690,6 @@
   },
   "@yovoice.score.roleOf": {
     "defaultMessage": "{name} 的角色"
-  },
-  "@yovoice.settings.aiGroup": {
-    "defaultMessage": "AI 写作"
   },
   "@yovoice.settings.aiTimeout": {
     "defaultMessage": "请求超时"
@@ -3029,5 +3023,168 @@
   },
   "@yovoice.app.pageError.reload": {
     "defaultMessage": "重新加载"
-  }
+  },
+  "@yovoice.library.batchDelete": {
+    "defaultMessage": "批量删除"
+  },
+  "@yovoice.library.selectAll": {
+    "defaultMessage": "全选"
+  },
+  "@yovoice.library.pickVoice": {
+    "defaultMessage": "选择“{name}”"
+  },
+  "@yovoice.library.finishPicking": {
+    "defaultMessage": "完成"
+  },
+  "@yovoice.library.deletePicked": {
+    "defaultMessage": "删除所选（{n}）"
+  },
+  "@yovoice.library.deletePickedTitle": {
+    "defaultMessage": "删除所选的 {n} 条参考音频？"
+  },
+  "@yovoice.library.deletePickedBody": {
+    "defaultMessage": "将删除所选参考音频及其音频文件，无法撤销。"
+  },
+  "@yovoice.library.batchDeleteReferenced": {
+    "defaultMessage": "「{names}」仍被角色或作品使用，未删除，请先替换或移除引用。"
+  },
+  "@yovoice.app.exportVersion": {
+    "defaultMessage": "导出音频"
+  },
+  "@yovoice.history.generations": {
+    "defaultMessage": "历史生成"
+  },
+  "@yovoice.library.searchGenerations": {
+    "defaultMessage": "搜索历史生成"
+  },
+  "@yovoice.library.emptyGenerationsTitle": {
+    "defaultMessage": "暂无历史生成"
+  },
+  "@yovoice.music.nowPlaying": {
+    "defaultMessage": "播放页"
+  },
+  "@yovoice.music.nowPlayingTitle": {
+    "defaultMessage": "{title} · 播放页"
+  },
+  "@yovoice.music.openNowPlaying": {
+    "defaultMessage": "在播放页打开 {name}"
+  },
+  "@yovoice.music.closeNowPlaying": {
+    "defaultMessage": "关闭播放页"
+  },
+  "@yovoice.music.fullscreen": {
+    "defaultMessage": "全屏"
+  },
+  "@yovoice.music.exitFullscreen": {
+    "defaultMessage": "退出全屏"
+  },
+  "@yovoice.music.seekLyric": {
+    "defaultMessage": "从这一句开始播放"
+  },
+  "@yovoice.music.lyricsEstimated": {
+    "defaultMessage": "歌词时间按歌曲时长估算"
+  },
+  "@yovoice.setup.label": {
+    "defaultMessage": "生成前的准备"
+  },
+  "@yovoice.setup.title": {
+    "defaultMessage": "开始生成前还需准备 {count} 项"
+  },
+  "@yovoice.setup.hint": {
+    "defaultMessage": "每一步都可以在这里完成，全部就绪后自动收起。"
+  },
+  "@yovoice.setup.model": {
+    "defaultMessage": "下载模型"
+  },
+  "@yovoice.setup.soundfont": {
+    "defaultMessage": "下载音色库"
+  },
+  "@yovoice.setup.engine": {
+    "defaultMessage": "安装推理引擎"
+  },
+  "@yovoice.setup.engineDetail": {
+    "defaultMessage": "audio.cpp，在本机运行模型"
+  },
+  "@yovoice.setup.engineUpdate": {
+    "defaultMessage": "当前模型需要更新推理引擎"
+  },
+  "@yovoice.setup.voice": {
+    "defaultMessage": "选一个声音"
+  },
+  "@yovoice.setup.voiceDetail": {
+    "defaultMessage": "当前模型按参考音频克隆声音"
+  },
+  "@yovoice.setup.download": {
+    "defaultMessage": "下载"
+  },
+  "@yovoice.setup.otherModel": {
+    "defaultMessage": "换一个"
+  },
+  "@yovoice.setup.install": {
+    "defaultMessage": "安装"
+  },
+  "@yovoice.setup.update": {
+    "defaultMessage": "更新"
+  },
+  "@yovoice.setup.chooseVoice": {
+    "defaultMessage": "选择参考音频"
+  },
+  "@yovoice.setup.done": {
+    "defaultMessage": "已完成"
+  },
+  "@yovoice.setup.downloading": {
+    "defaultMessage": "已下载 {received} / {total}"
+  },
+  "@yovoice.setup.installing": {
+    "defaultMessage": "正在安装…"
+  },
+  "@yovoice.music.rewind": {
+    "defaultMessage": "后退 {n} 秒"
+  },
+  "@yovoice.music.forward": {
+    "defaultMessage": "前进 {n} 秒"
+  },
+  "@yovoice.music.syncLyrics": {
+    "defaultMessage": "校准歌词"
+  },
+  "@yovoice.music.resyncLyrics": {
+    "defaultMessage": "重新校准"
+  },
+  "@yovoice.music.syncReset": {
+    "defaultMessage": "清除校准"
+  },
+  "@yovoice.music.lyricsAnalyzed": {
+    "defaultMessage": "歌词时间按人声自动定位，可再校准"
+  },
+  "@yovoice.music.lyricsSynced": {
+    "defaultMessage": "歌词时间已校准"
+  },
+  "@yovoice.music.syncHint": {
+    "defaultMessage": "每一行开始唱时按 ↓ 或点“下一行”，按退格撤销上一行"
+  },
+  "@yovoice.music.syncNext": {
+    "defaultMessage": "下一行"
+  },
+  "@yovoice.music.syncUndo": {
+    "defaultMessage": "撤销"
+  },
+  "@yovoice.music.syncCancel": {
+    "defaultMessage": "取消校准"
+  },
+  "@yovoice.music.syncProgress": {
+    "defaultMessage": "{done} / {total} 行"
+  },
+  "@yovoice.activity.import": {"defaultMessage": "正在识别并校验模型"},
+  "@yovoice.app.historyPlaceholder": {"defaultMessage": "历史版本"},
+  "@yovoice.app.historyVersions": {"defaultMessage": "当前作品历史"},
+  "@yovoice.error.modelImportNone": {"defaultMessage": "没有识别到兼容的 GGUF，请选择模型列表中列出的 audio.cpp 模型包。"},
+  "@yovoice.settings.importGguf": {"defaultMessage": "导入 GGUF"},
+  "@yovoice.error.modelImportRequired": {"defaultMessage": "该模型包尚未发布到下载源，请导入已验证的 Kokoro 多语言 GGUF 包。"},
+  "@yovoice.music.takes": {"defaultMessage": "版本"},
+  "@yovoice.music.takeCount": {"defaultMessage": "{count} 个版本"},
+  "@yovoice.music.take": {"defaultMessage": "版本 {n}"},
+  "@yovoice.music.noTakes": {"defaultMessage": "每次生成都会在这里留下一个版本，方便对比和挑选。"},
+  "@yovoice.settings.importLocal": {"defaultMessage": "导入本地模型"},
+  "@yovoice.settings.importLocalHint": {"defaultMessage": "已有 GGUF 文件时可直接导入，无需下载。"},
+  "@yovoice.settings.aiGroup": {"defaultMessage": "AI 写作"}
 }

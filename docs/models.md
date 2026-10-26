@@ -58,6 +58,8 @@ IndexTTS supports `--emotion-text`, `--emotion-reference`, or `--emotion-vector`
 
 VoxCPM2 uses voice descriptions for speed, emotion, and dialect. `--guidance-scale`, `--inference-steps`, and `--seed` provide additional control. Transcript-assisted cloning follows the reference performance instead of adding a design description.
 
+VoxCPM2 generates autoregressively at 6.25 frames per second. When one chunk runs too long, the voice drifts or breaks into noise, and pitch and loudness slowly sag within the chunk. YoVoice defaults to 200 characters per chunk with a 400-character limit. The default continuation strategy feeds the previous chunk into the next to keep transitions smooth; when cloning, set the long-text strategy to `stateless` to anchor every chunk directly on the reference audio.
+
 OmniVoice supports `--speed`, `--language`, `--guidance-scale`, and `--inference-steps`. Sound tags such as `[laughter]` and `[sigh]` can be inserted into the text. Qwen3-TTS supports `--language auto|zh|en|ja|ko|de|fr|ru|pt|es|it`.
 
 ### Breeze TTS 2 and dragging speech
@@ -90,7 +92,7 @@ Kokoro generates speech with built-in voices and does not require reference audi
 | `kokoro-1.0-q8` | About 933 MB | 54 voices; includes Japanese | Import a compatible GGUF |
 | `kokoro-1.1-zh-q8` | About 255 MB | 100 Chinese and 3 English voices; experimental | Import a compatible GGUF |
 
-The downloadable models support Chinese, American/British English, Spanish, French, Hindi, Italian, and Brazilian Portuguese. Version 1.1-zh uses different voice IDs from version 1.0.
+The official models support Chinese, American/British English, Spanish, French, Hindi, Italian, and Brazilian Portuguese. Version 1.1-zh uses different voice IDs from version 1.0.
 
 ### Generate speech
 

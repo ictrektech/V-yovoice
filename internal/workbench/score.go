@@ -53,7 +53,7 @@ func (w *Workbench) startScore(d schema.Draft, saveDraft bool) (<-chan struct{},
 			return msg.Err(msg.ErrModelMoved, nil)
 		}
 		id := schema.NewID()
-		file := id + ".wav"
+		file := outputFileName(id, time.Now(), d.Title)
 		path, e := w.Store.MediaPath("outputs", file)
 		if e != nil {
 			return e

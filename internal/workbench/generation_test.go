@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 	"yovoice/internal/catalog"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
@@ -114,5 +115,65 @@ func TestScoreRendersWithoutEngine(t *testing.T) {
 	}
 	if g := state.History[0]; g.Duration < 3.99 || g.Duration > 4.01 { // 一小节 2 秒加 2 秒收尾
 		t.Fatal(g.Duration)
+	}
+}
+
+// 合并上游后仍保留全部语音历史及音频，包含未被时间线引用的旧版本。
+func TestTextGenerationPreservesExistingVersions(t *testing.T) {
+	wb, err := New(t.TempDir())
+	must(t, err)
+	defer wb.Close()
+	executable, err := os.Executable()
+	must(t, err)
+	model := filepath.Join(wb.Store.Root, "models", "fake.gguf")
+	must(t, os.WriteFile(model, []byte("test"), 0600))
+	reference := filepath.Join(t.TempDir(), "reference.wav")
+	must(t, os.WriteFile(reference, wav(), 0600))
+	voice, err := wb.ImportVoice(context.Background(), reference, "")
+	must(t, err)
+	d := schema.DefaultDraft()
+	d.VoiceID = &voice.ID
+	other := schema.DefaultDraft()
+	other.ID = schema.NewID()
+	var history []schema.Generation
+	for i := range 11 {
+		g := schema.Generation{ID: schema.NewID(), Title: "旧版本", FileName: schema.NewID() + ".wav", CreatedAt: time.Now().Add(-time.Duration(i+1) * time.Minute).UTC(), Duration: 1, Settings: d}
+		must(t, os.WriteFile(filepath.Join(wb.Store.Root, "outputs", g.FileName), wav(), 0600))
+		history = append(history, g)
+	}
+	foreign := schema.Generation{ID: schema.NewID(), Title: "其他作品", FileName: schema.NewID() + ".wav", CreatedAt: time.Now().Add(-time.Hour).UTC(), Duration: 1, Settings: other}
+	must(t, os.WriteFile(filepath.Join(wb.Store.Root, "outputs", foreign.FileName), wav(), 0600))
+	// 最旧的一条放在时间线上，不能被删除。
+	used := history[10]
+	d.Timeline = &schema.AudioTimeline{Tracks: []schema.AudioLane{{ID: "lane", Name: "旁白", Clips: []schema.AudioClip{{ID: "clip", GenerationID: used.ID, Duration: 1}}}}}
+	must(t, wb.Store.Update(func(s *schema.State) {
+		s.Models = []schema.InstalledModel{{ID: "index-2.5-q8", Path: model}}
+		s.RuntimePath = &executable
+		s.RuntimeBackend = ptr("cpu")
+		s.RuntimeVersion = ptr(catalog.EngineVersion)
+		s.Preferences.Backend = "cpu"
+		s.Drafts = []schema.Draft{d, other}
+		s.History = append(history, foreign)
+	}, true))
+	must(t, wb.Generate(d))
+	<-wb.Done()
+	state := wb.Store.Read()
+	if state.Activity == nil || state.Activity.Status != "completed" {
+		t.Fatalf("%+v", state.Activity)
+	}
+	ids := map[string]bool{}
+	for _, g := range state.History {
+		ids[g.ID] = true
+	}
+	if len(state.History) != len(history)+2 || !ids[foreign.ID] {
+		t.Fatalf("history = %d", len(state.History))
+	}
+	for _, old := range history {
+		if !ids[old.ID] {
+			t.Fatalf("旧版本被删除：%s", old.ID)
+		}
+		if _, err := os.Stat(filepath.Join(wb.Store.Root, "outputs", old.FileName)); err != nil {
+			t.Fatal("旧版本音频应保留", err)
+		}
 	}
 }
