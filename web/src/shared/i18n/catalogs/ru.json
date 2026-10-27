@@ -1902,7 +1902,7 @@
     "defaultMessage": "Текст песни — не более 4000 символов."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "Длительность должна быть 10–300 секунд, темп — 30–300 BPM."
+    "defaultMessage": "Настройки музыки выходят за пределы этой модели: проверьте длительность, темп или фрагмент для перерисовки."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Генерация музыки"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "Запись длится {total}, поэтому в качестве образца взят самый чистый фрагмент ({start}–{end}). Его можно изменить через «Обрезать»."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Выберите уже созданный вариант этой работы для переработки или перерисовки фрагмента либо вернитесь к генерации по тексту."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Создаёт инструментальную музыку по описанию на английском и может переработать или частично перерисовать готовый вариант; до 2 минут. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Создаёт звуковые эффекты по описанию на английском и может переработать или частично перерисовать готовый вариант; до 2 минут. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "Более крупная модель Stable Audio 3: инструментальная музыка выше качеством и более длинные треки (примерно до 6 минут); может переработать или частично перерисовать готовый вариант. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "По тексту"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Переработать"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Перерисовать"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Исходный вариант"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Сначала создайте вариант, затем его можно переработать или перерисовать."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Сила изменений"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: чем меньше, тем ближе к исходному варианту."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Перерисовать с (с)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Перерисовать до (с)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio понимает только описания на английском и не поёт текст."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Опишите звук, например footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Создать аудио"
   }
 }

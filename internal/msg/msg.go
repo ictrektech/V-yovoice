@@ -115,9 +115,11 @@ const (
 	ErrMusicLyrics           Code = "@yovoice.error.musicLyrics"
 	ErrMusicParams           Code = "@yovoice.error.musicParams"
 	ErrMusicLyricsRequired   Code = "@yovoice.error.musicLyricsRequired"
-	ErrScoreInvalid          Code = "@yovoice.error.scoreInvalid"
-	ErrScoreTooLong          Code = "@yovoice.error.scoreTooLong"
-	ErrMidiInvalid           Code = "@yovoice.error.midiInvalid"
+	// Stable Audio 改编时没有选起点版本，或选中的版本已删除、音频文件丢失。
+	ErrMusicSourceRequired Code = "@yovoice.error.musicSourceRequired"
+	ErrScoreInvalid        Code = "@yovoice.error.scoreInvalid"
+	ErrScoreTooLong        Code = "@yovoice.error.scoreTooLong"
+	ErrMidiInvalid         Code = "@yovoice.error.midiInvalid"
 	// 旋律谱：谱面不合方言（参数含小节与声部）、引擎没有写出谱、扒谱模型未下载。
 	ErrMelodyInvalid           Code = "@yovoice.error.melodyInvalid"
 	ErrMelodyEmpty             Code = "@yovoice.error.melodyEmpty"
@@ -228,7 +230,7 @@ func All() []Code {
 		ErrCPUBundleInvalid, ErrBackendUnsupported, ErrPlatformArch, ErrMacBackend, ErrMacAppleSilicon,
 		ErrRequestInvalid, ErrMethodUnsupported,
 		ErrVoxModeInvalid, ErrVoxTextLimits, ErrVoxReferenceRequired, ErrVoxParams,
-		ErrMusicStyle, ErrMusicLyrics, ErrMusicParams, ErrMusicLyricsRequired, ErrEngineUpgradeRequired, ErrScoreInvalid, ErrScoreTooLong, ErrMidiInvalid, ErrMelodyInvalid, ErrMelodyEmpty, ErrCoverModelRequired, ErrMelodySoundFontRequired, ErrAlignModelRequired, ErrAlignLyrics, ErrAlignEmpty,
+		ErrMusicStyle, ErrMusicLyrics, ErrMusicParams, ErrMusicLyricsRequired, ErrMusicSourceRequired, ErrEngineUpgradeRequired, ErrScoreInvalid, ErrScoreTooLong, ErrMidiInvalid, ErrMelodyInvalid, ErrMelodyEmpty, ErrCoverModelRequired, ErrMelodySoundFontRequired, ErrAlignModelRequired, ErrAlignLyrics, ErrAlignEmpty,
 		ErrAIProviderInvalid, ErrAINotConfigured, ErrAIAuth, ErrAIRateLimit, ErrAINetwork, ErrAIResponse, ErrAIModelsPath, ErrAIResultInvalid, ErrAITimeout, ErrAssistantMissing, ErrAssistantProvider,
 		ErrAIFreeRate, ErrAIFreeBusy, ErrAIFreePromptCap, ErrAIFreeAccess, ErrCodexMissing, ErrCodexLoggedOut, ErrCodexFailed, ErrCodexLimit, ErrCodexNoImage,
 		ErrLocalAPIPort, ErrLocalAPIPortInUse,

@@ -183,6 +183,9 @@ func validateMusic(d Draft, family string) error {
 		}
 		return nil
 	}
+	if family == "stable_audio" {
+		return validateStableAudio(d)
+	}
 	o, err := d.GenerationOptions("ace_step")
 	if err != nil {
 		return err
@@ -193,6 +196,39 @@ func validateMusic(d Draft, family string) error {
 	}
 	if v, ok := o["bpm"].(float64); ok && v < 30 {
 		return msg.Err(msg.ErrMusicParams, nil)
+	}
+	if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+		return msg.Err(msg.ErrParamsOutOfRange, nil)
+	}
+	return nil
+}
+
+// validateStableAudio 校验 Stable Audio：只用英文描述生成音乐或音效，不演唱歌词；
+// 改编需要选定起点版本；局部重绘的区间须落在模型最长时长内。
+func validateStableAudio(d Draft) error {
+	m, _ := catalog.Lookup(d.ModelID)
+	o, err := d.GenerationOptions("stable_audio")
+	if err != nil {
+		return err
+	}
+	limit := float64(m.MaxDuration)
+	if v, ok := o["duration_seconds"].(float64); ok && limit > 0 && v > limit {
+		return msg.Err(msg.ErrMusicParams, nil)
+	}
+	switch o["edit"] {
+	case "init_audio":
+		if d.SourceGenerationID == "" {
+			return msg.Err(msg.ErrMusicSourceRequired, nil)
+		}
+	case "inpaint_audio":
+		if d.SourceGenerationID == "" {
+			return msg.Err(msg.ErrMusicSourceRequired, nil)
+		}
+		start, _ := o["inpaint_start"].(float64)
+		end, _ := o["inpaint_end"].(float64)
+		if end <= start || (limit > 0 && end > limit) {
+			return msg.Err(msg.ErrMusicParams, nil)
+		}
 	}
 	if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
 		return msg.Err(msg.ErrParamsOutOfRange, nil)

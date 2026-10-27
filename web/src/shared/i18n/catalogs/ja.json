@@ -1902,7 +1902,7 @@
     "defaultMessage": "歌詞は 4000 文字までです。"
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "長さは 10〜300 秒、テンポは 30〜300 BPM にしてください。"
+    "defaultMessage": "音楽の設定がこのモデルの範囲外です。長さ、テンポ、再生成範囲を確認してください。"
   },
   "@yovoice.project.music": {
     "defaultMessage": "音楽生成"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "録音が {total} あるため、最も明瞭な {start}–{end} を参照音声にしました。「トリミング」で調整できます。"
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "アレンジまたは部分再生成の元にする、この作品の生成済みテイクを選ぶか、テキスト生成に戻してください。"
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "英語の説明からインスト曲を生成し、生成済みテイクのアレンジや部分再生成もできます（最長 2 分）。Stability AI コミュニティライセンス：年間収益 100 万米ドル未満は無料。"
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "英語の説明から効果音を生成し、生成済みテイクのアレンジや部分再生成もできます（最長 2 分）。Stability AI コミュニティライセンス：年間収益 100 万米ドル未満は無料。"
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "より大きな Stable Audio 3 モデル。高品質なインスト曲や長めの曲（約 6 分まで）を生成し、生成済みテイクのアレンジや部分再生成もできます。Stability AI コミュニティライセンス：年間収益 100 万米ドル未満は無料。"
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "テキストから"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "アレンジ"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "部分再生成"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "元のテイク"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "まずテイクを生成すると、それをもとにアレンジや部分再生成ができます。"
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "変化の大きさ"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1：小さいほど元のテイクに近くなります。"
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "再生成の開始（秒）"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "再生成の終了（秒）"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio は英語の説明のみ理解し、歌詞は歌いません。"
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "効果音を説明してください。例：footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "オーディオを生成"
   }
 }

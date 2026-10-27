@@ -33,7 +33,7 @@ Everything in the right-hand inspector is editable with `update_work` {"id","set
 
 1. `create_work` {"kind":"music","title":...}.
 2. Follow the yovoice-lyrics skill, then apply with `update_work` {"id","text":<style>,"lyrics":...,"instrumental":false,"language":"zh"}.
-3. `list_models`: an installed `ace-step-*` or `yue2-*` model is required. If missing, propose installing it with `propose_action` {"action":"install_model","target":<model id>}.
+3. `list_models`: an installed `ace-step-*`, `yue2-*` or `stable-audio-*` model is required (Stable Audio: English description only, instrumental music or sound effects, no lyrics). If missing, propose installing it with `propose_action` {"action":"install_model","target":<model id>}.
 4. `update_work` {"id","modelId":...} then `generate_work` (for YuE2 in score mode, after step 5). Music takes longer than voice; say so and let the user check later.
 5. With a `yue2-*` model in score mode, write the score first and let the user review and listen to it before generating; melody scores, covers, instrumentals and musical edits follow the yovoice-music skill.
 

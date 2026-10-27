@@ -1902,7 +1902,7 @@
     "defaultMessage": "歌词最多 4000 字。"
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "时长需为 10–300 秒，速度需为 30–300 BPM。"
+    "defaultMessage": "音乐参数超出当前模型的范围，请检查时长、速度或重绘区间。"
   },
   "@yovoice.project.music": {
     "defaultMessage": "音乐生成"
@@ -4015,5 +4015,53 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "录音长 {total}，已自动截取最清楚的 {start}–{end} 作为参考，可用“裁剪”调整。"
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "请选择本作品已生成的一个版本作为改编或重绘的起点，或切回文字生成。"
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "根据英文描述生成纯音乐，可在已生成的版本上改编或局部重绘，最长 2 分钟。模型许可为 Stability AI 社区许可：年收入低于 100 万美元可免费使用。"
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "根据英文描述生成音效，可在已生成的版本上改编或局部重绘，最长 2 分钟。模型许可为 Stability AI 社区许可：年收入低于 100 万美元可免费使用。"
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "更大的 Stable Audio 3 模型，纯音乐质量更高、可生成更长的曲子（约 6 分钟以内），也可改编或局部重绘已生成的版本。模型许可为 Stability AI 社区许可：年收入低于 100 万美元可免费使用。"
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "文字生成"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "改编"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "局部重绘"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "起点版本"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "先生成一个版本，才能在它的基础上改编或重绘。"
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "改动幅度"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1：越小越接近原版本。"
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "重绘开始（秒）"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "重绘结束（秒）"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio 只理解英文描述，不演唱歌词。"
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "描述你想要的音效，例如 footsteps on gravel, close perspective"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "生成音频"
   }
 }
