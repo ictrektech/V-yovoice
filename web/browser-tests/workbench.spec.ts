@@ -434,3 +434,24 @@ test('生成结果体检有问题时，播放栏显示提醒和问题位置', as
   expect(label).toContain('结尾被截断');
   expect(label).not.toContain('偏离中线');
 });
+
+test('已下载模型有新版本时显示轻提示，可关闭并重新下载更新', async ({ page }) => {
+  const state = emptyState();
+  state.models = [{ id: 'kokoro-82m-q8', path: 'kokoro-82m-q8_0.gguf', managed: true, sha256: '0'.repeat(64) }];
+  await seedState(page, state);
+  await page.goto('/');
+  const notice = page.getByTestId('model-update-notice');
+  await expect(notice).toContainText('1 个模型可更新');
+  await notice.getByRole('button', { name: '关闭提示' }).click();
+  await expect(notice).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId('model-update-notice')).toHaveCount(0);
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
+  const model = page.locator('[data-model-id="kokoro-82m-q8"]');
+  await expect(model.getByText('有新版本', { exact: true })).toBeVisible();
+  await model.getByRole('button', { name: '更新', exact: true }).click();
+  await expect(model.getByText('有新版本', { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('model-update-notice')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1') ?? '{}').models?.[0]?.sha256)).not.toBe('0'.repeat(64));
+});

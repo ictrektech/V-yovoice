@@ -33,11 +33,11 @@ export type ScoreRole = 'melody' | 'piano' | 'strings' | 'bass' | 'drums' | 'pad
 export interface ScoreTrack { id: string; name: string; role?: ScoreRole; program: number; drums?: boolean; level?: number; pan?: number; reverb?: number; mute?: boolean; humanize?: Humanize; dynamics?: ScoreRamp[]; notes: ScoreNote[] }
 export interface ScoreSection { name: string; start: number; end: number; tempo?: number }
 export interface Score { tempo: number; timeSignature: number[]; key?: string; sections?: ScoreSection[]; tracks: ScoreTrack[] }
-export type ProjectKind = 'text' | 'story' | 'subtitle' | 'music' | 'score';
+export type ProjectKind = 'text' | 'story' | 'subtitle' | 'music' | 'score' | 'sfx';
 export interface Draft extends SynthesisSettings { performance?: CharacterPerformance; id: string; title: string; text: string; kind?: ProjectKind; characterId?: string; createdAt?: string; updatedAt?: string; subtitles?: SubtitleDocument; timeline?: AudioTimeline; score?: Score }
-export type ProjectPage = 'text' | 'story' | 'music' | 'score';
+export type ProjectPage = 'text' | 'story' | 'music' | 'score' | 'sfx';
 // 旧字幕作品沿用原始数据，统一归入故事。
-export const projectKind = (draft: Draft): ProjectPage => draft.kind === 'music' || draft.kind === 'score' ? draft.kind : draft.subtitles || draft.kind === 'story' || draft.kind === 'subtitle' ? 'story' : 'text';
+export const projectKind = (draft: Draft): ProjectPage => draft.kind === 'music' || draft.kind === 'score' || draft.kind === 'sfx' ? draft.kind : draft.subtitles || draft.kind === 'story' || draft.kind === 'subtitle' ? 'story' : 'text';
 export interface CharacterPreview { id: string; fileName: string; duration: number; settings: SynthesisSettings; text: string }
 export interface Character { performances?: CharacterPerformance[]; id: string; name: string; settings: SynthesisSettings; demoText: string; preview?: CharacterPreview; createdAt?: string; updatedAt?: string }
 export const synthesisSettings = ({ performance: _performance, id: _id, title: _title, text: _text, kind: _kind, characterId: _characterId, createdAt: _createdAt, updatedAt: _updatedAt, subtitles: _subtitles, timeline: _timeline, score: _score, ...settings }: Draft): SynthesisSettings => structuredClone(settings);
@@ -68,7 +68,12 @@ export interface Voice { referenceText?: string; source?: string; sourceGenerati
 export interface VoiceExcerpt { start: number; end: number; total: number }
 export interface ModelFile { path: string; size: number; sha256: string }
 export interface ModelPackage { voices?: string[]; variant?: string; maxDuration?: number; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
-export interface InstalledModel { id: string; path: string; managed: boolean }
+export interface InstalledModel { id: string; path: string; managed: boolean; sha256?: string }
+export const modelMainFile = (model: ModelPackage): ModelFile => model.files?.find(file => file.path === model.remotePath) ?? { path: model.remotePath, size: model.size, sha256: model.sha256 };
+export const modelUpdateAvailable = (state: Pick<State, 'models'>, model: ModelPackage) => {
+  const installed = state.models.find(item => item.id === model.id);
+  return installed?.sha256 && installed.sha256 !== modelMainFile(model).sha256 ? installed : undefined;
+};
 export interface GenerationSegment { cueId: string; speakerId: string; speakerName: string; batchId: string; index: number; targetClipId?: string; placement?: 'ripple' | 'preserve' }
 // 本机 Codex CLI 的检测结果：path 为空表示未安装，login 为 chatgpt、apikey 或空（未登录）。
 export interface CodexInfo { path?: string; version?: string; login?: 'chatgpt' | 'apikey' }
@@ -125,7 +130,7 @@ export interface CleanupReport {
   freedBytes: number;
 }
 export interface Preferences { downloadSource: string; backend: string; modelDirectory: string | null; uiLocale: UiLocale; proxyURL?: string; proxyEnabled?: boolean; aiTimeout?: number; introSeen?: boolean; tourSeen?: boolean; assistantQuiet?: boolean; hiddenFeatures?: Feature[] }
-// 可在设置中隐藏的功能入口：故事配音、音乐生成（含编曲）与 Ocho 助手，默认全部显示。
+// 可在设置中隐藏的功能入口：故事配音、音乐生成（含编曲与音效）与 Ocho 助手，默认全部显示。
 export const optionalFeatures = ['story', 'music', 'assistant'] as const;
 export type Feature = typeof optionalFeatures[number];
 export const featureHidden = (preferences: Preferences, feature: Feature) => !!preferences.hiddenFeatures?.includes(feature);
@@ -272,9 +277,11 @@ export function groupModels(models: ModelPackage[]) {
   for (const model of models) groups.set(model.name, [...(groups.get(model.name) ?? []), model]);
   return [...groups.values()];
 }
+// 音效可用专门的 SFX 模型或 Stable Audio Medium；Small Music 只用于歌曲。
+export const isSfxModel = (id: string) => isStableAudio(id) && (id.includes('-sfx-') || id.includes('-medium-'));
 // 新作品的默认模型：沿用最近一次同类作品用过且已安装的模型，否则取第一个已安装的同类模型，都没有时用 fallback。
-export function preferredModel(state: Pick<State, 'models' | 'drafts'>, kind: 'text' | 'story' | 'music' | 'score', fallback: string) {
-  const fits = kind === 'music' ? isMusicModel : kind === 'score' ? isSoundFont : isVoiceModel;
+export function preferredModel(state: Pick<State, 'models' | 'drafts'>, kind: 'text' | 'story' | 'music' | 'score' | 'sfx', fallback: string) {
+  const fits = kind === 'music' ? (id: string) => isMusicModel(id) && !id.includes('-sfx-') : kind === 'sfx' ? isSfxModel : kind === 'score' ? isSoundFont : isVoiceModel;
   const installed = new Set(state.models.map(model => model.id));
   const recent = state.drafts.filter(d => installed.has(d.modelId) && fits(d.modelId)).sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0];
   return recent?.modelId ?? state.models.find(model => fits(model.id))?.id ?? fallback;

@@ -4059,7 +4059,37 @@
     "defaultMessage": "Stable Audio は英語の説明のみ理解し、歌詞は歌いません。"
   },
   "@yovoice.music.soundPlaceholder": {
-    "defaultMessage": "効果音を説明してください。例：footsteps on gravel, close perspective"
+    "defaultMessage": "効果音を英語で説明してください。例：footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "モデル更新 {count} 件"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "新しいバージョン"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "更新"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "効果音生成"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "新しい効果音"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "効果音の説明"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "効果音を作る"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "効果音プロジェクトを作成し、短い効果音を生成して"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "効果音が完成しました。説明を調整して改良しますか？"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "現在の効果音の英語説明を調整し、改良版を生成して"
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "オーディオを生成"

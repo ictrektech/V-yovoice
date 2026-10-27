@@ -14,13 +14,14 @@ import { ModelOptions } from '../create/model-options';
 import { applyPresetTags, durationPresets, isPresetActive, musicLanguages, splitTags, stylePresets, styleTags, tagHintKey } from './music-draft';
 import { useElapsed } from '../../shared/lib/use-elapsed';
 import { StableAudioControls, stableAudioOptions, stableAudioReady } from './stable-audio-controls';
+import { sfxDurationPresets } from '../sfx/sfx-draft';
 
 const optionValues = (key: string) => definitions.ace_step.find(spec => spec.key === key)?.values ?? [];
 
 // 音乐检查器：常用的时长、演唱语言与风格预设放在右侧面板中，参照情绪预设的层级结构。
-export function MusicInspector({ draft, state, catalog, change, generate, cancel, settings, upgradeEngine, advanced, setAdvanced, header }: {
+export function MusicInspector({ draft, state, catalog, change, generate, cancel, settings, upgradeEngine, advanced, setAdvanced, header, soundEffects = false }: {
   draft: Draft; state: State; catalog: ModelPackage[]; change: (patch: Partial<Draft>) => void; header?: ReactNode;
-  generate: () => void; cancel: () => void; settings: () => void; upgradeEngine: () => void; close?: () => void; advanced: boolean; setAdvanced: (value: boolean) => void;
+  generate: () => void; cancel: () => void; settings: () => void; upgradeEngine: () => void; close?: () => void; advanced: boolean; setAdvanced: (value: boolean) => void; soundEffects?: boolean;
 }) {
   const t = useTranslator();
   const busy = state.activity?.status === 'running';
@@ -35,14 +36,16 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
   const yueOptions = draft.modelOptions?.yue2 ?? {};
   const yueMode = String(yueOptions.cot ?? 'auto');
   const updateYue = (key: string, value: string | number) => change({ modelOptions: { ...draft.modelOptions, yue2: { ...yueOptions, [key]: value } } });
-  const models = catalog.filter(model => isMusicModel(model.id));
+  const models = catalog.filter(model => soundEffects
+    ? model.family === 'stable_audio' && (model.variant === 'sfx' || model.variant === 'medium')
+    : isMusicModel(model.id) && (model.variant !== 'sfx' || model.id === draft.modelId));
   const model = models.find(item => item.id === draft.modelId);
   // 已装内核过旧时提前说明原因，生成按钮仍可点击并跳转到内核设置。
   // YuE2 由歌词决定长度、也不接受 ACE-Step 的规划参数，只保留种子。
   const yue = isYuE(draft.modelId);
   // Stable Audio 只按英文描述生成，没有歌词与演唱语言；音效模型也不套用歌曲风格预设。
   const stable = isStableAudio(draft.modelId);
-  const sfx = stable && model?.variant === 'sfx';
+  const sfx = soundEffects || (stable && model?.variant === 'sfx');
   const engineOutdated = !!state.runtimePath && !modelEngineReady(state, model);
   const tags = splitTags(draft.text);
   const groups = Object.keys(styleTags) as (keyof typeof styleTags)[];
@@ -66,7 +69,7 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
         <h2 className="inspector-section-title">{t('@yovoice.create.model')}</h2>
         <ModelSelector label={t('@yovoice.create.model')} models={models} state={state} value={draft.modelId} isDisabled={generating} manage={settings} onChange={modelId => change(isStableAudio(modelId) ? { modelId, instrumental: true } : { modelId })} />
       </VStack>
-      {stable ? <StableAudioControls draft={draft} model={model} history={state.history} change={change} /> : yue ? <>
+      {stable ? <StableAudioControls draft={draft} model={model} history={state.history} change={change} durationPresets={soundEffects ? sfxDurationPresets : undefined} /> : yue ? <>
       {/* 生成方式：按旋律谱（有谱按谱、没谱先写谱）或不经过谱自由发挥；纯音乐必须经过谱。 */}
       {draft.instrumental ? null : <VStack gap={2}>
         <h3>{t('@yovoice.music.mode')}</h3>

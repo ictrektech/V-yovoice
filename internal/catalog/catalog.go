@@ -11,12 +11,12 @@ import (
 	"yovoice/internal/msg"
 )
 
-const Revision = "6d5436fc85f7a20c2e9f4e472b7f3a532f686444"
+const Revision = "874fcb41ececda20bcbc0782d6b4ea7f7d069ea8"
 
 // ModelScopeRevision 固定 ModelScope 上 audio.cpp 模型镜像的提交。镜像会随上游整体刷新，
 // 跟随 master 时文件大小与 SHA256 都会和目录清单对不上，导致下载失败；
 // 该提交下目录清单中的全部文件与清单一致，升级模型时与 Revision 一起更新。
-const ModelScopeRevision = "63d135e95ebee8d3ac36a0dd69540518b65c8f64"
+const ModelScopeRevision = "c5046e531f656253f082b7f74384ca59ec6d2a4c"
 
 type ModelPackage struct {
 	Revision string `json:"revision,omitempty"`
@@ -206,6 +206,16 @@ func (m ModelPackage) PackageFiles() []ModelFile {
 		return m.Files
 	}
 	return []ModelFile{{Path: m.RemotePath, Size: m.Size, SHA256: m.SHA256}}
+}
+
+// MainFile 返回用于识别模型文件版本的主文件。
+func (m ModelPackage) MainFile() ModelFile {
+	for _, file := range m.PackageFiles() {
+		if file.Path == m.RemotePath {
+			return file
+		}
+	}
+	return ModelFile{Path: m.RemotePath, Size: m.Size, SHA256: m.SHA256}
 }
 
 func Lookup(id string) (ModelPackage, error) {

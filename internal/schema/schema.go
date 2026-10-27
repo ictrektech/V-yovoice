@@ -184,6 +184,7 @@ type InstalledModel struct {
 	ID      string `json:"id"`
 	Path    string `json:"path"`
 	Managed bool   `json:"managed"`
+	SHA256  string `json:"sha256,omitempty"`
 }
 type Generation struct {
 	ID        string             `json:"id"`

@@ -186,7 +186,8 @@
         "additionalProperties": false,
         "description": "Text plus voice settings. Omitted fields use the app defaults; unknown fields are rejected. Which fields apply depends on the model family: see `generationOptions` from `/v1/models` and the model guide.",
         "properties": {
-          "text": { "type": "string", "description": "Text to speak, or the style description for music models" },
+          "text": { "type": "string", "description": "Text to speak, or the style description for music and sound-effect models" },
+          "kind": { "type": "string", "description": "Optional work kind stored in the generation history; use sfx for sound effects. Omit for voice generation" },
           "modelId": { "type": "string", "description": "Installed model ID from `/v1/models`" },
           "voiceId": { "type": "string", "nullable": true, "description": "Reference voice ID from `/v1/voices`; optional for models with voice design" },
           "mode": { "type": "string", "description": "Voice source mode" },
@@ -309,7 +310,8 @@
               "properties": {
                 "id": { "type": "string" },
                 "path": { "type": "string" },
-                "managed": { "type": "boolean" }
+                "managed": { "type": "boolean" },
+                "sha256": { "type": "string", "description": "SHA256 of the installed main model file" }
               }
             }
           },

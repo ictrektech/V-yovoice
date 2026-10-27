@@ -14,6 +14,15 @@ func Validate(d Draft) error {
 	if d.Kind == "score" {
 		return validateScoreDraft(d)
 	}
+	if d.Kind == "sfx" {
+		m, e := catalog.Lookup(d.ModelID)
+		if e != nil {
+			return e
+		}
+		if m.Family != "stable_audio" || m.Variant != "sfx" && m.Variant != "medium" {
+			return msg.Err(msg.ErrModelUnsupported, nil)
+		}
+	}
 	if m, e := catalog.Lookup(d.ModelID); e == nil && catalog.IsMusic(m.Family) {
 		return validateMusic(d, m.Family)
 	}

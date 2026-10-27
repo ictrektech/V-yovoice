@@ -449,8 +449,8 @@ func TestSetModelDirectoryAdoptsModels(t *testing.T) {
 	}
 	must(t, w.SetModelDirectory(dir))
 	models := w.Store.Read().Models
-	if len(models) != 1 || models[0].ID != single.ID || !models[0].Managed {
-		t.Fatalf("应只登记完整的单文件模型: %+v", models)
+	if len(models) != 1 || models[0].ID != single.ID || !models[0].Managed || models[0].SHA256 != single.MainFile().SHA256 {
+		t.Fatalf("应只登记完整的单文件模型并记录主文件摘要: %+v", models)
 	}
 	sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(multi.Files[0].Path)), multi.Files[0].Size)
 	must(t, w.SetModelDirectory(dir))
@@ -482,4 +482,30 @@ func TestCancelOperationOnlyCancelsOwnRun(t *testing.T) {
 	w.mu.Lock()
 	w.cancel, w.done = nil, nil
 	w.mu.Unlock()
+}
+
+// 更新模型时新文件先落在 .new，生成进行中不替换并保留新文件，空闲后再替换旧文件。
+func TestSwapModelFilesWaitsForGeneration(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	path := filepath.Join(w.Store.Root, "model.gguf")
+	must(t, os.WriteFile(path, []byte("old"), 0600))
+	must(t, os.WriteFile(path+".new", []byte("new"), 0600))
+	must(t, w.begin("generate", msg.ActivityGenerate, nil, nil, func(ctx context.Context) error { <-ctx.Done(); return ctx.Err() }))
+	if err = w.swapModelFiles([]string{path}); err == nil {
+		t.Fatal("生成期间不能替换模型文件")
+	}
+	if data, _ := os.ReadFile(path + ".new"); string(data) != "new" {
+		t.Fatal("忙碌时应保留已下载的新文件")
+	}
+	w.Cancel()
+	<-w.Done()
+	must(t, w.swapModelFiles([]string{path}))
+	if data, _ := os.ReadFile(path); string(data) != "new" {
+		t.Fatal("空闲时应替换为新文件")
+	}
+	if _, err = os.Stat(path + ".new"); !os.IsNotExist(err) {
+		t.Fatal("替换后不应残留 .new 文件")
+	}
 }

@@ -114,6 +114,7 @@ export function MediaLibrary({ page, state, query, onQueryChange, track, auditio
         const excerpt = kind === 'music' ? (item.settings.instrumental ? t('@yovoice.music.instrumental') : firstLyric) : name !== item.settings.text.trim() ? item.settings.text.trim() : undefined;
         return <Ticket key={item.id} index={index} className={`history-item ticket-${kind}`} coverClassName={selected && playingId === item.id ? 'is-playing' : ''}
           cover={quick ? <TapeCover seed={item.id} title={name} />
+            : kind === 'sfx' ? <WaveRing seed={item.id} duration={item.duration}><Player compact avatar={{ seed: item.id, label: t('@yovoice.app.audition', { name }), select: listen }} suspended={suspended} track={selected ? track : null} onError={onError} /></WaveRing>
             : <RecordCover seed={item.id} interactive><Player compact avatar={{ seed: item.id, label: t('@yovoice.app.audition', { name }), select: listen }} suspended={suspended} track={selected ? track : null} onError={onError} /></RecordCover>}
           eyebrow={<HStack className="history-meta" gap={2}>{quick ? null : <b>{version}</b>}<time dateTime={item.createdAt}>{date}</time></HStack>}
           title={<h3 onPointerEnter={overflowTitle} data-full-text={item.settings.text}>{name}</h3>} excerpt={excerpt}

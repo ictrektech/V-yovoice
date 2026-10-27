@@ -4,10 +4,11 @@ import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { TextInput } from '@astryxdesign/core/TextInput';
+import { Token } from '@astryxdesign/core/Token';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { CircleCheck, Download, Pause, Search, Trash2 } from 'lucide-react';
+import { CircleCheck, Download, Pause, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { call } from '../../shared/lib/client';
-import { formatSize, groupModels, type Draft, type ModelPackage, type State } from '../../shared/workbench';
+import { formatSize, groupModels, modelUpdateAvailable, type Draft, type ModelPackage, type State } from '../../shared/workbench';
 import { SettingsGroup } from '../../shared/ui/settings-group';
 
 function downloadStatusLabel(t: (key: string) => string, downloading: boolean, received: number, size: number, status: string) {
@@ -60,6 +61,7 @@ export function ModelGroups({ models, state, draft, run, focus }: { models: Mode
     const removeBlocked = busy || (modelBusy && !(activity?.kind === 'download' && activity.modelId && activity.modelId !== model.id));
     const inUse = draft.modelId === model.id;
     const owned = group.filter(isInstalled);
+    const update = modelUpdateAvailable(state, model);
     // 应用下载的模型移除时连同文件删除；导入的模型只解除登记。
     const managed = state.models.find(m => m.id === model.id)?.managed ?? false;
     return <VStack className="model-row settings-row" data-model-id={model.id} data-model-ids={group.map(item => item.id).join(' ')} data-installed={ready} key={group[0].name} gap={3}>
@@ -70,12 +72,16 @@ export function ModelGroups({ models, state, draft, run, focus }: { models: Mode
             <p className="settings-row-title">{model.name}</p>
             {group.length === 1 ? <small className="precision">{model.precision}</small> : null}
             <small className="model-size">{formatSize(model.size)}</small>
-            {ready ? <small className="ready">{inUse ? t('@yovoice.settings.inUse') : t('@yovoice.settings.verified')}</small> : null}
+            {update ? <Token size="sm" color="gray" label={t('@yovoice.settings.modelUpdateAvailable')} /> : null}
+            {ready && !update ? <small className="ready">{inUse ? t('@yovoice.settings.inUse') : t('@yovoice.settings.verified')}</small> : null}
           </HStack>
           <small>{modelDescription(t, model)}</small>
         </VStack>
         {downloading ? <Button size="sm" label={t('@yovoice.action.pause')} icon={<Pause size={16} />} onClick={() => run(() => call('model.cancel'))} />
-          : ready ? <Button size="sm" variant="ghost" label={t('@yovoice.settings.removeModel')} icon={<Trash2 size={16} />} isDisabled={removeBlocked} tooltip={removeBlocked ? t('@yovoice.settings.removeBlocked') : t(managed ? '@yovoice.settings.removeManagedTooltip' : '@yovoice.settings.removeTooltip')} onClick={() => run(() => call('model.forget', { id: model.id }))} />
+          : ready ? <HStack gap={1} vAlign="center">
+            {update ? <Button size="sm" variant="secondary" label={t('@yovoice.settings.updateModel')} icon={<RefreshCw size={16} />} isDisabled={modelBusy} onClick={() => run(() => call('model.download', { id: model.id }))} /> : null}
+            <Button size="sm" variant="ghost" label={t('@yovoice.settings.removeModel')} icon={<Trash2 size={16} />} isDisabled={removeBlocked} tooltip={removeBlocked ? t('@yovoice.settings.removeBlocked') : t(managed ? '@yovoice.settings.removeManagedTooltip' : '@yovoice.settings.removeTooltip')} onClick={() => run(() => call('model.forget', { id: model.id }))} />
+          </HStack>
           : <Button size="sm" label={download ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={16} />} isDisabled={modelBusy} onClick={() => run(() => call('model.download', { id: model.id }))} />}
       </HStack>
       {group.length > 1 ? <HStack className="model-precisions" gap={3} vAlign="center" wrap="wrap">

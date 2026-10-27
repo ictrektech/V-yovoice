@@ -31,31 +31,36 @@ func (w *Workbench) newAssistantServer() *mcp.Server {
 	w.registerStatusTool(server)
 	w.registerListModelsTool(server)
 	w.registerListVoicesTool(server)
-	mcp.AddTool(server, &mcp.Tool{Name: "list_works", Description: "列出作品（id、类型、标题、更新时间），可按类型过滤。类型：text（语音）、story（故事配音）、music（音乐）、score（编曲）。"}, w.listWorksTool)
+	mcp.AddTool(server, &mcp.Tool{Name: "list_works", Description: "列出作品（id、类型、标题、更新时间），可按类型过滤。类型：text（语音）、story（故事配音）、music（音乐）、sfx（音效）、score（编曲）。"}, w.listWorksTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "get_work", Description: "读取一个作品的完整可编辑内容：台词或风格、歌词、角色与音色分配、模型与参数、乐谱等。修改作品前先调用。"}, w.getWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "create_work", Description: "按类型新建作品并返回 id，默认让界面随即打开它（open=false 则只在后台创建、不切换界面）。新作品为空内容，随后用 update_work 填写。只想建声音角色时不要新建作品，用 save_character。"}, w.createWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "update_work", Description: "按字段补丁修改作品：标题、台词/文本、歌词与纯音乐、演唱语言、故事配音的角色台词、乐谱（与写谱同一套校验）、YuE2 旋律谱 abc；右侧检查器里的全部声音设置与高级参数（模型、音色、声音设计描述、情绪、语速、温度、modelOptions 等）放在 settings；characterId 套用声音库角色；故事配音的每个角色用 speakerSettings。返回修改后的摘要。"}, w.updateWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "list_characters", Description: "列出声音库里的角色（id、名称、模型、参考音色、声音设计描述）。给作品或故事角色套用角色前先调用。"}, w.listCharactersTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "save_character", Description: "新建或修改声音库里的角色（声音配置：模型、参考音色、声音设计描述、全部参数）。新建可用 fromWork 以某个作品当前的声音设置为起点，再用 settings 改动；修改已有角色传 id。不会改动任何作品，也不会切换界面。删除角色走 propose_action。"}, w.saveCharacterTool)
-	mcp.AddTool(server, &mcp.Tool{Name: "generate_work", Description: "对一个作品发起生成（语音、音乐或编曲渲染），立即返回；生成前先用 list_models 确认模型已安装。进度与结果用 get_generation_status 查询。YuE2 作品选的是按旋律谱生成却还没有谱时会被拒绝：先 plan_melody 写谱、填入作品，等用户看过试听过并同意后再生成。"}, w.generateWorkTool)
+	mcp.AddTool(server, &mcp.Tool{Name: "generate_work", Description: "对一个作品发起生成（语音、音乐、音效或编曲渲染），立即返回；生成前先用 list_models 确认模型已安装。进度与结果用 get_generation_status 查询。YuE2 作品选的是按旋律谱生成却还没有谱时会被拒绝：先 plan_melody 写谱、填入作品，等用户看过试听过并同意后再生成。"}, w.generateWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "get_generation_status", Description: "查询作品当前的生成进度与最近一次生成的结果（时长与是否完成）。"}, w.getGenerationStatusTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "open_work", Description: "让界面打开某个作品。"}, w.openWorkTool)
-	mcp.AddTool(server, &mcp.Tool{Name: "open_page", Description: "让界面切换页面：text（语音生成）、story（故事配音）、music（音乐生成）、score（编曲）、characters（声音库）、settings（设置）。"}, w.openPageTool)
+	mcp.AddTool(server, &mcp.Tool{Name: "open_page", Description: "让界面切换页面：text（语音生成）、story（故事配音）、music（音乐生成）、sfx（音效生成）、score（编曲）、characters（声音库）、settings（设置）。"}, w.openPageTool)
 	w.registerMusicTools(server)
 	w.registerAudioTools(server)
 	w.registerAgentTools(server)
 	return server
 }
 
-// workKindOf 把作品的原始 Kind 归并为界面使用的四种类型。
-// modelKind 返回模型适用的作品类型：music、score 或 text（语音与故事共用）；扒谱和歌词对齐模型不用于生成，返回空。
+// workKindOf 把作品的原始 Kind 归并为界面使用的作品类型。
+// modelKind 返回模型适用的作品类型：music、sfx、score 或 text（语音与故事共用）；扒谱和歌词对齐模型不用于生成，返回空。
 func modelKind(id string) string {
 	m, err := catalog.Lookup(id)
 	if err != nil {
 		return ""
 	}
 	switch m.Family {
-	case "ace_step", "yue2", "stable_audio":
+	case "ace_step", "yue2":
+		return "music"
+	case "stable_audio":
+		if m.Variant == "sfx" {
+			return "sfx"
+		}
 		return "music"
 	case "soundfont":
 		return "score"
@@ -92,6 +97,8 @@ func preferredModel(s schema.State, kind, fallback string) string {
 	switch kind {
 	case "music":
 		return "ace-step-1.5-turbo-bf16"
+	case "sfx":
+		return "stable-audio-3-small-sfx-q8"
 	case "score":
 		return "musescore-general-sf2"
 	}
@@ -100,7 +107,7 @@ func preferredModel(s schema.State, kind, fallback string) string {
 
 func workKindOf(d schema.Draft) string {
 	switch d.Kind {
-	case "music", "score":
+	case "music", "sfx", "score":
 		return d.Kind
 	case "story", "subtitle":
 		return "story"
@@ -112,10 +119,10 @@ func workKindOf(d schema.Draft) string {
 }
 
 // assistantPages 是 open_page 接受的页面。
-var assistantPages = []string{"text", "story", "music", "score", "characters", "voices", "history", "settings"}
+var assistantPages = []string{"text", "story", "music", "sfx", "score", "characters", "voices", "history", "settings"}
 
 func (w *Workbench) listWorksTool(ctx context.Context, req *mcp.CallToolRequest, in struct {
-	Kind string `json:"kind,omitempty" jsonschema:"只列某类作品：text、story、music 或 score；留空列全部"`
+	Kind string `json:"kind,omitempty" jsonschema:"只列某类作品：text、story、music、sfx 或 score；留空列全部"`
 }) (*mcp.CallToolResult, any, error) {
 	drafts := w.Store.Read().Drafts
 	works := make([]map[string]any, 0, len(drafts))
@@ -194,16 +201,16 @@ func (w *Workbench) assistantWork(id string) (schema.Draft, error) {
 	return schema.Draft{}, fmt.Errorf("没有找到作品 %s，请先用 list_works 查看现有的作品 ID", id)
 }
 
-// createWorkInput 的类型与 createDraft 的界面默认一致：语音用默认语音模型，音乐用 ACE-Step，编曲用音色库。
+// createWorkInput 的类型与 createDraft 的界面默认一致：语音用默认语音模型，音乐用 ACE-Step，音效用 Stable Audio SFX，编曲用音色库。
 type createWorkInput struct {
-	Kind  string `json:"kind" jsonschema:"作品类型：text、story、music 或 score"`
+	Kind  string `json:"kind" jsonschema:"作品类型：text、story、music、sfx 或 score"`
 	Title string `json:"title,omitempty" jsonschema:"作品标题，留空由用户稍后命名"`
 	Open  *bool  `json:"open,omitempty" jsonschema:"是否让界面打开新作品，默认 true；只是准备素材时传 false"`
 }
 
 func (w *Workbench) createWorkTool(ctx context.Context, req *mcp.CallToolRequest, in createWorkInput) (*mcp.CallToolResult, any, error) {
-	if !slices.Contains([]string{"text", "story", "music", "score"}, in.Kind) {
-		return nil, nil, fmt.Errorf("kind 必须是 text、story、music 或 score")
+	if !slices.Contains([]string{"text", "story", "music", "sfx", "score"}, in.Kind) {
+		return nil, nil, fmt.Errorf("kind 必须是 text、story、music、sfx 或 score")
 	}
 	d := schema.DefaultDraft()
 	d.Text, d.Kind, d.Title = "", in.Kind, strings.TrimSpace(in.Title)
@@ -235,7 +242,7 @@ func (w *Workbench) createWorkTool(ctx context.Context, req *mcp.CallToolRequest
 type updateWorkInput struct {
 	ID              string               `json:"id" jsonschema:"作品 ID"`
 	Title           *string              `json:"title,omitempty" jsonschema:"标题"`
-	Text            *string              `json:"text,omitempty" jsonschema:"台词或正文（语音/故事）；音乐作品是风格描述"`
+	Text            *string              `json:"text,omitempty" jsonschema:"台词或正文（语音/故事）；音乐、音效作品是英文描述"`
 	Lyrics          *string              `json:"lyrics,omitempty" jsonschema:"歌词，段落标记独占一行；纯音乐时只允许段落标记"`
 	Instrumental    *bool                `json:"instrumental,omitempty" jsonschema:"纯音乐（无演唱）"`
 	Language        *string              `json:"language,omitempty" jsonschema:"音乐作品的演唱语言 ISO 代码，如 zh、en"`
@@ -342,7 +349,7 @@ func (w *Workbench) updateWorkTool(ctx context.Context, req *mcp.CallToolRequest
 		patch("种子")
 	}
 	if in.CharacterID != nil {
-		if kind == "music" || kind == "score" {
+		if kind == "music" || kind == "sfx" || kind == "score" {
 			return nil, nil, fmt.Errorf("characterId 只适用于语音和故事配音作品，这个作品是 %s", kind)
 		}
 		if id := strings.TrimSpace(*in.CharacterID); id == "" {
@@ -550,7 +557,7 @@ func applySpeakerVoices(d *schema.Draft, assignments []workSpeakerVoice) error {
 	return nil
 }
 
-// generateWorkInput 的动作名按作品类型显示（语音/音乐/渲染）。
+// generateWorkInput 的动作名按作品类型显示（语音/音乐/音效/渲染）。
 type generateWorkInput struct {
 	ID           string `json:"id" jsonschema:"作品 ID"`
 	WithoutScore bool   `json:"withoutScore,omitempty" jsonschema:"仅当用户明确说不看谱、直接生成时为 true：YuE2 生成时自己写谱，生成后填入作品"`
@@ -578,6 +585,8 @@ func (w *Workbench) generateWorkTool(ctx context.Context, req *mcp.CallToolReque
 	switch workKindOf(d) {
 	case "music":
 		action, actionEN = "生成音乐", "generate music"
+	case "sfx":
+		action, actionEN = "生成音效", "generate sound effects"
 	case "score":
 		action, actionEN = "渲染配乐", "render the arrangement"
 	}
@@ -649,12 +658,12 @@ func (w *Workbench) openWorkTool(ctx context.Context, req *mcp.CallToolRequest, 
 // pageCardLabels 是 open_page 卡片摘要里的页面名。
 var pageCardLabels = map[string][2]string{
 	"text": {"语音生成页", "voice generation"}, "story": {"故事配音页", "story dubbing"}, "music": {"音乐生成页", "music generation"},
-	"score": {"编曲页", "arrangement"}, "characters": {"声音库页", "voice library"}, "voices": {"参考音色页", "reference library"},
+	"sfx": {"音效生成页", "sound effects generation"}, "score": {"编曲页", "arrangement"}, "characters": {"声音库页", "voice library"}, "voices": {"参考音色页", "reference library"},
 	"history": {"历史页", "history"}, "settings": {"设置页", "settings"},
 }
 
 type pageInput struct {
-	Page string `json:"page" jsonschema:"页面：text、story、music、score、characters 或 settings"`
+	Page string `json:"page" jsonschema:"页面：text、story、music、sfx、score、characters 或 settings"`
 }
 
 func (w *Workbench) openPageTool(ctx context.Context, req *mcp.CallToolRequest, in pageInput) (*mcp.CallToolResult, any, error) {
@@ -678,9 +687,11 @@ func (w *Workbench) assistantModelCheck(model, kind string) error {
 	if e != nil {
 		return fmt.Errorf("未知模型 %s，请用 list_models 查询可用模型", model)
 	}
-	// 目录 family：语音类各不相同，音乐见 catalog.IsMusic，编曲渲染用 soundfont。
-	music, soundfont := catalog.IsMusic(definition.Family), definition.Family == "soundfont"
-	if kind == "score" && !soundfont || kind == "music" && !music || (kind == "text" || kind == "story") && (music || soundfont) {
+	if kind == "story" {
+		kind = "text"
+	}
+	compatible := modelKind(model) == kind || definition.Family == "stable_audio" && (kind == "sfx" && definition.Variant == "medium" || kind == "music" && definition.Variant == "sfx")
+	if !compatible {
 		return fmt.Errorf("模型 %s（%s）不适用于%s作品", model, definition.Family, kind)
 	}
 	for _, installed := range w.Store.Read().Models {

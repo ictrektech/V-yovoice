@@ -131,10 +131,10 @@ func (w *Workbench) ListAssets() ([]Asset, error) {
 	return assets, nil
 }
 
-// projectKind 与前端 shared/workbench.ts 的同名函数一致：音乐、编曲按 kind，有字幕或故事类型的是故事配音，其余是语音生成。
+// projectKind 与前端 shared/workbench.ts 的同名函数一致：音乐、音效、编曲按 kind，有字幕或故事类型的是故事配音，其余是语音生成。
 func projectKind(d schema.Draft) string {
 	switch {
-	case d.Kind == "music" || d.Kind == "score":
+	case d.Kind == "music" || d.Kind == "sfx" || d.Kind == "score":
 		return d.Kind
 	case d.Subtitles != nil || d.Kind == "story" || d.Kind == "subtitle":
 		return "story"

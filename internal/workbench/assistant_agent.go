@@ -34,6 +34,7 @@ func (w *Workbench) appStatusTool(ctx context.Context, req *mcp.CallToolRequest,
 		item := map[string]any{"id": installed.ID}
 		if definition, e := catalog.Lookup(installed.ID); e == nil {
 			item["name"], item["family"] = definition.Name, definition.Family
+			item["updateAvailable"] = installed.SHA256 != "" && installed.SHA256 != definition.MainFile().SHA256
 		}
 		models = append(models, item)
 	}

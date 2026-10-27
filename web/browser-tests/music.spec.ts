@@ -139,10 +139,34 @@ test('选中 Stable Audio：只写英文描述，没有歌词与演唱语言；�
   await expect(page.getByLabel('引导强度')).toHaveValue('1');
   await expect(page.getByLabel('推理步数')).toHaveValue('8');
   await page.screenshot({ path: testInfo.outputPath('music-stable-audio.png') });
-  // 音效模型不套用歌曲风格预设。
+  // 音效模型归入独立音效作品，不再出现在新的歌曲模型列表里。
   await page.getByRole('combobox', { name: '模型' }).click();
-  await page.getByRole('option', { name: /^Stable Audio 3 Small SFX/ }).click();
-  await expect(page.getByRole('heading', { name: '风格预设' })).toHaveCount(0);
+  await expect(page.getByRole('option', { name: /^Stable Audio 3 Small SFX/ })).toHaveCount(0);
+});
+
+test('新建音效：英文描述、专用模型、短时长与生成入口', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('nav-new').click();
+  await page.getByRole('menuitem', { name: '音效生成', exact: true }).click();
+  const description = page.getByLabel('音效描述', { exact: true });
+  await expect(description).toBeVisible();
+  await expect(page.getByLabel('歌词', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: '5秒' })).toBeChecked();
+  await expect(page.getByRole('combobox', { name: '模型' })).toContainText('Stable Audio 3 Small SFX');
+  await page.getByRole('combobox', { name: '模型' }).click();
+  await expect(page.getByRole('option', { name: /^Stable Audio 3 Small SFX/ })).toHaveCount(1);
+  await expect(page.getByRole('option', { name: /^Stable Audio 3 Medium/ })).toHaveCount(1);
+  await expect(page.getByRole('option', { name: /^Stable Audio 3 Small Music/ })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await description.fill('A short metallic impact followed by a gentle echo');
+  await page.getByRole('radio', { name: '10秒' }).click();
+  await expect(page.getByRole('button', { name: '生成音频', exact: true })).toBeEnabled();
+  await expect(page.locator('.saved')).toContainText('已保存');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).drafts.find((d: { kind?: string }) => d.kind === 'sfx'));
+  expect(saved).toMatchObject({ kind: 'sfx', modelId: 'stable-audio-3-small-sfx-q8', instrumental: true, modelOptions: { stable_audio: { duration_seconds: 10 } } });
+  await page.getByTestId('nav-music').click();
+  await page.getByRole('tab', { name: '音效生成', exact: true }).click();
+  await expect(page.locator('.project-library-row:visible .wave-ring')).toHaveCount(1);
 });
 
 const melodyABC = `X:1
