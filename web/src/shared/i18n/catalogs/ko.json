@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "고급 설정"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "음색 혼합"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "생성 취소"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "반복 페널티"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "두 번째 음색"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "두 번째 음색 비율"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "랜덤 시드"
@@ -838,6 +847,12 @@
   },
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "이 모델을 제거하기 전에 관련 작업을 완료하세요."
+  },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "성능 우선"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "생성 속도가 빨라지지만 VRAM 사용량이 늘어납니다"
   },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "모델 제거"

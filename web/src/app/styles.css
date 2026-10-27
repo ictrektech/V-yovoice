@@ -630,6 +630,21 @@
   .sidebar-update { padding: var(--spacing-3); border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); }
   .sidebar-update-title { justify-content: start; width: 100%; padding-inline: 0; font-weight: var(--font-weight-medium); }
   .sidebar-update-title svg { color: var(--color-accent); }
+  /* 模型更新提示：同侧栏导航项尺寸对齐，带有整体浮起阴影与微弱提示底色。 */
+  .model-update-notice { width: 100%; min-height: var(--spacing-10); border-radius: var(--radius-element);
+    background: color-mix(in srgb, var(--color-accent) 7%, var(--app-white));
+    border: var(--border-width) solid color-mix(in srgb, var(--color-accent) 24%, var(--app-line));
+    box-shadow: var(--shadow-low); padding-inline: 0 var(--spacing-1-5);
+    transition: box-shadow var(--duration-fast) var(--app-ease-swift), border-color var(--duration-fast) var(--app-ease-swift); }
+  .model-update-notice:hover { box-shadow: var(--shadow-med); border-color: color-mix(in srgb, var(--color-accent) 40%, var(--app-line)); }
+  .model-update-action.astryx-button { justify-content: start; width: 100%; min-height: var(--spacing-10); height: 100%;
+    border: 0; border-radius: var(--radius-element); background: transparent; gap: var(--spacing-3);
+    font-size: var(--app-ui-font); font-weight: var(--font-weight-medium); padding-inline: var(--spacing-4) var(--spacing-2); color: var(--app-ink); }
+  .model-update-action.astryx-button svg { color: var(--color-accent); flex-shrink: 0; }
+  .model-update-action.astryx-button:hover { background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
+  .model-update-dismiss.astryx-button { flex-shrink: 0; width: var(--spacing-7); height: var(--spacing-7); min-width: 0; min-height: 0;
+    padding: 0; border: 0; border-radius: var(--radius-full); color: var(--app-muted); background: transparent; }
+  .model-update-dismiss.astryx-button:hover { color: var(--app-ink); background: color-mix(in srgb, var(--color-accent) 15%, transparent); }
   .update-progress { width: 100%; }
   .update-progress-row .settings-row-control { flex: 1 1 calc(var(--spacing-10) * 6); }
   .release-notes-panel { padding-top: var(--spacing-4); border-top: var(--border-width) solid var(--app-line); }
@@ -638,7 +653,7 @@
   .release-notes li + li { margin-top: var(--spacing-2); }
   .release-notes code { padding: 0 var(--spacing-1); border-radius: var(--radius-element); background: var(--color-background-muted); font-size: 0.92em; }
   .release-link { font-size: var(--app-small-font); white-space: nowrap; }
-  @media (max-width: 600px) { .sidebar-update { display: none; } }
+  @media (max-width: 600px) { .sidebar-update, .model-update-notice { display: none; } }
 
   /* 音乐：区块分隔，风格标签采用一体化输入盒，右侧配置区与情绪预设统一。 */
   .music-block + .music-block { padding-top: var(--spacing-4); border-top: var(--border-width) solid var(--app-line); }
@@ -968,7 +983,7 @@
   /* 标语：提亮、减重，字距从很宽收拢到正常，同时由模糊变清晰。 */
   .intro-tagline { margin: 0; font: var(--font-weight-normal) calc(var(--font-size-base) + var(--spacing-2))/1.4 var(--intro-font-text); letter-spacing: .08em; color: color-mix(in srgb, var(--intro-mist) 86%, transparent);
     animation: intro-track 1400ms cubic-bezier(.2, .8, .2, 1) 5500ms both; }
-  /* 四种创作方式：玻璃质感胶囊，图标放进带青色光的小圆徽章，入场带一点 3D 翻转。 */
+  /* 五种创作方式：玻璃质感胶囊，图标放进带青色光的小圆徽章，入场带一点 3D 翻转。 */
   .intro-kinds { margin-top: var(--spacing-8); }
   .intro-kind { padding: var(--spacing-1-5) var(--spacing-4) var(--spacing-1-5) var(--spacing-1-5); border-radius: var(--radius-full); font: var(--font-weight-medium) var(--font-size-base)/1 var(--intro-font-text); letter-spacing: .02em; color: var(--intro-mist);
     background: linear-gradient(180deg, color-mix(in srgb, var(--color-on-dark) 11%, transparent), color-mix(in srgb, var(--color-on-dark) 3%, transparent)); border: var(--border-width) solid color-mix(in srgb, var(--color-on-dark) 14%, transparent);
@@ -980,6 +995,7 @@
   .intro-kind:nth-child(2) { animation-delay: 6250ms; }
   .intro-kind:nth-child(3) { animation-delay: 6400ms; }
   .intro-kind:nth-child(4) { animation-delay: 6550ms; }
+  .intro-kind:nth-child(5) { animation-delay: 6700ms; }
   /* 「开始探索」：发光的立体胶囊（顶部高光、底部内阴影、青色光晕），箭头随悬停前移，定期有一道光扫过。 */
   .intro-cta { position: relative; overflow: hidden; isolation: isolate; height: calc(var(--spacing-12) + var(--spacing-1-5)); margin-top: var(--spacing-8); padding: 0 calc(var(--spacing-6) + var(--spacing-0-5)) 0 var(--spacing-8); gap: calc(var(--spacing-2) + var(--spacing-0-5)); border: 0; border-radius: var(--radius-full);
     font: var(--font-weight-semibold) calc(var(--font-size-base) + var(--spacing-0-5))/1 var(--intro-font-text); letter-spacing: .08em; color: var(--intro-cta-ink);

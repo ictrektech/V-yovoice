@@ -97,7 +97,7 @@ func (w *Workbench) PlanMelody(d schema.Draft) error {
 		return e
 	}
 	_, e = w.start("generate", msg.ActivityPlanMelody, nil, &d.ModelID, func(ctx context.Context) error {
-		abc, truncated, e := w.engine.PlanMelody(ctx, *s.RuntimePath, model, s.Preferences.Backend, d, func(code msg.Code, params msg.Params) { w.progress(code, params, 0, 1) })
+		abc, truncated, e := w.engine.PlanMelody(ctx, *s.RuntimePath, model, s.Preferences.Backend, performanceFirst(s), d, func(code msg.Code, params msg.Params) { w.progress(code, params, 0, 1) })
 		if e != nil {
 			return e
 		}

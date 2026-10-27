@@ -17,8 +17,8 @@ export function ModelUpdateSidebarCard({ state, catalog, revision, openSettings 
     writeLocal(dismissedKey, revision);
     setDismissedRevision(revision);
   };
-  return <HStack className="sidebar-update model-update-notice" gap={1} vAlign="center" data-testid="model-update-notice">
-    <Button variant="ghost" size="sm" className="sidebar-update-title grow" icon={<Download size={15} />} label={t('@yovoice.settings.updateNotice', { count: updates.length })} onClick={() => openSettings(updates[0].id)} />
-    <Button variant="ghost" size="sm" isIconOnly icon={<X size={15} />} label={t('@yovoice.action.closeNotice')} onClick={dismiss} />
+  return <HStack className="model-update-notice" gap={0} vAlign="center" data-testid="model-update-notice">
+    <Button variant="ghost" className="model-update-action grow" icon={<Download size={18} />} label={t('@yovoice.settings.updateNotice', { count: updates.length })} onClick={() => openSettings(updates[0].id)} />
+    <Button variant="ghost" size="sm" isIconOnly className="model-update-dismiss" icon={<X size={14} />} label={t('@yovoice.action.closeNotice')} onClick={dismiss} />
   </HStack>;
 }

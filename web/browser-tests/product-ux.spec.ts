@@ -163,3 +163,28 @@ test('开场画面一出现就完全盖住主界面，不会先露出面板', as
   // 挂载的同一帧里就必须不透明；若先从透明淡入，主界面会透出来。
   expect(await page.locator('.intro-screen').evaluate(el => getComputedStyle(el).opacity)).toBe('1');
 });
+
+test('引擎设置：CUDA 可启用性能优先并保存，非 CUDA 隐藏', async ({ page }) => {
+  const state = emptyState();
+  await seedState(page, { ...state, preferences: { ...state.preferences, backend: 'cuda' } });
+  await page.goto('/');
+  await page.getByTestId('nav-settings').click();
+  await page.getByRole('tab', { name: '推理引擎', exact: true }).click();
+  const performanceFirst = page.locator('input[name="performanceFirst"]');
+  await expect(performanceFirst).toBeVisible();
+  await expect(performanceFirst).not.toBeChecked();
+  await performanceFirst.click();
+  await expect(performanceFirst).toBeChecked();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).preferences.performanceFirst)).toBe(true);
+  await page.reload();
+  await page.getByTestId('nav-settings').click();
+  await page.getByRole('tab', { name: '推理引擎', exact: true }).click();
+  await expect(performanceFirst).toBeChecked();
+  await page.getByRole('combobox', { name: '计算设备', exact: true }).click();
+  await page.getByRole('option', { name: 'CPU', exact: true }).click();
+  await expect(performanceFirst).toHaveCount(0);
+  await page.getByRole('combobox', { name: '计算设备', exact: true }).click();
+  await page.getByRole('option', { name: /CUDA 13\.3/ }).click();
+  await expect(performanceFirst).toBeVisible();
+  await expect(performanceFirst).toBeChecked();
+});

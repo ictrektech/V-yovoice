@@ -50,9 +50,6 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 	}
 	if m.Family == "kokoro_tts" {
 		o, _ := d.GenerationOptions(m.Family)
-		if _, ok := o["text_chunk_size"]; !ok {
-			o["text_chunk_size"] = 64
-		}
 		if d.Seed != nil {
 			o["seed"] = *d.Seed
 		}

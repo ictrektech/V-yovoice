@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "詳細設定"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "音色を混合"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "生成をキャンセル"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "繰り返しペナルティ"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "2番目の音色"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "2番目の音色の比率"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "乱数シード"
@@ -838,6 +847,12 @@
   },
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "このモデルを削除する前に、関連する操作を終えてください。"
+  },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "パフォーマンス優先"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "生成が速くなりますが、VRAM使用量が増えます"
   },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "モデルを削除"

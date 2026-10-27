@@ -286,12 +286,14 @@ func ParseUiLocale(raw string) (UiLocale, error) {
 }
 
 type Preferences struct {
-	ProxyURL       string   `json:"proxyURL,omitempty"`
-	ProxyEnabled   *bool    `json:"proxyEnabled,omitempty"`
-	DownloadSource string   `json:"downloadSource"`
-	Backend        string   `json:"backend"`
-	ModelDirectory *string  `json:"modelDirectory"`
-	UiLocale       UiLocale `json:"uiLocale"`
+	ProxyURL       string `json:"proxyURL,omitempty"`
+	ProxyEnabled   *bool  `json:"proxyEnabled,omitempty"`
+	DownloadSource string `json:"downloadSource"`
+	Backend        string `json:"backend"`
+	// PerformanceFirst 在支持的 CUDA 模型上启用高性能会话模式，以更多显存换取生成速度。
+	PerformanceFirst bool     `json:"performanceFirst,omitempty"`
+	ModelDirectory   *string  `json:"modelDirectory"`
+	UiLocale         UiLocale `json:"uiLocale"`
 	// AITimeout 是单次 AI 请求的超时秒数，0 表示默认值。
 	AITimeout int `json:"aiTimeout,omitempty"`
 	// IntroSeen 表示已看过首次启动的开场画面，之后启动只显示简短的加载动画。

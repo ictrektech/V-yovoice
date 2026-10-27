@@ -110,8 +110,19 @@ func (e *Engine) stop() {
 		_ = os.Remove(pidPath(e.root))
 	}
 }
-func (e *Engine) start(ctx context.Context, executable, model string, definition catalog.ModelPackage, backend string, encoderSamples int, progress func(msg.Code, msg.Params)) error {
+func (e *Engine) start(ctx context.Context, executable, model string, definition catalog.ModelPackage, backend string, performanceFirst bool, encoderSamples int, progress func(msg.Code, msg.Params)) error {
 	family, task := definition.Family, definition.Task
+	if performanceFirst && (backend == "cuda" || backend == "cuda13") {
+		switch family {
+		case "ace_step", "qwen3_tts", "yue2", "voxcpm2":
+			sessionOptions := make(map[string]string, len(definition.SessionOptions)+1)
+			for key, value := range definition.SessionOptions {
+				sessionOptions[key] = value
+			}
+			sessionOptions[family+".perf_mode"] = "cuda_perf"
+			definition.SessionOptions = sessionOptions
+		}
+	}
 	if task == "" {
 		task = "tts"
 	}
@@ -257,7 +268,7 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 }
 
 // Generate 生成音频写入 output；YuE2 自己规划旋律时一并返回这次所用的旋律谱，其余模型返回空串。
-func (e *Engine) Generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, output string, progress func(msg.Code, msg.Params)) (score string, err error) {
+func (e *Engine) Generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, performanceFirst bool, d schema.Draft, voice, emotion, output string, progress func(msg.Code, msg.Params)) (score string, err error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	defer func() {
@@ -289,7 +300,7 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 			encoderSamples = max(encoderSamples, int(math.Ceil(duration*16000/2560))*2560)
 		}
 	}
-	if err = e.start(ctx, executable, m.Path, definition, backend, encoderSamples, progress); err != nil {
+	if err = e.start(ctx, executable, m.Path, definition, backend, performanceFirst, encoderSamples, progress); err != nil {
 		return "", err
 	}
 	// YuE2 纯音乐：没谱时先在同一个会话里出谱，再把人声旋律移到器乐声部后生成；
@@ -344,7 +355,7 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 }
 
 // PlanMelody 只运行 YuE2 的规划阶段（stop_after=abc），返回带和弦的旋律谱和是否因长度上限被截断。
-func (e *Engine) PlanMelody(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, progress func(msg.Code, msg.Params)) (score string, truncated bool, err error) {
+func (e *Engine) PlanMelody(ctx context.Context, executable string, m schema.InstalledModel, backend string, performanceFirst bool, d schema.Draft, progress func(msg.Code, msg.Params)) (score string, truncated bool, err error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	defer func() {
@@ -365,7 +376,7 @@ func (e *Engine) PlanMelody(ctx context.Context, executable string, m schema.Ins
 		return "", false, msg.Err(msg.ErrModelUnsupported, nil)
 	}
 	payload["request"].(map[string]any)["options"].(map[string]any)["stop_after"] = "abc"
-	if err = e.start(ctx, executable, m.Path, definition, backend, 0, progress); err != nil {
+	if err = e.start(ctx, executable, m.Path, definition, backend, performanceFirst, 0, progress); err != nil {
 		return "", false, err
 	}
 	progress(msg.ActivityPlanMelody, nil)
@@ -396,7 +407,7 @@ func (e *Engine) Transcribe(ctx context.Context, executable string, m schema.Ins
 	if definition.Family != "sheetsage2" {
 		return "", msg.Err(msg.ErrModelUnsupported, nil)
 	}
-	if err = e.start(ctx, executable, m.Path, definition, backend, 0, progress); err != nil {
+	if err = e.start(ctx, executable, m.Path, definition, backend, false, 0, progress); err != nil {
 		return "", err
 	}
 	progress(msg.ActivityTranscribe, nil)
@@ -453,7 +464,7 @@ func (e *Engine) SeparateVocals(ctx context.Context, executable string, m schema
 	}
 	// 包内默认 4 次重叠推理是为了分轨音质；对齐只需要听得清人声，单遍推理快约 4 倍。
 	definition.SessionOptions = map[string]string{"bs_roformer.num_overlap": "1"}
-	if err = e.start(ctx, executable, path, definition, backend, 0, progress); err != nil {
+	if err = e.start(ctx, executable, path, definition, backend, false, 0, progress); err != nil {
 		return err
 	}
 	progress(msg.ActivitySeparateVocals, nil)
@@ -488,7 +499,7 @@ func (e *Engine) AlignWords(ctx context.Context, executable string, m schema.Ins
 	if err != nil {
 		return nil, err
 	}
-	if err = e.start(ctx, executable, path, definition, backend, 0, progress); err != nil {
+	if err = e.start(ctx, executable, path, definition, backend, false, 0, progress); err != nil {
 		return nil, err
 	}
 	result, err := e.run(ctx, map[string]any{"model": "index", "request": map[string]any{"audio": wav, "text": text, "language": language,
