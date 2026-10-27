@@ -16,6 +16,11 @@
   <img src="https://img.shields.io/badge/Linux-x64-FCC624?style=flat-square" alt="Linux (x64)" />
 </p>
 <p align="center">
+  <a href="https://www.producthunt.com/products/yovoice?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-yovoice" target="_blank" rel="noopener noreferrer">
+    <img alt="yovoice - Local-first voice, music, and score creation studio | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1293995&amp;theme=light&amp;t=1793070018670" />
+  </a>
+</p>
+<p align="center">
   <a href="https://www.star-history.com/leemysw/yovoice">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=leemysw/yovoice&type=rank&theme=dark" />
