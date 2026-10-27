@@ -4,7 +4,12 @@
 
 ## [Unreleased]
 
+## [0.0.30] - 2026-10-27
+
 ### 简体中文
+
+此安装包更新 Jetson/L4T 镜像（`l4t_20261027`）；其余平台继续引用现有镜像。
+
 - 本地打包自动复用 GitHub CLI 登录，避免查询依赖版本时因匿名 API 限流而失败。
 - 修复 Qwen3-ASR 已下载却无法通过输入校准检查的问题；识别页面区分模型文件就绪与当前设备的推理审批，优先选择已获准模型并说明不可用原因。
 - 镜像构建脚本新增 `--dry-run`，可预览目标镜像、构建步骤和飞书登记计划，无需实际构建或上传。
@@ -12,6 +17,9 @@
 - 语音识别页面自动转换并按模型批准范围分段上传音频，显示进度并支持取消；修复已批准的大文件仍被固定 1 MiB 请求体限制拦截的问题，保留逐段调度与输入检查。
 
 ### English
+
+This pull package updates the Jetson/L4T image (`l4t_20261027`); other platforms retain their existing images.
+
 - Reuse the local GitHub CLI login when packaging to avoid anonymous API rate limits during dependency verification.
 - Accept approved Qwen3-ASR input limits. Distinguish downloaded models from models approved for transcription on the current device, select an approved model by default, and explain unavailable models.
 - Add `--dry-run` to preview target images, build steps and Feishu updates without building or uploading.
