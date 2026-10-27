@@ -32,6 +32,10 @@ Reference files are in this skill's folder (from the workspace: `.agents/skills/
 
 `modelOptions.yue2`: `cot` (`auto` | `full` | `melody` | `off`; auto picks full with chords, melody without), `num_inference_steps` 1-64 (8; more steps can sound cleaner but take longer), `abc_temperature` 0.05-2 (0.7, score writing), `semantic_temperature` 0.05-2 (1.0), `semantic_top_p` 0.01-1 (0.95), `semantic_top_k` 1-500 (100), `semantic_repetition_penalty` 0.5-3 (1.2). Change them only when asked; the defaults are the tuned route.
 
+## Stable Audio sound effects
+
+For an `sfx` work, write `text` as a concrete English description of the sound source and its action, not a music style. Include useful spatial distance or indoor/outdoor placement and the materials involved, for example: `a heavy wooden door closing in a small tiled hallway, close microphone, short natural reverberation` or `rain hitting a metal roof outdoors, distant traffic far behind`. Request 1–30 seconds. Avoid genre, band, melody, tempo, singing and other music-style wording. Small SFX is best for short effects; Medium trades a larger model for a better balance of duration, detail and quality.
+
 ## Be honest about results
 
 YuE2 follows a score loosely: it does not guarantee every note, exact timing, or that an instrument named in the style is absent. A valid score or a finished take is not proof it sounds right; say what you changed and invite the user to listen. Every edit becomes a new take; earlier takes stay in the history for comparison.

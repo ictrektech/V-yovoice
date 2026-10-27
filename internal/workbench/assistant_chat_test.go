@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -564,5 +565,106 @@ func TestPreferredModel(t *testing.T) {
 	}
 	if got := preferredModel(schema.State{}, "music", ""); got != "ace-step-1.5-turbo-bf16" {
 		t.Errorf("没有已安装模型时音乐默认 = %s", got)
+	}
+}
+
+// add_timeline_audio 复制整段生成，支持按名称、序号或默认新轨添加，并默认追加到轨道末尾。
+func TestAssistantAddTimelineAudio(t *testing.T) {
+	w := assistantWorkbench(t, fakeocho.Plan{})
+	ctx := context.Background()
+	source := schema.DefaultDraft()
+	source.Kind, source.Title, source.Text = "sfx", "脚步", "footsteps on gravel"
+	generationID := schema.NewID()
+	sourcePath := filepath.Join(w.Store.Root, "outputs", generationID+".wav")
+	must(t, os.WriteFile(sourcePath, wav(), 0600))
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.History = []schema.Generation{{ID: generationID, Title: "版本 1", FileName: generationID + ".wav", CreatedAt: time.Now(), Duration: 1, Settings: source}}
+	}, true))
+	story := schema.DefaultDraft()
+	story.Kind, story.Title, story.Text = "story", "夜晚", ""
+	story.Timeline = &schema.AudioTimeline{Tracks: []schema.AudioLane{{ID: "track-1", Name: "环境", Clips: []schema.AudioClip{{ID: "existing", GenerationID: generationID, Start: 2, Duration: 1}}}}}
+	must(t, w.SaveDraft(story))
+
+	_, added, err := w.addTimelineAudioTool(ctx, toolReq, addTimelineAudioInput{ID: story.ID, GenerationID: generationID, Track: "环境"})
+	must(t, err)
+	result := added.(map[string]any)
+	if result["start"] != 3.0 || result["track"] != "环境" {
+		t.Fatalf("按名称添加应默认追加到末尾：%+v", result)
+	}
+	assetID := result["assetId"].(string)
+	assetPath := filepath.Join(w.Store.Root, "outputs", "import-"+assetID+".wav")
+	sourceBytes, err := os.ReadFile(sourcePath)
+	must(t, err)
+	assetBytes, err := os.ReadFile(assetPath)
+	must(t, err)
+	if string(sourceBytes) != string(assetBytes) {
+		t.Fatal("导入素材应复制完整源音频")
+	}
+	saved := func() schema.Draft {
+		for _, d := range w.Store.Read().Drafts {
+			if d.ID == story.ID {
+				return d
+			}
+		}
+		t.Fatal("故事作品丢失")
+		return schema.Draft{}
+	}
+	d := saved()
+	if len(d.Timeline.Assets) != 1 || d.Timeline.Assets[0].Name != "脚步 · 版本 1" {
+		t.Fatalf("独立素材及命名不对：%+v", d.Timeline.Assets)
+	}
+	clip := d.Timeline.Tracks[0].Clips[1]
+	if clip.AssetID != assetID || clip.GenerationID != "" || clip.ID == "" || clip.Offset != 0 || clip.Duration != 1 {
+		t.Fatalf("素材剪辑不对：%+v", clip)
+	}
+
+	explicit := 0.5
+	_, added, err = w.addTimelineAudioTool(ctx, toolReq, addTimelineAudioInput{ID: story.ID, GenerationID: generationID, Track: "1", Start: &explicit})
+	must(t, err)
+	if added.(map[string]any)["start"] != explicit {
+		t.Fatalf("按序号与显式 start 添加失败：%+v", added)
+	}
+	_, added, err = w.addTimelineAudioTool(ctx, toolReq, addTimelineAudioInput{ID: story.ID, GenerationID: generationID})
+	must(t, err)
+	if added.(map[string]any)["track"] != "音效" || added.(map[string]any)["start"] != 0.0 {
+		t.Fatalf("默认应新建音效轨并从头开始：%+v", added)
+	}
+	d = saved()
+	if len(d.Timeline.Tracks) != 2 || len(d.Timeline.Tracks[0].Clips) != 3 || len(d.Timeline.Tracks[1].Clips) != 1 {
+		t.Fatalf("轨道或剪辑数量不对：%+v", d.Timeline.Tracks)
+	}
+	if update := w.Store.Read().AssistantLive.Update; update == nil || update.WorkID != story.ID {
+		t.Fatalf("成功添加后应发出 chatUpdate：%+v", w.Store.Read().AssistantLive)
+	}
+
+	_, content, err := w.getWorkTool(ctx, toolReq, workIDInput{ID: story.ID})
+	must(t, err)
+	tracks := content.(map[string]any)["tracks"].([]map[string]any)
+	if len(tracks) != 2 || tracks[0]["index"] != 1 || tracks[0]["end"] != 4.0 {
+		t.Fatalf("get_work 轨道摘要不对：%+v", tracks)
+	}
+	encoded, _ := json.Marshal(content)
+	if strings.Contains(string(encoded), `"clips"`) || strings.Contains(string(encoded), `"assets"`) {
+		t.Fatalf("get_work 不应返回全部剪辑或素材：%s", encoded)
+	}
+
+	if _, _, err = w.addTimelineAudioTool(ctx, toolReq, addTimelineAudioInput{ID: story.ID, GenerationID: generationID, Track: "不存在"}); err == nil {
+		t.Fatal("未知轨道应被拒绝")
+	}
+	for _, invalid := range []float64{-1, math.NaN(), math.Inf(1), 86401} {
+		if _, _, err = w.addTimelineAudioTool(ctx, toolReq, addTimelineAudioInput{ID: story.ID, GenerationID: generationID, Start: &invalid}); err == nil {
+			t.Fatalf("非法 start 应被拒绝：%v", invalid)
+		}
+	}
+	d = saved()
+	d.Timeline.Tracks[0].Locked = true
+	must(t, w.SaveDraft(d))
+	if _, _, err = w.addTimelineAudioTool(ctx, toolReq, addTimelineAudioInput{ID: story.ID, GenerationID: generationID, Track: "1"}); err == nil || !strings.Contains(err.Error(), "锁定") {
+		t.Fatal("锁定轨道应被拒绝", err)
+	}
+	plain := schema.DefaultDraft()
+	must(t, w.SaveDraft(plain))
+	if _, _, err = w.addTimelineAudioTool(ctx, toolReq, addTimelineAudioInput{ID: plain.ID, GenerationID: generationID}); err == nil || !strings.Contains(err.Error(), "story") {
+		t.Fatal("非故事作品应被拒绝", err)
 	}
 }

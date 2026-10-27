@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 	"yovoice/internal/catalog"
@@ -18,7 +19,7 @@ import (
 // 作品工具（list/get/create/update/generate/open）立即反映在界面上；删除、下载模型、改设置
 // 只能经 propose_action 提议，由用户在确认卡片上执行；不提供导入导出。
 var assistantTools = []string{
-	"list_works", "get_work", "create_work", "update_work", "generate_work", "get_generation_status", "inspect_audio",
+	"list_works", "get_work", "create_work", "update_work", "generate_work", "get_generation_status", "inspect_audio", "add_timeline_audio",
 	"plan_melody", "cover_melody", "transform_melody",
 	"open_work", "open_page", "list_models", "list_voices", "list_characters", "save_character", "status",
 	"get_app_status", "get_recent_errors", "remember_preference", "forget_preference", "propose_action",
@@ -32,13 +33,14 @@ func (w *Workbench) newAssistantServer() *mcp.Server {
 	w.registerListModelsTool(server)
 	w.registerListVoicesTool(server)
 	mcp.AddTool(server, &mcp.Tool{Name: "list_works", Description: "列出作品（id、类型、标题、更新时间），可按类型过滤。类型：text（语音）、story（故事配音）、music（音乐）、sfx（音效）、score（编曲）。"}, w.listWorksTool)
-	mcp.AddTool(server, &mcp.Tool{Name: "get_work", Description: "读取一个作品的完整可编辑内容：台词或风格、歌词、角色与音色分配、模型与参数、乐谱等。修改作品前先调用。"}, w.getWorkTool)
+	mcp.AddTool(server, &mcp.Tool{Name: "get_work", Description: "读取一个作品的完整可编辑内容：台词或风格、歌词、角色与音色分配、模型与参数、乐谱、时间线轨道摘要（序号、id、名称、锁定与末尾时间）等。修改作品前先调用。"}, w.getWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "create_work", Description: "按类型新建作品并返回 id，默认让界面随即打开它（open=false 则只在后台创建、不切换界面）。新作品为空内容，随后用 update_work 填写。只想建声音角色时不要新建作品，用 save_character。"}, w.createWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "update_work", Description: "按字段补丁修改作品：标题、台词/文本、歌词与纯音乐、演唱语言、故事配音的角色台词、乐谱（与写谱同一套校验）、YuE2 旋律谱 abc；右侧检查器里的全部声音设置与高级参数（模型、音色、声音设计描述、情绪、语速、温度、modelOptions 等）放在 settings；characterId 套用声音库角色；故事配音的每个角色用 speakerSettings。返回修改后的摘要。"}, w.updateWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "list_characters", Description: "列出声音库里的角色（id、名称、模型、参考音色、声音设计描述）。给作品或故事角色套用角色前先调用。"}, w.listCharactersTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "save_character", Description: "新建或修改声音库里的角色（声音配置：模型、参考音色、声音设计描述、全部参数）。新建可用 fromWork 以某个作品当前的声音设置为起点，再用 settings 改动；修改已有角色传 id。不会改动任何作品，也不会切换界面。删除角色走 propose_action。"}, w.saveCharacterTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "generate_work", Description: "对一个作品发起生成（语音、音乐、音效或编曲渲染），立即返回；生成前先用 list_models 确认模型已安装。进度与结果用 get_generation_status 查询。YuE2 作品选的是按旋律谱生成却还没有谱时会被拒绝：先 plan_melody 写谱、填入作品，等用户看过试听过并同意后再生成。"}, w.generateWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "get_generation_status", Description: "查询作品当前的生成进度与最近一次生成的结果（时长与是否完成）。"}, w.getGenerationStatusTool)
+	mcp.AddTool(server, &mcp.Tool{Name: "add_timeline_audio", Description: "把一个完整的生成版本作为独立素材加入故事配音时间线。id 是目标 story 作品，generationId 是来源版本；track 可填 get_work 返回的轨道名称或 1 起始序号，留空新建“音效”轨；start 是秒数，留空追加到该轨末尾。锁定轨道不能修改。"}, w.addTimelineAudioTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "open_work", Description: "让界面打开某个作品。"}, w.openWorkTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "open_page", Description: "让界面切换页面：text（语音生成）、story（故事配音）、music（音乐生成）、sfx（音效生成）、score（编曲）、characters（声音库）、settings（设置）。"}, w.openPageTool)
 	w.registerMusicTools(server)
@@ -137,7 +139,7 @@ func (w *Workbench) listWorksTool(ctx context.Context, req *mcp.CallToolRequest,
 	return nil, map[string]any{"works": works}, nil
 }
 
-// workContent 把作品转成给模型看的内容，去掉时间线等对编辑无用的大字段。
+// workContent 把作品转成给模型看的内容；时间线只保留选轨所需的摘要，不返回剪辑和素材明细。
 func workContent(d schema.Draft) map[string]any {
 	out := map[string]any{"id": d.ID, "kind": workKindOf(d), "title": d.Title, "text": d.Text, "updatedAt": d.UpdatedAt}
 	settings := map[string]any{"modelId": d.ModelID, "mode": d.Mode, "language": d.Language, "speed": d.Speed}
@@ -170,6 +172,17 @@ func workContent(d schema.Draft) map[string]any {
 		}
 		out["speakers"] = speakers
 		out["cues"] = cues
+	}
+	if d.Timeline != nil {
+		tracks := make([]map[string]any, 0, len(d.Timeline.Tracks))
+		for i, track := range d.Timeline.Tracks {
+			end := 0.0
+			for _, clip := range track.Clips {
+				end = max(end, clip.Start+clip.Duration)
+			}
+			tracks = append(tracks, map[string]any{"index": i + 1, "id": track.ID, "name": track.Name, "locked": track.Locked, "end": end})
+		}
+		out["tracks"] = tracks
 	}
 	if d.Score != nil {
 		out["score"] = d.Score
@@ -643,6 +656,69 @@ func (w *Workbench) getGenerationStatusTool(ctx context.Context, req *mcp.CallTo
 	}
 	w.chatCard("get_generation_status", fmt.Sprintf("查看了《%s》的生成进度", d.Title), fmt.Sprintf("Checked generation status of %q", d.Title), "done")
 	return nil, out, nil
+}
+
+type addTimelineAudioInput struct {
+	ID           string   `json:"id" jsonschema:"目标 story 故事配音作品 ID"`
+	GenerationID string   `json:"generationId" jsonschema:"来源整段生成版本 ID，不能是单句片段"`
+	Track        string   `json:"track,omitempty" jsonschema:"目标轨道名称或 1 起始序号；留空新建“音效”轨"`
+	Start        *float64 `json:"start,omitempty" jsonschema:"剪辑起点秒数，必须是非负有限数；留空追加到该轨末尾"`
+}
+
+// addTimelineAudioTool 把整段生成复制成作品独立素材，再以完整剪辑加入故事时间线。
+func (w *Workbench) addTimelineAudioTool(ctx context.Context, req *mcp.CallToolRequest, in addTimelineAudioInput) (*mcp.CallToolResult, any, error) {
+	d, err := w.assistantWork(in.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if workKindOf(d) != "story" {
+		return nil, nil, fmt.Errorf("add_timeline_audio 只适用于 story 故事配音作品")
+	}
+	if in.Start != nil && !schema.InRange(*in.Start, 0, 86400) {
+		return nil, nil, fmt.Errorf("start 必须是 0–86400 秒之间的有限数")
+	}
+	if d.Timeline == nil {
+		d.Timeline = &schema.AudioTimeline{}
+	}
+	trackIndex := len(d.Timeline.Tracks)
+	if track := strings.TrimSpace(in.Track); track == "" {
+		d.Timeline.Tracks = append(d.Timeline.Tracks, schema.AudioLane{ID: schema.NewID(), Name: "音效"})
+	} else {
+		trackIndex = slices.IndexFunc(d.Timeline.Tracks, func(t schema.AudioLane) bool { return t.Name == track })
+		if trackIndex < 0 {
+			if ordinal, e := strconv.Atoi(track); e == nil && ordinal >= 1 && ordinal <= len(d.Timeline.Tracks) {
+				trackIndex = ordinal - 1
+			}
+		}
+		if trackIndex < 0 {
+			return nil, nil, fmt.Errorf("没有找到轨道 %q，请用 get_work 查看轨道名称或 1 起始序号", track)
+		}
+	}
+	track := &d.Timeline.Tracks[trackIndex]
+	if track.Locked {
+		return nil, nil, fmt.Errorf("轨道《%s》已锁定，不能添加音频", track.Name)
+	}
+	start := 0.0
+	for _, clip := range track.Clips {
+		start = max(start, clip.Start+clip.Duration)
+	}
+	if in.Start != nil {
+		start = *in.Start
+	}
+	asset, err := w.ImportTimelineGeneration(ctx, in.GenerationID)
+	if err != nil {
+		return nil, nil, err
+	}
+	clip := schema.AudioClip{ID: schema.NewID(), AssetID: asset.ID, Start: start, Offset: 0, Duration: asset.Duration}
+	d.Timeline.Assets = append(d.Timeline.Assets, asset)
+	track = &d.Timeline.Tracks[trackIndex]
+	track.Clips = append(track.Clips, clip)
+	if err = w.SaveDraft(d); err != nil {
+		return nil, nil, err
+	}
+	w.chatCard("add_timeline_audio", fmt.Sprintf("把《%s》加入《%s》的%s轨", asset.Name, d.Title, track.Name), fmt.Sprintf("Added %q to track %q in %q", asset.Name, track.Name, d.Title), "done")
+	w.chatUpdate(d.ID)
+	return nil, map[string]any{"id": d.ID, "generationId": in.GenerationID, "assetId": asset.ID, "clipId": clip.ID, "trackId": track.ID, "track": track.Name, "start": start, "duration": asset.Duration}, nil
 }
 
 func (w *Workbench) openWorkTool(ctx context.Context, req *mcp.CallToolRequest, in workIDInput) (*mcp.CallToolResult, any, error) {

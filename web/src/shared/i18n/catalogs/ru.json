@@ -1592,6 +1592,12 @@
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "Добавить из версий"
   },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "Добавить из yovoice"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "Добавить"
+  },
   "@yovoice.nav.library": {
     "defaultMessage": "Фонотека"
   },

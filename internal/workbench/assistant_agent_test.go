@@ -11,6 +11,7 @@ import (
 	"time"
 	"yovoice/internal/assistant"
 	"yovoice/internal/assistant/fakeocho"
+	"yovoice/internal/catalog"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
 )
@@ -264,5 +265,88 @@ func TestAssistantVoiceSettingsAndCharacters(t *testing.T) {
 	}
 	if _, _, err = w.updateWorkTool(ctx, toolReq, updateWorkInput{ID: storyID, SpeakerSettings: []workSpeakerSetting{{Speaker: "丙", Settings: &voiceSettingsInput{}}}}); err == nil {
 		t.Fatal("不在角色列表里的角色应报错")
+	}
+}
+
+// Kokoro 同语言双音色正权重表达式可由 update_work 保存，首个音色决定合成语言。
+func TestAssistantKokoroSpeakerBlend(t *testing.T) {
+	w := assistantWorkbench(t, fakeocho.Plan{})
+	_, created, err := w.createWorkTool(context.Background(), toolReq, createWorkInput{Kind: "text", Title: "混合音色", Open: boolPtr(false)})
+	must(t, err)
+	id := created.(map[string]any)["id"].(string)
+	modelID := "kokoro-82m-q8"
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.Models = append(s.Models, schema.InstalledModel{ID: modelID})
+	}, true))
+	speaker, language := "zf_xiaobei(0.7)+zf_xiaoni(0.3)", "zh"
+	_, _, err = w.updateWorkTool(context.Background(), toolReq, updateWorkInput{ID: id, Settings: &voiceSettingsInput{ModelID: &modelID, Speaker: &speaker, SynthesisLanguage: &language}})
+	must(t, err)
+	for _, d := range w.Store.Read().Drafts {
+		if d.ID == id && (d.Speaker != speaker || d.SynthesisLanguage != "zh") {
+			t.Fatalf("混合 speaker 未生效：%+v", d.SynthesisSettings)
+		}
+	}
+}
+
+// install_model 对已安装但 SHA 不同的模型显示更新卡片；无更新与未知 SHA 仍拒绝。
+func TestAssistantInstallModelUpdateProposal(t *testing.T) {
+	w := assistantWorkbench(t, fakeocho.Plan{})
+	modelID := "kokoro-82m-q8"
+	definition, err := catalog.Lookup(modelID)
+	must(t, err)
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.Models = []schema.InstalledModel{{ID: modelID, SHA256: "old-sha"}}
+	}, true))
+	w.chat.turn = &chatTurn{locale: schema.UiLocaleZhCN}
+	_, _, err = w.proposeTool(context.Background(), toolReq, proposeInput{Action: "install_model", Target: modelID})
+	must(t, err)
+	if len(w.chat.turn.blocks) != 1 || w.chat.turn.blocks[0].Card == nil || !strings.HasPrefix(w.chat.turn.blocks[0].Card.Summary, "更新模型 ") {
+		t.Fatalf("已安装的旧模型应显示更新卡片：%+v", w.chat.turn.blocks)
+	}
+	if names := proposalLabels["install_model_update"]; names[0] != "更新模型 %s" || names[1] != "Update model %s" {
+		t.Fatalf("更新卡片中英文文案不对：%v", names)
+	}
+	for _, sha := range []string{definition.MainFile().SHA256, ""} {
+		must(t, w.Store.Update(func(s *schema.State) {
+			s.Models[0].SHA256 = sha
+		}, true))
+		if _, _, err = w.proposeTool(context.Background(), toolReq, proposeInput{Action: "install_model", Target: modelID}); err == nil || !strings.Contains(err.Error(), "没有可用更新") {
+			t.Fatalf("无更新模型应拒绝重复安装：sha=%q err=%v", sha, err)
+		}
+	}
+}
+
+// 性能优先只允许 CUDA/CUDA13 与 v0.9.3+ 内核，确认后保存偏好并出现在应用状态中。
+func TestAssistantPerformanceFirstProposal(t *testing.T) {
+	w := assistantWorkbench(t, fakeocho.Plan{})
+	current, old := "v0.9.3", "v0.9.2"
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.Preferences.Backend, s.RuntimeVersion = "metal", &current
+	}, true))
+	if _, _, err := w.proposeTool(context.Background(), toolReq, proposeInput{Action: "set_performance_first", Value: "on"}); err == nil || !strings.Contains(err.Error(), "CUDA") {
+		t.Fatal("非 CUDA 应拒绝性能优先", err)
+	}
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.Preferences.Backend, s.RuntimeVersion = "cuda", &old
+	}, true))
+	if _, _, err := w.proposeTool(context.Background(), toolReq, proposeInput{Action: "set_performance_first", Value: "on"}); err == nil || !strings.Contains(err.Error(), performanceFirstEngine) {
+		t.Fatal("旧内核应拒绝性能优先", err)
+	}
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.Preferences.Backend, s.RuntimeVersion = "cuda13", &current
+	}, true))
+	for _, value := range []string{"true", "", "ON"} {
+		if _, _, err := w.proposeTool(context.Background(), toolReq, proposeInput{Action: "set_performance_first", Value: value}); err == nil || !strings.Contains(err.Error(), "on 或 off") {
+			t.Fatalf("非法性能优先值应被拒绝：%q %v", value, err)
+		}
+	}
+	for _, value := range []string{"on", "off"} {
+		must(t, w.runProposal(schema.AssistantProposal{Action: "set_performance_first", Value: value}))
+		_, status, err := w.appStatusTool(context.Background(), toolReq, struct{}{})
+		must(t, err)
+		want := value == "on"
+		if w.Store.Read().Preferences.PerformanceFirst != want || status.(map[string]any)["performanceFirst"] != want {
+			t.Fatalf("性能优先状态未保存或输出：value=%s status=%+v", value, status)
+		}
 	}
 }

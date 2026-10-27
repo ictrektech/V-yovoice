@@ -43,6 +43,13 @@ Everything in the right-hand inspector is editable with `update_work` {"id","set
 2. `update_work` {"id","text":<short English sound description>}; leave lyrics empty. Stable Audio Medium also fits; Small Music does not.
 3. Confirm an SFX or Medium model is installed with `list_models`, then `generate_work`. Rework and inpaint use the same Stable Audio settings as music.
 
+## Add sound effects to a story (给故事配音加音效)
+
+1. `create_work` {"kind":"sfx","title":...,"open":false}, then `update_work` {"id","text":<specific English sound description>}.
+2. Confirm an SFX or Medium model is installed with `list_models`, then `generate_work` {"id"}.
+3. Poll `get_generation_status` {"id"} until the completed `latest` appears; keep its `id` as the generation ID.
+4. `get_work` on the target story and choose a track from `tracks`, or leave `track` empty to create an 音效 track. Call `add_timeline_audio` {"id":<story id>,"generationId":<latest.id>,"track":<name or 1-based index>,"start":<optional seconds>}. Without `start`, it appends at that track's end.
+
 ## Underscore / arrangement (给作品配乐)
 
 1. `create_work` {"kind":"score","title":...}.

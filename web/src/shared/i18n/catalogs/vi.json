@@ -1592,6 +1592,12 @@
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "Thêm từ các phiên bản"
   },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "Thêm từ yovoice"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "Thêm"
+  },
   "@yovoice.nav.library": {
     "defaultMessage": "Thư viện âm thanh"
   },

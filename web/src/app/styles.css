@@ -188,6 +188,8 @@
   .timeline-audio-menu .astryx-dropdown-menu-item span { font-size: inherit; line-height: var(--spacing-5); }
   .timeline-audio-menu svg, .timeline-audio-button svg { width: var(--spacing-4); height: var(--spacing-4); stroke-width: 1.5; }
   .timeline-history-list { max-height: calc(var(--spacing-8) * 10); overflow-y: auto; }
+  .timeline-generation-label { min-width: 0; }
+  .timeline-generation-label b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .multitrack-region { position: absolute; top: var(--spacing-1); height: var(--spacing-10); min-width: 0; }
   .multitrack-clip { width: 100%; height: 100%; min-width: 0; overflow: hidden; justify-content: start; cursor: grab; border-color: var(--color-border); border-radius: var(--radius-inner); padding-block: 0 var(--spacing-5); font-size: var(--font-size-xs); }
   .multitrack-clip[aria-pressed="true"] { outline: var(--border-width) solid var(--app-wave); outline-offset: calc(var(--border-width) * -1); background: color-mix(in srgb, var(--app-wave) 8%, var(--color-background-surface)); }

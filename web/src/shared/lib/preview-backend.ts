@@ -640,6 +640,25 @@ export async function previewImportTimeline(file: File, name: string): Promise<A
   } finally { await context.close(); }
 }
 
+export async function previewImportTimelineGeneration(generationID: string): Promise<AudioAsset> {
+  const state = preview();
+  const generation = state.history.find(item => item.id === generationID && !item.segment);
+  if (!generation) throw new CallError('@yovoice.error.audioMissing');
+  const draft = state.drafts.find(item => item.id === generation.settings.id);
+  const name = Array.from(`${draft?.title ?? generation.settings.title} · ${generation.title}`).slice(0, 120).join('');
+  const blob = await blobStore(generation.fileName);
+  if (!blob) throw new CallError('@yovoice.error.audioBlobMissing');
+  const context = new AudioContext();
+  try {
+    const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+    if (buffer.duration < 0.01 || buffer.duration > 3600) throw new CallError('@yovoice.timeline.importDuration');
+    const id = crypto.randomUUID().replaceAll('-', '');
+    const asset = { id, name, fileName: `import-${id}.wav`, duration: buffer.duration };
+    await blobStore(asset.fileName, blob);
+    return asset;
+  } finally { await context.close(); }
+}
+
 export async function previewImportVoice(file: File): Promise<Voice> {
   assertUploadSize(file);
   const context = new AudioContext();
