@@ -4,6 +4,7 @@ import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { CircleAlert } from 'lucide-react';
 import { reportDesktop } from '../lib/bridge';
+import { dismissSplash } from '../lib/splash';
 import { call } from '../lib/client';
 import { resolveInitialUiLocale } from '../i18n/locale';
 
@@ -27,6 +28,7 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
     return props.resetKey !== state.resetKey ? { error: null, resetKey: props.resetKey } : null;
   }
   componentDidCatch(error: Error, info: ErrorInfo) {
+    dismissSplash(true);
     reportDesktop('render', this.props.name, `${error.stack ?? String(error)}\n${info.componentStack ?? ''}`);
   }
   render() {
@@ -49,9 +51,9 @@ export function PageBoundary({ name, resetKey, children }: { name: string; reset
   return <Boundary name={name} resetKey={resetKey} labels={() => ({ title: t('@yovoice.app.pageError.title'), body: t('@yovoice.app.pageError.body'), retry: t('@yovoice.app.pageError.retry'), reload: t('@yovoice.app.pageError.reload') })}>{children}</Boundary>;
 }
 
-// 最外层兜底：语言环境尚未加载时也能展示，按系统语言选择文案。
+// 最外层兜底：语言目录尚未加载时也能展示，中文系统显示中文，其余显示英文。
 export function RootBoundary({ children }: { children: ReactNode }) {
-  const zh = resolveInitialUiLocale(navigator.language) === 'zh-CN';
+  const zh = resolveInitialUiLocale(navigator.language).startsWith('zh');
   const labels = (): Labels => zh
     ? { title: '界面出错了', body: '出错原因已记录到日志。可以重试，或重新加载窗口（会先保存未保存的修改）。', retry: '重试', reload: '重新加载' }
     : { title: 'Something went wrong', body: 'The error has been logged. Try again or reload the window (unsaved edits are saved first).', retry: 'Try again', reload: 'Reload' };

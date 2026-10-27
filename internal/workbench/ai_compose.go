@@ -2,67 +2,39 @@ package workbench
 
 import (
 	"cmp"
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
-	"yovoice/internal/llm"
-	"yovoice/internal/msg"
 	"yovoice/internal/schema"
 )
 
-// ScoreBrief 是“AI 写谱”的输入：一句话描述、目标时长（秒，0 表示由模型决定）和界面语言。
-type ScoreBrief struct {
-	ProjectID string          `json:"projectId"`
-	Brief     string          `json:"brief"`
-	Seconds   int             `json:"seconds"`
-	Locale    schema.UiLocale `json:"locale"`
+// 助手写谱与 update_work 共用的乐谱构建与校验：notes 接受紧凑数组与完整对象，
+// repeats 让模型只写一遍循环段落，由这里展开。
+
+// scoreInput 是助手提交的乐谱输入。
+type scoreInput struct {
+	Tempo         float64               `json:"tempo" jsonschema:"速度 30-300（BPM）"`
+	TimeSignature []int                 `json:"timeSignature" jsonschema:"拍号 [分子,分母]，如 [4,4]"`
+	Key           string                `json:"key,omitempty" jsonschema:"调性，如 D minor"`
+	Sections      []schema.ScoreSection `json:"sections,omitempty" jsonschema:"段落，可带自己的 tempo 做渐慢"`
+	Tracks        []scoreTrack          `json:"tracks"`
 }
 
-const scorePrompt = `You are a film and video composer who writes arrangements as JSON for yovoice. yovoice renders every track with a General MIDI sound font and mixes tracks by role.
-
-Return ONLY one JSON object, no prose, no Markdown:
-{"title":"Night Drive","tempo":100,"timeSignature":[4,4],"key":"D minor","sections":[{"name":"Intro","start":1,"end":4}],
- "tracks":[{"id":"piano","name":"Piano","role":"piano","program":0,"reverb":0.3,"pan":-0.1,
-   "humanize":{"velocity":8,"timingMs":6},"dynamics":[{"start":1,"end":4,"from":0.5,"to":1}],
-   "notes":[[1,1,62,1,80],[1,2,65,0.5,72]],"repeats":[{"from":1,"to":4,"at":[9,13]}]}]}
-
-Rules:
-- notes are arrays [bar, beat, pitch, length, velocity]. bar and beat start at 1; beat may be fractional (1.5 = the off-beat of beat 1); beats are quarter notes (6/8 has 3 beats per bar); length is in beats; pitch is MIDI (60 = C4); velocity 1-127.
-- program is a General MIDI number: 0 piano, 4 electric piano, 24 nylon guitar, 32 acoustic bass, 33 finger bass, 40 violin, 41 viola, 42 cello, 46 harp, 48 string ensemble, 52 choir, 56 trumpet, 60 french horn, 71 clarinet, 73 flute, 81 saw lead, 88 new age pad, 89 warm pad, 95 sweep pad. For drums set "drums":true and use pitches 36 kick, 38 snare, 37 side stick, 42 closed hat, 46 open hat, 49 crash, 51 ride.
-- role is one of melody, piano, strings, bass, drums, pad, arp, other; it sets the default level (melody and piano in front, pad and arp behind). Do not set level unless needed.
-- One instrument per track, 3-8 tracks, unique ids. Optional: pan -1..1, reverb 0..1, humanize {velocity 0-40, timingMs 0-50}, dynamics ramps {start bar, end bar, from 0-1, to 0-1}. Sections may set their own tempo for a slowdown.
-- Plan a chord progression first, then write bass, pad, melody and rhythm parts that follow it. Shape the piece with sections: introduce and drop parts, use dynamics for builds.
-- Keep it compact: write at most 1500 notes in total. Sustained pads and long notes are cheaper than many short ones.
-- repeats copy a track's own notes from bars from..to so the copy starts at each bar listed in at. Write a loop, groove or recurring phrase once and repeat it instead of writing it again; this is how long pieces stay within the note budget. Notes written directly in the target bars are kept too.
-- Seconds = bars x beats per bar x 60 / tempo. Match the requested length within about 10%%, and never exceed %d seconds.
-- title is a short name for the piece, at most 20 characters.
-- Write the title, section and track names in %s.`
-
-func scoreLanguage(locale schema.UiLocale) string {
-	if locale == schema.UiLocaleZhCN {
-		return "Simplified Chinese"
-	}
-	return "English"
-}
-
-// ComposedScore 是 AI 写谱的结果：乐谱和顺带起的曲名，曲名只在作品尚未命名时由界面采用。
-type ComposedScore struct {
-	schema.Score
-	Title string `json:"title,omitempty"`
-}
-
-// aiScore 接受紧凑的数组音符和完整的对象音符两种写法。
-type aiScore struct {
-	schema.Score
-	Title  string `json:"title"`
-	Tracks []struct {
-		schema.ScoreTrack
-		Notes   []json.RawMessage `json:"notes"`
-		Repeats []scoreRepeat     `json:"repeats"`
-	} `json:"tracks"`
+// scoreTrack 是乐谱里的一个声部。
+type scoreTrack struct {
+	ID       string             `json:"id" jsonschema:"声部唯一 ID"`
+	Name     string             `json:"name" jsonschema:"声部名称，用界面语言书写"`
+	Role     string             `json:"role,omitempty" jsonschema:"melody/piano/strings/bass/drums/pad/arp/other"`
+	Program  int                `json:"program" jsonschema:"General MIDI 音色号 0-127"`
+	Drums    bool               `json:"drums,omitempty" jsonschema:"鼓组时为 true"`
+	Level    float64            `json:"level,omitempty" jsonschema:"电平 dBFS，一般省略"`
+	Pan      float64            `json:"pan,omitempty" jsonschema:"-1 到 1"`
+	Reverb   float64            `json:"reverb,omitempty" jsonschema:"0 到 1"`
+	Humanize *schema.Humanize   `json:"humanize,omitempty" jsonschema:"力度与时间微调"`
+	Dynamics []schema.ScoreRamp `json:"dynamics,omitempty" jsonschema:"音量渐变"`
+	Notes    []any              `json:"notes" jsonschema:"音符数组，每项为 [小节,拍,MIDI音高,拍数,力度] 五个数字或同字段对象；小节与拍从 1 开始，拍可为小数"`
+	Repeats  []scoreRepeat      `json:"repeats,omitempty" jsonschema:"把 from..to 小节的音符复制到各 at 起点"`
 }
 
 // scoreRepeat 让模型只写一遍循环段落，由这里展开成音符，长曲子不必逐个写出。
@@ -104,172 +76,57 @@ func expandRepeats(track *schema.ScoreTrack, repeats []scoreRepeat, budget int) 
 	return nil
 }
 
-func decodeScore(text string) (ComposedScore, error) {
-	raw := llm.ExtractJSON(text)
-	if raw == "" {
-		return ComposedScore{}, errors.New("no JSON object found")
-	}
-	var v aiScore
-	if e := json.Unmarshal([]byte(raw), &v); e != nil {
-		return ComposedScore{}, fmt.Errorf("invalid JSON: %v", e)
-	}
-	s := v.Score
-	s.Tracks = nil
+// buildScore 把工具参数转成乐谱并做与界面一致的校验。
+func buildScore(in scoreInput) (schema.Score, error) {
+	s := schema.Score{Tempo: in.Tempo, TimeSignature: in.TimeSignature, Key: strings.TrimSpace(in.Key), Sections: in.Sections}
 	notes := 0
-	for _, t := range v.Tracks {
-		track := t.ScoreTrack
-		track.Notes = make([]schema.ScoreNote, 0, len(t.Notes))
-		for _, n := range t.Notes {
-			var note schema.ScoreNote
-			var values []float64
-			if json.Unmarshal(n, &values) == nil {
-				if len(values) != 5 {
-					return ComposedScore{}, fmt.Errorf("track %q: each note array needs exactly 5 numbers [bar, beat, pitch, length, velocity]", track.ID)
-				}
-				note = schema.ScoreNote{Bar: int(values[0]), Beat: values[1], Pitch: int(values[2]), Length: values[3], Velocity: int(values[4])}
-			} else if e := json.Unmarshal(n, &note); e != nil {
-				return ComposedScore{}, fmt.Errorf("track %q: invalid note %s", track.ID, string(n))
+	for _, t := range in.Tracks {
+		track := schema.ScoreTrack{ID: t.ID, Name: t.Name, Role: t.Role, Program: t.Program, Drums: t.Drums, Level: t.Level, Pan: t.Pan, Reverb: t.Reverb, Humanize: t.Humanize, Dynamics: t.Dynamics}
+		for _, raw := range t.Notes {
+			note, err := parseScoreNote(raw)
+			if err != nil {
+				return schema.Score{}, fmt.Errorf("track %q: %v", track.ID, err)
 			}
 			track.Notes = append(track.Notes, note)
 		}
-		if e := expandRepeats(&track, t.Repeats, schema.ScoreMaxNotes-notes); e != nil {
-			return ComposedScore{}, e
+		if err := expandRepeats(&track, t.Repeats, schema.ScoreMaxNotes-notes); err != nil {
+			return schema.Score{}, err
 		}
 		notes += len(track.Notes)
 		s.Tracks = append(s.Tracks, track)
 	}
 	if issue := schema.ScoreIssue(&s); issue != "" {
-		return ComposedScore{}, errors.New(issue)
+		return schema.Score{}, fmt.Errorf("%s", issue)
 	}
-	return ComposedScore{Score: s, Title: truncateRunes(strings.TrimSpace(v.Title), 120)}, nil
+	return s, nil
 }
 
-func (in ScoreBrief) valid() bool {
-	brief := strings.TrimSpace(in.Brief)
-	return brief != "" && schema.TextLen(brief) <= 2000 && in.Seconds >= 0 && in.Seconds <= int(schema.ScoreMaxSeconds)
-}
-
-// StartScore 在后台写谱，立即返回任务。
-func (w *Workbench) StartScore(in ScoreBrief) (schema.AITask, error) {
-	if !in.valid() {
-		return schema.AITask{}, msg.Err(msg.ErrRequestInvalid, nil)
-	}
-	return w.startAI("score", in.ProjectID, strings.TrimSpace(in.Brief), func(ctx context.Context) (any, error) { return w.ComposeScore(ctx, in) })
-}
-
-// ComposeScore 让模型写出乐谱和曲名并校验；不合规时把问题发回让模型修正一次。
-func (w *Workbench) ComposeScore(ctx context.Context, in ScoreBrief) (ComposedScore, error) {
-	if !in.valid() {
-		return ComposedScore{}, msg.Err(msg.ErrRequestInvalid, nil)
-	}
-	brief := strings.TrimSpace(in.Brief)
-	ask := "Brief: " + brief
-	if in.Seconds > 0 {
-		ask += fmt.Sprintf("\nTarget length: about %d seconds.", in.Seconds)
-	}
-	request := llm.Request{System: fmt.Sprintf(scorePrompt, int(schema.ScoreMaxSeconds), scoreLanguage(in.Locale)), Messages: []llm.Message{{Role: "user", Content: ask}}, MaxTokens: 16000, Temperature: 0.7}
-	var issue string
-	for attempt := 0; attempt < 2; attempt++ {
-		result, e := w.complete(ctx, request)
-		if e != nil {
-			return ComposedScore{}, e
+// parseScoreNote 接受紧凑数组 [bar, beat, pitch, length, velocity] 与完整对象两种音符写法。
+func parseScoreNote(raw any) (schema.ScoreNote, error) {
+	switch v := raw.(type) {
+	case []any:
+		if len(v) != 5 {
+			return schema.ScoreNote{}, fmt.Errorf("each note array needs exactly 5 numbers [bar, beat, pitch, length, velocity]")
 		}
-		var s ComposedScore
-		if result.Truncated {
-			e = errors.New("output was cut off by the length limit")
-		} else {
-			s, e = decodeScore(result.Text)
+		values := make([]float64, 5)
+		for i, item := range v {
+			f, ok := item.(float64)
+			if !ok {
+				return schema.ScoreNote{}, fmt.Errorf("note array values must be numbers")
+			}
+			values[i] = f
 		}
-		if e == nil {
-			return s, nil
+		return schema.ScoreNote{Bar: int(values[0]), Beat: values[1], Pitch: int(values[2]), Length: values[3], Velocity: int(values[4])}, nil
+	case map[string]any:
+		data, err := json.Marshal(v)
+		if err != nil {
+			return schema.ScoreNote{}, err
 		}
-		issue = e.Error()
-		w.logAIOutput("score", issue, result.Text)
-		if attempt == 0 {
-			w.setAIStage("repairing")
+		var note schema.ScoreNote
+		if err = json.Unmarshal(data, &note); err != nil {
+			return schema.ScoreNote{}, fmt.Errorf("invalid note %s", data)
 		}
-		fix := "Your score is invalid: " + issue + ". Return the complete corrected JSON only."
-		if result.Truncated {
-			fix = "Your output was cut off. Write a shorter score with fewer notes (use longer notes and fewer bars) and return complete JSON only."
-		}
-		request.Messages = append(request.Messages, llm.Message{Role: "assistant", Content: result.Text}, llm.Message{Role: "user", Content: fix})
+		return note, nil
 	}
-	return ComposedScore{}, msg.Err(msg.ErrAIResultInvalid, msg.Params{"detail": issue})
-}
-
-// LyricsBrief 是“AI 写歌词”的输入。
-type LyricsBrief struct {
-	ProjectID    string          `json:"projectId"`
-	Brief        string          `json:"brief"`
-	Instrumental bool            `json:"instrumental"`
-	Language     string          `json:"language"`
-	Locale       schema.UiLocale `json:"locale"`
-}
-
-// Lyrics 是写给音乐作品的风格描述与带段落标记的歌词。
-type Lyrics struct {
-	Title    string `json:"title"`
-	Style    string `json:"style"`
-	Lyrics   string `json:"lyrics"`
-	Language string `json:"language"`
-}
-
-const lyricsPrompt = `You write songs for ACE-Step, a music generation model. Return ONLY one JSON object, no prose, no Markdown:
-{"title":"...","style":"...","lyrics":"...","language":"zh"}
-
-- style: one line of comma-separated English tags for genre, mood, instruments, vocal type and tempo feel, e.g. "city pop, nostalgic, warm synths, slap bass, female vocals, 100 bpm". At most 300 characters.
-- lyrics: lines grouped under section markers on their own line: [intro], [verse], [pre-chorus], [chorus], [bridge], [outro]. Keep it singable: short lines, a memorable repeated chorus. At most 2500 characters.%s
-- language: the ISO code of the sung language, one of zh, en, yue, ja, ko, es, fr, de, pt, ru, it.
-- title in the sung language.`
-
-func (in LyricsBrief) valid() bool {
-	brief := strings.TrimSpace(in.Brief)
-	return brief != "" && schema.TextLen(brief) <= 2000
-}
-
-// StartLyrics 在后台写歌词，立即返回任务。
-func (w *Workbench) StartLyrics(in LyricsBrief) (schema.AITask, error) {
-	if !in.valid() {
-		return schema.AITask{}, msg.Err(msg.ErrRequestInvalid, nil)
-	}
-	return w.startAI("lyrics", in.ProjectID, strings.TrimSpace(in.Brief), func(ctx context.Context) (any, error) { return w.WriteLyrics(ctx, in) })
-}
-
-// WriteLyrics 让模型写出风格描述与歌词；纯音乐只写风格与段落结构。
-func (w *Workbench) WriteLyrics(ctx context.Context, in LyricsBrief) (Lyrics, error) {
-	if !in.valid() {
-		return Lyrics{}, msg.Err(msg.ErrRequestInvalid, nil)
-	}
-	brief := strings.TrimSpace(in.Brief)
-	extra := ""
-	if in.Instrumental {
-		extra = "\n- This is an instrumental: leave lyrics empty except section markers describing the arrangement, e.g. [intro]\\n[verse]\\n[chorus]."
-	}
-	ask := "Song idea: " + brief
-	if in.Language != "" && slices.Contains(schema.MusicLanguages, in.Language) {
-		ask += "\nSung language: " + in.Language
-	}
-	result, e := w.complete(ctx, llm.Request{System: fmt.Sprintf(lyricsPrompt, extra), Messages: []llm.Message{{Role: "user", Content: ask}}, MaxTokens: 4000, Temperature: 0.9})
-	if e != nil {
-		return Lyrics{}, e
-	}
-	var l Lyrics
-	if e = json.Unmarshal([]byte(llm.ExtractJSON(result.Text)), &l); e != nil || strings.TrimSpace(l.Style) == "" {
-		w.logAIOutput("lyrics", "missing style", result.Text)
-		return Lyrics{}, msg.Err(msg.ErrAIResultInvalid, msg.Params{"detail": "missing style"})
-	}
-	l.Title = truncateRunes(strings.TrimSpace(l.Title), 120)
-	l.Style = truncateRunes(strings.TrimSpace(l.Style), 512)
-	l.Lyrics = truncateRunes(strings.TrimSpace(l.Lyrics), 4000)
-	if !slices.Contains(schema.MusicLanguages, l.Language) {
-		l.Language = ""
-	}
-	return l, nil
-}
-
-func truncateRunes(s string, n int) string {
-	if r := []rune(s); len(r) > n {
-		return string(r[:n])
-	}
-	return s
+	return schema.ScoreNote{}, fmt.Errorf("invalid note %v", raw)
 }

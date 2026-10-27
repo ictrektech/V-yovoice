@@ -36,7 +36,8 @@ func TestVoxReferenceEncoderCapacity(t *testing.T) {
 		binary.LittleEndian.PutUint32(data[28:], uint32(item.rate*2))
 		binary.LittleEndian.PutUint32(data[40:], uint32(len(data)-44))
 		must(t, os.WriteFile(voice, data, 0600))
-		must(t, engine.Generate(context.Background(), executable, model, "cpu", draft, voice, "", output, func(msg.Code, msg.Params) {}))
+		_, e := engine.Generate(context.Background(), executable, model, "cpu", draft, voice, "", output, func(msg.Code, msg.Params) {})
+		must(t, e)
 		var config struct {
 			Models []struct {
 				Options map[string]int `json:"session_options"`
@@ -52,7 +53,8 @@ func TestVoxReferenceEncoderCapacity(t *testing.T) {
 		if pid == previousPID {
 			t.Fatal("容量变化后必须重建引擎会话")
 		}
-		must(t, engine.Generate(context.Background(), executable, model, "cpu", draft, voice, "", output, func(msg.Code, msg.Params) {}))
+		_, e = engine.Generate(context.Background(), executable, model, "cpu", draft, voice, "", output, func(msg.Code, msg.Params) {})
+		must(t, e)
 		if engine.process.Process.Pid != pid {
 			t.Fatal("容量不变时应复用引擎")
 		}

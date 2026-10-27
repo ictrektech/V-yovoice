@@ -23,7 +23,11 @@ func TestPresetsMatchWeb(t *testing.T) {
 		t.Fatal("internal/llm/presets.json 与 web/src/shared/lib/ai-presets.json 不一致")
 	}
 	for _, p := range Presets {
-		if p.Key == "" || p.Name == "" || (p.Endpoint != "custom" && !strings.HasPrefix(p.BaseURL, "http")) {
+		// 经 CLI 调用的订阅没有地址，只能使用 Codex 协议。
+		if p.Endpoint == "cli" && (p.Format != FormatCodex || p.BaseURL != "") {
+			t.Errorf("CLI 预设 %+v 配置错误", p)
+		}
+		if p.Key == "" || p.Name == "" || (p.Endpoint != "custom" && p.Endpoint != "cli" && !strings.HasPrefix(p.BaseURL, "http")) {
 			t.Errorf("预设 %+v 不完整", p)
 		}
 	}

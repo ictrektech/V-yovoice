@@ -1,14 +1,15 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { Dialog } from '@astryxdesign/core/Dialog';
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
-import { useTranslator } from '@astryxdesign/core/i18n';
-import { ArrowDown, ChevronDown, FastForward, Maximize, Minimize, Pause, Play, Rewind } from 'lucide-react';
-import { call, mediaUrl } from '../../shared/lib/client';
+import { useLocale, useTranslator } from '@astryxdesign/core/i18n';
+import { ArrowDown, ArrowLeftRight, Check, ChevronDown, Download, FastForward, Maximize, Minimize, Pause, Play, Rewind } from 'lucide-react';
+import { call, mediaUrl, saveText } from '../../shared/lib/client';
 import { noticeMessage } from '../../shared/lib/call-error';
 import { formatTime, type Generation } from '../../shared/workbench';
 import { alignLyrics, vocalActivity, type VocalActivity } from './lyric-align';
-import { activeLyric, lyricRows, lyricTimeline, type LyricLine } from './lyric-timing';
+import { activeLyric, lyricRows, lyricTimeline, lyricsToLrc, type LyricLine } from './lyric-timing';
 import { splitTags } from './music-draft';
 import { coverPalette, SongCover } from './song-cover';
 
@@ -41,8 +42,19 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
 
 // 音乐播放页：仿 Apple Music 的全屏播放，左侧封面与播放控制，右侧滚动歌词；方便录屏，静置时自动隐藏控件和鼠标。
 // 歌词时间先按音频里的人声片段自动定位，判断不可靠时按时长估算；可以边听边逐行校准，校准结果随版本保存。
-export function NowPlaying({ item, title, close, onError }: { item: Generation; title: string; close: () => void; onError: (message: string) => void }) {
+// versions 是同一作品的各个版本：可以在播放页里切换版本对比试听，切换时保持播放位置，按 B 在最近两个版本之间来回切。
+export function NowPlaying({ item: opened, title: openedTitle, versions = [], close, onError }: { item: Generation; title: string; versions?: Generation[]; close: () => void; onError: (message: string) => void }) {
   const t = useTranslator();
+  const locale = useLocale();
+  const [item, setItem] = useState(opened);
+  // 上一个听的版本，用来 A/B 来回切换。
+  const [previous, setPrevious] = useState<Generation | null>(null);
+  // 切换版本时记下的位置和播放状态，新音频加载后恢复。
+  const resume = useRef<{ time: number; play: boolean } | null>(null);
+  const title = item.id === opened.id ? openedTitle : item.title;
+  // 版本号按生成先后从 1 开始，与版本记录一致。
+  const ordered = useMemo(() => [...versions].sort((a, b) => a.createdAt.localeCompare(b.createdAt)), [versions]);
+  const versionNumber = (value: Generation) => ordered.findIndex(entry => entry.id === value.id) + 1;
   const audio = useRef<HTMLAudioElement>(null);
   const stage = useRef<HTMLElement>(null);
   const lyricsBox = useRef<HTMLElement>(null);
@@ -70,6 +82,13 @@ export function NowPlaying({ item, title, close, onError }: { item: Generation; 
   const { hue, accent } = coverPalette(item.id);
   const tags = splitTags(item.settings.text).slice(0, 4);
 
+  const switchTo = (next: Generation) => {
+    if (next.id === item.id) return;
+    const element = audio.current;
+    resume.current = { time: element?.currentTime ?? time, play: !!element && !element.paused };
+    envelope.current = [];
+    setPrevious(item); setItem(next); setTimes(next.lyricTimes); setVoice(null); setSync(null); setDuration(next.duration);
+  };
   // 打开即开始播放；浏览器拦截自动播放时停在开头，由用户点播放。
   useEffect(() => {
     let disposed = false, resource = '';
@@ -126,6 +145,8 @@ export function NowPlaying({ item, title, close, onError }: { item: Generation; 
     if (next.length < rows.length) { setSync(next); return; }
     setSync(null); save(next);
   };
+  // 按当前显示的歌词时间（校准、自动定位或估算）导出 LRC。
+  const exportLrc = () => { void saveText(lyricsToLrc(timeline, title), title, 'lrc').catch((error: unknown) => onError(noticeMessage(error))); };
   const undo = () => {
     if (!sync?.length) return;
     const last = sync.at(-1)!;
@@ -177,7 +198,8 @@ export function NowPlaying({ item, title, close, onError }: { item: Generation; 
     const action = event.key === ' ' ? toggle
       : sync && (event.key === 'ArrowDown' || event.key === 'Enter') ? mark
         : sync && event.key === 'Backspace' ? undo
-          : !sync && event.key === 'ArrowLeft' ? () => seek(time - skipStep)
+          : !sync && previous && (event.key === 'b' || event.key === 'B') ? () => switchTo(previous)
+            : !sync && event.key === 'ArrowLeft' ? () => seek(time - skipStep)
             : !sync && event.key === 'ArrowRight' ? () => seek(time + skipStep) : null;
     if (!action) return;
     event.preventDefault(); action();
@@ -196,11 +218,25 @@ export function NowPlaying({ item, title, close, onError }: { item: Generation; 
       onPointerMove={wake} onPointerDown={wake}
       onAnimationEnd={event => { if (leaving && event.target === stage.current) close(); }}>
       <audio hidden ref={audio} src={url || undefined} autoPlay
-        onLoadedMetadata={() => { const value = audio.current?.duration; if (value && Number.isFinite(value)) setDuration(value); }}
+        onLoadedMetadata={() => {
+          const element = audio.current, value = element?.duration;
+          if (value && Number.isFinite(value)) setDuration(value);
+          const saved = resume.current; resume.current = null;
+          if (!element || !saved) return;
+          element.currentTime = Math.min(saved.time, value && Number.isFinite(value) ? value : saved.time);
+          if (!saved.play) element.pause();
+        }}
         onTimeUpdate={() => setTime(audio.current?.currentTime ?? 0)}
         onPlay={() => setPlaying(true)} onPause={() => { setPlaying(false); setIdle(false); }} onEnded={() => setPlaying(false)} />
       <HStack className="now-playing-bar now-playing-chrome" gap={2} hAlign="between" vAlign="center">
         <Button className="now-playing-glass now-playing-round" label={t('@yovoice.music.closeNowPlaying')} isIconOnly variant="ghost" icon={<ChevronDown />} onClick={leave} />
+        {ordered.length > 1 ? <HStack className="now-playing-versions" gap={1} vAlign="center">
+          <DropdownMenu presentation="popover" alignment="center" menuWidth="max-content"
+            button={{ className: 'now-playing-glass', size: 'sm', variant: 'ghost', label: t('@yovoice.app.historyVersion', { n: versionNumber(item) }), tooltip: t('@yovoice.music.compareVersions') }}
+            items={[...ordered].reverse().map(entry => ({ id: entry.id, label: t('@yovoice.app.historyVersion', { n: versionNumber(entry) }), description: new Date(entry.createdAt).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+              endContent: entry.id === item.id ? <Check size={14} /> : undefined, onClick: () => switchTo(entry) }))} />
+          {previous && previous.id !== item.id ? <Button className="now-playing-glass" size="sm" variant="ghost" icon={<ArrowLeftRight />} label={t('@yovoice.music.switchBack', { n: versionNumber(previous) })} tooltip={t('@yovoice.music.switchBackHint')} onClick={() => switchTo(previous)} /> : null}
+        </HStack> : null}
         {document.fullscreenEnabled ? <Button className="now-playing-glass now-playing-round" label={t(fullscreen ? '@yovoice.music.exitFullscreen' : '@yovoice.music.fullscreen')} isIconOnly variant="ghost" icon={fullscreen ? <Minimize /> : <Maximize />} onClick={toggleFullscreen} /> : null}
       </HStack>
       <HStack className={`now-playing-stage ${lines.length ? '' : 'now-playing-solo'}`.trim()} gap={0} vAlign="center">
@@ -239,6 +275,7 @@ export function NowPlaying({ item, title, close, onError }: { item: Generation; 
         <small>{t(times ? '@yovoice.music.lyricsSynced' : auto ? '@yovoice.music.lyricsAnalyzed' : '@yovoice.music.lyricsEstimated')}</small>
         <Button className="now-playing-glass" size="sm" variant="ghost" label={t(times ? '@yovoice.music.resyncLyrics' : '@yovoice.music.syncLyrics')} isDisabled={!url} onClick={startSync} />
         {times ? <Button className="now-playing-glass" size="sm" variant="ghost" label={t('@yovoice.music.syncReset')} onClick={() => save(undefined)} /> : null}
+        <Button className="now-playing-glass" size="sm" variant="ghost" icon={<Download />} label={t('@yovoice.music.exportLrc')} isDisabled={!timeline.length} onClick={exportLrc} />
       </HStack> : null}
     </VStack>
   </Dialog>;

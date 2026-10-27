@@ -38,7 +38,7 @@ func TestRemoteAPI(t *testing.T) {
 	}
 	r := httptest.NewRequest("GET", "/v1/models", nil)
 	r.Header.Set("Authorization", "Bearer "+token)
-	r.Header.Set("Origin", "https://example.com")
+	r.Header.Set("Origin", "https://evil.test")
 	rejected := httptest.NewRecorder()
 	api.ServeHTTP(rejected, r)
 	if rejected.Code != 403 {

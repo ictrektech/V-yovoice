@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+	"yovoice/internal/assistant"
 	"yovoice/internal/diag"
 	"yovoice/internal/download"
 	"yovoice/internal/engine"
@@ -39,6 +40,8 @@ type Workbench struct {
 	// bundled 记录随安装包分发的内核，键为后端；启动时登记，之后只读。
 	bundled         map[string]bundledRuntime
 	ai              aiState
+	chat            chatState
+	assistant       *assistant.Manager
 	pendingDataPath string
 }
 
@@ -56,6 +59,7 @@ func New(root string) (*Workbench, error) {
 		return download.Proxy(req, preferences.ProxyURL)
 	}
 	w := &Workbench{Store: s, engine: engine.New(root), client: &http.Client{Transport: transport}, bundled: map[string]bundledRuntime{}}
+	w.assistant = assistant.New(root, assistant.Options{Tools: assistantTools, NewServer: w.newAssistantServer})
 	// 先找回已解压的内核再清理，避免把仍可使用的 GPU 内核当作残留删除。
 	if e = w.importLegacyPrivate(); e != nil {
 		s.Close()
@@ -271,6 +275,8 @@ func (w *Workbench) Close() {
 			}
 		}
 		w.stopAI()
+		w.stopChat()
+		w.assistant.Stop()
 		w.engine.Stop()
 		w.client.CloseIdleConnections()
 		if e := w.Store.Close(); e != nil {

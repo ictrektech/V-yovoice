@@ -1,15 +1,14 @@
 import Foundation
 
 /// UI locale for native menus and alerts. Mirrors Preferences.uiLocale (not TTS Draft.language).
+/// 原生文案只备中英两份：中文界面语言用中文，其余界面语言用英文；旧数据没有该字段时视为中文。
 enum HostUiLocale: String {
     case zhCN = "zh-CN"
     case en = "en"
 
     static func parse(_ raw: String?) -> HostUiLocale {
-        switch raw {
-        case "en": return .en
-        default: return .zhCN
-        }
+        guard let raw else { return .zhCN }
+        return raw.hasPrefix("zh") ? .zhCN : .en
     }
 
     static func fromNavigatorLike(_ language: String) -> HostUiLocale {
@@ -73,6 +72,8 @@ enum HostL10n {
             "sidebar.tooltip": "收起或展开侧栏",
             "inspector.toggle": "切换右侧面板",
             "inspector.tooltip": "收起或展开右侧面板",
+            "assistant.toggle": "切换 Ocho",
+            "assistant.tooltip": "打开或关闭 Ocho（⌘J）",
             "loading": "正在打开 yovoice…",
             "about.credits": "如果 yovoice 对你有帮助，欢迎给项目点个 Star。\n\n",
             "panel.pickAudioOrSubtitles": "选择音频或字幕",
@@ -98,6 +99,7 @@ enum HostL10n {
             "err.audioPath": "无法读取音频位置。",
             "err.audioMissing": "音频文件不存在。",
             "err.exportInvalid": "导出音频格式无效或超过大小限制。",
+            "err.textExportInvalid": "导出文件格式无效或超过大小限制。",
             "err.modelDirRead": "无法读取模型保存位置。",
             "err.modelDirOpen": "无法打开模型保存目录。",
             "err.serviceNotReady": "本地服务尚未就绪。",
@@ -168,6 +170,8 @@ enum HostL10n {
             "sidebar.tooltip": "Collapse or expand the sidebar",
             "inspector.toggle": "Toggle Right Panel",
             "inspector.tooltip": "Collapse or expand the right panel",
+            "assistant.toggle": "Toggle Ocho",
+            "assistant.tooltip": "Open or close Ocho (⌘J)",
             "loading": "Opening yovoice…",
             "about.credits": "If yovoice helps you, consider starring the project.\n\n",
             "panel.pickAudioOrSubtitles": "Choose audio or subtitles",
@@ -193,6 +197,7 @@ enum HostL10n {
             "err.audioPath": "Could not read the audio location.",
             "err.audioMissing": "Audio file does not exist.",
             "err.exportInvalid": "Export audio is invalid or exceeds the size limit.",
+            "err.textExportInvalid": "The exported file is invalid or exceeds the size limit.",
             "err.modelDirRead": "Could not read the model save location.",
             "err.modelDirOpen": "Could not open the model save folder.",
             "err.serviceNotReady": "Local service is not ready yet.",

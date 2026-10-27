@@ -69,7 +69,9 @@ func RunFakeEngine() {
 	http.HandleFunc("/v1/tasks/run", func(w http.ResponseWriter, r *http.Request) {
 		var p struct {
 			Request struct {
-				Text string `json:"text"`
+				Text    string         `json:"text"`
+				Audio   string         `json:"audio"`
+				Options map[string]any `json:"options"`
 			} `json:"request"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&p)
@@ -81,8 +83,33 @@ func RunFakeEngine() {
 			http.Error(w, "模拟生成失败", http.StatusInternalServerError)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]string{"audio": base64.StdEncoding.EncodeToString(WAV())})
+		result := map[string]any{}
+		// YuE2 自己规划（cot 非 off 且未给谱）或 SheetSage2 扒谱时附带旋律谱；只出谱或扒谱时没有音频。
+		_, given := p.Request.Options["abc"]
+		if (p.Request.Options["cot"] != nil && p.Request.Options["cot"] != "off" && !given) || p.Request.Audio != "" {
+			result["artifacts"] = []any{map[string]any{"id": "score", "kind": "custom", "payload": base64.StdEncoding.EncodeToString([]byte(ABC)), "meta": map[string]string{"format": "abc", "truncated": "false"}}}
+		}
+		if p.Request.Options["stop_after"] != "abc" && p.Request.Audio == "" {
+			result["audio"] = base64.StdEncoding.EncodeToString(WAV())
+		}
+		_ = json.NewEncoder(w).Encode(result)
 	})
 	_ = http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", config.Port), nil)
 	os.Exit(0)
 }
+
+// ABC 是模拟引擎返回的 YuE2 旋律谱：两小节，带和弦与段落。
+const ABC = `X:1
+T:
+M:4/4
+L:1/32
+Q:1/4=120
+V: Vocal clef=treble name="Vocal Melody" snm="Vocal"
+V: Ins clef=treble name="Ins Melody" snm="Inst."
+K:C
+% verse
+V: Vocal
+"C"E8G8c16|"G"B8G8D16|
+V: Ins
+Z2|
+`

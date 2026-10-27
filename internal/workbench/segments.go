@@ -91,7 +91,7 @@ func (w *Workbench) generateSegments(ctx context.Context, state schema.State, pa
 			return err
 		}
 		diag.Log(w.Store.Root, "segment.started", "project_id", part.draft.ID, "batch_id", batch, "cue_id", part.segment.CueID, "generation_id", id, "model_id", part.model.ID, "index", index)
-		err = w.engine.Generate(ctx, *state.RuntimePath, part.model, state.Preferences.Backend, part.draft, part.voice, part.emotion, path, func(_ msg.Code, _ msg.Params) {
+		_, err = w.engine.Generate(ctx, *state.RuntimePath, part.model, state.Preferences.Backend, part.draft, part.voice, part.emotion, path, func(_ msg.Code, _ msg.Params) {
 			w.progress(msg.ActivitySubtitle, msg.Params{"n": index + 1, "total": len(parts)}, int64(index), int64(len(parts)))
 		})
 		if err != nil {

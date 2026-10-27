@@ -5,11 +5,11 @@ import { useTranslator } from '@astryxdesign/core/i18n';
 import definitions from '../../shared/lib/generation-options.json';
 import type { Draft } from '../../shared/workbench';
 
-export function ModelOptions({ draft, family, change }: { draft: Draft; family: keyof typeof definitions; change: (patch: Partial<Draft>) => void }) {
+export function ModelOptions({ draft, family, change, omit = [] }: { draft: Draft; family: keyof typeof definitions; change: (patch: Partial<Draft>) => void; omit?: string[] }) {
   const t = useTranslator();
   const values = draft.modelOptions?.[family] ?? {};
   const update = (key: string, value: string | number | boolean) => change({ modelOptions: { ...draft.modelOptions, [family]: { ...values, [key]: value } } });
-  return <VStack gap={4}>{definitions[family].map(spec => {
+  return <VStack gap={4}>{definitions[family].filter(spec => !omit.includes(spec.key)).map(spec => {
     const label = t(`@yovoice.options.${spec.key}`);
     const value = values[spec.key] ?? spec.default;
     if (spec.type === 'boolean') return <Switch key={spec.key} label={label} size="sm" value={Boolean(value)} onChange={value => update(spec.key, value)} />;

@@ -55,6 +55,8 @@ type Job struct {
 	Fence           uint64          `json:"fence"`
 	Stopped         bool            `json:"stopped"`
 	Error           string          `json:"error,omitempty"`
+	BeforeMelodyID  string          `json:"before_melody_id,omitempty"`
+	OutputMelodyID  string          `json:"output_melody_id,omitempty"`
 	BeforeFiles     []string        `json:"before_files,omitempty"`
 	OutputFiles     []string        `json:"output_files,omitempty"`
 }
@@ -428,7 +430,11 @@ func (j *Jobs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Workbench unavailable", 503)
 				return
 			}
-			job.BeforeFiles = stateFiles(workbench.Store.Read())
+			before := workbench.Store.Read()
+			job.BeforeFiles = stateFiles(before)
+			if before.Melody != nil {
+				job.BeforeMelodyID = before.Melody.ID
+			}
 			if err = atomicJSON(j.path(job.ID), job); err != nil {
 				http.Error(w, "Journal unavailable", 503)
 				return
@@ -511,7 +517,7 @@ func (j *Jobs) execute(ctx context.Context, job Job, run *execution) {
 		// 等待结束并卸载驻留模型，固定模板包含装载峰值，无隐含跨任务驻留预算。
 		w.UnloadRuntime()
 		state := w.Store.Read()
-		if actionErr == nil && state.Activity != nil && state.Activity.Status != "completed" {
+		if job.Method != "melody.listen" && actionErr == nil && state.Activity != nil && state.Activity.Status != "completed" {
 			actionErr = fmt.Errorf("generation did not complete")
 		}
 	}
@@ -526,7 +532,11 @@ func (j *Jobs) execute(ctx context.Context, job Job, run *execution) {
 	}
 	current.Stopped = true
 	if w != nil {
-		for _, file := range stateFiles(w.Store.Read()) {
+		state := w.Store.Read()
+		if state.Melody != nil && state.Melody.ID != current.BeforeMelodyID {
+			current.OutputMelodyID = state.Melody.ID
+		}
+		for _, file := range stateFiles(state) {
 			if !slices.Contains(current.BeforeFiles, file) {
 				current.OutputFiles = append(current.OutputFiles, file)
 			}
@@ -566,6 +576,8 @@ func startSnapshot(ctx context.Context, w *workbench.Workbench, job Job) error {
 			return err
 		}
 		return w.GenerateSnapshot(input.Draft, input.CueID, input.ClipID)
+	case "melody.plan", "melody.cover", "melody.listen":
+		return runMusicSnapshot(ctx, w, job)
 	case "character.preview":
 		_, err := desktop.Call(ctx, w, job.Method, job.Data)
 		return err
@@ -621,6 +633,20 @@ func (j *Jobs) hiddenFiles(user string, state schema.State) (map[string]bool, *J
 func (j *Jobs) VisibleState(user string, state schema.State) schema.State {
 	j.mu.Lock()
 	defer j.mu.Unlock()
+	// ABC 文本也是推理结果；执行完成但尚未收到调度确认时不能被编辑器自动接收。
+	if state.Melody != nil {
+		paths, _ := filepath.Glob(filepath.Join(j.Server.Root, "jobs", "*.json"))
+		for _, path := range paths {
+			job, err := j.read(strings.TrimSuffix(filepath.Base(path), ".json"))
+			if err != nil || job.User != user || job.Status == "succeeded" {
+				continue
+			}
+			if job.OutputMelodyID == state.Melody.ID || (job.Attempt != "" && !job.Stopped && job.BeforeMelodyID != state.Melody.ID) {
+				state.Melody = nil
+				break
+			}
+		}
+	}
 	hidden, pending := j.hiddenFiles(user, state)
 	state.History = slices.DeleteFunc(state.History, func(g schema.Generation) bool { return hidden[g.FileName] })
 	state.Previews = slices.DeleteFunc(state.Previews, func(g schema.CharacterPreview) bool { return hidden[g.FileName] })

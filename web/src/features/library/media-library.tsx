@@ -20,11 +20,11 @@ import { overflowTitle } from '../../shared/ui/overflow-title';
 // 存根用的短时长：不足一小时显示 m:ss。
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
 
-export function MediaLibrary({ page, state, query, onQueryChange, track, audition, stop, suspended, addVoice, editVoice, reuse, exportItem, play, onError, controls, project }: {
+export function MediaLibrary({ page, state, query, onQueryChange, track, audition, stop, suspended, addVoice, editVoice, saveCharacter, reuse, exportItem, play, onError, controls, project }: {
   controls?: ReactNode; project: Draft;
   page: 'voices' | 'history'; state: State; query: string; onQueryChange: (value: string) => void;
   track: Track | null; audition: (track: Track) => void; stop: () => void; suspended: boolean;
-  addVoice: () => void; editVoice: (item: Voice | Generation) => void; reuse: (item: Generation) => void;
+  addVoice: () => void; editVoice: (item: Voice | Generation) => void; saveCharacter: (item: Generation) => void; reuse: (item: Generation) => void;
   exportItem: (item: Generation) => void; play: (item: Generation) => void;
   onError: (message: string) => void;
 }) {
@@ -109,7 +109,7 @@ export function MediaLibrary({ page, state, query, onQueryChange, track, auditio
             {kind === 'music' ? <Button label={t('@yovoice.music.openNowPlaying', { name })} tooltip={t('@yovoice.music.nowPlaying')} size="sm" variant="ghost" isIconOnly icon={<Disc3 />} onClick={() => { stop(); play(item); }} /> : null}
             <DropdownMenu className="audio-actions-menu" presentation="popover" alignment="end" hasChevron={false} button={{ label: t('@yovoice.history.audioActions'), size: 'sm', variant: 'ghost', isIconOnly: true, icon: <MoreHorizontal /> }} items={[
               { label: t('@yovoice.app.exportVersion'), onClick: () => exportItem(item) },
-              ...(quick ? [{ label: t('@yovoice.voice.save'), onClick: () => editVoice(item) }] : []),
+              ...(quick ? [{ label: t('@yovoice.voice.save'), onClick: () => editVoice(item) }, { label: t('@yovoice.character.saveAs'), onClick: () => saveCharacter(item) }] : []),
               { label: t(kind === 'music' ? '@yovoice.music.reuseTake' : '@yovoice.app.reuseSettings'), onClick: () => reuse(item) },
             ]} />
             <MediaActions item={{ id: item.id, kind: 'outputs', name: item.title }} beforeDelete={stop} onError={onError} />

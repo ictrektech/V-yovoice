@@ -1,7 +1,7 @@
 import type { AudioAsset, State, Voice } from '../workbench';
 import { toBase64 } from './sound';
 import { CallError, parseCallError } from './call-error';
-import { desktopCall, desktopMediaUrl, isDesktop, isMac, subscribeDesktop } from './bridge';
+import { desktopCall, desktopMediaUrl, isDesktop, isMac, reportDesktop, subscribeDesktop } from './bridge';
 import { assertUploadSize, previewCall, previewImportTimeline, previewImportVoice, previewMediaUrl, subscribePreview } from './preview-backend';
 import { isVos, vosCall, vosMedia, subscribeVos } from './vos';
 
@@ -29,15 +29,72 @@ export async function importVoiceFile(file: File): Promise<Voice> {
   return call<Voice>('voice.record', { name: file.name.replace(/\.[^.]+$/, ''), base64: await toBase64(file) });
 }
 
+// 翻唱扒谱：上传歌曲交给后台用 SheetSage2 提取旋律；浏览器预览不做推理。
+export async function coverMelodyFile(projectId: string, file: File): Promise<void> {
+  if (!isDesktop && !isVos) throw new CallError('@yovoice.error.previewDesktopOnly');
+  assertUploadSize(file);
+  await call('melody.cover', { projectId, base64: await toBase64(file) });
+}
+
+// VOS 试听也需排队，直到调度确认后才取得可访问的音频；离开谱面后停止轮询。
+export async function listenMelody(abc: string, isCurrent: () => boolean): Promise<string | null> {
+  if (!isVos) return (await call<{ fileName: string }>('melody.listen', { abc })).fileName;
+  const id = await call<string>('melody.listen', { abc });
+  while (isCurrent()) {
+    const result = await call<{ fileName: string } | null>('melody.result', { id });
+    if (result) return result.fileName;
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  return null;
+}
+
 export async function mediaUrl(kind: 'voices' | 'outputs', file: string): Promise<string> {
   return isVos ? vosMedia(kind, file) : isDesktop ? desktopMediaUrl(kind, file) : previewMediaUrl(file);
 }
 
-export async function saveAudio(blob: Blob, name: string): Promise<boolean> {
-  const fileName = `${name.replace(/[\\/:*?"<>|]/g, '_').slice(0, 100) || 'yovoice'}.wav`;
-  if (isDesktop) return call<boolean>('audio.export', { name: fileName, base64: await toBase64(blob) });
+const exportName = (name: string, fallback = 'yovoice') => name.replace(/[\\/:*?"<>|]/g, '_').slice(0, 100) || fallback;
+
+// 浏览器预览没有保存对话框，直接交给浏览器下载。
+function download(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a'); link.href = url; link.download = fileName; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return true;
+}
+
+// 只在界面里完成的操作（导出文件等）写入服务日志，事件名记为 client.<event>；上报失败不影响操作本身。
+export function logEvent(event: string, detail = '') {
+  if (isDesktop) reportDesktop(event, '', detail);
+  else void previewCall('diag.client', { event, detail }).catch(() => undefined);
+}
+
+// 导出结果写入日志：保存、取消或失败（失败时原样抛出）。
+async function logged(format: string, save: () => Promise<boolean>): Promise<boolean> {
+  try {
+    const saved = await save();
+    logEvent(saved ? 'export_saved' : 'export_cancelled', format);
+    return saved;
+  } catch (error) {
+    logEvent('export_failed', `${format}: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
+  }
+}
+
+export async function saveAudio(blob: Blob, name: string): Promise<boolean> {
+  const fileName = `${exportName(name)}.wav`;
+  return logged('wav', async () => {
+    if (isDesktop) return call<boolean>('audio.export', { name: fileName, base64: await toBase64(blob) });
+    download(blob, fileName);
+    return true;
+  });
+}
+
+// 字幕、歌词与 ABC 谱面等 UTF-8 文本：桌面端由宿主弹出保存对话框并写文件，用户取消时返回 false。
+export type TextExportFormat = 'srt' | 'vtt' | 'lrc' | 'abc';
+export async function saveText(text: string, name: string, format: TextExportFormat): Promise<boolean> {
+  const fileName = `${exportName(name)}.${format}`;
+  return logged(format, async () => {
+    if (isDesktop) return call<boolean>('text.export', { name: fileName, format, text });
+    download(new Blob([text], { type: format === 'vtt' ? 'text/vtt' : 'text/plain' }), fileName);
+    return true;
+  });
 }

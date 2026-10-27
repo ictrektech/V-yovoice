@@ -170,6 +170,15 @@
     "endpoint": "local"
   },
   {
+    "key": "codex",
+    "name": "ChatGPT (Codex)",
+    "format": "codex_cli",
+    "baseURL": "",
+    "modelsPath": "",
+    "endpoint": "cli",
+    "icon": "openai"
+  },
+  {
     "key": "custom",
     "name": "Custom",
     "format": "chat_completions",

@@ -7,6 +7,7 @@ import (
 	"yovoice/internal/diag"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
+	"yovoice/internal/score"
 )
 
 func (w *Workbench) SaveDraft(d schema.Draft) error {
@@ -39,7 +40,7 @@ func (w *Workbench) saveDraft(d schema.Draft) (err error) {
 		return err
 	}
 	stage = "validate_limits"
-	if !schema.ValidID(d.ID) || schema.TextLen(d.Text) > 12000 || schema.TextLen(d.Title) > 120 || schema.TextLen(d.EmotionText) > 500 || schema.TextLen(d.VoiceDescription) > 500 || schema.TextLen(d.ReferenceText) > 2000 || schema.TextLen(d.Lyrics) > 4000 || !schema.ScoreWithinLimits(d.Score) {
+	if !schema.ValidID(d.ID) || schema.TextLen(d.Text) > 12000 || schema.TextLen(d.Title) > 120 || schema.TextLen(d.EmotionText) > 500 || schema.TextLen(d.VoiceDescription) > 500 || schema.TextLen(d.ReferenceText) > 2000 || schema.TextLen(d.Lyrics) > 4000 || len(d.Abc) > score.ABCMaxLength || !schema.ScoreWithinLimits(d.Score) {
 		return msg.Err(msg.ErrDraftLimits, nil)
 	}
 	// 内容未变化时直接返回、不写盘：打开作品或界面补存都会触发保存，
@@ -117,6 +118,18 @@ func (w *Workbench) DeleteDraft(id string) error {
 		s.Drafts = slices.DeleteFunc(s.Drafts, func(d schema.Draft) bool { return d.ID == id })
 		if len(deleteIDs) > 0 {
 			s.History = slices.DeleteFunc(s.History, func(g schema.Generation) bool { return deleteIDs[g.ID] })
+			for i := range s.Voices {
+				if deleteIDs[s.Voices[i].SourceGenerationID] {
+					s.Voices[i].SourceGenerationID = ""
+				}
+			}
+		}
+		// 作品专属的待取结果（出谱、已结束的 AI 写作）随作品一起丢弃，不再留给其他作品。
+		if s.Melody != nil && s.Melody.ProjectID == id {
+			s.Melody = nil
+		}
+		if s.AITask != nil && s.AITask.ProjectID == id && s.AITask.Status != "running" {
+			s.AITask = nil
 		}
 	}, true)
 	if err != nil {

@@ -95,6 +95,16 @@ export class Timeline {
     return value.tracks.filter(t => !t.muted && (!solo || t.solo));
   }
 
+  // 导出范围：track:单条音轨（忽略静音和独奏），role:某位说话人的片段；全部和所选范围不改动音轨。
+  static scoped(value: AudioTimeline, scope: string, history: Generation[]): AudioTimeline {
+    if (scope.startsWith('track:')) return { ...value, tracks: value.tracks.filter(t => t.id === scope.slice(6)).map(t => ({ ...t, muted: false, solo: false })) };
+    if (scope.startsWith('role:')) {
+      const role = scope.slice(5);
+      return { ...value, tracks: value.tracks.map(t => ({ ...t, clips: t.clips.filter(c => history.find(g => g.id === c.generationId)?.segment?.speakerId === role) })) };
+    }
+    return value;
+  }
+
   static snap(value: AudioTimeline, ids: string[], edges: number[], threshold: number, cursor: number) {
     const targets = [0, cursor, ...value.tracks.flatMap(t => t.clips.filter(c => !ids.includes(c.id)).flatMap(c => [c.start, c.start + c.duration]))];
     let delta = 0, guide: number | undefined, distance = threshold;

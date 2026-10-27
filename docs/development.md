@@ -66,6 +66,8 @@ Use `make check-core` for Go formatting, static analysis and tests with the race
 
 ## Project layout
 
+For processes, request flow and the data directory, see [Architecture](architecture.md).
+
 | Directory | Purpose |
 | --- | --- |
 | `cmd/` | CLI and local service entry points |
@@ -91,7 +93,7 @@ Use `make check-core` for Go formatting, static analysis and tests with the race
   Transport packages only decode requests and call public `Workbench` methods; they never touch its internal state. `testkit` is for tests only.
 - Desktop calls run concurrently. `Workbench` serializes short read-validate-write transactions with an edit lock; conversion, downloads, inference and project import/export run without it. Only one background operation runs at a time.
 - The model catalog, generation options and OmniVoice attributes are embedded in the Go service and imported by the UI. Keep `internal/catalog/*.json` and `web/src/shared/lib/*.json` identical (`engine.json` is used only by the service and build scripts and has no UI copy).
-- Declare message codes in `internal/msg`, add them to `msg.All`, and provide copy in both UI languages.
+- Declare message codes in `internal/msg`, add them to `msg.All`, and provide copy in every UI language under `web/src/shared/i18n/catalogs/` (English is the source and the fallback for missing keys). To add a UI language, register it in `web/src/shared/i18n/locale.ts` and `schema.UiLocaleNames`, add its catalog and the Astryx locale loader in `catalogs/index.ts`.
 - To upgrade audio.cpp, edit only `internal/catalog/engine.json`: `version` is the recommended release, `minimum` is the oldest runtime the request mapping and model packages support, plus the archive checksums. Runtime installs and the build scripts in `scripts/desktop/` read it. The installed runtime version is stored in the state; below `minimum` an upgrade is required, below `version` the UI offers an optional upgrade. Raise `minimum` only when the app actually depends on the newer runtime.
 - On Windows, `-Package` builds the full CPU installer and the app-only `-update.exe`. Auto-update downloads only the latter, leaving `engine/` and its `yovoice-engine.json` (bundled runtime version and backend) untouched.
 

@@ -18,7 +18,8 @@ public sealed class ServiceCallException : IOException
         if (wire.ValueKind != JsonValueKind.Object) return HostL10n.T("本地服务返回了无效错误：", "The local service returned an invalid error: ") + wire;
         string code = wire.TryGetProperty("code", out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()! : "";
         // 错误文案与网页共用同一份翻译，按当前界面语言选择。
-        using var stream = typeof(ServiceCallException).Assembly.GetManifestResourceStream(HostL10n.English ? "yovoice.messages.en.json" : "yovoice.messages.zh-cn.json");
+        var assembly = typeof(ServiceCallException).Assembly;
+        using var stream = assembly.GetManifestResourceStream($"yovoice.messages.{HostL10n.Locale.ToLowerInvariant()}.json") ?? assembly.GetManifestResourceStream("yovoice.messages.en.json");
         using var catalog = stream is null ? null : JsonDocument.Parse(stream);
         string message = catalog is not null && catalog.RootElement.TryGetProperty(code, out var entry)
             ? entry.GetProperty("defaultMessage").GetString()! : HostL10n.T("本地服务请求失败。", "The local service request failed.");

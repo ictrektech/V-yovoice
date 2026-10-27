@@ -1,13 +1,24 @@
 package engine
 
 import (
+	"errors"
 	"math"
 	"strconv"
 	"strings"
 	"yovoice/internal/catalog"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
+	"yovoice/internal/score"
 )
+
+// melodyError 把谱面问题转成界面可显示的错误，带上小节与声部。
+func melodyError(e error) error {
+	var issue *score.ABCIssue
+	if errors.As(e, &issue) {
+		return msg.Err(msg.ErrMelodyInvalid, msg.Params{"bar": issue.Bar, "voice": issue.Voice, "code": issue.Code, "detail": issue.Detail})
+	}
+	return e
+}
 
 func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error) {
 	if e := schema.Validate(d); e != nil {
@@ -32,13 +43,7 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 		return map[string]any{"model": "index", "request": r}, nil
 	}
 	if m.Family == "yue2" {
-		// YuE2 以歌词为正文、风格为请求参数；没有时长参数，长度由歌词决定。
-		lyrics := strings.TrimSpace(d.Lyrics)
-		o := map[string]any{"style": strings.TrimSpace(d.Text), "lyrics": lyrics}
-		if d.Seed != nil {
-			o["seed"] = *d.Seed
-		}
-		return map[string]any{"model": "index", "request": map[string]any{"text": lyrics, "options": o}}, nil
+		return yue2Request(d)
 	}
 	if m.Family == "kokoro_tts" {
 		o, _ := d.GenerationOptions(m.Family)
@@ -199,4 +204,90 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 		}
 	}
 	return map[string]any{"model": "index", "request": r}, nil
+}
+
+// planningLyrics 是纯音乐出谱时没有歌词用的段落骨架，只给规划器安排结构，不会被唱出来。
+const planningLyrics = "[Intro]\n\n[Verse]\n\n[Chorus]\n\n[Verse]\n\n[Chorus]\n\n[Outro]\n"
+
+// yue2Request 构建 YuE2 请求。YuE2 以歌词为正文、风格为请求参数，没有时长参数，长度由歌词或谱决定。
+// 规划模式 cot：auto 时有谱按谱演唱（谱里有和弦用 full、只有旋律用 melody），没谱用 full 让模型自己出谱，
+// 结果附带这次的旋律谱；off 不经过谱直接生成；melody 会先去掉谱里的和弦，让伴奏自由编配。
+// 纯音乐：有谱时把人声旋律移到器乐声部、歌词换成段落标记再生成；没谱时这是出谱请求（Generate 先出谱再转）。
+func yue2Request(d schema.Draft) (map[string]any, error) {
+	options, err := d.GenerationOptions("yue2")
+	if err != nil {
+		return nil, err
+	}
+	mode, _ := options["cot"].(string)
+	delete(options, "cot")
+	style := strings.TrimSpace(d.Text)
+	lyrics := strings.TrimSpace(d.Lyrics)
+	abc := d.Abc
+	if strings.TrimSpace(abc) == "" {
+		abc = ""
+	}
+	if d.Instrumental {
+		// 纯音乐必须经过谱：自由生成没有可转换的旋律。
+		if mode == "off" {
+			mode = ""
+		}
+		if !strings.Contains(strings.ToLower(style), "instrumental") {
+			style += ", instrumental, no vocals"
+		}
+		if abc == "" {
+			if lyrics == "" {
+				lyrics = planningLyrics
+			}
+		} else {
+			converted, _, e := score.InstrumentalABC(d.Abc)
+			if e != nil {
+				return nil, melodyError(e)
+			}
+			parsed, _ := score.ParseABC(converted)
+			abc, lyrics = converted, parsed.SectionTags()
+		}
+	}
+	if mode == "off" {
+		abc = ""
+	}
+	cot := "full"
+	if mode == "off" {
+		cot = "off"
+	}
+	o := map[string]any{"style": style, "lyrics": lyrics}
+	for key, value := range options {
+		o[key] = value
+	}
+	if abc != "" {
+		s, e := score.ParseABC(abc)
+		if e != nil {
+			return nil, melodyError(e)
+		}
+		switch {
+		case mode == "melody" && s.HasChords():
+			if abc, e = score.StripABCChords(abc); e != nil {
+				return nil, melodyError(e)
+			}
+			cot = "melody"
+		case mode == "melody", mode == "" && !s.HasChords():
+			cot = "melody"
+		}
+		o["abc"] = abc
+	} else if mode == "melody" {
+		cot = "melody"
+	}
+	o["cot"] = cot
+	if d.Seed != nil {
+		o["seed"] = *d.Seed
+	}
+	return map[string]any{"model": "index", "request": map[string]any{"text": lyrics, "options": o}}, nil
+}
+
+// instrumentalScore 返回纯音乐实际演奏的谱：人声旋律已移到器乐声部。
+func instrumentalScore(abc string) (string, error) {
+	converted, _, e := score.InstrumentalABC(abc)
+	if e != nil {
+		return "", melodyError(e)
+	}
+	return converted, nil
 }

@@ -64,7 +64,8 @@ func serveAPI(ctx context.Context, wb *workbench.Workbench, address, token, cert
 	if cert != "" {
 		scheme = "https"
 	}
-	if err = json.NewEncoder(out).Encode(map[string]string{"url": scheme + "://" + listener.Addr().String(), "mcpUrl": scheme + "://" + listener.Addr().String() + "/mcp"}); err != nil {
+	base := scheme + "://" + listener.Addr().String()
+	if err = json.NewEncoder(out).Encode(map[string]string{"url": base, "mcpUrl": base + "/mcp", "docsUrl": base + "/docs/"}); err != nil {
 		return err
 	}
 	if cert != "" {

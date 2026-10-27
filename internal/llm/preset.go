@@ -14,6 +14,7 @@ const (
 	FormatAnthropic = "anthropic_messages"
 )
 
+// Formats 是 HTTP 接口协议，FormatCodex 不在其中：它只用于 codex 预设，不能在自定义服务里选。
 var Formats = []string{FormatChat, FormatResponses, FormatAnthropic}
 
 // Preset 描述一个服务商：固定地址的服务只需填写密钥；本地与自定义服务可改地址，自定义服务还可改协议与模型列表路径。
@@ -24,7 +25,8 @@ type Preset struct {
 	BaseURL    string `json:"baseURL"`
 	ModelsPath string `json:"modelsPath"`
 	KeyURL     string `json:"keyURL,omitempty"`
-	// Endpoint 为 fixed（地址固定）、local（本地服务，可改地址、无需密钥）或 custom（全部可改）。
+	// Endpoint 为 fixed（地址固定）、local（本地服务，可改地址、无需密钥）、custom（全部可改）
+	// 或 cli（经本机 CLI 调用订阅，没有地址和密钥）。
 	Endpoint string `json:"endpoint"`
 	// Plan 为 coding 表示编程套餐：与同一家的按量 API 地址、密钥都不同，单独成行。
 	Plan string `json:"plan,omitempty"`

@@ -80,3 +80,20 @@ export const activeLyric = (lines: LyricLine[], time: number) => {
   for (let i = 0; i < lines.length && lines[i].start <= time; i++) index = i;
   return index;
 };
+
+// LRC 时间标签 [mm:ss.xx]：先取整到百分之一秒再进位，超过 99 分钟时分钟位照常增长。
+export function lrcTime(seconds: number) {
+  const total = Math.max(0, Math.round(seconds * 100));
+  return `[${String(Math.floor(total / 6000)).padStart(2, '0')}:${String(Math.floor(total / 100) % 60).padStart(2, '0')}.${String(total % 100).padStart(2, '0')}]`;
+}
+
+// 按播放页的歌词时间导出 LRC：段落标记行已在拆行时去掉；器乐间隔写成空行让播放器清掉上一句，开头的前奏不写。
+export function lyricsToLrc(lines: LyricLine[], title?: string) {
+  const out = title?.trim() ? [`[ti:${title.trim().replace(/[\r\n\]]/g, ' ')}]`] : [];
+  let clear = false;
+  for (const line of lines) {
+    if (line.instrumental) { if (clear) out.push(lrcTime(line.start)); clear = false; continue; }
+    out.push(`${lrcTime(line.start)}${line.text}`); clear = true;
+  }
+  return `${out.join('\n')}\n`;
+}

@@ -1,5 +1,5 @@
 import type { TranslatorFn } from '@astryxdesign/core/i18n';
-import type { Activity, MessageCode, MessageParams } from '../workbench';
+import type { Activity, MelodyIssue, MessageCode, MessageParams } from '../workbench';
 import { CallError } from '../lib/call-error';
 
 const unknownCode = '@yovoice.error.unknown' as MessageCode;
@@ -10,8 +10,18 @@ export function formatActivity(t: TranslatorFn, activity: Activity | null | unde
   return t(activity.code, activity.params ?? undefined);
 }
 
+/** 旋律谱问题：按问题类型给出原因，附上所在小节与声部（Vocal 人声、Ins 伴奏），没有小节时给出行号。 */
+export function formatMelodyIssue(t: TranslatorFn, issue: MelodyIssue): string {
+  const voice = issue.voice === 'Vocal' || issue.voice === 'Ins' ? t(`@yovoice.melody.voice.${issue.voice}`) : '';
+  const where = issue.bar ? t(voice ? '@yovoice.melody.where.barVoice' : '@yovoice.melody.where.bar', { bar: issue.bar, voice })
+    : issue.line ? t('@yovoice.melody.where.line', { line: issue.line }) : '';
+  const reason = t(`@yovoice.melody.issue.${issue.code || 'token'}`);
+  return where ? t('@yovoice.melody.issueAt', { where, reason }) : reason;
+}
+
 /** 未知错误的文案不含原因，附上底层细节，避免宿主或服务报告的具体原因被吞掉。 */
 function translate(t: TranslatorFn, code: MessageCode, params?: MessageParams | null): string {
+  if (code === '@yovoice.error.melodyInvalid') return t(code, { issue: formatMelodyIssue(t, (params ?? {}) as unknown as MelodyIssue) });
   const message = t(code, params ?? undefined);
   return code === unknownCode && params?.detail ? `${message} (${String(params.detail)})` : message;
 }

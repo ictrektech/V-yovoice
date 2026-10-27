@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"yovoice/internal/assistant/fakeocho"
 	"yovoice/internal/catalog"
 	"yovoice/internal/download"
 	"yovoice/internal/engine"
@@ -345,6 +346,7 @@ func TestGenerateDuringModelDownload(t *testing.T) {
 // 整个包的用户目录指向临时目录：存储迁移会写全局 storage.json，
 // 绝不能改动开发者本机配置，否则真实应用会把数据目录指向测试临时目录。
 func TestMain(m *testing.M) {
+	fakeocho.Run()
 	testkit.RunFakeEngine()
 	home, err := os.MkdirTemp("", "yovoice-home-*")
 	if err != nil {

@@ -15,8 +15,9 @@ export function App() {
   const session = useDraftSession(ready, state, setError);
   const { setDraft, setDraftPersisted } = session;
   useEffect(() => {
-    const unsubscribe = subscribe(setState);
-    void call<{ state: State; catalog: ModelPackage[]; engine?: EngineInfo }>('state.get').then(async result => {
+    // 助手运行时可用性由 state.get 一次性带回，之后每次状态推送都保留。
+    const unsubscribe = subscribe(s => setState(current => ({ ...s, assistantMissing: current.assistantMissing })));
+    void call<{ state: State; catalog: ModelPackage[]; engine?: EngineInfo; assistant?: { available: boolean } }>('state.get').then(async result => {
       let next = result.state;
       if (!isUiLocale(next.preferences.uiLocale)) {
         try {
@@ -29,7 +30,7 @@ export function App() {
       const sorted = [...next.drafts].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
       const saved = savedId ? next.drafts.find(d => d.id === savedId) : undefined;
       const initial = saved ?? sorted.find(d => projectKind(d) === 'text') ?? sorted[0];
-      setState(next); setCatalog(result.catalog); setEngine(result.engine ?? { version: '', minimum: '' }); setDraft(normalizeDraft(initial ?? createDraft(true, next.preferences.uiLocale, defaultModelId))); setDraftPersisted(!!initial);
+      setState({ ...next, assistantMissing: result.assistant ? !result.assistant.available : undefined }); setCatalog(result.catalog); setEngine(result.engine ?? { version: '', minimum: '' }); setDraft(normalizeDraft(initial ?? createDraft(true, next.preferences.uiLocale, defaultModelId))); setDraftPersisted(!!initial);
       setReady(true);
     }).catch(e => setError(noticeMessage(e)));
     return unsubscribe;

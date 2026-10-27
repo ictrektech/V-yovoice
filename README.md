@@ -43,6 +43,12 @@ music/score RPC contract, job polling/cancellation and authenticated result down
 these are explicitly distinguished from the public OpenAI-compatible speech endpoints.
 Import-only variants do not offer a remote download in either manager; stopping a
 download only cancels active tasks whose file selection overlaps the chosen model.
+The v0.3.0 integration adds 12 workbench languages, grouped precision choices,
+YuE2 melody planning and SheetSage2 song transcription. Melody planning,
+transcription and soundfont previews require approved V-Scheduler model mappings;
+results remain private until Scheduler confirms success. The desktop Ocho assistant,
+including its file and command tools, is unavailable in VOS. See the
+[integration record](docs/upstream-integration.md) for validation limits.
 The VOS sidebar provides dedicated Model management, ASR, original TTS, Speaker recognition,
 and Hotword management pages inside the workbench. They retain the original
 model cards, download/unload controls, transcription, speaker enrollment,
@@ -106,7 +112,7 @@ publish or install an application. See [the VOS release guide](ictrek.app/README
 <p align="center">Give your words a voice. Compose your ideas into songs.</p>
 <p align="center">
   <a href="https://yovoice.leemysw.com"><img src="https://img.shields.io/badge/website-yovoice.leemysw.com-10b981?style=flat-square" alt="Website" /></a>
-  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.2.1-blue?style=flat-square" alt="Version 0.2.1" /></a>
+  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.3.0-blue?style=flat-square" alt="Version 0.3.0" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-orange?style=flat-square" alt="License: Apache-2.0" /></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-black?style=flat-square" alt="macOS 14+ (Apple Silicon)" />
   <img src="https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square" alt="Windows 10/11 (x64)" />
@@ -143,7 +149,7 @@ Turn text into expressive speech, natural cloned voices, complete vocal songs, a
 - 💸 **Zero Recurring Fees**: Say goodbye to per-character/per-minute meters and expensive cloud voice/music subscriptions.
 - ⚡ **Native C++ Performance (No Python Hell)**: Powered by [audio.cpp](https://github.com/0xShug0/audio.cpp) v0.9.1. Ships with bundled Windows CUDA 12.4/13.3 runtimes and native macOS Metal support. Double-click and create—no Conda or PyTorch conflicts.
 - 🎛️ **Creator Workstation**: Multi-take versioning for side-by-side comparison, waveform trimming, timeline scrolling, and clean stems/MIDI export.
-- 🤖 **MCP & AI Agent Ecosystem**: Connect DeepSeek, Qwen, Claude, OpenAI, or local Ollama to write scores and lyrics in seconds. Includes a native Model Context Protocol (MCP) server for Cursor and Claude Code.
+- 🤖 **MCP & AI Agent Ecosystem**: Chat with DeepSeek, Qwen, Claude, OpenAI, or local Ollama to create and edit works end to end. Includes a native Model Context Protocol (MCP) server for Cursor and Claude Code.
 
 ---
 
@@ -189,7 +195,7 @@ Turn text into expressive speech, natural cloned voices, complete vocal songs, a
 | Kokoro-82M 1.1-zh | 82M | Q8 · 255.32 MB | 100 Chinese and 3 English voices; experimental, import only |
 | ACE-Step 1.5 Turbo | — | BF16 · 10.09 GB | Songs and instrumentals from a style prompt and lyrics, 50+ vocal languages; requires engine v0.9.1 |
 
-All models are available in the App and CLI. See [model selection](docs/models.md) for input requirements and examples. OmniVoice (CC-BY-NC) and Breeze TTS 2 (BreezeBlue Research and Non-Commercial License) weights are restricted to non-commercial use.
+Downloadable models are available inside the App or with the CLI; import-only variants require compatible local GGUF files. See [model selection](docs/models.md) for file sizes, hardware requirements, inputs and examples. OmniVoice, YuE2 and Breeze TTS 2 weights are restricted to non-commercial use.
 
 ---
 
@@ -207,8 +213,6 @@ Choose the package for your platform from the repository’s [Releases](../../re
 The Windows installer downloads and installs [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) if needed. Models are downloaded inside the app; uninstalling preserves user data in `~/.yovoice`.
 
 Check for updates from the app menu on macOS or Windows. Updates are also checked and downloaded in the background; restart to install when ready. Windows updates download only the app (`-update.exe`) and keep the installed runtime; when a release recommends a newer runtime you can upgrade it in Settings → Inference engine.
-
-![Install yovoice on macOS](docs/images/yovoice-macos-install.png)
 
 ---
 
@@ -244,7 +248,15 @@ make install
 make app-run
 ```
 
-See the [development guide](docs/development.md) for prerequisites. It also covers browser preview, tests, and project structure.
+See the [development guide](docs/development.md) for prerequisites. It also covers browser preview, tests, and project structure. For how the processes and packages fit together, see [Architecture](docs/architecture.md).
+
+---
+
+## Community
+
+Scan the QR code with WeChat to join the yovoice user group. If the code has expired, open an [issue](../../issues) and we will post a new one.
+
+<p align="center"><img src="docs/images/Group%20chat_%E3%80%90YOVOICE%E3%80%91%E4%BA%A4%E6%B5%81%E7%BE%A4.png" width="240" alt="yovoice WeChat group QR code" /></p>
 
 ---
 
@@ -262,6 +274,8 @@ Bug reports, feature suggestions, and pull requests are welcome. Include your pl
 - [OmniVoice](https://github.com/k2-fsa/OmniVoice) — voice design and cloning models.
 - [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) — voice cloning, built-in voices, and text-guided voice design.
 - [ACE-Step](https://github.com/ace-step/ACE-Step-1.5) — music generation from style prompts and lyrics.
+- [YuE](https://github.com/multimodal-art-projection/YuE) — full vocal song generation from lyrics.
+- [Breeze TTS 2](https://huggingface.co/BreezeBlue/Breeze-TTS-2) — Chinese and English voice design and cloning.
 - [go-meltysynth](https://github.com/sinshu/go-meltysynth), [MuseScore General](https://musescore.org/en/handbook/3/soundfonts-and-sfz-files#gm_soundfonts), [GeneralUser GS](https://www.schristiancollins.com/generaluser) and SGM-V2.01 by David Shan — the SoundFont synthesizer and sound fonts behind score rendering.
 - Kokoro — lightweight speech synthesis with built-in voices: [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) and [Kokoro-82M-v1.1-zh](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh).
 

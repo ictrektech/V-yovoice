@@ -12,7 +12,7 @@ Good uses:
 
 ## Sound font
 
-Rendering needs the MuseScore General sound font (`musescore-general-sf2`, SF2, about 216 MB) with all 128 GM instruments and drum kits. Download it in Settings › Sound fonts, or run:
+Rendering needs the MuseScore General sound font (`musescore-general-sf2`, SF2, about 216 MB) with all 128 GM instruments and drum kits. Download it in Settings › Score sound fonts, or run:
 
 ```sh
 yovoice models download musescore-general-sf2
@@ -37,8 +37,8 @@ Scores do not need the inference engine or a GPU.
 3. In the track table, change the instrument (GM program), role and target level, or turn a track off.
 4. The inspector edits tempo, meter and key, and lists when each section starts and ends so you can line them up with narration.
 5. Render music to create a mixed WAV, kept as a version of the project that you can play and export.
-6. Export saves MIDI or score JSON. Copy Agent prompt copies instructions describing the score format for an Agent.
-7. With an [AI service](ai.md) set up, AI compose writes a whole arrangement from a description and a length.
+6. Export saves MIDI or score JSON. To have an Agent write the score, give it the [format](#format) below or the tools in [CLI and Agents](#cli-and-agents).
+7. With an [AI service](ai.md) set up, ask the assistant to write a whole arrangement from a description and a length, and keep revising it in the conversation.
 
 ## Format
 

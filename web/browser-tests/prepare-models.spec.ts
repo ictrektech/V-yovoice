@@ -28,7 +28,9 @@ test('各功能页可原地准备相关模型，关闭不离开原页面，未�
   await page.goto('/');
   await expect(page.getByTestId('nav-background-music')).toHaveCount(0);
   for (const destination of ['asr', 'tts', 'speaker', 'hotwords', 'text', 'story', 'music', 'score', 'characters', 'settings', 'api-docs']) {
-    await page.getByTestId(`nav-${destination}`).click();
+    const navigation = destination === 'score' ? 'music' : destination;
+    await page.getByTestId(`nav-${navigation}`).click();
+    if (destination === 'score') await page.getByRole('tab', { name: /编曲/ }).click();
     await page.getByTestId('prepare-models').click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
@@ -39,7 +41,11 @@ test('各功能页可原地准备相关模型，关闭不离开原页面，未�
       const rows = dialog.locator('[data-model-id]');
       await expect(rows.first()).toBeVisible();
       const ids = await rows.evaluateAll(items => items.map(item => item.getAttribute('data-model-id')));
-      if (destination === 'music') expect(ids.every(id => id?.startsWith('ace-step-') || id?.startsWith('yue2-'))).toBeTruthy();
+      if (destination === 'music') {
+        expect(ids.every(id => id?.startsWith('ace-step-') || id?.startsWith('yue2-') || id?.startsWith('sheetsage2-') || id?.endsWith('-sf2'))).toBeTruthy();
+        expect(ids).toContain('sheetsage2-orig');
+        expect(ids.some(id => id?.endsWith('-sf2'))).toBeTruthy();
+      }
       if (destination === 'score') expect(ids.every(id => id?.endsWith('-sf2'))).toBeTruthy();
       if (destination === 'music') {
         await dialog.getByRole('button', { name: '下载模型', exact: true }).first().click();
@@ -60,6 +66,6 @@ test('各功能页可原地准备相关模型，关闭不离开原页面，未�
     }
     await dialog.getByRole('button', { name: '关闭', exact: true }).last().click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByTestId(`nav-${destination}`)).toHaveClass(/selected/);
+    await expect(page.getByTestId(`nav-${navigation}`)).toHaveClass(/selected/);
   }
 });

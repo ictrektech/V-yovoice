@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { seedState } from './seed';
 import { emptyState } from '../src/shared/workbench';
-import { composedScorePatch, createScoreDraft, exampleScore, scoreDuration } from '../src/features/score/score-draft';
-import { lyricsPatch } from '../src/features/music/music-draft';
+import { createScoreDraft, exampleScore, scoreDuration } from '../src/features/score/score-draft';
 import { midiToScore, scoreToMidi } from '../src/features/score/score-midi';
 
 test('新建编曲作品：示例乐谱、音块总览、声部调整与持久化', async ({ page }, testInfo) => {
@@ -10,7 +9,7 @@ test('新建编曲作品：示例乐谱、音块总览、声部调整与持久�
   test.setTimeout(60_000);
   await page.goto('/');
   await page.getByTestId('nav-new').click();
-  await page.getByRole('menuitem', { name: '编曲', exact: true }).click();
+  await page.getByRole('menuitem', { name: '编曲生成', exact: true }).click();
   await expect(page.getByText('按小节和拍写下每个声部的音符')).toBeVisible();
   await expect(page.getByRole('button', { name: '渲染配乐', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '填入示例', exact: true }).click();
@@ -111,17 +110,18 @@ test('新建编曲作品：示例乐谱、音块总览、声部调整与持久�
   expect(saved.score.tracks.find((t: { id: string }) => t.id === 'pad').level).toBe(-26);
   expect(saved.score.tracks.find((t: { id: string }) => t.id === 'arp').mute).toBe(true);
 
-  // 未安装音色库时渲染不再跳到设置页：创作区顶部的准备清单提示下载音色库，“换一个”打开独立的“编曲音色库”页；配音作品的模型列表不包含音色库。
+  // 未安装音色库时渲染直接打开独立的“编曲音色库”页；配音作品的模型列表不包含音色库。
   await page.getByRole('button', { name: '渲染配乐', exact: true }).click();
-  const setup = page.locator('.setup-checklist');
-  await expect(setup).toHaveAttribute('data-attention', 'true');
-  await expect(setup.getByRole('listitem')).toHaveText([/下载音色库/]);
-  await setup.getByRole('button', { name: '换一个', exact: true }).click();
   await expect(page.getByRole('tab', { name: '编曲音色库', exact: true, selected: true })).toBeVisible();
   await expect(page.locator('[data-model-id="musescore-general-sf2"]')).toContainText('General MIDI 音色库');
   await expect(page.locator('[data-model-id$="-sf2"]')).toHaveCount(3);
-  await page.getByTestId('nav-score').click();
+  // 编曲生成并入音乐生成：侧栏只保留「音乐生成」，编曲标签页也高亮它。
+  await expect(page.getByTestId('nav-score')).toHaveCount(0);
+  await page.getByTestId('nav-music').click();
+  await page.getByRole('tab', { name: '编曲生成', exact: true }).click();
   await expect(page.locator('.project-library-row:visible')).toHaveCount(1);
+  await expect(page.getByRole('tab', { name: '编曲生成', exact: true, selected: true })).toBeVisible();
+  await expect(page.getByTestId('nav-music')).toHaveAttribute('aria-current', 'page');
   await page.getByTestId('nav-new').click();
   await page.getByRole('menuitem', { name: '语音生成', exact: true }).click();
   await page.getByRole('combobox', { name: '模型' }).click();
@@ -165,28 +165,15 @@ test('缺少乐谱的旧编曲作品可以正常打开，不再白屏', async ({
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await page.getByTestId('nav-new').click();
-  await page.getByRole('menuitem', { name: '编曲', exact: true }).click();
+  await page.getByRole('menuitem', { name: '编曲生成', exact: true }).click();
   await expect(page.locator('.saved')).toContainText('已保存');
   const state = await page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!));
   for (const draft of state.drafts) if (draft.kind === 'score') { delete draft.score; draft.title = '旧编曲'; }
   await seedState(page, state);
   await page.reload();
   await expect(page.getByLabel('作品名称')).toHaveValue('旧编曲');
-  await page.getByTestId('nav-score').click();
+  await page.getByTestId('nav-music').click();
+  await page.getByRole('tab', { name: '编曲生成', exact: true }).click();
   await expect(page.locator('.project-library-row').filter({ hasText: '旧编曲' })).toBeVisible();
   expect(errors).toEqual([]);
-});
-
-test('AI 写谱与写歌词顺带起名：空标题或“未命名作品”采用 AI 标题，已命名作品保留', () => {
-  const score = { ...exampleScore('zh-CN'), title: ' 晨光序曲 ' };
-  for (const title of ['', '  ', '未命名作品', 'Untitled']) {
-    const patch = composedScorePatch(title, score);
-    expect(patch.title).toBe('晨光序曲');
-    expect(patch.score).not.toHaveProperty('title');
-    expect(patch.score?.tracks.length).toBe(score.tracks.length);
-    expect(lyricsPatch({ title, instrumental: false }, { title: '夏夜', style: 'city pop', lyrics: '[verse]' }).title).toBe('夏夜');
-  }
-  expect(composedScorePatch('我的片头', score)).not.toHaveProperty('title');
-  expect(composedScorePatch('未命名作品', exampleScore('zh-CN'))).not.toHaveProperty('title');
-  expect(lyricsPatch({ title: '我的歌', instrumental: false }, { title: '夏夜', style: 'city pop' })).toEqual({ text: 'city pop' });
 });

@@ -116,6 +116,8 @@ curl --fail -H "Authorization: Bearer $YOVOICE_API_TOKEN" "$YOVOICE_URL/v1/audio
 | POST | `/v1/generate` | 同步生成，返回 WAV，响应头包含 `X-Yovoice-Generation-ID` |
 | GET | `/v1/audio/{id}` | 下载生成的 WAV |
 
+完整的接口参考（请求字段、响应结构与状态码）由运行中的服务在 `/docs/` 提供，例如 `http://127.0.0.1:8080/docs/`；`yovoice serve` 启动时会以 `docsUrl` 输出该地址。打开页面不需要令牌：点击 **Authorize** 填入令牌后，可用 **Try it out** 直接在页面中调用接口。原始 OpenAPI 文档位于 `/docs/openapi.json`。页面从 jsDelivr 加载 Swagger UI，查看时需要联网，接口本身不需要。
+
 ## 重试与限制
 
 - `requestId` 为随机的 32 位十六进制 ID。使用相同 ID 和参数重试可避免重复生成；同 ID 更换参数返回 409。
@@ -125,7 +127,7 @@ curl --fail -H "Authorization: Bearer $YOVOICE_API_TOKEN" "$YOVOICE_URL/v1/audio
 - 客户端断线不取消异步任务。需要停止时使用取消工具或 DELETE 接口。
 - 参数错误返回 400，认证失败 401，上传超限 413，生成失败 500，同步生成超时 504。
 
-Token 可访问整个服务及其音色和音频，不区分用户或配额。不支持浏览器跨域调用。各模型仍须遵循其使用协议。
+Token 可访问整个服务及其音色和音频，不区分用户或配额。不支持浏览器跨域调用，只有服务自身的 `/docs/` 页面可以在浏览器中调用。各模型仍须遵循其使用协议。
 
 ## 超时与反向代理
 

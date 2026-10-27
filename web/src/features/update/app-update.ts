@@ -12,7 +12,8 @@ export interface AppUpdate {
 
 declare global { interface Window { __workbenchPreviewUpdate?: (update: AppUpdate | null) => void; __workbenchUpdateCalls?: string[] } }
 
-export const releasesUrl = 'https://github.com/leemysw/yovoice/releases';
+export const projectUrl = 'https://github.com/leemysw/yovoice';
+export const releasesUrl = `${projectUrl}/releases`;
 export const releaseUrl = (version: string | null) => version ? `${releasesUrl}/tag/v${version}` : `${releasesUrl}/latest`;
 // 新版本已发现但尚未安装的阶段：侧栏与设置导航据此提示。
 export const updatePending = (update: AppUpdate | null) => !!update && ['downloading', 'verifying', 'ready', 'installing'].includes(update.status);

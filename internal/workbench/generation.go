@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 	"time"
 	"yovoice/internal/audio"
 	"yovoice/internal/diag"
@@ -185,7 +186,8 @@ func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID str
 			}
 		}()
 		part := parts[0]
-		if e = w.engine.Generate(ctx, *s.RuntimePath, part.model, s.Preferences.Backend, part.draft, part.voice, part.emotion, path, func(code msg.Code, params msg.Params) { w.progress(code, params, 0, 1) }); e != nil {
+		generatedScore := ""
+		if generatedScore, e = w.engine.Generate(ctx, *s.RuntimePath, part.model, s.Preferences.Backend, part.draft, part.voice, part.emotion, path, func(code msg.Code, params msg.Params) { w.progress(code, params, 0, 1) }); e != nil {
 			return e
 		}
 		duration, e := audio.Duration(path)
@@ -208,12 +210,20 @@ func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID str
 		// 与逐句生成一致，快照不携带时间轴，避免历史记录随剪辑反复膨胀。
 		snapshot := d
 		snapshot.Timeline = nil
+		// YuE2 自己规划或纯音乐转谱时附带这次实际所用的旋律谱，存进这一版，之后可以载入编辑。
+		if generatedScore != "" {
+			snapshot.Abc = generatedScore
+		}
 		g := schema.Generation{ID: id, Title: d.Title, FileName: file, CreatedAt: time.Now().UTC(), Duration: duration, Settings: snapshot}
 		if e = w.Store.Update(func(s *schema.State) { s.History = append([]schema.Generation{g}, s.History...) }, true); e != nil {
 			_ = os.Remove(path)
 			return e
 		}
 		keep = true
+		// 作品还没有谱时，把 YuE2 这次自己写的谱交给界面填入旋律谱，和“先写旋律谱”的结果一样处理。
+		if generatedScore != "" && strings.TrimSpace(d.Abc) == "" {
+			_ = w.offerMelody(d.ID, "plan", generatedScore, false)
+		}
 		diag.Log(w.Store.Root, "generation.saved", "project_id", d.ID, "generation_id", id, "model_id", part.model.ID, "duration", duration)
 		return nil
 	}, previewID, d.ID)

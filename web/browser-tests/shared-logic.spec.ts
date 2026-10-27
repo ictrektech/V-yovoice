@@ -7,6 +7,8 @@ import { formatCallError, formatNotice } from '../src/shared/i18n/format';
 import { alignLyrics, vocalActivity } from '../src/features/music/lyric-align';
 import { activeLyric, lyricRows, lyricTimeline } from '../src/features/music/lyric-timing';
 import { songLyrics, syntheticSong } from './synthetic-song';
+import { readFileSync } from 'node:fs';
+import { isUiLocale, resolveInitialUiLocale, uiLocales } from '../src/shared/i18n/locale';
 import { createDraft, previewStale, projectKind, requiresVoice, synthesisSettings, normalizeDraft, formatBytes, type Character, type Draft } from '../src/shared/workbench';
 
 // 不打开页面，直接校验界面依赖的纯逻辑。
@@ -158,4 +160,23 @@ test('歌词按音频自动定位：人声片段的开头对上每一行，没�
   expect(alignLyrics(accompaniment.rows, vocalActivity(accompaniment.left, accompaniment.right, accompaniment.rate), accompaniment.duration)).toBeNull();
   const silence = new Float32Array(16000 * 20);
   expect(alignLyrics(song.rows, vocalActivity(silence, silence, 16000), 20)).toBeNull();
+});
+
+test('首次启动按系统语言选择界面语言，繁体与葡语按地区归并，未知语言回退英文', () => {
+  expect(['zh-CN', 'zh', 'zh-Hans-CN', 'zh-SG'].map(resolveInitialUiLocale)).toEqual(['zh-CN', 'zh-CN', 'zh-CN', 'zh-CN']);
+  expect(['zh-TW', 'zh-HK', 'zh-Hant', 'zh_Hant_MO'].map(resolveInitialUiLocale)).toEqual(['zh-TW', 'zh-TW', 'zh-TW', 'zh-TW']);
+  expect(['ja-JP', 'ko', 'pt-PT', 'pt-BR', 'de-AT', 'en-GB', 'ar-SA', 'tr'].map(resolveInitialUiLocale)).toEqual(['ja', 'ko', 'pt-BR', 'pt-BR', 'de', 'en', 'en', 'en']);
+  expect(isUiLocale('vi')).toBe(true);
+  expect(isUiLocale('pt')).toBe(false);
+});
+
+test('各语言目录与英文目录键一致，占位符相同', () => {
+  const read = (id: string) => JSON.parse(readFileSync(`src/shared/i18n/catalogs/${id.toLowerCase()}.json`, 'utf8')) as Record<string, { defaultMessage: string }>;
+  const params = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join(',');
+  const en = read('en');
+  for (const { id } of uiLocales) {
+    const catalog = read(id);
+    expect(Object.keys(catalog).sort(), id).toEqual(Object.keys(en).sort());
+    for (const [key, { defaultMessage }] of Object.entries(en)) expect(params(catalog[key].defaultMessage), `${id} ${key}`).toBe(params(defaultMessage));
+  }
 });

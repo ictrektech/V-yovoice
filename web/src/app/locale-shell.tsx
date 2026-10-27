@@ -1,17 +1,14 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { InternationalizationProvider } from '@astryxdesign/core/i18n';
-import astryxZhCN from '@astryxdesign/core/locales/zh-CN.json';
-import astryxZhTW from '@astryxdesign/core/locales/zh-TW.json';
-import type { Catalog } from '@astryxdesign/core/i18n';
-import { appMessages, buildProviderMessages } from '../shared/i18n/catalogs';
-import { isUiLocale, resolveInitialUiLocale } from '../shared/i18n/locale';
-import type { Preferences, UiLocale } from '../shared/workbench';
+import { useEffect, useState, type ReactNode } from 'react';
+import { InternationalizationProvider, type MessagesByLocale } from '@astryxdesign/core/i18n';
+import { loadMessages } from '../shared/i18n/catalogs';
+import { isUiLocale, resolveInitialUiLocale, type UiLocale } from '../shared/i18n/locale';
+import type { Preferences } from '../shared/workbench';
 import { call } from '../shared/lib/client';
 import { isVos } from '../shared/lib/vos';
 import { listenVosLocale } from '../shared/lib/vos-locale';
+import { reportDesktop } from '../shared/lib/bridge';
 
 const bootLocale = resolveInitialUiLocale(typeof navigator !== 'undefined' ? navigator.language : 'en');
-const providerMessages = buildProviderMessages(astryxZhCN as Catalog, appMessages, astryxZhTW as Catalog);
 
 export type LocaleShellProps = {
   preferencesLocale: UiLocale | null | undefined;
@@ -21,17 +18,29 @@ export type LocaleShellProps = {
 /**
  * Owns InternationalizationProvider locale + documentElement.lang.
  * Boot uses navigator until preferences.uiLocale arrives.
+ * 目录按需加载：加载完成前保持上一种语言，首次加载完成前不渲染，避免先闪一下英文。
  */
 export function LocaleShell({ preferencesLocale, children }: LocaleShellProps) {
   const [vosLocale, setVosLocale] = useState<UiLocale>(bootLocale);
   useEffect(() => isVos ? listenVosLocale(setVosLocale) : undefined, []);
-  const locale = isVos ? vosLocale : isUiLocale(preferencesLocale) ? preferencesLocale : bootLocale;
+  const wanted = isVos ? vosLocale : isUiLocale(preferencesLocale) ? preferencesLocale : bootLocale;
+  const [loaded, setLoaded] = useState<{ locale: UiLocale; messages: MessagesByLocale } | null>(null);
   useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
-  const messages = useMemo(() => providerMessages, []);
+    let current = true;
+    loadMessages(wanted)
+      .then(messages => { if (current) setLoaded({ locale: wanted, messages }); })
+      .catch(error => {
+        reportDesktop('error', '', `load locale ${wanted}: ${String(error)}`);
+        if (current) void loadMessages('en').then(messages => { if (current) setLoaded(prev => prev ?? { locale: 'en', messages }); });
+      });
+    return () => { current = false; };
+  }, [wanted]);
+  useEffect(() => {
+    if (loaded) document.documentElement.lang = loaded.locale;
+  }, [loaded]);
+  if (!loaded) return null;
   return (
-    <InternationalizationProvider locale={locale} messages={messages}>
+    <InternationalizationProvider locale={loaded.locale} messages={loaded.messages}>
       {children}
     </InternationalizationProvider>
   );

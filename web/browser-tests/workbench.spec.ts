@@ -46,10 +46,26 @@ test('四种表达方式、草稿持久化与模型协议', async ({ page }) => 
   await expect(page.getByText('已保存', { exact: true })).toBeVisible();
   await page.reload(); await expect(page.getByLabel('作品名称')).toHaveValue('测试旁白');
   await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('tab', { name: '模型', exact: true }).click();
-  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(33);
-  await expect(page.locator('[data-model-id="kokoro-1.0-q8"]')).toBeVisible();
-  await expect(page.locator('[data-model-id="kokoro-1.1-zh-q8"]')).toBeVisible();
+  // 语音模型与音乐模型分页显示，各自带下载设置。
+  await page.getByRole('tab', { name: '音乐模型', exact: true }).click();
+  // 同一模型的多种量化合并为一行，用精度切换。
+  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(4);
+  const yue = page.locator('[data-model-id^="yue2-"]');
+  await expect(yue).toHaveCount(1);
+  await expect(yue).toHaveAttribute('data-model-id', 'yue2-3b-q8');
+  await yue.getByRole('radio', { name: 'BF16' }).click();
+  await expect(yue).toHaveAttribute('data-model-id', 'yue2-3b-bf16');
+  await expect(yue.locator('.model-size')).toHaveText('7.53 GB');
+  await expect(page.getByLabel('下载来源', { exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
+  // 保留两个仅导入的 Kokoro，不把它们计入可下载模型组。
+  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(10);
+  for (const id of ['kokoro-1.0-q8', 'kokoro-1.1-zh-q8']) {
+    const row = page.locator(`[data-model-id="${id}"]`);
+    await expect(row).toBeVisible();
+    await expect(row.getByRole('button', { name: '导入 GGUF', exact: true })).toBeVisible();
+  }
+  await expect(page.locator('[data-model-id^="ace-step-"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'IndexTTS 协议' }).click();
   await expect(page.getByRole('heading', { name: '模型使用协议' })).toBeVisible();
   await page.getByRole('button', { name: '关闭协议' }).click();
@@ -64,13 +80,8 @@ test('真实 WAV 导入、播放、裁剪和空状态', async ({ page }) => {
   wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(16000, 24); wav.writeUInt32LE(32000, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(wav.length - 44, 40);
   for (let i = 0; i < 32000; i++) wav.writeInt16LE(Math.round(Math.sin(i * 440 * Math.PI * 2 / 16000) * 8000), 44 + i * 2);
   await page.locator('input[type=file][accept^="audio/"]').setInputFiles({ name: '测试音色.wav', mimeType: 'audio/wav', buffer: wav });
-  // 新用户的准备清单：模型、推理引擎和参考音频在创作区就地完成，选好的步骤标为已完成。
-  const setup = page.locator('.setup-checklist').getByRole('listitem');
-  await expect(setup).toHaveText([/下载模型/, /安装推理引擎/, /选一个声音/]);
   await page.getByRole('button', { name: '使用所选参考音频', exact: true }).click();
   await expect(page.getByRole('button', { name: '测试音色', exact: true })).toBeVisible();
-  await expect(setup.nth(2)).toHaveAttribute('data-done', 'true');
-  await expect(setup.nth(2)).toContainText('已完成');
   await page.getByRole('button', { name: '试听当前音色' }).click();
   await expect(page.getByRole('button', { name: '暂停', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '暂停', exact: true }).click();
@@ -170,7 +181,7 @@ test('真实 WAV 导入、播放、裁剪和空状态', async ({ page }) => {
   await expect(controls).toHaveAttribute('data-playing', 'false');
   await play.click();
   await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('tab', { name: '模型', exact: true }).click();
+  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
   await expect.poll(() => page.locator('audio').evaluateAll(elements => elements.every(el => (el as HTMLAudioElement).paused))).toBeTruthy();
   await page.getByTestId('nav-story').click();
   await expect(page.locator('footer.player')).toBeHidden();
@@ -251,7 +262,7 @@ test('语音生成只有历史生成：工具栏进入历史页，试听不改�
   await expect(transport.getByRole('button', { name: '导出音频', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '保存为角色', exact: true })).toHaveCount(0);
   await transport.getByRole('button', { name: '音频操作', exact: true }).click();
-  await expect(page.getByRole('menuitem')).toHaveText(['保存为参考音频']);
+  await expect(page.getByRole('menuitem')).toHaveText(['保存为参考音频', '保存为角色']);
   await page.keyboard.press('Escape');
 
   // 历史生成汇总所有语音作品的结果，不分版本；改过名的显示名称，其余显示正文。
@@ -268,6 +279,15 @@ test('语音生成只有历史生成：工具栏进入历史页，试听不改�
   await rows.first().getByRole('button', { name: `删除音频${draft.title}`, exact: true }).click();
   await page.getByRole('button', { name: '取消', exact: true }).click();
   await expect(rows).toHaveCount(3);
+  // 生成结果连同当时的参数一起存为角色：角色编辑器带着名称、模型和语速打开，保存后进入声音库。
+  await rows.nth(1).getByRole('button', { name: '音频操作', exact: true }).click();
+  await page.getByRole('menuitem', { name: '保存为角色', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: '角色名称' })).toHaveValue(draft.title);
+  await expect(page.getByRole('combobox', { name: '模型', exact: true })).toContainText('IndexTTS 2');
+  await page.getByRole('button', { name: '保存角色', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1') ?? '{}').characters?.map((c: { name: string; settings: { speed: number } }) => `${c.name}:${c.settings.speed}`))).toEqual([`${draft.title}:0.8`]);
+  await page.getByTestId('nav-text').click();
+  await openProjectHistory(page);
   await rows.first().getByRole('button', { name: `删除音频${draft.title}`, exact: true }).click();
   await page.getByRole('button', { name: '删除音频', exact: true }).click();
   await expect(rows).toHaveCount(2);
@@ -295,7 +315,7 @@ test('OmniVoice 和 Qwen3-TTS 使用各自的声音控件', async ({ page }) => 
   await page.goto('/');
   const model = page.getByRole('combobox', { name: '模型', exact: true });
   await model.click();
-  await page.getByRole('option', { name: /OmniVoice · Q8/ }).click();
+  await page.getByRole('option', { name: /^OmniVoice/ }).click();
   await expect(page.getByRole('radio', { name: '声音设计', exact: true })).toBeChecked();
   await expect(page.getByRole('button', { name: '添加参考音频', exact: true })).toHaveCount(0);
   await page.getByRole('combobox', { name: '性别', exact: true }).click();
@@ -319,7 +339,7 @@ test('OmniVoice 和 Qwen3-TTS 使用各自的声音控件', async ({ page }) => 
   await expect(page.getByRole('radio', { name: '音色克隆', exact: true })).toBeChecked();
   await expect(page.getByLabel('参考音频原文')).toHaveValue('你好。');
   await model.click();
-  await page.getByRole('option', { name: /Qwen3-TTS 1.7B Base · Q8/ }).click();
+  await page.getByRole('option', { name: /^Qwen3-TTS 1.7B Base/ }).click();
   await expect(page.getByRole('button', { name: '添加参考音频', exact: true })).toBeVisible();
   await expect(page.getByRole('radio', { name: '声音设计', exact: true })).toHaveCount(0);
   await expect(page.getByRole('radio', { name: '情绪调节', exact: true })).toHaveCount(0);
@@ -329,7 +349,7 @@ test('OmniVoice 和 Qwen3-TTS 使用各自的声音控件', async ({ page }) => 
 test('Breeze TTS 2 在设计与克隆间切换描述用途，并以短分段为默认', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('combobox', { name: '模型', exact: true }).click();
-  await page.getByRole('option', { name: /Breeze TTS 2 · Q8/ }).click();
+  await page.getByRole('option', { name: /^Breeze TTS 2/ }).click();
   await expect(page.getByRole('radio', { name: '声音设计', exact: true })).toBeChecked();
   await expect(page.getByRole('button', { name: '添加参考音频', exact: true })).toHaveCount(0);
   await page.getByLabel('声音描述', { exact: true }).fill('温暖的女声，语速平稳');

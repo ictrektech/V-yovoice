@@ -5,13 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
+	"os"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+	"yovoice/internal/assistant"
 	"yovoice/internal/diag"
+	"yovoice/internal/download"
 	"yovoice/internal/llm"
 	"yovoice/internal/msg"
+	"yovoice/internal/platform"
 	"yovoice/internal/schema"
 )
 
@@ -38,6 +42,8 @@ type aiState struct {
 	secrets sync.Mutex
 	// connect 是进行中的 OrcaRouter 一键授权。
 	connect *connectSession
+	// codexLogin 结束进行中的 `codex login`。
+	codexLogin context.CancelFunc
 }
 
 // aiKeysPrivate 是状态库私有设置中保存 AI 服务密钥的键，值为服务 ID 到密钥的映射。
@@ -91,7 +97,12 @@ func (w *Workbench) SaveAIProvider(in AIProviderInput) (schema.AIProvider, error
 	if p.Name == "" {
 		p.Name = preset.Name
 	}
-	if !slices.Contains(llm.Formats, p.Format) || !validEndpoint(p.BaseURL) || schema.TextLen(p.Name) > 60 || len(p.Model) > 200 || len(p.ModelsPath) > 500 {
+	// Codex 订阅经本机 CLI 调用，没有地址和密钥。
+	cli := preset.Endpoint == "cli"
+	if cli && in.Key != nil && *in.Key != "" {
+		return schema.AIProvider{}, bad
+	}
+	if !cli && (!slices.Contains(llm.Formats, p.Format) || !validEndpoint(p.BaseURL)) || schema.TextLen(p.Name) > 60 || len(p.Model) > 200 || len(p.ModelsPath) > 500 {
 		return schema.AIProvider{}, bad
 	}
 	if in.Key != nil && len(*in.Key) > 4096 {
@@ -264,7 +275,7 @@ func (w *Workbench) complete(ctx context.Context, request llm.Request) (llm.Resu
 	if e != nil {
 		return llm.Result{}, e
 	}
-	if c.Model == "" {
+	if c.Model == "" && c.Format != llm.FormatCodex {
 		return llm.Result{}, msg.Err(msg.ErrAINotConfigured, nil)
 	}
 	timeout := aiTimeout(w.Store.Read().Preferences)
@@ -285,13 +296,93 @@ func (w *Workbench) complete(ctx context.Context, request llm.Request) (llm.Resu
 	return result, e
 }
 
-// logAIOutput 记录无法使用的模型输出的开头和结尾，便于排查格式问题。
-func (w *Workbench) logAIOutput(kind, issue, text string) {
-	head, tail := text, ""
-	if r := []rune(text); len(r) > 600 {
-		head, tail = string(r[:400]), string(r[len(r)-200:])
+// providerEnv 把服务配置翻译成 ocho 的模型服务环境变量；密钥只经环境变量传给子进程。
+func providerEnv(p schema.AIProvider, c llm.Config) []string {
+	var env []string
+	set := func(name, value string) { env = append(env, name+"="+value) }
+	switch p.Format {
+	case llm.FormatAnthropic:
+		set("ANTHROPIC_BASE_URL", c.BaseURL)
+		if c.Key != "" {
+			set("ANTHROPIC_API_KEY", c.Key)
+		}
+	case llm.FormatResponses:
+		set("OCHO_API_PROVIDER", "responses")
+		set("OPENAI_BASE_URL", c.BaseURL)
+		if c.Key != "" {
+			set("OPENAI_API_KEY", c.Key)
+		}
+	default:
+		set("OCHO_API_PROVIDER", "openai")
+		set("OPENAI_BASE_URL", c.BaseURL)
+		if c.Key != "" {
+			set("OPENAI_API_KEY", c.Key)
+		}
 	}
-	diag.Log(w.Store.Root, "ai.output_invalid", "kind", kind, "issue", issue, "chars", len(text), "head", head, "tail", tail)
+	return env
+}
+
+// proxyEnvNames 是透传给助手子进程的代理环境变量名；小写形式一并透传，匹配常见代理客户端的约定。
+var proxyEnvNames = []string{
+	"HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy", "NO_PROXY", "no_proxy",
+}
+
+// proxyEnv 按偏好设置生成助手子进程的代理环境变量：启用时指向配置的地址（本地地址仍直连，
+// 与下载代理一致），显式关闭时全部不设，未配置时从宿主环境透传，方便依赖系统代理的用户。
+func proxyEnv(p schema.Preferences) []string {
+	if p.ProxyEnabled != nil && !*p.ProxyEnabled {
+		return nil
+	}
+	address := strings.TrimSpace(p.ProxyURL)
+	if _, err := download.ParseProxy(address); err != nil {
+		return nil
+	}
+	if address == "" {
+		var env []string
+		for _, name := range proxyEnvNames {
+			if value := os.Getenv(name); value != "" {
+				env = append(env, name+"="+value)
+			}
+		}
+		return env
+	}
+	// NO_PROXY 兜住本机服务（如 Ollama）：代理只应接管远程模型请求。
+	return []string{"HTTPS_PROXY=" + address, "HTTP_PROXY=" + address, "ALL_PROXY=" + address,
+		"NO_PROXY=localhost,127.0.0.1,::1", "no_proxy=localhost,127.0.0.1,::1"}
+}
+
+// assistantConfig 由当前服务配置组装某个会话的助手子进程配置；ocho 缺失与服务未配置分别报错。
+// 每个会话有独立的 OCHO_CONFIG_DIR（切换会话即重启子进程）；长期偏好由 yovoice 保存并随消息注入。
+func (w *Workbench) assistantConfig(sessionID string) (assistant.Config, error) {
+	executable, err := platform.OchoExecutable()
+	if err != nil {
+		return assistant.Config{}, msg.Err(msg.ErrAssistantMissing, nil)
+	}
+	p, c, err := w.aiConfig("")
+	if err != nil {
+		return assistant.Config{}, err
+	}
+	// ChatGPT 订阅经 Codex CLI 调用，没有 ocho 可用的接口地址与密钥。
+	if c.Format == llm.FormatCodex {
+		return assistant.Config{}, msg.Err(msg.ErrAssistantProvider, nil)
+	}
+	if c.Model == "" {
+		return assistant.Config{}, msg.Err(msg.ErrAINotConfigured, nil)
+	}
+	// 会话目录预先建好：ocho 首次启动要往里写自己的配置。
+	if err = os.MkdirAll(assistantSessionDir(w.Store.Root, sessionID), 0700); err != nil {
+		return assistant.Config{}, err
+	}
+	env := append(providerEnv(p, c), proxyEnv(w.Store.Read().Preferences)...)
+	env = append(env, "OCHO_CONFIG_DIR="+assistantSessionDir(w.Store.Root, sessionID))
+	return assistant.Config{Executable: executable, Model: c.Model, Env: env}, nil
+}
+
+// logAIOutput 记录无法使用的模型输出的形态，便于排查格式问题；不记录输出内容，其中可能有 AI 写的歌词。
+func (w *Workbench) logAIOutput(kind, issue, text string) {
+	trimmed := strings.TrimSpace(text)
+	diag.Log(w.Store.Root, "ai.output_invalid", "kind", kind, "issue", issue, "chars", len(text), "lines", strings.Count(trimmed, "\n")+1,
+		"fenced", strings.Contains(text, "```"), "json", json.Valid([]byte(trimmed)))
 }
 
 // startAI 在后台运行一次 AI 写作任务并立即返回任务；同一时间只运行一个，CancelAI 可中止。
@@ -301,23 +392,30 @@ func (w *Workbench) startAI(kind, projectID, brief string, work func(context.Con
 	if e != nil {
 		return schema.AITask{}, e
 	}
-	if c.Model == "" {
+	if c.Model == "" && c.Format != llm.FormatCodex {
 		return schema.AITask{}, msg.Err(msg.ErrAINotConfigured, nil)
 	}
+	task := schema.AITask{Kind: kind, ProjectID: projectID, Brief: brief, Stage: "writing", Provider: p.Name, Model: c.Model}
+	return w.runAI(task, p.ID, work)
+}
+
+// runAI 写入任务并在后台运行 work；同一时间只运行一个 AI 任务，结束后结果或错误写回状态。
+func (w *Workbench) runAI(task schema.AITask, providerID string, work func(context.Context) (any, error)) (schema.AITask, error) {
 	w.ai.mu.Lock()
 	defer w.ai.mu.Unlock()
 	if w.ai.cancel != nil {
 		return schema.AITask{}, msg.Err(msg.ErrBusy, nil)
 	}
-	task := schema.AITask{ID: schema.NewID(), Kind: kind, ProjectID: projectID, Brief: brief, Status: "running", Stage: "writing", Provider: p.Name, Model: c.Model,
-		Timeout: int(aiTimeout(w.Store.Read().Preferences).Seconds()), StartedAt: time.Now().UTC()}
-	if e = w.Store.Update(func(s *schema.State) { s.AITask = &task }, false); e != nil {
+	kind := task.Kind
+	task.ID, task.Status, task.StartedAt = schema.NewID(), "running", time.Now().UTC()
+	task.Timeout = int(aiTimeout(w.Store.Read().Preferences).Seconds())
+	if e := w.Store.Update(func(s *schema.State) { s.AITask = &task }, false); e != nil {
 		return schema.AITask{}, e
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	w.ai.cancel, w.ai.task, w.ai.done = cancel, task.ID, done
-	diag.Log(w.Store.Root, "ai.task_started", "task_id", task.ID, "kind", kind, "project_id", projectID, "provider_id", p.ID, "model", c.Model, "timeout_s", task.Timeout)
+	diag.Log(w.Store.Root, "ai.task_started", "task_id", task.ID, "kind", kind, "project_id", task.ProjectID, "provider_id", providerID, "model", task.Model, "timeout_s", task.Timeout)
 	go func() {
 		defer close(done)
 		defer cancel()
@@ -371,6 +469,21 @@ func (w *Workbench) setAIStage(stage string) {
 	}, false)
 }
 
+// setAIProgress 更新分段任务的进度。
+func (w *Workbench) setAIProgress(done, total int) {
+	w.ai.mu.Lock()
+	id := w.ai.task
+	w.ai.mu.Unlock()
+	if id == "" {
+		return
+	}
+	_ = w.Store.Update(func(s *schema.State) {
+		if s.AITask != nil && s.AITask.ID == id && s.AITask.Status == "running" {
+			s.AITask.Done, s.AITask.Total = done, total
+		}
+	}, false)
+}
+
 // CancelAI 取消正在进行的 AI 任务。
 func (w *Workbench) CancelAI() {
 	w.ai.mu.Lock()
@@ -391,6 +504,9 @@ func (w *Workbench) stopAI() {
 	}
 	w.ai.mu.Lock()
 	done := w.ai.done
+	if w.ai.codexLogin != nil {
+		w.ai.codexLogin()
+	}
 	if w.ai.cancel != nil {
 		w.ai.cancel()
 	}

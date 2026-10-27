@@ -1,5 +1,5 @@
 import type { UiLocale } from '../workbench';
-import { isUiLocale, resolveInitialUiLocale } from '../i18n/locale';
+import { isUiLocale, resolveInitialUiLocale, uiLocales } from '../i18n/locale';
 
 const key = 'v-voice-creator-locale';
 export type VosLocalePreference = UiLocale | 'auto';
@@ -24,7 +24,7 @@ function legacyVosLocale(): UiLocale | undefined {
       const raw = localStorage.getItem(name);
       let value: unknown = raw;
       try { const parsed: unknown = JSON.parse(raw ?? 'null'); value = parsed && typeof parsed === 'object' && 'value' in parsed ? parsed.value : parsed; } catch { /* 兼容未包装的语言字符串。 */ }
-      if (typeof value === 'string' && /^(zh(?:[-_](?:cn|sg|hans|tw|hk|mo|hant))?(?:[-_].*)?|en(?:[-_].*)?)$/i.test(value.trim())) {
+      if (typeof value === 'string' && /^(zh(?:[-_](?:cn|sg|hans|tw|hk|mo|hant))?(?:[-_].*)?|(?:en|ja|ko|es|fr|de|pt|ru|it|vi)(?:[-_].*)?)$/i.test(value.trim())) {
         return resolveInitialUiLocale(value.trim().replaceAll('_', '-'));
       }
     }
@@ -46,7 +46,7 @@ export function listenVosLocale(apply: (locale: UiLocale) => void) {
   const accept = (state: { locale?: unknown }) => {
     if (typeof state.locale !== 'string') return;
     const locale = state.locale.toLowerCase();
-    if (!locale.startsWith('zh') && !locale.startsWith('en')) return;
+    if (!uiLocales.some(item => item.id.split('-')[0].toLowerCase() === locale.split(/[-_]/)[0])) return;
     platformLocale = resolveInitialUiLocale(locale);
     update();
   };

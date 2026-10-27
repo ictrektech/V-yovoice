@@ -13,8 +13,13 @@ import (
 
 func TestMessageCodesCoveredByCatalogs(t *testing.T) {
 	root := repoFile(t, "web", "src", "shared", "i18n", "catalogs")
-	for _, name := range []string{"en.json", "zh-cn.json"} {
-		b, err := os.ReadFile(filepath.Join(root, name))
+	names, err := filepath.Glob(filepath.Join(root, "*.json"))
+	if err != nil || len(names) < 2 {
+		t.Fatal("找不到界面语言目录", err)
+	}
+	for _, path := range names {
+		name := filepath.Base(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -17,7 +17,7 @@ def test_creative_capabilities_match_native_variants():
 
 
 def test_creative_discovery_is_dynamic_and_public(monkeypatch):
-    rows = models()
+    rows = models(include_non_speech=True)
     ready = True
 
     async def listed():
@@ -27,6 +27,8 @@ def test_creative_discovery_is_dynamic_and_public(monkeypatch):
     result = client.get("/api/v1/discovery").json()["models"]
     index = next(row for row in result if row["id"] == "audiocpp-index-2.5-q8")
     assert index["endpoints"] == ["audio/speech"]
+    assert "audiocpp-sheetsage2-orig" not in {row["id"] for row in result}
+    assert next(row for row in rows if row["key"] == "audiocpp-sheetsage2-orig")["capabilities"] == ["midi"]
     assert "emotion_control" in index["capabilities"]
     assert index["voices"]["endpoint"].startswith("/v1/audio/voices?")
     ready = False

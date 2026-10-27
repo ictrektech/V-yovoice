@@ -127,6 +127,9 @@ func payload(c Config, r Request) map[string]any {
 
 // Complete 发送一次非流式请求并取回文本。推理模型输出的 <think> 段会被去掉。
 func Complete(ctx context.Context, client *http.Client, c Config, r Request) (Result, error) {
+	if c.Format == FormatCodex {
+		return codexComplete(ctx, c, r)
+	}
 	if strings.TrimSpace(c.Model) == "" || len(r.Messages) == 0 {
 		return Result{}, msg.Err(msg.ErrAINotConfigured, nil)
 	}
@@ -235,6 +238,9 @@ func parse(format string, body []byte) (Result, error) {
 
 // Models 读取服务的模型列表（OpenAI 与 Anthropic 都返回 {data:[{id}]}）。
 func Models(ctx context.Context, client *http.Client, c Config) ([]string, error) {
+	if c.Format == FormatCodex {
+		return codexModels(ctx)
+	}
 	if strings.TrimSpace(c.ModelsPath) == "" {
 		return nil, msg.Err(msg.ErrAIModelsPath, nil)
 	}

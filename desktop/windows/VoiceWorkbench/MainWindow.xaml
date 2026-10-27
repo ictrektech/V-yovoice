@@ -131,6 +131,7 @@
                     </MenuItem>
                     <MenuItem x:Name="ViewMenu" Header="视图">
                         <MenuItem x:Name="ToggleSidebarMenu" Header="切换侧栏" Click="ToggleSidebar_Click" />
+                        <MenuItem x:Name="ToggleAssistantMenu" Header="切换 Ocho" Click="ToggleAssistant_Click" />
                         <MenuItem x:Name="ToggleInspectorMenu" Header="切换右侧面板" Click="ToggleInspector_Click" IsEnabled="False" />
                     </MenuItem>
                     <MenuItem x:Name="HelpMenu" Header="帮助">
@@ -139,6 +140,10 @@
                 </Menu>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button x:Name="ToggleAssistantButton" Style="{StaticResource CaptionButton}" Width="36" Visibility="Collapsed" Click="ToggleAssistant_Click" ToolTip="切换 Ocho" AutomationProperties.Name="切换 Ocho">
+                    <!-- Ocho 小幽灵：逐帧播放 Resources/ocho-ghost.png，与界面里的形象一致 -->
+                    <Image x:Name="OchoGhost" Width="20" Height="20" RenderOptions.BitmapScalingMode="HighQuality" />
+                </Button>
                 <Button x:Name="ToggleInspectorButton" Style="{StaticResource CaptionButton}" Width="36" Visibility="Collapsed" Click="ToggleInspector_Click" ToolTip="切换右侧面板" AutomationProperties.Name="切换右侧面板">
                     <Path Data="M 2,1 L 14,1 Q 16,1 16,3 L 16,13 Q 16,15 14,15 L 2,15 Q 0,15 0,13 L 0,3 Q 0,1 2,1 M 11,1 L 11,15"
                           Stroke="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}" StrokeThickness="1" Width="16" Height="16" />
@@ -154,7 +159,8 @@
                 </Button>
             </StackPanel>
         </Grid>
-        <Grid x:Name="Container" Grid.Row="1">
+        <!-- 与网页启动动画同底色（yovoice-paper 页面底色），网页加载前后不闪白。 -->
+        <Grid x:Name="Container" Grid.Row="1" Background="#F7F7F7">
             <TextBlock x:Name="StartupMessage" Text="正在打开 yovoice…" VerticalAlignment="Center" HorizontalAlignment="Center"
                        Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
         </Grid>

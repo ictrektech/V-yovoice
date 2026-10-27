@@ -789,6 +789,20 @@
     ]
   },
   {
+    "id": "sheetsage2-orig",
+    "name": "SheetSage2",
+    "family": "sheetsage2",
+    "task": "midi",
+    "engineMinimum": "v0.9.1",
+    "version": "2",
+    "precision": "F32",
+    "repo": "audio-cpp/SheetSage2-GGUF",
+    "revision": "4e88814450385334524e50df43724af583f74206",
+    "remotePath": "sheetsage2-orig.gguf",
+    "size": 2708224256,
+    "sha256": "d858bfdf5ac7be16261ac6ee38754d6fca502149131b44a5262b4039fb72876e"
+  },
+  {
     "id": "musescore-general-sf2",
     "name": "MuseScore General",
     "family": "soundfont",

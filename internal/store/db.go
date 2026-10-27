@@ -100,10 +100,12 @@ var settingFields = []setting{
 	{"activity", func(s *schema.State) any { return &s.Activity }},
 	{"modelActivity", func(s *schema.State) any { return &s.ModelActivity }},
 	{"aiProviderID", func(s *schema.State) any { return &s.AIProviderID }},
+	{"assistantSessions", func(s *schema.State) any { return &s.AssistantSessions }},
+	{"assistantMemory", func(s *schema.State) any { return &s.AssistantMemory }},
 }
 
 // sessionFields 只属于本次会话，不写入数据库。
-var sessionFields = []string{"previews", "aiTask"}
+var sessionFields = []string{"previews", "aiTask", "melody", "assistantLive"}
 
 var tables = []table{
 	{

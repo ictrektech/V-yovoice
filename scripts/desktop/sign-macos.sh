@@ -23,6 +23,14 @@ sign_kokoro() {
     codesign --verify --strict "$library"
   done
 }
+# ocho 允许通过 YOVOICE_OCHO_SKIP 跳过打包，存在时必须带加固运行时签名才能通过公证。
+sign_ocho() {
+  local executable="$1"
+  if [[ ! -f "$executable" ]]; then return; fi
+  if [[ "$(lipo -archs "$executable")" != arm64 ]]; then echo "仅支持 Apple Silicon：$executable" >&2; exit 1; fi
+  codesign "${sign_args[@]}" --options runtime "$executable"
+  codesign --verify --strict "$executable"
+}
 case "$target" in
   *.app)
     # 先签嵌入的服务，再签主应用；不使用 --deep 代替逐项签名。
@@ -38,6 +46,7 @@ case "$target" in
       codesign "${sign_args[@]}" --options runtime "$target/Contents/Resources/engine/audiocpp_server"
     fi
     codesign "${sign_args[@]}" --options runtime "$target/Contents/Resources/tools/ffmpeg"
+    sign_ocho "$target/Contents/Resources/tools/ocho/ocho"
     codesign "${sign_args[@]}" --options runtime --entitlements desktop/macos/entitlements.plist "$target"
     codesign --verify --deep --strict "$target"
     ;;
@@ -49,6 +58,7 @@ case "$target" in
     if [[ "$(lipo -archs "$converter")" != arm64 ]]; then echo 'CLI 转换器必须为 arm64。' >&2; exit 1; fi
     codesign "${sign_args[@]}" --options runtime "$converter"
     codesign --verify --strict "$converter"
+    sign_ocho "$(dirname "$target")/tools/ocho/ocho"
     codesign "${sign_args[@]}" --options runtime "$target"
     codesign --verify --strict "$target"
     ;;

@@ -157,14 +157,16 @@ func TestStateRoundTrip(t *testing.T) {
 		state.RuntimePath, state.RuntimeBackend = &path, &backend
 		state.Runtimes = map[string]schema.InstalledRuntime{"cpu": {Path: path, Version: "1"}}
 		state.Preferences.Backend = "metal"
-		state.AITask = &schema.AITask{ID: "task"}
+		state.AssistantSessions = &schema.AssistantSessions{CurrentID: "s1", Sessions: []schema.AssistantSession{{ID: "s1", Title: "你好", Messages: []schema.AssistantMessage{{ID: "m1", Role: "user", Text: "你好"}}}}}
+		state.AssistantLive = &schema.AssistantLive{Queued: 2}
 	}, true))
 	want := s.Read()
 	must(t, s.Close())
 	reopened, err := New(root)
 	must(t, err)
 	got := reopened.Read()
-	want.AITask = nil
+	// 助手实时状态只属于会话，重开后清除；会话记录保留。
+	want.AssistantLive = nil
 	a, _ := json.Marshal(want)
 	b, _ := json.Marshal(got)
 	if string(a) != string(b) {

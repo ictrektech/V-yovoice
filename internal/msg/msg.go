@@ -42,6 +42,8 @@ const (
 	ActivityFailed          Code = "@yovoice.activity.failed"
 	ActivityInterrupted     Code = "@yovoice.activity.interrupted"
 	ActivityRelocate        Code = "@yovoice.activity.relocate"
+	ActivityPlanMelody      Code = "@yovoice.activity.planMelody"
+	ActivityTranscribe      Code = "@yovoice.activity.transcribe"
 
 	ErrBusy                  Code = "@yovoice.error.busy"
 	ErrProxyURL              Code = "@yovoice.error.proxyURL"
@@ -115,7 +117,12 @@ const (
 	ErrScoreInvalid          Code = "@yovoice.error.scoreInvalid"
 	ErrScoreTooLong          Code = "@yovoice.error.scoreTooLong"
 	ErrMidiInvalid           Code = "@yovoice.error.midiInvalid"
-	ErrEngineUpgradeRequired Code = "@yovoice.error.engineUpgradeRequired"
+	// 旋律谱：谱面不合方言（参数含小节与声部）、引擎没有写出谱、扒谱模型未下载。
+	ErrMelodyInvalid           Code = "@yovoice.error.melodyInvalid"
+	ErrMelodyEmpty             Code = "@yovoice.error.melodyEmpty"
+	ErrCoverModelRequired      Code = "@yovoice.error.coverModelRequired"
+	ErrMelodySoundFontRequired Code = "@yovoice.error.melodySoundFontRequired"
+	ErrEngineUpgradeRequired   Code = "@yovoice.error.engineUpgradeRequired"
 	// AI 服务（可选）：未配置、鉴权、限流、网络、响应异常与结果无效。
 	ErrAIProviderInvalid Code = "@yovoice.error.aiProviderInvalid"
 	ErrAINotConfigured   Code = "@yovoice.error.aiNotConfigured"
@@ -126,6 +133,17 @@ const (
 	ErrAIModelsPath      Code = "@yovoice.error.aiModelsPath"
 	ErrAIResultInvalid   Code = "@yovoice.error.aiResultInvalid"
 	ErrAITimeout         Code = "@yovoice.error.aiTimeout"
+	// 内置助手（ocho 运行时）缺失：安装包未随附且未通过 YOVOICE_OCHO_PATH 指定。
+	ErrAssistantMissing Code = "@yovoice.error.assistantMissing"
+	// 当前 AI 服务无法供内置助手使用（如经 Codex CLI 的 ChatGPT 订阅）。
+	ErrAssistantProvider Code = "@yovoice.error.assistantProvider"
+	// Codex CLI：未安装、未登录、运行失败、额度用完。
+	ErrCodexMissing   Code = "@yovoice.error.codexMissing"
+	ErrCodexLoggedOut Code = "@yovoice.error.codexLoggedOut"
+	ErrCodexFailed    Code = "@yovoice.error.codexFailed"
+	ErrCodexLimit     Code = "@yovoice.error.codexLimit"
+	// Codex 运行结束但没有生成图片（工具不可用或模型拒绝），detail 为模型的说明。
+	ErrCodexNoImage Code = "@yovoice.error.codexNoImage"
 	// OrcaRouter 免费模型的四种拒绝：窗口已满、通道繁忙、单次提示超长、账号未满足免费条件。
 	ErrAIFreeRate      Code = "@yovoice.error.aiFreeRate"
 	ErrAIFreeBusy      Code = "@yovoice.error.aiFreeBusy"
@@ -189,7 +207,7 @@ func All() []Code {
 		ActivityDownload, ActivityDownloading, ActivityVerifying, ActivityImport,
 		ActivityRuntimeDownload, ActivityRuntimeExtract, ActivityEngineStart,
 		ActivityGenerate, ActivitySynthesizing, ActivitySavingAudio, ActivityRendering,
-		ActivityCompleted, ActivityCancelled, ActivityPaused, ActivityFailed, ActivityInterrupted, ActivityRelocate,
+		ActivityCompleted, ActivityCancelled, ActivityPaused, ActivityFailed, ActivityInterrupted, ActivityRelocate, ActivityPlanMelody, ActivityTranscribe,
 		ErrBusy, ErrProxyURL, ErrModelDirAbsolute, ErrModelDirSpace,
 		ErrDownloadHTTP, ErrDownloadRange, ErrDownloadSize, ErrDownloadIncomplete,
 		ErrDownloadStale, ErrDownloadChecksum, ErrDownloadOversized,
@@ -206,9 +224,9 @@ func All() []Code {
 		ErrCPUBundleInvalid, ErrBackendUnsupported, ErrPlatformArch, ErrMacBackend, ErrMacAppleSilicon,
 		ErrRequestInvalid, ErrMethodUnsupported,
 		ErrVoxModeInvalid, ErrVoxTextLimits, ErrVoxReferenceRequired, ErrVoxParams,
-		ErrMusicStyle, ErrMusicLyrics, ErrMusicParams, ErrMusicLyricsRequired, ErrEngineUpgradeRequired, ErrScoreInvalid, ErrScoreTooLong, ErrMidiInvalid,
-		ErrAIProviderInvalid, ErrAINotConfigured, ErrAIAuth, ErrAIRateLimit, ErrAINetwork, ErrAIResponse, ErrAIModelsPath, ErrAIResultInvalid, ErrAITimeout,
-		ErrAIFreeRate, ErrAIFreeBusy, ErrAIFreePromptCap, ErrAIFreeAccess,
+		ErrMusicStyle, ErrMusicLyrics, ErrMusicParams, ErrMusicLyricsRequired, ErrEngineUpgradeRequired, ErrScoreInvalid, ErrScoreTooLong, ErrMidiInvalid, ErrMelodyInvalid, ErrMelodyEmpty, ErrCoverModelRequired, ErrMelodySoundFontRequired,
+		ErrAIProviderInvalid, ErrAINotConfigured, ErrAIAuth, ErrAIRateLimit, ErrAINetwork, ErrAIResponse, ErrAIModelsPath, ErrAIResultInvalid, ErrAITimeout, ErrAssistantMissing, ErrAssistantProvider,
+		ErrAIFreeRate, ErrAIFreeBusy, ErrAIFreePromptCap, ErrAIFreeAccess, ErrCodexMissing, ErrCodexLoggedOut, ErrCodexFailed, ErrCodexLimit, ErrCodexNoImage,
 		ErrLocalAPIPort, ErrLocalAPIPortInUse,
 		ErrStorageInsideApp, ErrStorageTargetNotEmpty, ErrStorageSame, ErrStorageInsideData, ErrStorageRestart, ErrDataRootMissing, ErrDiskFull,
 		ErrLegacyRestore, ErrUnknown,

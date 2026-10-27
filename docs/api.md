@@ -116,6 +116,8 @@ curl --fail -H "Authorization: Bearer $YOVOICE_API_TOKEN" "$YOVOICE_URL/v1/audio
 | POST | `/v1/generate` | Synchronous generation; returns WAV with an `X-Yovoice-Generation-ID` header |
 | GET | `/v1/audio/{id}` | Download generated WAV |
 
+The full reference, with request fields, response schemas and status codes, is served by the running server at `/docs/` (for example `http://127.0.0.1:8080/docs/`); `yovoice serve` prints it as `docsUrl`. The page needs no token. Use **Authorize** to enter the token, then **Try it out** to call the API from the page. The raw OpenAPI document is at `/docs/openapi.json`. The page loads Swagger UI from jsDelivr, so viewing it needs internet access; the API itself does not.
+
 ## Retries and limits
 
 - `requestId` is a random 32-character hexadecimal ID. Retry with the same ID and parameters to avoid duplicate generation. Reusing an ID with different parameters returns 409.
@@ -125,7 +127,7 @@ curl --fail -H "Authorization: Bearer $YOVOICE_API_TOKEN" "$YOVOICE_URL/v1/audio
 - Asynchronous tasks survive client disconnection. Use the cancel tool or DELETE endpoint to stop one.
 - Invalid parameters return 400, invalid credentials 401, oversized uploads 413, generation failures 500, and synchronous generation timeouts 504.
 
-The token grants access to the whole service, including its saved voices and audio. There are no per-user accounts or quotas. Browser cross-origin calls are not supported. Each model's license still applies.
+The token grants access to the whole service, including its saved voices and audio. There are no per-user accounts or quotas. Browser cross-origin calls are not supported; only the server's own `/docs/` page may call it from a browser. Each model's license still applies.
 
 ## Timeouts and reverse proxies
 

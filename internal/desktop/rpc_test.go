@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"yovoice/internal/diag"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
 	"yovoice/internal/workbench"
@@ -87,3 +88,29 @@ func TestScoreFilesRoundTrip(t *testing.T) {
 }
 
 func strconvQuote(s string) string { b, _ := json.Marshal(s); return string(b) }
+
+// 关键操作无论成败都以方法名记一条日志，可以通过 logs.query 查回；诊断包写到宿主选好的路径。
+func TestAuditedCallsAreQueryable(t *testing.T) {
+	w, err := workbench.New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	if _, err = Call(context.Background(), w, "media.delete", json.RawMessage(`{"kind":"voices","id":"missing"}`)); err == nil {
+		t.Fatal("删除不存在的音色应失败")
+	}
+	raw, err := Call(context.Background(), w, "logs.query", json.RawMessage(`{"module":"media","level":"error"}`))
+	must(t, err)
+	page := raw.(diag.Page)
+	if page.Total != 1 || page.Entries[0].Event != "media.delete" || page.Entries[0].Fields["id"] != "missing" || page.Entries[0].Fields["kind"] != "voices" {
+		t.Fatalf("关键操作日志: %+v", page)
+	}
+	if _, err = Call(context.Background(), w, "logs.export", json.RawMessage(`{}`)); err == nil {
+		t.Fatal("缺少保存路径时应拒绝")
+	}
+	path := filepath.Join(t.TempDir(), "diagnostics.zip")
+	if result, err := Call(context.Background(), w, "logs.export", json.RawMessage(`{"path":`+strconvQuote(path)+`,"version":"0.2.1"}`)); err != nil || result != true {
+		t.Fatal(result, err)
+	}
+	if _, err = os.Stat(path); err != nil {
+		t.Fatal(err)
+	}
+}

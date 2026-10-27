@@ -111,7 +111,7 @@ test('语音项目选择独立模型演绎并支持回到默认', async ({ page 
   await editor.getByRole('combobox', { name: '演绎方式', exact: true }).click();
   await page.getByRole('option', { name: '开心', exact: true }).click();
   await editor.getByRole('combobox', { name: '模型', exact: true }).click();
-  await page.getByRole('option', { name: /Qwen3-TTS 1.7B CustomVoice · Q8/ }).click();
+  await page.getByRole('option', { name: /^Qwen3-TTS 1.7B CustomVoice/ }).click();
   await editor.getByRole('combobox', { name: '内置音色', exact: true }).click();
   await page.getByRole('option', { name: /^Ryan/ }).click();
   await editor.getByLabel('声音描述', { exact: true }).fill('开心地说话');

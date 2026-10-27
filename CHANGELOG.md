@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### 简体中文
+
+- 合入上游 v0.3.0：支持 12 种界面语言，模型按名称合并并切换精度，改进音乐与编曲操作；保留 VOS 平台语言跟随及现有模型、接口和历史记录。
+- 新增 YuE2 旋律规划、SheetSage2 歌曲扒谱及旋律谱编辑、试听；VOS 音乐计算经过 V-Scheduler，模型需下载并获批准后使用。
+- 桌面端合入 Ocho 助手、资源整理及日志查看；VOS 继续使用现有服务入口，暂不开放桌面助手的文件和命令执行能力。
+
+### English
+
+- Integrate upstream v0.3.0 with 12 interface languages, grouped model precision choices, and improved music and score workflows. Preserve VOS language following, existing models, APIs and history.
+- Add YuE2 melody planning, SheetSage2 song transcription, and melody score editing and previews. VOS music computation runs through V-Scheduler and requires downloaded, approved models.
+- Integrate the desktop Ocho assistant, asset management and log viewer. VOS retains its existing service entry points; desktop assistant file and command execution remain unavailable there.
+
 ## [0.0.30] - 2026-10-27
 
 ### 简体中文

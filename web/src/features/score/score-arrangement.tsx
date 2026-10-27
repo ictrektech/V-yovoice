@@ -63,9 +63,10 @@ function ScoreLane({ score, track, zoom }: { score: Score; track: ScoreTrack; zo
 
 // 编曲视图：参照 GarageBand、Logic 的轨道区，上方是段落标尺，每个声部一行——左边窄轨头（色点切换角色，名称、电平、发声一行，音色在下一行），
 // 右边是对齐时间的音块。轨道区可以像底部播放器一样缩放、横向滚动，播放时显示指针并跟随，点标尺跳到对应位置。
-export function ScoreArrangement({ score, selected, select, label, updateTrack, playhead, seek }: {
+// 只读时（如由旋律谱换算的轨道）轨头只显示名称，改动回到谱面本身。
+export function ScoreArrangement({ score, selected, select, label, updateTrack, playhead, seek, readOnly }: {
   score: Score; selected?: string; select: (id: string) => void; label: string; updateTrack: (id: string, patch: Partial<ScoreTrack>) => void;
-  playhead?: { time: number; playing: boolean }; seek: (time: number) => void;
+  playhead?: { time: number; playing: boolean }; seek: (time: number) => void; readOnly?: boolean;
 }) {
   const t = useTranslator();
   const total = Math.max(1, scoreDuration(score));
@@ -161,7 +162,7 @@ export function ScoreArrangement({ score, selected, select, label, updateTrack, 
       (scrollerMetrics.clientWidth === 0 || playheadOffset <= scrollLeft + scrollerMetrics.clientWidth - scrollerMetrics.headWidth + 1)
     )
   );
-  return <VStack className="score-arrangement" gap={0} role="group" aria-label={label}>
+  return <VStack className="score-arrangement" data-readonly={readOnly || undefined} gap={0} role="group" aria-label={label}>
     <VStack className="score-scroll" ref={scroller} gap={0}>
       <VStack className="score-content" gap={0} style={{ '--score-lane': laneExpr, width: `calc(var(--score-head) + ${laneExpr})` } as CSSProperties}>
         <HStack className="score-ruler-row" gap={0}>
@@ -180,6 +181,7 @@ export function ScoreArrangement({ score, selected, select, label, updateTrack, 
         {score.tracks.map((track, index) => <HStack key={track.id} className="score-track" data-role={track.role ?? 'other'} data-muted={!!track.mute} aria-current={track.id === selected ? 'true' : undefined} gap={0}
           style={{ '--track-index': Math.min(index, 12) } as CSSProperties} onPointerDown={() => select(track.id)}>
           <HStack className="score-track-head" gap={0.5} vAlign="center">
+            {readOnly ? <><Circle className="score-role-dot" aria-hidden="true" /><b className="score-track-name" onPointerEnter={overflowTitle}>{track.name}</b></> : <>
             <DropdownMenu hasChevron={false} button={{ size: 'sm', variant: 'ghost', isIconOnly: true, className: 'score-role-button', icon: <Circle className="score-role-dot" />, label: t('@yovoice.score.roleOf', { name: track.name }) }}
               items={scoreRoles.map(role => ({ label: roleLabel(role), icon: <Circle className="score-role-dot" data-role={role} />, endContent: role === (track.role ?? 'other') ? <Check size={14} aria-hidden /> : undefined, onClick: () => updateTrack(track.id, { role, level: undefined }) }))} />
             <b className="score-track-name" onPointerEnter={overflowTitle}>{track.name}</b>
@@ -191,6 +193,7 @@ export function ScoreArrangement({ score, selected, select, label, updateTrack, 
             <label className="number-field compact" title={t('@yovoice.score.levelOf', { name: track.name })}><input type="number" aria-label={t('@yovoice.score.levelOf', { name: track.name })} min={-60} max={0} step={1} value={targetLevel(track)} onChange={event => { const level = Number(event.target.value); if (level >= -60 && level < 0) updateTrack(track.id, { level }); }} /><small aria-hidden="true">dB</small></label>
             <Button size="sm" variant="ghost" isIconOnly className="score-mute" aria-pressed={!track.mute} icon={track.mute ? <VolumeX /> : <Volume2 />}
               label={t('@yovoice.score.playTrack', { name: track.name })} tooltip={t('@yovoice.score.playTrack', { name: track.name })} onClick={() => updateTrack(track.id, { mute: !track.mute || undefined })} />
+            </>}
           </HStack>
           <ScoreLane score={score} track={track} zoom={zoom} />
         </HStack>)}

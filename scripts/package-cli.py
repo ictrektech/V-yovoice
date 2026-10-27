@@ -25,6 +25,7 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run([os.environ.get("GO", "go"), "build", "-trimpath", "-ldflags", f"-s -w -X main.version={version}", "-o", str(executable), "./cmd/yovoice"], cwd=root, env={**os.environ, "GOOS": goos, "GOARCH": goarch, "CGO_ENABLED": "0"}, check=True)
     subprocess.run([sys.executable, "scripts/build-ffmpeg.py", str(Path(directory) / "tools")], cwd=root, check=True)
     subprocess.run([sys.executable, "scripts/package-kokoro-runtime.py", str(Path(directory) / "tools/kokoro")], cwd=root, check=True)
+    subprocess.run([sys.executable, "scripts/package-ocho.py", str(Path(directory) / "tools/ocho")], cwd=root, check=True)
     converter = Path(directory) / "tools" / ("ffmpeg.exe" if goos == "windows" else "ffmpeg")
     subprocess.run([str(converter), "-version"], stdout=subprocess.DEVNULL, check=True)
     if goos == "darwin":

@@ -66,6 +66,8 @@ make check
 
 ## 项目结构
 
+进程、请求链路与数据目录见[架构](architecture_zh.md)。
+
 | 目录 | 用途 |
 | --- | --- |
 | `cmd/` | CLI 和本地服务入口 |
@@ -91,7 +93,7 @@ make check
   传输层只解码请求并调用 `Workbench` 的公开方法，不访问其内部状态。`testkit` 仅供测试引用。
 - 桌面调用并发执行。`Workbench` 用编辑锁串行化“读取 → 校验引用 → 写入”的短事务，转码、下载、推理与工程导入导出不持锁；后台操作同一时间只运行一个。
 - 模型目录、生成参数和 OmniVoice 属性同时嵌入 Go 服务并供界面引用，`internal/catalog/*.json` 与 `web/src/shared/lib/*.json` 需保持一致（`engine.json` 仅供服务端与构建脚本使用，没有界面副本）。
-- 消息码在 `internal/msg` 中声明，须加入 `msg.All` 并在两种界面语言中提供文案。
+- 消息码在 `internal/msg` 中声明，须加入 `msg.All`，并在 `web/src/shared/i18n/catalogs/` 的每种界面语言中提供文案（英文是源语言，也是缺词时的回退）。新增界面语言时在 `web/src/shared/i18n/locale.ts` 和 `schema.UiLocaleNames` 中登记，并在 `catalogs/index.ts` 中添加目录和 Astryx 语言包的加载。
 - 升级 audio.cpp 时只修改 `internal/catalog/engine.json`：`version` 是推荐版本，`minimum` 是请求格式与模型包所需的最低版本，另含运行包校验值；在线安装与 `scripts/desktop/` 构建脚本都从它读取。已安装内核的版本记录在状态中，低于 `minimum` 时必须升级，低于 `version` 时界面提供可选升级。只有确实依赖新内核时才提高 `minimum`。
 - Windows `-Package` 生成完整 CPU 安装包与只含应用本体的 `-update.exe`；自动更新只下载后者，`engine/` 目录及其中的 `yovoice-engine.json`（内置内核的版本与后端）在更新时保持不变。
 

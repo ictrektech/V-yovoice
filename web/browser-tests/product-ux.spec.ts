@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { seedState } from './seed';
+import { emptyState } from '../src/shared/workbench';
 
 test('新建四种作品、取消导入、卡片菜单与重命名独立保存', async ({ page }, testInfo) => {
   await page.goto('/');
@@ -112,4 +114,52 @@ test('存储设置：展示数据目录与占用明细，可更改位置与清�
   await page.getByRole('button', { name: '更改位置' }).click();
   await expect(page.getByText(/^数据已复制到新目录。请完全退出 yovoice 并重新打开应用生效/)).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('storage-settings.png'), animations: 'disabled' });
+});
+
+test('启动动画在脚本加载前显示，界面就绪后移除，不挡住操作', async ({ page }) => {
+  let release = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/src/main.tsx', async route => { await gate; await route.continue(); });
+  await page.goto('/', { waitUntil: 'commit' });
+  await expect(page.locator('#splash .tile')).toBeVisible();
+  release();
+  await expect(page.locator('#splash')).toHaveCount(0);
+  await page.getByTestId('nav-new').click();
+  await expect(page.getByRole('menuitem').first()).toBeVisible();
+});
+
+test('首次启动显示开场画面，点「开始探索」进入主界面并记住，再次打开不再显示', async ({ page }) => {
+  const state = emptyState();
+  await seedState(page, { ...state, preferences: { ...state.preferences, introSeen: false } });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const intro = page.getByRole('dialog', { name: 'yovoice' });
+  await expect(intro.getByText('让文字发声，把灵感谱成歌')).toBeVisible();
+  await expect(intro.getByText('故事配音')).toBeVisible();
+  const start = intro.getByRole('button', { name: '开始探索' });
+  await expect(start).toBeFocused();
+  await start.press('Enter');
+  await expect(intro).toHaveCount(0);
+  await page.getByTestId('nav-new').click();
+  await expect(page.getByRole('menuitem').first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId('nav-new')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'yovoice' })).toHaveCount(0);
+  // 设置里可以重新播放，看完不影响已记住的状态。
+  await page.getByTestId('nav-settings').click();
+  await page.getByRole('button', { name: '重新播放' }).click();
+  await page.getByRole('dialog', { name: 'yovoice' }).getByRole('button', { name: '开始探索' }).click();
+  await expect(page.getByRole('dialog', { name: 'yovoice' })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId('nav-new')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'yovoice' })).toHaveCount(0);
+});
+
+test('开场画面一出现就完全盖住主界面，不会先露出面板', async ({ page }) => {
+  const state = emptyState();
+  await seedState(page, { ...state, preferences: { ...state.preferences, introSeen: false } });
+  await page.goto('/');
+  await page.waitForSelector('.intro-screen', { state: 'attached' });
+  // 挂载的同一帧里就必须不透明；若先从透明淡入，主界面会透出来。
+  expect(await page.locator('.intro-screen').evaluate(el => getComputedStyle(el).opacity)).toBe('1');
 });

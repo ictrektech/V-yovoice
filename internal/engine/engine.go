@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"yovoice/internal/audio"
 	"yovoice/internal/catalog"
@@ -29,10 +30,12 @@ import (
 
 // Engine 可被并发调用：同一时间只运行一个推理请求，停止会等待当前请求结束。
 type Engine struct {
-	mu            sync.Mutex
-	root          string
-	process       *exec.Cmd
-	done          chan error
+	mu      sync.Mutex
+	root    string
+	process *exec.Cmd
+	done    chan error
+	// stopping 标记当前进程是被主动结束的，退出日志据此区分正常停止与意外退出。
+	stopping      *atomic.Bool
 	endpoint, key string
 	client        *http.Client
 }
@@ -74,6 +77,7 @@ func (e *Engine) Stop() {
 // stop 要求调用方持有 mu。
 func (e *Engine) stop() {
 	if e.process != nil {
+		e.stopping.Store(true)
 		platform.KillProcess(e.process)
 		<-e.done
 		e.process = nil
@@ -177,8 +181,24 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 	_ = os.WriteFile(pidPath(e.root), []byte(strconv.Itoa(c.Process.Pid)), 0600)
 	e.process = c
 	e.done = make(chan error, 1)
-	done := e.done
-	go func() { done <- c.Wait(); close(done) }()
+	e.stopping = new(atomic.Bool)
+	done, stopping, pid, launched := e.done, e.stopping, c.Process.Pid, time.Now()
+	diag.Log(e.root, "engine.started", "family", family, "task", task, "backend", backend, "pid", pid)
+	go func() {
+		err := c.Wait()
+		event := "engine.exited"
+		if stopping.Load() {
+			event = "engine.stopped"
+		}
+		exit := ""
+		if err != nil {
+			exit = err.Error()
+		}
+		// 意外退出时 engine.log 里有推理进程自己的错误输出。
+		diag.Log(e.root, event, "family", family, "pid", pid, "uptime_s", int(time.Since(launched).Seconds()), "exit", exit)
+		done <- err
+		close(done)
+	}()
 	e.endpoint = fmt.Sprintf("http://127.0.0.1:%d/", port)
 	attempts := 120
 	if family == "kokoro_tts" {
@@ -192,6 +212,7 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 		select {
 		case <-e.done:
 			e.process = nil
+			diag.Log(e.root, "engine.start_failed", "family", family, "pid", pid)
 			return msg.Err(msg.ErrEngineStartFailed, nil)
 		default:
 		}
@@ -205,6 +226,7 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 		cancel()
 		if healthy {
 			e.key = key
+			diag.Log(e.root, "engine.ready", "family", family, "pid", pid, "startup_ms", time.Since(launched).Milliseconds())
 			return nil
 		}
 		select {
@@ -213,9 +235,12 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 		case <-time.After(250 * time.Millisecond):
 		}
 	}
+	diag.Log(e.root, "engine.start_timeout", "family", family, "pid", pid, "attempts", attempts)
 	return msg.Err(msg.ErrEngineStartTimeout, nil)
 }
-func (e *Engine) Generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, output string, progress func(msg.Code, msg.Params)) (err error) {
+
+// Generate 生成音频写入 output；YuE2 自己规划旋律时一并返回这次所用的旋律谱，其余模型返回空串。
+func (e *Engine) Generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, output string, progress func(msg.Code, msg.Params)) (score string, err error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	defer func() {
@@ -226,19 +251,19 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 	}()
 	payload, err := BuildRequest(d, voice, emotion)
 	if err != nil {
-		return err
+		return "", err
 	}
 	definition, err := catalog.Lookup(m.ID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if os.Getenv("VVOICE_SHARED_MODELS") == "true" {
 		m.Path, err = filepath.EvalSymlinks(m.Path)
 		if err != nil {
-			return err
+			return "", err
 		}
 		if err = catalog.VerifyPackage(ctx, definition, m.Path); err != nil {
-			return err
+			return "", err
 		}
 	}
 	encoderSamples := 0
@@ -247,60 +272,202 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 		if d.RequiresVoice() {
 			duration, audioErr := audio.Duration(voice)
 			if audioErr != nil {
-				return audioErr
+				return "", audioErr
 			}
 			if duration < 1 || duration > 60 {
-				return msg.Err(msg.ErrAudioDuration, nil)
+				return "", msg.Err(msg.ErrAudioDuration, nil)
 			}
 			// VoxCPM2 先重采样到 16 kHz，再按 4 × 640 个采样点补齐；长参考音频按需扩容。
 			encoderSamples = max(encoderSamples, int(math.Ceil(duration*16000/2560))*2560)
 		}
 	}
 	if err = e.start(ctx, executable, m.Path, definition, backend, encoderSamples, progress); err != nil {
-		return err
+		return "", err
+	}
+	// YuE2 纯音乐：没谱时先在同一个会话里出谱，再把人声旋律移到器乐声部后生成；
+	// 返回实际演奏的谱，存进这一版，之后可以载入编辑。
+	played := ""
+	if definition.Family == "yue2" && d.Instrumental {
+		if strings.TrimSpace(d.Abc) == "" {
+			plan, _ := payload["request"].(map[string]any)["options"].(map[string]any)
+			plan["stop_after"] = "abc"
+			progress(msg.ActivityPlanMelody, nil)
+			planned, err := e.run(ctx, payload)
+			if err != nil {
+				return "", err
+			}
+			if d.Abc, _, _ = planned.score(); d.Abc == "" {
+				return "", msg.Err(msg.ErrMelodyEmpty, nil)
+			}
+		}
+		if played, err = instrumentalScore(d.Abc); err != nil {
+			return "", err
+		}
+		if payload, err = BuildRequest(d, voice, emotion); err != nil {
+			return "", err
+		}
 	}
 	progress(msg.ActivitySynthesizing, nil)
+	result, err := e.run(ctx, payload)
+	if err != nil {
+		return "", err
+	}
+	if result.Audio == "" {
+		return "", msg.Err(msg.ErrEngineNoAudio, nil)
+	}
+	progress(msg.ActivitySavingAudio, nil)
+	wav, err := base64.StdEncoding.DecodeString(result.Audio)
+	if err != nil {
+		return "", err
+	}
+	if err = os.WriteFile(output+".part", wav, 0600); err != nil {
+		return "", err
+	}
+	if _, err = audio.Duration(output + ".part"); err != nil {
+		return "", err
+	}
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
+	if score, _, _ = result.score(); played != "" {
+		score = played
+	}
+	return score, os.Rename(output+".part", output)
+}
+
+// PlanMelody 只运行 YuE2 的规划阶段（stop_after=abc），返回带和弦的旋律谱和是否因长度上限被截断。
+func (e *Engine) PlanMelody(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, progress func(msg.Code, msg.Params)) (score string, truncated bool, err error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	defer func() {
+		if err != nil {
+			e.stop()
+		}
+	}()
+	d.Abc = ""
+	payload, err := BuildRequest(d, "", "")
+	if err != nil {
+		return "", false, err
+	}
+	definition, err := catalog.Lookup(m.ID)
+	if err != nil {
+		return "", false, err
+	}
+	if definition.Family != "yue2" {
+		return "", false, msg.Err(msg.ErrModelUnsupported, nil)
+	}
+	payload["request"].(map[string]any)["options"].(map[string]any)["stop_after"] = "abc"
+	if os.Getenv("VVOICE_SHARED_MODELS") == "true" {
+		m.Path, err = filepath.EvalSymlinks(m.Path)
+		if err == nil {
+			err = catalog.VerifyPackage(ctx, definition, m.Path)
+		}
+		if err != nil {
+			return "", false, err
+		}
+	}
+	if err = e.start(ctx, executable, m.Path, definition, backend, 0, progress); err != nil {
+		return "", false, err
+	}
+	progress(msg.ActivityPlanMelody, nil)
+	result, err := e.run(ctx, payload)
+	if err != nil {
+		return "", false, err
+	}
+	score, truncated, ok := result.score()
+	if !ok {
+		return "", false, msg.Err(msg.ErrMelodyEmpty, nil)
+	}
+	return score, truncated, nil
+}
+
+// Transcribe 用 SheetSage2 把一首歌扒成旋律谱；wav 是已转换好的本地音频路径。
+func (e *Engine) Transcribe(ctx context.Context, executable string, m schema.InstalledModel, backend, wav string, progress func(msg.Code, msg.Params)) (score string, err error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	defer func() {
+		if err != nil {
+			e.stop()
+		}
+	}()
+	definition, err := catalog.Lookup(m.ID)
+	if err != nil {
+		return "", err
+	}
+	if definition.Family != "sheetsage2" {
+		return "", msg.Err(msg.ErrModelUnsupported, nil)
+	}
+	if os.Getenv("VVOICE_SHARED_MODELS") == "true" {
+		m.Path, err = filepath.EvalSymlinks(m.Path)
+		if err == nil {
+			err = catalog.VerifyPackage(ctx, definition, m.Path)
+		}
+		if err != nil {
+			return "", err
+		}
+	}
+	if err = e.start(ctx, executable, m.Path, definition, backend, 0, progress); err != nil {
+		return "", err
+	}
+	progress(msg.ActivityTranscribe, nil)
+	result, err := e.run(ctx, map[string]any{"model": "index", "request": map[string]any{"audio": wav}})
+	if err != nil {
+		return "", err
+	}
+	score, _, ok := result.score()
+	if !ok {
+		return "", msg.Err(msg.ErrMelodyEmpty, nil)
+	}
+	return score, nil
+}
+
+// taskResult 是 /v1/tasks/run 的结果：音频为 base64 WAV，附加产物（如 ABC 谱）也以 base64 承载。
+type taskResult struct {
+	Audio     string `json:"audio"`
+	Artifacts []struct {
+		ID      string            `json:"id"`
+		Payload string            `json:"payload"`
+		Meta    map[string]string `json:"meta"`
+	} `json:"artifacts"`
+}
+
+// score 取出 ABC 格式的产物；YuE2 只在自己规划时附带，按给定谱演唱时没有。
+func (r taskResult) score() (string, bool, bool) {
+	for _, a := range r.Artifacts {
+		if a.Meta["format"] != "abc" {
+			continue
+		}
+		b, err := base64.StdEncoding.DecodeString(a.Payload)
+		if err != nil || len(bytes.TrimSpace(b)) == 0 {
+			continue
+		}
+		return string(b), a.Meta["truncated"] == "true", true
+	}
+	return "", false, false
+}
+
+// run 要求调用方持有 mu 且引擎已启动。
+func (e *Engine) run(ctx context.Context, payload map[string]any) (taskResult, error) {
+	var result taskResult
 	b, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return result, err
 	}
 	req, err := http.NewRequestWithContext(ctx, "POST", e.endpoint+"v1/tasks/run", bytes.NewReader(b))
 	if err != nil {
-		return err
+		return result, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	res, err := e.client.Do(req)
 	if err != nil {
-		return err
+		return result, err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		b, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
 		_ = os.WriteFile(filepath.Join(e.root, "logs", "last-inference-error.txt"), b, 0600)
-		return msg.Err(msg.ErrGenerateFailed, nil)
+		return result, msg.Err(msg.ErrGenerateFailed, nil)
 	}
-	var result struct {
-		Audio string `json:"audio"`
-	}
-	if err = json.NewDecoder(io.LimitReader(res.Body, 256<<20)).Decode(&result); err != nil {
-		return err
-	}
-	if result.Audio == "" {
-		return msg.Err(msg.ErrEngineNoAudio, nil)
-	}
-	progress(msg.ActivitySavingAudio, nil)
-	wav, err := base64.StdEncoding.DecodeString(result.Audio)
-	if err != nil {
-		return err
-	}
-	if err = os.WriteFile(output+".part", wav, 0600); err != nil {
-		return err
-	}
-	if _, err = audio.Duration(output + ".part"); err != nil {
-		return err
-	}
-	if err = ctx.Err(); err != nil {
-		return err
-	}
-	return os.Rename(output+".part", output)
+	err = json.NewDecoder(io.LimitReader(res.Body, 256<<20)).Decode(&result)
+	return result, err
 }

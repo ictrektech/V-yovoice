@@ -7,7 +7,11 @@ import UniformTypeIdentifiers
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
     private var window: NSWindow!
     private var web: WKWebView!
-    private var inspectorAccessory: NSTitlebarAccessoryViewController?
+    private var assistantButton: NSButton?
+    private var inspectorVisible = false
+    private var assistantEntryVisible = false
+    private var ghostTimer: Timer?
+    private var inspectorButton: NSButton?
     // 服务崩溃后可在应用内重新启动：Process 只能运行一次，每次启动都换新的进程与管道。
     private var service = Process()
     private var input = Pipe()
@@ -55,16 +59,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         inspectorButton.isBordered = false
         inspectorButton.toolTip = HostL10n.t("inspector.tooltip")
         inspectorButton.frame = NSRect(x: 0, y: 0, width: 32, height: 28)
-        rightAccessory.view = inspectorButton
-        // 只有工作区有右侧面板，由前端在进入或离开工作区时通知显示。
-        self.inspectorAccessory = rightAccessory
+        // 助手按钮只在网页右下角入口被移走后出现，面板开关状态由前端统一管理。
+        let assistantButton = NSButton(image: Self.ghostOutline(), target: self, action: #selector(toggleAssistant))
+        assistantButton.setAccessibilityLabel(HostL10n.t("assistant.toggle"))
+        assistantButton.imageScaling = .scaleProportionallyDown
+        animateGhost(assistantButton)
+        assistantButton.isBordered = false
+        assistantButton.toolTip = HostL10n.t("assistant.tooltip")
+        assistantButton.frame = NSRect(x: 0, y: 0, width: 32, height: 28)
+        // 标题栏附件按 view 的 frame 定尺寸，用固定大小的容器手动排布；NSStackView 在这里会被压成零宽而看不见。
+        let titleButtons = NSView(frame: NSRect(x: 0, y: 0, width: 66, height: 28))
+        titleButtons.addSubview(assistantButton)
+        titleButtons.addSubview(inspectorButton)
+        rightAccessory.view = titleButtons
+        window.addTitlebarAccessoryViewController(rightAccessory)
+        self.assistantButton = assistantButton
+        self.inspectorButton = inspectorButton
+        // 两个按钮都由前端通知显隐：右侧面板按钮只在工作区出现，助手按钮只在右下角入口移走后出现。
+        layoutTitleButtons()
         window.minSize = NSSize(width: 960, height: 600)
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()
+        // 本地服务启动前的占位：与网页启动动画同底色，文字居中，避免先闪一下左下角的系统样式。
         let loading = NSTextField(labelWithString: HostL10n.t("loading"))
-        loading.frame = NSRect(x: 40, y: 40, width: 400, height: 30)
-        window.contentView?.addSubview(loading)
+        loading.textColor = .secondaryLabelColor
+        loading.alignment = .center
+        loading.translatesAutoresizingMaskIntoConstraints = false
+        if let content = window.contentView {
+            content.addSubview(loading)
+            NSLayoutConstraint.activate([loading.centerXAnchor.constraint(equalTo: content.centerXAnchor), loading.centerYAnchor.constraint(equalTo: content.centerYAnchor)])
+        }
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         do { try startService() } catch { showError(error) }
@@ -81,16 +106,63 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         web?.evaluateJavaScript("window.dispatchEvent(new Event('workbench-toggle-inspector'))", completionHandler: nil)
     }
 
-    private func updateInspectorAccessory(visible: Bool) {
-        guard let accessory = inspectorAccessory else { return }
-        let isPresent = window.titlebarAccessoryViewControllers.contains(accessory)
-        if visible && !isPresent {
-            window.addTitlebarAccessoryViewController(accessory)
-        } else if !visible && isPresent {
-            if let index = window.titlebarAccessoryViewControllers.firstIndex(of: accessory) {
-                window.removeTitlebarAccessoryViewController(at: index)
-            }
+    // 标题栏里的 Ocho：逐帧播放与界面一致的毛绒小幽灵（帧序列由网页里的 bot-avatars 录制，见 Resources/ocho-ghost.png）。
+    // 资源缺失时（如未打包直接运行）退回一张静态的幽灵线稿。
+    private static func ghostFrames() -> [NSImage] {
+        guard let url = Bundle.main.url(forResource: "ocho-ghost", withExtension: "png"),
+              let strip = NSImage(contentsOf: url)?.cgImage(forProposedRect: nil, context: nil, hints: nil), strip.height > 0 else { return [ghostOutline()] }
+        let side = strip.height
+        return (0..<(strip.width / side)).compactMap { index in
+            strip.cropping(to: CGRect(x: index * side, y: 0, width: side, height: side)).map { NSImage(cgImage: $0, size: NSSize(width: 20, height: 20)) }
         }
+    }
+
+    private static func ghostOutline() -> NSImage {
+        let image = NSImage(size: NSSize(width: 16, height: 16), flipped: true) { _ in
+            NSColor.black.setStroke()
+            NSColor.black.setFill()
+            let body = NSBezierPath()
+            body.move(to: NSPoint(x: 8, y: 1.5))
+            body.curve(to: NSPoint(x: 2.5, y: 7.5), controlPoint1: NSPoint(x: 4.4, y: 1.5), controlPoint2: NSPoint(x: 2.5, y: 4))
+            body.line(to: NSPoint(x: 2.5, y: 14.5))
+            for (x, y) in [(4.3, 13.0), (6.1, 14.5), (8.0, 13.0), (9.9, 14.5), (11.7, 13.0), (13.5, 14.5)] { body.line(to: NSPoint(x: x, y: y)) }
+            body.line(to: NSPoint(x: 13.5, y: 7.5))
+            body.curve(to: NSPoint(x: 8, y: 1.5), controlPoint1: NSPoint(x: 13.5, y: 4), controlPoint2: NSPoint(x: 11.6, y: 1.5))
+            body.close()
+            body.lineWidth = 1.2
+            body.lineJoinStyle = .round
+            body.stroke()
+            NSBezierPath(ovalIn: NSRect(x: 5.4, y: 6, width: 1.8, height: 2.2)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 8.8, y: 6, width: 1.8, height: 2.2)).fill()
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+
+    // animateGhost 以 10 帧/秒循环播放；系统开启“减弱动态效果”时停在第一帧。
+    private func animateGhost(_ button: NSButton) {
+        let frames = Self.ghostFrames()
+        button.image = frames.first
+        guard frames.count > 1, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+        var index = 0
+        ghostTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak button] _ in
+            index = (index + 1) % frames.count
+            button?.image = frames[index]
+        }
+    }
+
+    @objc private func toggleAssistant() {
+        // 助手面板状态由前端统一管理，标题栏仅发送切换事件。
+        web?.evaluateJavaScript("window.dispatchEvent(new Event('workbench-toggle-assistant'))", completionHandler: nil)
+    }
+
+    // 右侧面板按钮贴最右；不在工作区时隐藏，助手按钮补到最右，避免留空位。
+    private func layoutTitleButtons() {
+        inspectorButton?.isHidden = !inspectorVisible
+        assistantButton?.isHidden = !assistantEntryVisible
+        inspectorButton?.frame = NSRect(x: 34, y: 0, width: 32, height: 28)
+        assistantButton?.frame = NSRect(x: inspectorVisible ? 0 : 34, y: 0, width: 32, height: 28)
     }
 
     @objc private func showAbout() {
@@ -339,8 +411,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         var data = message["data"] as? [String: Any] ?? [:]
         let method = message["method"] as? String ?? ""
         if method == "inspector.available" {
-            let available = data["available"] as? Bool == true
-            updateInspectorAccessory(visible: available)
+            inspectorVisible = data["available"] as? Bool == true
+            layoutTitleButtons()
+            return ["id": message["id"]!, "result": true]
+        }
+        if method == "assistant.entry" {
+            assistantEntryVisible = data["visible"] as? Bool == true
+            layoutTitleButtons()
             return ["id": message["id"]!, "result": true]
         }
         if method == "sidebar.save" {
@@ -353,6 +430,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             let panel = NSSavePanel()
             panel.allowedContentTypes = [UTType(filenameExtension: "yovoice") ?? .data]
             panel.nameFieldStringValue = (data["name"] as? String ?? "project") + ".yovoice"
+            let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
+            guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": false] }
+            data["path"] = url.path
+            message["data"] = data
+        }
+        if method == "logs.export" {
+            // 诊断包由本地服务打包写入，宿主只负责选择保存位置。
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.zip]
+            let stamp = DateFormatter()
+            stamp.dateFormat = "yyyyMMdd-HHmmss"
+            panel.nameFieldStringValue = "yovoice-diagnostics-" + stamp.string(from: Date()) + ".zip"
             let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
             guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": false] }
             data["path"] = url.path
@@ -398,6 +487,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
             guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": false] }
             try audio.write(to: url, options: .atomic)
+            return ["id": message["id"]!, "result": true]
+        }
+        if method == "text.export" {
+            // 字幕（SRT/VTT）、歌词（LRC）与旋律谱（ABC）是界面生成的 UTF-8 文本，宿主只负责选位置并写文件。
+            let format = data["format"] as? String ?? ""
+            guard ["srt", "vtt", "lrc", "abc"].contains(format), let text = data["text"] as? String, text.utf8.count <= 20_000_000 else { throw failure(HostL10n.t("err.textExportInvalid")) }
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [UTType(filenameExtension: format) ?? .plainText]
+            panel.nameFieldStringValue = (data["name"] as? String ?? "yovoice." + format)
+            let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
+            guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": false] }
+            try Data(text.utf8).write(to: url, options: .atomic)
             return ["id": message["id"]!, "result": true]
         }
         if method == "media.reveal" {

@@ -22,13 +22,18 @@ func TestFrontendTypesMatchSchema(t *testing.T) {
 		"AudioClip":    {"fadeIn", "fadeOut"},              // 旧版淡化，读取时忽略
 		"ModelPackage": {"revision", "repo", "modelScope"}, // 下载时固定的仓库与修订号
 	}
+	// 仅界面使用、不随状态保存的字段。
+	tsOnly := map[string][]string{
+		"State": {"assistantMissing"}, // state.get 附带的随包助手可用性，不入库
+	}
 	for _, value := range []any{
 		schema.SynthesisSettings{}, schema.SubtitleSpeaker{}, schema.CharacterPerformance{}, schema.SubtitleCue{}, schema.SubtitleDocument{},
 		schema.AudioClip{}, schema.AudioLane{}, schema.AudioAsset{}, schema.AudioMarker{}, schema.AudioTimeline{}, schema.Draft{},
 		schema.CharacterPreview{}, schema.Character{}, schema.Voice{}, schema.InstalledModel{}, schema.Generation{},
 		schema.GenerationSegment{}, schema.Activity{}, schema.Preferences{}, schema.State{}, catalog.ModelPackage{},
 		schema.Score{}, schema.ScoreSection{}, schema.ScoreTrack{}, schema.Humanize{}, schema.ScoreRamp{}, schema.ScoreNote{},
-		schema.AIProvider{}, schema.AITest{}, schema.AITask{},
+		schema.AIProvider{}, schema.AITest{}, schema.AITask{}, schema.MelodyResult{},
+		schema.AssistantMessage{}, schema.AssistantBlock{}, schema.AssistantToolCard{}, schema.AssistantSession{}, schema.AssistantSessions{}, schema.AssistantTurn{}, schema.AssistantNav{}, schema.AssistantUpdate{}, schema.AssistantLive{},
 	} {
 		typ := reflect.TypeOf(value)
 		ts, ok := interfaces[typ.Name()]
@@ -43,7 +48,7 @@ func TestFrontendTypesMatchSchema(t *testing.T) {
 			}
 		}
 		for _, name := range ts {
-			if !slices.Contains(fields, name) {
+			if !slices.Contains(fields, name) && !slices.Contains(tsOnly[typ.Name()], name) {
 				t.Errorf("%s.%s 只在 TS 中定义，后端不会保存", typ.Name(), name)
 			}
 		}
@@ -105,4 +110,28 @@ func tsInterfaces(source string) map[string][]string {
 		result[name] = fields
 	}
 	return result
+}
+
+// 界面语言清单在 web/src/shared/i18n/locale.ts 与 UiLocaleNames 各写一份，并且每种语言都要有翻译目录。
+func TestUiLocalesMatchFrontend(t *testing.T) {
+	source, err := os.ReadFile(testkit.RepoFile(t, "web", "src", "shared", "i18n", "locale.ts"))
+	testkit.Must(t, err)
+	var ids []string
+	for _, match := range regexp.MustCompile(`\{ id: '([^']+)', name: `).FindAllStringSubmatch(string(source), -1) {
+		ids = append(ids, match[1])
+	}
+	var names []string
+	for locale := range schema.UiLocaleNames {
+		names = append(names, string(locale))
+	}
+	slices.Sort(ids)
+	slices.Sort(names)
+	if !slices.Equal(ids, names) {
+		t.Fatalf("locale.ts %v 与 UiLocaleNames %v 不一致", ids, names)
+	}
+	for _, id := range ids {
+		if _, err := os.Stat(testkit.RepoFile(t, "web", "src", "shared", "i18n", "catalogs", strings.ToLower(id)+".json")); err != nil {
+			t.Errorf("缺少 %s 的翻译目录", id)
+		}
+	}
 }

@@ -69,3 +69,41 @@ func executableName() string {
 	}
 	return "audiocpp_server"
 }
+
+// 删除生成记录或作品时，指向它们的引用一起清掉：已采纳标记、声音来源、作品待取的出谱结果。
+func TestDeleteClearsReferences(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	d := schema.DefaultDraft()
+	must(t, w.SaveDraft(d))
+	for _, name := range []string{"g1.wav", "g2.wav"} {
+		path, err := w.Store.MediaPath("outputs", name)
+		must(t, err)
+		must(t, os.WriteFile(path, []byte("x"), 0600))
+	}
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.History = append(s.History, schema.Generation{ID: "g1", FileName: "g1.wav", Settings: schema.Draft{ID: d.ID}}, schema.Generation{ID: "g2", FileName: "g2.wav", Settings: schema.Draft{ID: d.ID}})
+		s.Voices = append(s.Voices, schema.Voice{ID: "v1", Name: "来自 g1", FileName: "v1.wav", SourceGenerationID: "g1"}, schema.Voice{ID: "v2", Name: "来自 g2", FileName: "v2.wav", SourceGenerationID: "g2"})
+		s.Melody = &schema.MelodyResult{ID: "m1", ProjectID: d.ID}
+		s.Drafts[0].Timeline = &schema.AudioTimeline{AcceptedGenerations: []string{"g1", "g2"}}
+	}, true))
+	must(t, w.DeleteMedia("outputs", "g1"))
+	s := w.Store.Read()
+	if got := s.Drafts[0].Timeline.AcceptedGenerations; len(got) != 1 || got[0] != "g2" {
+		t.Fatalf("删除生成后应移除已采纳标记：%v", got)
+	}
+	if s.Voices[0].SourceGenerationID != "" || s.Voices[1].SourceGenerationID != "g2" {
+		t.Fatalf("删除生成后应清掉声音来源：%+v", s.Voices)
+	}
+	must(t, w.DeleteDraft(d.ID))
+	s = w.Store.Read()
+	if len(s.History) != 0 || s.Melody != nil || s.Voices[1].SourceGenerationID != "" {
+		t.Fatalf("删除作品后不应留下生成、出谱结果或声音来源：%+v %+v %+v", s.History, s.Melody, s.Voices)
+	}
+	if path, _ := w.Store.MediaPath("outputs", "g2.wav"); fileExists(path) {
+		t.Fatal("删除作品后应删除音频文件")
+	}
+}
+
+func fileExists(path string) bool { _, err := os.Stat(path); return err == nil }

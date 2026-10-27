@@ -160,6 +160,8 @@ async def discovery():
         if row["status"] != "ready":
             continue
         kind = row["kind"]
+        if kind not in {"asr", "tts", "speaker"}:
+            continue
         if kind == "speaker":
             models.append({
                 "id": row["key"],

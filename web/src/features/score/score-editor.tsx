@@ -1,17 +1,14 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Download, FileMusic, Lightbulb, Upload } from 'lucide-react';
-import { Selector } from '../../shared/selector';
-import { AIComposer } from '../../shared/ui/ai-composer';
 import { call, isDesktop } from '../../shared/lib/client';
-import { formatTime, type Draft, type Score, type State, type UiLocale } from '../../shared/workbench';
-import { composedScorePatch, emptyScore, exampleScore, noteCount, scoreBars, scoreDuration } from './score-draft';
+import { formatTime, type Draft, type Score, type UiLocale } from '../../shared/workbench';
+import { emptyScore, exampleScore, noteCount, scoreBars, scoreDuration } from './score-draft';
 import { midiToScore, scoreToMidi } from './score-midi';
 
-const lengths = [30, 60, 90, 120, 180, 300, 480, 600];
 
 // 浏览器预览只做最基本的结构检查，完整校验在保存时由 Go 完成。
 function parseScore(text: string): Score {
@@ -27,11 +24,10 @@ function download(data: BlobPart, type: string, name: string) {
 }
 
 // 编曲区：曲子概要与导入导出、一句话交给 AI 写谱，以及 DAW 式的轨道视图（轨头调音色与电平，右侧音块对齐段落）。
-export function ScoreEditor({ draft, state, change, locale, onError, configureAI }: { draft: Draft; state: State; change: (patch: Partial<Draft>) => void; locale: UiLocale; onError: (error: string) => void; configureAI: () => void }) {
+export function ScoreEditor({ draft, change, locale, onError }: { draft: Draft; change: (patch: Partial<Draft>) => void; locale: UiLocale; onError: (error: string) => void }) {
   const t = useTranslator();
   const score = draft.score ?? emptyScore();
   const input = useRef<HTMLInputElement>(null);
-  const [seconds, setSeconds] = useState(60);
   const notes = noteCount(score);
   const replace = (next: Score) => change({ score: next });
   const fileName = (draft.title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 100) || 'score');
@@ -47,11 +43,6 @@ export function ScoreEditor({ draft, state, change, locale, onError, configureAI
       else download(JSON.stringify(score, null, 2), 'application/json', `${fileName}.json`);
     } catch (error) { onError((error as Error).message); }
   }
-  const applyScore = (result: unknown) => change(composedScorePatch(draft.title, result));
-  const composer = <AIComposer kind="score" projectId={draft.id} state={state} overwrite={notes > 0} configure={configureAI} apply={applyScore}
-    placeholder={t('@yovoice.ai.scorePlaceholder')} submitLabel={t('@yovoice.ai.scoreSubmit')}
-    start={brief => call('ai.score', { projectId: draft.id, brief, seconds, locale })}
-    extra={<Selector label={t('@yovoice.ai.scoreSeconds')} isLabelHidden size="sm" width="calc(var(--spacing-10) * 2.5)" value={String(seconds)} options={lengths.map(value => ({ value: String(value), label: t('@yovoice.ai.scoreLength', { time: formatTime(value) }) }))} onChange={value => setSeconds(Number(value))} />} />;
   const summary = [score.key, `${score.tempo} BPM`, score.timeSignature.join('/'), t('@yovoice.score.barCount', { count: scoreBars(score) }), formatTime(scoreDuration(score))].filter(Boolean).join(' · ');
   return <VStack className="score-editor" gap={5}>
     <HStack hAlign="between" vAlign="center" gap={2} wrap="wrap">
@@ -73,7 +64,6 @@ export function ScoreEditor({ draft, state, change, locale, onError, configureAI
         } catch (error) { onError(error instanceof SyntaxError ? '@yovoice.error.scoreInvalid' : (error as Error).message); }
       }} />
     </HStack>
-    {composer}
     {notes ? null
       : <VStack className="score-empty" gap={3} hAlign="center">
         <p>{t('@yovoice.score.empty')}</p>

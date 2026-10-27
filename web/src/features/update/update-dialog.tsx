@@ -8,6 +8,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { AppDialog } from '../../shared/ui/app-dialog';
 import { checkForUpdate, formatBytes, installUpdate, releaseUrl, updatePercent, useAppUpdate, type AppUpdate } from './app-update';
 import { ReleaseNotes } from './release-notes';
+import { isUiLocale } from '../../shared/i18n/locale';
 
 // 下载进度：已知大小时显示百分比与字节数，否则显示不确定进度。
 export function UpdateProgress({ update }: { update: AppUpdate }) {
@@ -27,7 +28,8 @@ export function UpdateProgress({ update }: { update: AppUpdate }) {
 // 更新详情：版本、发布说明、下载进度和重启安装；宿主菜单“检查更新”与界面入口共用。
 export function UpdateDialogHost() {
   const t = useTranslator();
-  const locale = useLocale() === 'en' ? 'en' : 'zh-CN';
+  const current = useLocale();
+  const locale = isUiLocale(current) ? current : 'en';
   const update = useAppUpdate();
   const [open, setOpen] = useState(false);
   useEffect(() => {

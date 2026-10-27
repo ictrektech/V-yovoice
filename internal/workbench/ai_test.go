@@ -4,17 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
+	"yovoice/internal/assistant"
+	"yovoice/internal/assistant/fakeocho"
 	"yovoice/internal/llm"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
@@ -73,7 +73,56 @@ func TestAIProviderKeysStayOutOfState(t *testing.T) {
 	}
 }
 
-// fakeLLM 依次返回给定的回复，记录收到的请求。
+// fakeModels 返回一个可用的模型列表与连通测试服务，供助手测试的工作台使用。
+func fakeModels(t *testing.T) *httptest.Server {
+	var n atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			_, _ = w.Write([]byte(`{"data":[{"id":"qwen3"},{"id":"llama3"}]}`))
+			return
+		}
+		n.Add(1)
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"OK"},"finish_reason":"stop"}]}`))
+	}))
+	t.Cleanup(server.Close)
+	return server
+}
+
+// assistantWorkbench 准备一个指向假 LLM 服务的 Workbench；助手运行时指向测试二进制（假 ocho），
+// 假运行时的开关经 Options.ExtraEnv 注入子进程环境。
+func assistantWorkbench(t *testing.T, plan fakeocho.Plan, extraEnv ...string) *Workbench {
+	w, err := New(t.TempDir())
+	must(t, err)
+	t.Cleanup(w.Close)
+	_, err = w.SaveAIProvider(AIProviderInput{Preset: "ollama", BaseURL: fakeModels(t).URL + "/v1"})
+	must(t, err)
+	_, err = w.AIModels(context.Background(), "")
+	must(t, err)
+	t.Setenv("YOVOICE_OCHO_PATH", selfExecutable(t))
+	data, err := json.Marshal(plan)
+	must(t, err)
+	path := filepath.Join(t.TempDir(), "plan.json")
+	must(t, os.WriteFile(path, data, 0600))
+	w.assistant = assistant.New(w.Store.Root, assistant.Options{Tools: assistantTools, NewServer: w.newAssistantServer,
+		ExtraEnv: append([]string{fakeocho.PlanEnv + "=" + path}, extraEnv...)})
+	t.Cleanup(func() {
+		if t.Failed() {
+			if log, e := os.ReadFile(filepath.Join(w.Store.Root, "logs", "assistant.log")); e == nil {
+				t.Logf("child log:\n%s", log)
+			}
+		}
+	})
+	return w
+}
+
+func selfExecutable(t *testing.T) string {
+	t.Helper()
+	executable, err := os.Executable()
+	must(t, err)
+	return executable
+}
+
+// fakeLLM 依次返回给定的回复，记录收到的请求；供分角色、旋律谱等后台 AI 任务测试。
 func fakeLLM(t *testing.T, replies ...string) (*httptest.Server, *[]map[string]any) {
 	var requests []map[string]any
 	var n atomic.Int32
@@ -103,99 +152,6 @@ func aiWorkbench(t *testing.T, server *httptest.Server) *Workbench {
 	return w
 }
 
-// 模型列表与连通测试的结果写回服务。
-func TestAIModelsAndTest(t *testing.T) {
-	server, _ := fakeLLM(t, "OK")
-	w := aiWorkbench(t, server)
-	id := w.Store.Read().AIProviderID
-	models, err := w.AIModels(context.Background(), id)
-	must(t, err)
-	p := w.Store.Read().AIProviders[0]
-	if len(models) != 2 || p.Model != "llama3" || len(p.Models) != 2 {
-		t.Fatalf("应保存模型列表并选中第一个：%+v", p)
-	}
-	result, err := w.TestAIProvider(context.Background(), id)
-	must(t, err)
-	if !result.OK || w.Store.Read().AIProviders[0].LastTest == nil {
-		t.Fatal("测试结果应记录在服务上", result)
-	}
-}
-
-// AI 写谱：接受紧凑数组音符；首次结果不合规时把问题发回，第二次合规即返回。
-func TestComposeScoreRepairsOnce(t *testing.T) {
-	bad := `{"tempo":100,"timeSignature":[4,4],"tracks":[{"id":"p","name":"钢琴","role":"piano","program":0,"notes":[[1,5,60,1,80]]}]}`
-	good := "好的：\n```json\n" + `{"title":" 暖光钢琴 ","tempo":100,"timeSignature":[4,4],"key":"C 大调","sections":[{"name":"主歌","start":1,"end":2}],"tracks":[{"id":"p","name":"钢琴","role":"piano","program":0,"notes":[[1,1,60,1,80],[2,1.5,64,0.5,70]]},{"id":"d","name":"鼓","role":"drums","program":0,"drums":true,"notes":[{"bar":1,"beat":1,"pitch":36,"length":0.25,"velocity":100}]}]}` + "\n```"
-	server, requests := fakeLLM(t, bad, good)
-	w := aiWorkbench(t, server)
-	_, err := w.AIModels(context.Background(), "")
-	must(t, err)
-	s, err := w.ComposeScore(context.Background(), ScoreBrief{Brief: "温暖的钢琴小品", Seconds: 10, Locale: schema.UiLocaleZhCN})
-	must(t, err)
-	if len(s.Tracks) != 2 || s.Tracks[0].Notes[1].Beat != 1.5 || !s.Tracks[1].Drums || s.Title != "暖光钢琴" {
-		t.Fatalf("乐谱解析不对：%+v", s)
-	}
-	if len(*requests) != 2 {
-		t.Fatal("应修复一次", len(*requests))
-	}
-	last := (*requests)[1]["messages"].([]any)
-	fix := last[len(last)-1].(map[string]any)["content"].(string)
-	if !strings.Contains(fix, "beat 5") || !strings.Contains((*requests)[0]["messages"].([]any)[0].(map[string]any)["content"].(string), "Simplified Chinese") {
-		t.Fatal("修复请求应带上具体问题", fix)
-	}
-
-	server, _ = fakeLLM(t, "不是 JSON")
-	w = aiWorkbench(t, server)
-	_, err = w.AIModels(context.Background(), "")
-	must(t, err)
-	var ce *msg.CallError
-	if _, err = w.ComposeScore(context.Background(), ScoreBrief{Brief: "x"}); !errors.As(err, &ce) || ce.Code != msg.ErrAIResultInvalid {
-		t.Fatal("两次都不合规应返回 aiResultInvalid", err)
-	}
-}
-
-// 循环段落只写一遍，由 repeats 展开；展开后超出音符上限要报给模型修正。
-func TestDecodeScoreRepeats(t *testing.T) {
-	s, err := decodeScore(`{"tempo":120,"timeSignature":[4,4],"tracks":[{"id":"d","name":"鼓","role":"drums","drums":true,"notes":[[1,1,36,1,100],[2,3,38,1,90],[5,1,49,2,110]],"repeats":[{"from":1,"to":2,"at":[3,9]}]}]}`)
-	must(t, err)
-	notes := s.Tracks[0].Notes
-	if len(notes) != 7 || notes[2].Bar != 3 || notes[3].Bar != 4 || notes[3].Beat != 3 || notes[4].Bar != 5 || notes[6].Bar != 10 {
-		t.Fatalf("展开结果不对：%+v", notes)
-	}
-	if _, err = decodeScore(`{"tempo":120,"timeSignature":[4,4],"tracks":[{"id":"d","name":"鼓","notes":[[1,1,36,1,100]],"repeats":[{"from":2,"to":1,"at":[3]}]}]}`); err == nil || !strings.Contains(err.Error(), "from <= to") {
-		t.Fatal("非法的 repeats 应报错", err)
-	}
-	many := make([]string, 0, 400)
-	for i := range 400 {
-		many = append(many, fmt.Sprintf("[1,%g,60,0.01,80]", 1+float64(i)/100))
-	}
-	at := make([]string, 0, 60)
-	for i := range 60 {
-		at = append(at, strconv.Itoa(i+2))
-	}
-	if _, err = decodeScore(`{"tempo":120,"timeSignature":[4,4],"tracks":[{"id":"p","name":"钢琴","notes":[` + strings.Join(many, ",") + `],"repeats":[{"from":1,"to":1,"at":[` + strings.Join(at, ",") + `]}]}]}`); err == nil || !strings.Contains(err.Error(), "after repeats") {
-		t.Fatal("展开超出上限应报错", err)
-	}
-}
-
-func TestWriteLyricsAndNotConfigured(t *testing.T) {
-	w, err := New(t.TempDir())
-	must(t, err)
-	defer w.Close()
-	var ce *msg.CallError
-	if _, err = w.WriteLyrics(context.Background(), LyricsBrief{Brief: "夏天"}); !errors.As(err, &ce) || ce.Code != msg.ErrAINotConfigured {
-		t.Fatal("未配置服务时应返回 aiNotConfigured", err)
-	}
-	server, _ := fakeLLM(t, `{"title":"夏夜","style":"city pop, warm synths","lyrics":"[verse]\n晚风吹过","language":"xx"}`)
-	w = aiWorkbench(t, server)
-	_, err = w.AIModels(context.Background(), "")
-	must(t, err)
-	l, err := w.WriteLyrics(context.Background(), LyricsBrief{Brief: "夏天的晚风", Language: "zh"})
-	must(t, err)
-	if l.Title != "夏夜" || l.Style != "city pop, warm synths" || !strings.HasPrefix(l.Lyrics, "[verse]") || l.Language != "" {
-		t.Fatalf("%+v", l)
-	}
-}
-
 // waitAI 等待后台任务结束并返回最终状态。
 func waitAI(t *testing.T, w *Workbench) schema.AITask {
 	t.Helper()
@@ -214,29 +170,161 @@ func waitAI(t *testing.T, w *Workbench) schema.AITask {
 	}
 }
 
-// 后台任务：立即返回运行中的任务，完成后结果写回状态，界面取用后清除。
-func TestAITaskCompletesInBackground(t *testing.T) {
-	server, _ := fakeLLM(t, `{"title":"夏夜","style":"city pop","lyrics":"[verse]\n晚风","language":"zh"}`)
+// 模型列表与连通测试的结果写回服务。
+func TestAIModelsAndTest(t *testing.T) {
+	server, _ := fakeLLM(t, "OK")
 	w := aiWorkbench(t, server)
-	_, err := w.AIModels(context.Background(), "")
+	id := w.Store.Read().AIProviderID
+	models, err := w.AIModels(context.Background(), id)
 	must(t, err)
-	task, err := w.StartLyrics(LyricsBrief{ProjectID: "p1", Brief: "夏天"})
+	p := w.Store.Read().AIProviders[0]
+	if len(models) != 2 || p.Model != "llama3" || len(p.Models) != 2 {
+		t.Fatalf("应保存模型列表并选中第一个：%+v", p)
+	}
+	result, err := w.TestAIProvider(context.Background(), id)
 	must(t, err)
-	if task.Status != "running" || task.ProjectID != "p1" || task.Model != "llama3" || task.Timeout != schema.AITimeoutDefault {
-		t.Fatalf("应返回运行中的任务：%+v", task)
+	if !result.OK || w.Store.Read().AIProviders[0].LastTest == nil {
+		t.Fatal("测试结果应记录在服务上", result)
 	}
-	done := waitAI(t, w)
-	var l Lyrics
-	if done.Status != "completed" || json.Unmarshal(done.Result, &l) != nil || l.Title != "夏夜" || done.FinishedAt == nil {
-		t.Fatalf("结果应写回状态：%+v", done)
+}
+
+// 循环段落只写一遍，由 repeats 展开；展开后超出音符上限要报错。
+func TestBuildScoreRepeats(t *testing.T) {
+	in := scoreInput{}
+	in.Tempo, in.TimeSignature = 120, []int{4, 4}
+	in.Tracks = append(in.Tracks, scoreTrack{ID: "d", Name: "鼓", Role: "drums", Notes: []any{
+		[]any{float64(1), float64(1), float64(36), float64(1), float64(100)},
+		[]any{float64(2), float64(3), float64(38), float64(1), float64(90)},
+		[]any{float64(5), float64(1), float64(49), float64(2), float64(110)},
+	}, Repeats: []scoreRepeat{{From: 1, To: 2, At: []int{3, 9}}}})
+	s, err := buildScore(in)
+	must(t, err)
+	notes := s.Tracks[0].Notes
+	if len(notes) != 7 || notes[2].Bar != 3 || notes[3].Bar != 4 || notes[3].Beat != 3 || notes[4].Bar != 5 || notes[6].Bar != 10 {
+		t.Fatalf("展开结果不对：%+v", notes)
 	}
-	must(t, w.DismissAI(done.ID))
-	if w.Store.Read().AITask != nil {
-		t.Fatal("取用后应清除任务")
+	many, at := make([]any, 0, 400), make([]int, 0, 60)
+	for i := range 400 {
+		many = append(many, []any{float64(1), float64(1) + float64(i)/100, float64(60), float64(0.01), float64(80)})
 	}
-	var ce *msg.CallError
-	if _, err = w.StartScore(ScoreBrief{Brief: " "}); !errors.As(err, &ce) || ce.Code != msg.ErrRequestInvalid {
-		t.Fatal("无效输入应立即报错", err)
+	for i := range 60 {
+		at = append(at, i+2)
+	}
+	in.Tracks[0].Notes, in.Tracks[0].Repeats = many, []scoreRepeat{{From: 1, To: 1, At: at}}
+	if _, err = buildScore(in); err == nil || !strings.Contains(err.Error(), "after repeats") {
+		t.Fatal("展开超出上限应报错")
+	}
+}
+
+// 助手子进程继承偏好里的代理设置：未配置时透传宿主环境（含小写与 NO_PROXY），
+// 启用时三变量指向配置地址并保留本机直连，显式关闭时不设任何代理变量。
+func TestAssistantProxyEnv(t *testing.T) {
+	dump := filepath.Join(t.TempDir(), "dump.txt")
+	w := assistantWorkbench(t, fakeocho.Plan{Turns: [][]fakeocho.Step{{
+		{Assistant: "好"},
+		{Result: "success"},
+	}, {
+		{Assistant: "好"},
+		{Result: "success"},
+	}, {
+		{Assistant: "好"},
+		{Result: "success"},
+	}}}, fakeocho.DumpEnv+"="+dump)
+	ask := func() {
+		t.Helper()
+		must(t, w.SendAssistant("写一段", AssistantContext{}))
+		waitChatIdle(t, w)
+	}
+	dumpText := func() string {
+		t.Helper()
+		b, err := os.ReadFile(dump)
+		must(t, err)
+		return string(b)
+	}
+	for _, name := range []string{"HTTPS_PROXY", "https_proxy", "NO_PROXY"} {
+		t.Setenv(name, "http://from-host:7890")
+	}
+	ask()
+	if text := dumpText(); !strings.Contains(text, "HTTPS_PROXY=http://from-host:7890") ||
+		!strings.Contains(text, "https_proxy=http://from-host:7890") || !strings.Contains(text, "NO_PROXY=http://from-host:7890") {
+		t.Fatal("未配置时应透传宿主代理变量")
+	}
+	p := w.Store.Read().Preferences
+	enabled := true
+	p.ProxyEnabled, p.ProxyURL = &enabled, "http://127.0.0.1:7890"
+	must(t, w.SavePreferences(p))
+	ask()
+	if text := dumpText(); !strings.Contains(text, "HTTPS_PROXY=http://127.0.0.1:7890") ||
+		!strings.Contains(text, "HTTP_PROXY=http://127.0.0.1:7890") || !strings.Contains(text, "ALL_PROXY=http://127.0.0.1:7890") ||
+		!strings.Contains(text, "NO_PROXY=localhost,127.0.0.1,::1") {
+		t.Fatal("启用代理时应设置三变量并保留本机直连")
+	}
+	disabled := false
+	p.ProxyEnabled = &disabled
+	must(t, w.SavePreferences(p))
+	ask()
+	if text := dumpText(); strings.Contains(text, "PROXY=") || strings.Contains(text, "proxy=") {
+		t.Fatal("显式关闭后不应再有任何代理变量")
+	}
+}
+
+// 代理设置参与 Config.Env：变化后助手子进程重启，未变化时复用进程。
+func TestAssistantProxyChangeRestartsChild(t *testing.T) {
+	turn := func() []fakeocho.Step {
+		return []fakeocho.Step{{Assistant: "好"}, {Result: "success"}}
+	}
+	w := assistantWorkbench(t, fakeocho.Plan{Turns: [][]fakeocho.Step{turn(), turn(), turn()}})
+	pidFile := filepath.Join(w.Store.Root, "assistant", "ocho.pid")
+	compose := func() string {
+		t.Helper()
+		must(t, w.SendAssistant("写一段", AssistantContext{}))
+		waitChatIdle(t, w)
+		b, err := os.ReadFile(pidFile)
+		must(t, err)
+		return strings.TrimSpace(string(b))
+	}
+	first := compose()
+	// 配置不变：复用进程。
+	if again := compose(); again != first {
+		t.Fatalf("配置未变不应重启：%s != %s", first, again)
+	}
+	enabled := true
+	p := w.Store.Read().Preferences
+	p.ProxyEnabled, p.ProxyURL = &enabled, "http://127.0.0.1:7890"
+	must(t, w.SavePreferences(p))
+	if restarted := compose(); restarted == first {
+		t.Fatal("代理变化应重启助手子进程")
+	}
+}
+
+// waitChatIdle 等待对话完全结束（无运行中的一轮、无排队、最后一条不是未回复的用户消息）。
+func waitChatIdle(t *testing.T, w *Workbench) []schema.AssistantMessage {
+	t.Helper()
+	changes, stop := w.Store.Subscribe()
+	defer stop()
+	deadline := time.After(30 * time.Second)
+	idle := func(s schema.State) []schema.AssistantMessage {
+		if live := s.AssistantLive; live != nil && (live.Turn != nil || live.Queued > 0) {
+			return nil
+		}
+		if s.AssistantSessions == nil {
+			return nil
+		}
+		session := assistantSessionByID(s, s.AssistantSessions.CurrentID)
+		if session == nil || len(session.Messages) == 0 || session.Messages[len(session.Messages)-1].Role == "user" {
+			return nil
+		}
+		return session.Messages
+	}
+	for {
+		if messages := idle(w.Store.Read()); messages != nil {
+			return messages
+		}
+		select {
+		case <-changes:
+		case <-deadline:
+			t.Fatal("对话没有结束")
+		}
 	}
 }
 
@@ -296,17 +384,38 @@ func TestCancelAI(t *testing.T) {
 	w := aiWorkbench(t, server)
 	_, err := w.AIModels(context.Background(), "")
 	must(t, err)
-	_, err = w.StartLyrics(LyricsBrief{Brief: "x"})
+	_, err = w.StartCast(CastBrief{Title: "x", Chapters: []CastChapter{{Lines: []CastLine{{Text: "x", Quote: true}}}}})
 	must(t, err)
 	var ce *msg.CallError
-	if _, err = w.StartLyrics(LyricsBrief{Brief: "y"}); !errors.As(err, &ce) || ce.Code != msg.ErrBusy {
+	if _, err = w.StartCast(CastBrief{Title: "x", Chapters: []CastChapter{{Lines: []CastLine{{Text: "x", Quote: true}}}}}); !errors.As(err, &ce) || ce.Code != msg.ErrBusy {
 		t.Fatal("并发请求应返回 busy", err)
 	}
 	w.CancelAI()
 	if task := waitAI(t, w); task.Status != "cancelled" {
 		t.Fatal("取消后任务应为 cancelled", task)
 	}
-	if _, err = w.StartLyrics(LyricsBrief{Brief: "z"}); err != nil {
+	if _, err = w.StartCast(CastBrief{Title: "x", Chapters: []CastChapter{{Lines: []CastLine{{Text: "x", Quote: true}}}}}); err != nil {
 		t.Fatal("结束后应能再次开始", err)
+	}
+}
+
+// Codex 订阅没有地址和密钥：忽略界面传来的地址与协议，拒绝填写密钥；未选模型时也能发起任务（使用 CLI 默认模型）。
+func TestCodexProviderSaves(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	key := "sk-should-not-be-here"
+	if _, err = w.SaveAIProvider(AIProviderInput{Preset: "codex", Key: &key}); err == nil {
+		t.Fatal("Codex 订阅不接受密钥")
+	}
+	p, err := w.SaveAIProvider(AIProviderInput{Preset: "codex", BaseURL: "http://evil.test", Format: "chat_completions"})
+	must(t, err)
+	if p.Format != llm.FormatCodex || p.BaseURL != "" || p.Model != "" || p.Name != "ChatGPT (Codex)" {
+		t.Fatalf("Codex 服务: %+v", p)
+	}
+	_, c, err := w.aiConfig(p.ID)
+	must(t, err)
+	if c.Format != llm.FormatCodex || c.Key != "" {
+		t.Fatalf("调用配置: %+v", c)
 	}
 }

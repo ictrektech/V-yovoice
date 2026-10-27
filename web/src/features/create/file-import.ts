@@ -14,8 +14,8 @@ const extension = (name: string) => name.split('.').pop()?.toLowerCase() ?? '';
 export const fileTitle = (name: string) => name.replace(/\.[^.]+$/, '').slice(0, 120);
 
 /** 读取文本文件：按 BOM 识别 UTF-16，否则按 UTF-8，失败时回退 GB18030（Windows 记事本常见的中文编码）。 */
-export async function readTextFile(file: Blob, invalid: string): Promise<string> {
-  if (file.size > 2 * 1024 * 1024) throw new CallError(invalid as `@yovoice.${string}`);
+export async function readTextFile(file: Blob, invalid: string, maxBytes = 2 * 1024 * 1024): Promise<string> {
+  if (file.size > maxBytes) throw new CallError(invalid as `@yovoice.${string}`);
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   const encodings = bytes[0] === 0xff && bytes[1] === 0xfe ? ['utf-16le'] : bytes[0] === 0xfe && bytes[1] === 0xff ? ['utf-16be'] : ['utf-8', 'gb18030'];

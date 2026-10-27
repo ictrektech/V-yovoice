@@ -75,6 +75,15 @@ if name == 'xcrun' and args[:2] == ['notarytool', 'submit']:
     assert not any(call[:2] == ['xcrun', 'stapler'] for call in calls)
     result, calls = run(cli, YOVOICE_CODESIGN_IDENTITY=identity, YOVOICE_NOTARIZE='1', CHECK_STATUS='Invalid')
     assert result.returncode != 0, 'CLI 公证失败必须阻止打包'
+    # CLI 包内的 ocho 同样要求加固运行时签名，并先于 CLI 主程序。
+    cli_ocho = root / 'tools/ocho/ocho'
+    cli_ocho.parent.mkdir(parents=True)
+    cli_ocho.touch()
+    result, calls = run(cli, YOVOICE_CODESIGN_IDENTITY=identity)
+    assert result.returncode == 0, result.stderr
+    signed = [call for call in calls if call[0] == 'codesign' and '--sign' in call]
+    cli_index = next(i for i, call in enumerate(signed) if call[-1] == str(cli))
+    assert signed[cli_index - 1][-1] == str(cli_ocho) and 'runtime' in signed[cli_index - 1]
     # 正式签名必须先处理发音库，再签保持加固运行时的引擎。
     library = app / 'Contents/Resources/tools/kokoro/libespeak-ng.dylib'
     library.parent.mkdir(parents=True)
@@ -85,6 +94,15 @@ if name == 'xcrun' and args[:2] == ['notarytool', 'submit']:
     library_index = next(i for i, call in enumerate(signed) if call[-1] == str(library))
     engine_index = next(i for i, call in enumerate(signed) if call[-1].endswith('/engine/audiocpp_server'))
     assert library_index < engine_index and 'runtime' in signed[engine_index]
+    # ocho 存在时必须带加固运行时签名，并先于主应用（公证要求包内可执行文件全部签名）。
+    ocho = app / 'Contents/Resources/tools/ocho/ocho'
+    ocho.parent.mkdir(parents=True)
+    ocho.touch()
+    result, calls = run(YOVOICE_CODESIGN_IDENTITY=identity)
+    assert result.returncode == 0, result.stderr
+    signed = [call for call in calls if call[0] == 'codesign' and '--sign' in call]
+    ocho_index = next(i for i, call in enumerate(signed) if call[-1] == str(ocho))
+    assert 'runtime' in signed[ocho_index] and signed[ocho_index + 1][-1] == str(app)
     result, calls = run()
     assert result.returncode == 0, result.stderr
     engine = next(call for call in calls if call[0] == 'codesign' and '--sign' in call and call[-1].endswith('/engine/audiocpp_server'))

@@ -46,8 +46,8 @@ func TestBrowserRequiresEnabledValidatedIdentity(t *testing.T) {
 			t.Fatalf("status=%d", got)
 		}
 	}
-	if got := rpc(s, "alice", "state.get", "{}").Code; got != 200 {
-		t.Fatalf("status=%d", got)
+	if got := rpc(s, "alice", "state.get", "{}"); got.Code != 200 || !strings.Contains(got.Body.String(), `"assistant":{"available":false}`) {
+		t.Fatalf("状态缺少助手可用性: %d %s", got.Code, got.Body.String())
 	}
 }
 
@@ -152,7 +152,7 @@ func TestUsersHaveSeparatePersistentProjects(t *testing.T) {
 
 func TestBrowserCannotUseDesktopPathsOrDownloadAsMember(t *testing.T) {
 	s := testServer(t)
-	for _, method := range []string{"project.import", "model.import", "storage.relocate", "runtime.install", "model.download"} {
+	for _, method := range []string{"project.import", "model.import", "storage.relocate", "runtime.install", "model.download", "assistant.send", "assistant.run", "ai.codex.login", "logs.export", "assets.delete"} {
 		if got := rpc(s, "alice", method, `{"path":"/etc/passwd","id":"index-2.5-q8"}`).Code; got != 403 {
 			t.Fatalf("%s status=%d", method, got)
 		}

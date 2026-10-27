@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useEffectEvent, useState, type CSSProperties } from 'react';
 import { Badge } from '@astryxdesign/core/Badge';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
@@ -6,20 +6,19 @@ import { List, ListItem } from '@astryxdesign/core/List';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { ArrowUpRight, Check, Play, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { ArrowUpRight, Check, LogIn, Play, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { ConfirmDelete } from '../../shared/ui/app-dialog';
 import { Selector } from '../../shared/selector';
 import { OrcaConnect } from '../../shared/ui/orca-connect';
-import { call, CallError } from '../../shared/lib/client';
+import { call, CallError, isDesktop } from '../../shared/lib/client';
 import { formatCallError } from '../../shared/i18n/format';
 import aiPresets from '../../shared/lib/ai-presets.json';
-import { aiTimeoutDefault, type AIProvider, type AITest, type State } from '../../shared/workbench';
+import { type AIProvider, type AITest, type CodexInfo, type State } from '../../shared/workbench';
 
 export interface AIPreset { key: string; name: string; format: string; baseURL: string; modelsPath: string; keyURL?: string; endpoint: string; plan?: string; icon?: string }
 export const presets = aiPresets as AIPreset[];
 const formats = ['chat_completions', 'responses', 'anthropic_messages'];
 // AI 请求超时的可选值（秒）。
-const aiTimeouts = [60, 120, 300, 600, 1200, 1800];
 
 type Editing = AIProvider & { key: string };
 const fresh = (p: AIPreset): Editing => ({ id: '', preset: p.key, name: '', format: p.format, baseURL: p.baseURL, modelsPath: p.modelsPath, model: '', key: '' });
@@ -40,6 +39,38 @@ function ProviderIcon({ preset, name, size = 'sm', active = false }: { preset?: 
   </HStack>;
 }
 
+// ChatGPT 订阅（Codex）：检测本机 Codex CLI 的安装与登录状态；登录由 CLI 在浏览器里完成，yovoice 不接触凭证。
+function CodexStatus() {
+  const t = useTranslator();
+  const [info, setInfo] = useState<CodexInfo | null>(null);
+  const [busy, setBusy] = useState<'' | 'check' | 'login'>('check');
+  const [error, setError] = useState('');
+  const check = useCallback(async () => {
+    setBusy('check'); setError('');
+    try { setInfo(await call<CodexInfo>('ai.codex.status')); } catch (e) { setError(formatCallError(t, e)); } finally { setBusy(''); }
+  }, [t]);
+  useEffect(() => { void check(); }, [check]);
+  const login = async () => {
+    setBusy('login'); setError('');
+    try { await call('ai.codex.login'); } catch (e) { setError(formatCallError(t, e)); } finally { setBusy(''); }
+  };
+  const status = !info ? '' : !info.path ? t('@yovoice.ai.codex.missing')
+    : info.login === 'chatgpt' ? t('@yovoice.ai.codex.chatgpt', { version: info.version ?? '' })
+      : info.login === 'apikey' ? t('@yovoice.ai.codex.apiKey', { version: info.version ?? '' }) : t('@yovoice.ai.codex.loggedOut', { version: info.version ?? '' });
+  return <VStack className="ai-field" gap={2}>
+    <p className="ai-field-title">{t('@yovoice.ai.codex.title')}</p>
+    <HStack gap={2} vAlign="center" wrap="wrap">
+      {info ? <StatusDot variant={info.login === 'chatgpt' ? 'success' : info.path ? 'warning' : 'error'} label={status} /> : null}
+      <small className="grow" role="status">{busy === 'check' ? t('@yovoice.ai.codex.checking') : status}</small>
+      <Button size="sm" variant="ghost" label={t('@yovoice.ai.codex.check')} icon={<RefreshCw />} isLoading={busy === 'check'} isDisabled={!!busy} onClick={() => void check()} />
+      {info?.path && info.login !== 'chatgpt' ? <Button size="sm" variant="primary" label={t('@yovoice.ai.codex.login')} icon={<LogIn />} isLoading={busy === 'login'} isDisabled={!!busy || !isDesktop} onClick={() => void login()} /> : null}
+    </HStack>
+    {info && !info.path ? <HStack gap={0}><Button className="ai-link" size="sm" variant="ghost" label={t('@yovoice.ai.codex.install')} endContent={<ArrowUpRight size={14} />} onClick={() => window.open('https://github.com/openai/codex', '_blank', 'noopener')} /></HStack> : null}
+    <small>{t('@yovoice.ai.codex.hint')}</small>
+    {error ? <p className="dialog-error" role="alert">{error}</p> : null}
+  </VStack>;
+}
+
 // 右侧详情：密钥、服务地址和模型在同一页直接编辑；测试和同步模型前先保存。
 // 当前使用哪个服务和模型在写作栏里切换，这里只保留必要的配置，标题行固定一行，切换服务时布局不跳动。
 function ProviderDetail({ provider, preset, run, saved, removed }: {
@@ -56,6 +87,7 @@ function ProviderDetail({ provider, preset, run, saved, removed }: {
   const [filter, setFilter] = useState('');
   const [removing, setRemoving] = useState(false);
   const presetName = preset.key === 'custom' ? t('@yovoice.ai.customProvider') : preset.name;
+  const cli = preset.endpoint === 'cli';
   const title = value.name || provider?.name || presetName;
   const patch = (next: Partial<Editing>) => setValue(v => ({ ...v, ...next }));
   const dirty = !provider || !!value.key || (['name', 'format', 'baseURL', 'modelsPath', 'model'] as const).some(k => (value[k] ?? '') !== (provider[k] ?? ''));
@@ -73,7 +105,8 @@ function ProviderDetail({ provider, preset, run, saved, removed }: {
     setBusy(kind); setError('');
     try {
       const result = await save(kind === 'key' ? '' : undefined);
-      if (kind === 'models') {
+      // Codex 没有填写模型时，保存后读取 CLI 的模型目录并选中第一个，写作栏才能直接使用。
+      if (kind === 'models' || cli && kind === 'save' && !result.model) {
         const list = await call<string[]>('ai.models', { id: result.id });
         patch({ models: list, model: result.model || list[0] || '' });
       } else if (kind === 'test') setTest(await call<AITest>('ai.test', { id: result.id }));
@@ -92,7 +125,7 @@ function ProviderDetail({ provider, preset, run, saved, removed }: {
 
     {preset.key === 'orcarouter' ? <OrcaConnect variant={provider?.keyMask ? 'secondary' : 'primary'} hint /> : null}
 
-    <VStack className="ai-field" gap={2}>
+    {cli ? <CodexStatus /> : <><VStack className="ai-field" gap={2}>
       {provider?.keyMask && !replacingKey ? <>
         <p className="ai-field-title">{t('@yovoice.ai.key')}</p>
         <HStack gap={2} vAlign="center">
@@ -113,12 +146,12 @@ function ProviderDetail({ provider, preset, run, saved, removed }: {
         <TextInput size="sm" label={t('@yovoice.ai.baseURL')} value={value.baseURL} placeholder="https://example.com/v1" onChange={baseURL => patch({ baseURL })} />
         {preset.endpoint === 'custom' ? <TextInput size="sm" label={t('@yovoice.ai.modelsPath')} value={value.modelsPath} placeholder="/models" onChange={modelsPath => patch({ modelsPath })} /> : null}
       </>}
-    </VStack>
+    </VStack></>}
 
     <VStack className="ai-field" gap={3}>
       <HStack hAlign="between" vAlign="center" gap={3}>
         <HStack gap={2} vAlign="center"><p className="ai-field-title">{t('@yovoice.ai.model')}</p>{models.length ? <Badge label={models.length} /> : null}</HStack>
-        <Button size="sm" label={t('@yovoice.ai.syncModels')} icon={<RefreshCw />} isLoading={busy === 'models'} isDisabled={!!busy || !value.modelsPath} onClick={() => void act('models')} />
+        <Button size="sm" label={t('@yovoice.ai.syncModels')} icon={<RefreshCw />} isLoading={busy === 'models'} isDisabled={!!busy || !value.modelsPath && !cli} onClick={() => void act('models')} />
       </HStack>
       <TextInput size="sm" label={t('@yovoice.ai.currentModel')} isLabelHidden value={value.model} placeholder={t('@yovoice.ai.modelPlaceholder')} onChange={model => patch({ model: model.slice(0, 200) })} />
       {models.length ? <>
@@ -171,19 +204,11 @@ export function AISettings({ state, run, focus }: {
   const groups = [
     { key: 'api', items: addable.filter(p => p.endpoint === 'fixed' && p.plan !== 'coding') },
     { key: 'coding', items: addable.filter(p => p.plan === 'coding') },
-    { key: 'local', items: addable.filter(p => p.endpoint !== 'fixed') },
+    { key: 'subscription', items: addable.filter(p => p.endpoint === 'cli') },
+    { key: 'local', items: addable.filter(p => p.endpoint === 'local' || p.endpoint === 'custom') },
   ].filter(group => group.items.length);
   return <VStack className="settings-panel ai-panel" gap={4} id="ai-panel" role="tabpanel" aria-label={t('@yovoice.settings.tabAI')}>
-    {/* 请求超时对所有服务生效，和服务配置放在同一页；放在说明同一行，不挤占下方服务配置的高度。 */}
-    <HStack gap={4} vAlign="center">
-      <small className="settings-intro grow">{t('@yovoice.ai.intro')}</small>
-      <HStack gap={2} vAlign="center">
-        <small className="settings-intro" title={t('@yovoice.settings.aiTimeoutHint')}>{t('@yovoice.settings.aiTimeout')}</small>
-        <Selector size="sm" label={t('@yovoice.settings.aiTimeout')} isLabelHidden value={String(state.preferences.aiTimeout || aiTimeoutDefault)} width="calc(var(--spacing-10) * 4)"
-          options={aiTimeouts.map(seconds => ({ value: String(seconds), label: t(seconds === aiTimeoutDefault ? '@yovoice.settings.minutesDefault' : '@yovoice.settings.minutes', { n: seconds / 60 }) }))}
-          onChange={value => run(() => call('preferences.save', { ...state.preferences, aiTimeout: Number(value) === aiTimeoutDefault ? undefined : Number(value) }))} />
-      </HStack>
-    </HStack>
+    <small className="settings-intro">{t('@yovoice.ai.intro')}</small>
     <HStack className="ai-split" gap={0}>
       <VStack className="ai-nav" gap={4}>
         {providers.length ? <List header={<small className="ai-nav-head">{t('@yovoice.ai.added')}</small>} density="compact">

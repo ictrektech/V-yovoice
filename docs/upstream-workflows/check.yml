@@ -89,6 +89,11 @@ jobs:
             artifacts/downloads/audio-*.zip
             artifacts/downloads/audio-*.tar.gz
           key: audio-cpp-${{ matrix.platform }}-${{ hashFiles('internal/catalog/engine.json', 'scripts/desktop/build-windows.ps1', 'scripts/desktop/build-macos.sh') }}
+      - name: Cache ocho runtime
+        uses: actions/cache@v4
+        with:
+          path: artifacts/downloads/ocho-*
+          key: ocho-${{ matrix.platform }}-${{ hashFiles('internal/catalog/ocho.json', 'scripts/package-ocho.py') }}
       - uses: actions/cache@v4
         with:
           path: |
@@ -251,6 +256,11 @@ jobs:
             artifacts/ffmpeg/
             artifacts/downloads/ffmpeg-*.tar.xz
           key: ffmpeg-linux-x64-${{ hashFiles('scripts/build-ffmpeg.py') }}
+      - name: Cache ocho runtime
+        uses: actions/cache@v4
+        with:
+          path: artifacts/downloads/ocho-*
+          key: ocho-linux-x64-${{ hashFiles('internal/catalog/ocho.json', 'scripts/package-ocho.py') }}
       - name: Package Linux CLI
         env:
           TAG: ${{ inputs.tag }}

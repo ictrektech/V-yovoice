@@ -120,7 +120,7 @@ try {
       await page.getByTestId('nav-models-creative-category').click();
       assert.equal(await page.getByTestId('nav-models-creative-category').getAttribute('aria-current'), 'page');
       assert.equal(await page.locator('[data-testid="model-management"] [role="tablist"]').count(), 0, 'duplicate top model tabs remained');
-      assert.equal(await page.locator('#creative-models-panel [data-model-id]').count(), modelCount);
+      assert.equal(await page.locator('#creative-models-panel [data-model-ids]').evaluateAll(rows => rows.flatMap(row => row.dataset.modelIds.split(' ')).length), modelCount);
       await page.getByText('Administrator-provided weights required in V-Scheduler', { exact: true }).first().waitFor();
       assert(!/[\u3400-\u9fff]/.test(await page.locator('#creative-models-panel').innerText()), 'Chinese remained in English creative model manager');
       await page.screenshot({ path: path.join(build, 'v-voice-creative-models-integrated.png'), fullPage: true });
@@ -198,7 +198,7 @@ try {
   await page.getByTestId('nav-models').click();
   await page.getByTestId('nav-models-category').click();
   await page.getByTestId('nav-settings').click();
-  assert.equal(await page.locator('[data-model-id]').count(), modelCount);
+  assert.equal(await page.locator('[data-model-ids]').evaluateAll(rows => rows.flatMap(row => row.dataset.modelIds.split(' ')).length), modelCount);
   assert.equal(await page.getByTestId('nav-models').count(), 1);
   await page.screenshot({ path: path.join(build, 'v-voice-settings.png'), fullPage: true });
   await page.reload();
@@ -209,9 +209,16 @@ try {
   await page.getByTestId('return-workbench').click();
   await page.waitForSelector('.document-title');
   assert.equal(await page.locator('.document-title').inputValue(), 'V-Voice isolated QA', 'returning from the compatibility console lost the draft');
+  for (const locale of ['ja', 'ko', 'es', 'fr', 'de', 'pt-BR', 'ru', 'it', 'vi']) {
+    await page.evaluate(locale => window.dispatchEvent(new CustomEvent('isolated-vos-locale', { detail: locale })), locale);
+    await page.waitForFunction(locale => document.documentElement.lang === locale, locale);
+    assert.equal(await page.locator('.document-title').inputValue(), 'V-Voice isolated QA', `locale ${locale} lost the draft`);
+  }
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('isolated-vos-locale', { detail: 'en' })));
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
   assert(identities > 0);
   assert.deepEqual(errors, []);
-  console.log(`PASS: V-Voice title/logo, ${modelCount} model variants, real Go persistence, reload, VOS locale event/snapshot ordering without draft loss, dedicated API docs in EN/zh-CN/zh-TW without untranslated EN labels; native inference not tested`);
+  console.log(`PASS: V-Voice title/logo, ${modelCount} model variants, real Go persistence, reload, 12 VOS locales and event/snapshot ordering without draft loss, dedicated API docs in EN/zh-CN/zh-TW without untranslated EN labels; native inference not tested`);
 } finally {
   await browser?.close();
   child.kill('SIGTERM');

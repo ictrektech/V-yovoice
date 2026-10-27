@@ -30,10 +30,14 @@ public static class HostL10n
         catch (Exception error) when (error is IOException or JsonException or UnauthorizedAccessException) { }
     }
 
+    // 网页的界面语言；服务错误按它选择翻译目录，原生文案只备中英两份，中文以外的语言用英文。
+    public static string Locale { get; private set; } = English ? "en" : "zh-CN";
+
     public static void Apply(string? uiLocale)
     {
-        if (uiLocale is not ("en" or "zh-CN")) return;
-        bool next = uiLocale == "en";
+        if (string.IsNullOrEmpty(uiLocale) || Locale == uiLocale) return;
+        Locale = uiLocale;
+        bool next = !uiLocale.StartsWith("zh", StringComparison.Ordinal);
         if (next == English) return;
         English = next;
         Changed?.Invoke();

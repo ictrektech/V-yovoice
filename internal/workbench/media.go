@@ -172,6 +172,17 @@ func (w *Workbench) DeleteMedia(kind, id string) error {
 	e := w.Store.Update(func(s *schema.State) {
 		if kind == "outputs" {
 			s.History = slices.DeleteFunc(s.History, func(v schema.Generation) bool { return v.ID == id })
+			// 一并清掉指向这条生成的记录：时间轴的已采纳标记、由它保存出的声音的来源。
+			for i := range s.Drafts {
+				if t := s.Drafts[i].Timeline; t != nil {
+					t.AcceptedGenerations = slices.DeleteFunc(t.AcceptedGenerations, func(g string) bool { return g == id })
+				}
+			}
+			for i := range s.Voices {
+				if s.Voices[i].SourceGenerationID == id {
+					s.Voices[i].SourceGenerationID = ""
+				}
+			}
 		} else {
 			s.Voices = slices.DeleteFunc(s.Voices, func(v schema.Voice) bool { return v.ID == id })
 			// 可见引用已在前面阻止删除，这里清理的是被说话人设置覆盖的隐藏引用，避免留下悬空 ID。

@@ -192,3 +192,24 @@ has named speakers/instructions, and VoiceDesign supports design. Kokoro has
 built-in voices, not cloning. Native model-specific input/length/speed limits
 still apply and return validation errors. Private projects/reference libraries
 are never included in public model discovery or the shared speech API.
+
+## v0.3.0 私有旋律谱 RPC
+
+下列调用均经带 VOS 身份认证的 `POST /studio-api/call`，不属于公开 OpenAI 语音协议。
+排队调用必须携带稳定的 32 位十六进制 `requestId`，返回当前用户的任务 ID。
+
+| method | data | 行为 |
+| --- | --- | --- |
+| `melody.plan` | YuE2 音乐作品快照 | 排队规划 ABC 旋律谱；执行时不覆盖排队后的正文编辑 |
+| `melody.cover` | `{projectId, base64}` | 上传不超过 20 MiB 的歌曲，使用已安装的 SheetSage2 扒谱；音频最长 10 分钟 |
+| `melody.listen` | `{abc}` | 使用已安装的音色库排队渲染试听，返回任务 ID |
+| `melody.result` | `{id: 任务ID}` | 试听未获调度确认时返回 null；成功后返回 `{fileName}`，失败或取消返回错误 |
+| `melody.inspect` / `melody.transform` | `{abc}` / `{abc, op, tempo}` | 校验或转换谱面，不加载推理模型 |
+| `melody.dismiss` | `{id: 谱面结果ID}` | 丢弃当前用户尚未接收的谱面结果 |
+
+辅助模型由服务端选择并固定到排队快照，客户端不能通过 `modelId` 自报预算。
+规划、扒谱和试听均使用既有 Scheduler 执行器与停止核验流程，缺少批准映射时拒绝排队。
+作品删除仍受排队输入保护。查询和取消沿用 `state.get`、`operation.cancel`；
+ABC 结果通过用户状态发布，试听通过 `melody.result` 查询，音频下载仍需身份认证并等待调度确认。
+SheetSage2 不会作为 TTS 暴露给标准语音发现接口。模型镜像发布与目标设备审批需另行完成，
+加入模型目录不表示已下载或已批准。桌面 Ocho、任意路径导入、文件导出和命令执行不在 VOS 白名单中。

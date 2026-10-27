@@ -12,7 +12,7 @@
 
 ## 准备音色库
 
-渲染需要 MuseScore General 音色库（`musescore-general-sf2`，SF2，约 216 MB），包含 128 种 GM 乐器和鼓组。在“设置 › 音色库”中下载，或运行：
+渲染需要 MuseScore General 音色库（`musescore-general-sf2`，SF2，约 216 MB），包含 128 种 GM 乐器和鼓组。在“设置 › 编曲音色库”中下载，或运行：
 
 ```sh
 yovoice models download musescore-general-sf2
@@ -37,8 +37,8 @@ yovoice models download musescore-general-sf2
 3. 声部表调整音色（GM 音色号）、角色、目标电平，或关闭某个声部的发声。
 4. 右侧可修改速度、拍号和调性，并显示每个段落的起止时间，方便与口播稿对齐。
 5. “渲染配乐”生成混音 WAV，保留为作品版本，可试听和导出。
-6. “导出”可保存为 MIDI 或乐谱 JSON；“复制 Agent 提示词”会复制一段说明乐谱格式的提示词，交给 Agent 写谱。
-7. 配置 [AI 服务](ai_zh.md) 后，“AI 写谱”可根据一句需求和时长写出整份编曲。
+6. “导出”可保存为 MIDI 或乐谱 JSON。想让 Agent 写谱，可把下方的[乐谱格式](#乐谱格式)交给它，或让它使用[命令行与 Agent](#命令行与-agent) 中的工具。
+7. 配置 [AI 服务](ai_zh.md) 后，可以让创作助手根据一句需求和时长写出整份编曲，并在对话里继续修改。
 
 ## 乐谱格式
 

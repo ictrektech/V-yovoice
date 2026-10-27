@@ -107,7 +107,7 @@ var allowed = map[string]bool{
 	"draft.save": true, "draft.delete": true, "generation.start": true, "generation.cue": true,
 	"character.save": true, "character.preview": true, "character.delete": true, "character.discardPreview": true,
 	"voice.fromGeneration": true, "voice.update": true, "voice.record": true, "timeline.import": true,
-	"media.rename": true, "media.delete": true, "generation.lyricTimes": true, "operation.cancel": true, "diag.client": true,
+	"media.rename": true, "media.delete": true, "generation.lyricTimes": true, "melody.inspect": true, "melody.transform": true, "melody.dismiss": true, "operation.cancel": true, "diag.client": true,
 }
 
 func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
@@ -201,6 +201,26 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 				return
 			}
 			result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, call.Data)
+		case "melody.plan", "melody.cover", "melody.listen":
+			if s.Jobs == nil {
+				http.Error(out, "V-Scheduler configuration required", 503)
+				return
+			}
+			var snapshot json.RawMessage
+			if snapshot, err = musicSnapshot(w, call.Method, call.Data, s.Jobs.config().Models); err == nil {
+				result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, snapshot)
+			}
+		case "melody.result":
+			if s.Jobs == nil {
+				http.Error(out, "V-Scheduler configuration required", 503)
+				return
+			}
+			var input struct {
+				ID string `json:"id"`
+			}
+			if err = json.Unmarshal(call.Data, &input); err == nil {
+				result, err = s.Jobs.musicResult(id, input.ID)
+			}
 		case "operation.cancel":
 			if s.Jobs == nil {
 				http.Error(out, "V-Scheduler configuration required", 503)
@@ -213,7 +233,7 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 			if s.Jobs != nil {
 				state = s.Jobs.VisibleState(id, state)
 			}
-			result = map[string]any{"state": state, "catalog": workbench.SharedCatalog(), "engine": map[string]string{"version": catalog.EngineVersion, "minimum": catalog.EngineMinimum}, "desktop": false}
+			result = map[string]any{"state": state, "catalog": workbench.SharedCatalog(), "engine": map[string]string{"version": catalog.EngineVersion, "minimum": catalog.EngineMinimum}, "desktop": false, "assistant": map[string]bool{"available": false}}
 		case "preferences.save":
 			// 浏览器只能保存语言等个人偏好，不能修改共享目录、代理及推理后端。
 			var p struct {

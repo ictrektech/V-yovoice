@@ -40,8 +40,11 @@ API 保留，在此基础上增加 yovoice 创作工作台和 audio.cpp 模型�
 超集，不以精选模型替代原有能力。创作目录保留上游全部可下载模型和精度，
 原本仅支持导入的条目仍需合法来源文件。模型统一由 V-Scheduler 内置模型仓库
 从 ModelScope 下载并共享管理，不在每个用户目录重复下载，无需独立安装 Model Hub。
-VOS 工作台及独立 API 文档页面均支持英文、简体中文和繁体中文，可跟随 VOS
-语言，也可仅在本应用内手动切换。
+VOS 工作台支持 12 种界面语言，独立 API 文档保留英文、简体中文和繁体中文；
+可跟随 VOS 语言，也可仅在本应用内手动切换。v0.3.0 集成新增精度分组、YuE2
+旋律规划、SheetSage2 扒谱与音色库试听，这些音乐计算需获 V-Scheduler 模型审批，
+结果在调度确认成功后才发布。VOS 暂不开放桌面 Ocho 助手及其文件和命令工具。
+验证范围见[上游集成记录](docs/upstream-integration.md)。
 
 参见[接入、标准 API、调度与回滚](docs/vos-integration.md)及
 [保留的语音服务文档](docs/v-voice-legacy.md)。下文保留上游桌面端说明，
@@ -54,7 +57,7 @@ VOS 工作台及独立 API 文档页面均支持英文、简体中文和繁体�
 <p align="center">让文字拥有你的声音，让创意谱成完整乐章。</p>
 <p align="center">
   <a href="https://yovoice.leemysw.com"><img src="https://img.shields.io/badge/website-yovoice.leemysw.com-10b981?style=flat-square" alt="官网" /></a>
-  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.2.1-blue?style=flat-square" alt="Version 0.2.1" /></a>
+  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.3.0-blue?style=flat-square" alt="Version 0.3.0" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-orange?style=flat-square" alt="License: Apache-2.0" /></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-black?style=flat-square" alt="macOS 14+ (Apple Silicon)" />
   <img src="https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square" alt="Windows 10/11 (x64)" />
@@ -91,7 +94,7 @@ yovoice 是一款适用于 macOS 和 Windows 的开源、本地优先（Local-fi
 - 💸 **零按字/按秒扣费**：无需订阅昂贵的云端 API（告别 ElevenLabs、Suno、商用配音会员计费）。
 - ⚡ **原生 C++ 极速引擎，免配 Python**：基于 [audio.cpp](https://github.com/0xShug0/audio.cpp) v0.9.1 原生构建，支持 macOS Metal 与 Windows NVIDIA CUDA 12.4/13.3 开箱即用，告别 Conda 与 PyTorch 依赖地狱。
 - 🎛️ **全流程专业创作流**：多版本试听对比（Takes）、多轨时间轴吸附裁剪、General MIDI 音色库本地渲染与分轨导出（Stems）。
-- 🤖 **原生 MCP 与 AI Agent 协创**：支持接入 DeepSeek、通义千问、Claude、OpenAI 或本地 Ollama 自动写歌写谱，并提供 Model Context Protocol (MCP) 服务，支持在 Cursor 或 Claude Code 中直接调用。
+- 🤖 **原生 MCP 与 AI Agent 协创**：接入 DeepSeek、通义千问、Claude、OpenAI 或本地 Ollama，用对话完成写歌写谱到生成的全流程，并提供 Model Context Protocol (MCP) 服务，支持在 Cursor 或 Claude Code 中直接调用。
 
 ---
 
@@ -137,7 +140,7 @@ yovoice 是一款适用于 macOS 和 Windows 的开源、本地优先（Local-fi
 | Kokoro-82M 1.1-zh | 82M | Q8 · 255.32 MB | 100 种中文音色及 3 种英文音色；实验性，仅支持导入 |
 | ACE-Step 1.5 Turbo | — | BF16 · 10.09 GB | 根据风格描述和歌词生成歌曲或纯音乐，支持 50 多种演唱语言；需要 v0.9.1 内核 |
 
-App 与 CLI 均支持以上模型，输入要求与示例见[模型选择](docs/models_zh.md)。OmniVoice 权重采用 CC-BY-NC 许可，Breeze TTS 2 权重采用 BreezeBlue 研究与非商业许可，均仅限非商业用途。
+可下载模型可在 App 内或通过 CLI 获取；仅支持导入的变体仍需兼容的本地 GGUF 文件。文件大小、硬件要求、输入要求与示例见[模型选择](docs/models_zh.md)。OmniVoice、YuE2 和 Breeze TTS 2 的权重仅限非商业用途。
 
 ---
 
@@ -155,8 +158,6 @@ App 与 CLI 均支持以上模型，输入要求与示例见[模型选择](docs/
 Windows 安装器会在缺少时联网安装 [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。模型在应用内下载。卸载应用保留 `~/.yovoice` 中的作品和模型。
 
 macOS 和 Windows 均支持在应用菜单中检查更新，也会自动检查并后台下载；下载完成后可选择重启安装。Windows 自动更新只下载应用本体（`-update.exe`），保留已安装的内核；新版本推荐更高的内核时，可在 设置 → 推理引擎 中选择升级。
-
-![yovoice macOS 安装界面](docs/images/yovoice-macos-install.png)
 
 ---
 
@@ -192,7 +193,15 @@ make install
 make app-run
 ```
 
-环境要求见[开发指南](docs/development_zh.md)，其中也介绍了浏览器预览、测试和项目结构。
+环境要求见[开发指南](docs/development_zh.md)，其中也介绍了浏览器预览、测试和项目结构。进程与各包如何协作见[架构](docs/architecture_zh.md)。
+
+---
+
+## 交流群
+
+使用微信扫码加入 yovoice 用户交流群。二维码过期时，欢迎提交 [Issue](../../issues)，我们会及时更新。
+
+<p align="center"><img src="docs/images/Group%20chat_%E3%80%90YOVOICE%E3%80%91%E4%BA%A4%E6%B5%81%E7%BE%A4.png" width="240" alt="yovoice 微信交流群二维码" /></p>
 
 ---
 
@@ -210,6 +219,8 @@ make app-run
 - [OmniVoice](https://github.com/k2-fsa/OmniVoice) — 声音设计与音色克隆模型。
 - [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) — 支持音色克隆、内置音色与文字设计声音。
 - [ACE-Step](https://github.com/ace-step/ACE-Step-1.5) — 根据风格描述与歌词生成音乐。
+- [YuE](https://github.com/multimodal-art-projection/YuE) — 根据歌词生成整首带人声歌曲。
+- [Breeze TTS 2](https://huggingface.co/BreezeBlue/Breeze-TTS-2) — 中英文声音设计与音色克隆。
 - [go-meltysynth](https://github.com/sinshu/go-meltysynth)、[MuseScore General](https://musescore.org/en/handbook/3/soundfonts-and-sfz-files#gm_soundfonts)、[GeneralUser GS](https://www.schristiancollins.com/generaluser) 与 David Shan 的 SGM-V2.01 — 编曲渲染使用的 SoundFont 合成器与音色库。
 - Kokoro — 使用内置音色的轻量语音合成模型：[Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) 与 [Kokoro-82M-v1.1-zh](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh)。
 
