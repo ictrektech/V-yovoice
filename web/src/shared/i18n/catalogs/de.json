@@ -1592,6 +1592,12 @@
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "Aus Versionen hinzufügen"
   },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "Aus yovoice hinzufügen"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "Hinzufügen"
+  },
   "@yovoice.nav.library": {
     "defaultMessage": "Klangbibliothek"
   },

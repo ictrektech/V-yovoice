@@ -2,7 +2,7 @@ import type { AudioAsset, State, Voice } from '../workbench';
 import { toBase64 } from './sound';
 import { CallError, parseCallError } from './call-error';
 import { desktopCall, desktopMediaUrl, isDesktop, isLinux, isMac, reportDesktop, subscribeDesktop } from './bridge';
-import { assertUploadSize, previewCall, previewImportTimeline, previewImportVoice, previewMediaUrl, subscribePreview } from './preview-backend';
+import { assertUploadSize, previewCall, previewImportTimeline, previewImportTimelineGeneration, previewImportVoice, previewMediaUrl, subscribePreview } from './preview-backend';
 
 // 界面统一的后端入口：桌面端经宿主桥接调用 Go 服务，浏览器预览使用本地模拟后端。
 export { CallError, parseCallError, isDesktop, isLinux, isMac };
@@ -20,6 +20,11 @@ export async function importTimelineFile(file: File): Promise<AudioAsset> {
   if (!isDesktop) return previewImportTimeline(file, name);
   assertUploadSize(file);
   return call<AudioAsset>('timeline.import', { name, base64: await toBase64(file) });
+}
+
+export async function importTimelineGeneration(generationID: string): Promise<AudioAsset> {
+  if (!isDesktop) return previewImportTimelineGeneration(generationID);
+  return call<AudioAsset>('timeline.fromGeneration', { id: generationID });
 }
 
 export async function importVoiceFile(file: File): Promise<Voice> {

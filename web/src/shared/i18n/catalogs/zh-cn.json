@@ -1592,6 +1592,12 @@
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "从历史版本添加"
   },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "从 yovoice 添加"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "添加"
+  },
   "@yovoice.nav.library": {
     "defaultMessage": "声音库"
   },

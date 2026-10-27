@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 	"yovoice/internal/audio"
@@ -91,5 +92,30 @@ func (w *Workbench) ImportTimelineFrom(ctx context.Context, r io.Reader, name st
 		return schema.AudioAsset{}, err
 	}
 	defer os.Remove(path)
+	return w.importTimelineAudio(ctx, path, name)
+}
+
+// ImportTimelineGeneration 把整段生成音频复制为独立素材，源作品或版本删除后时间线仍可使用。
+func (w *Workbench) ImportTimelineGeneration(ctx context.Context, generationID string) (schema.AudioAsset, error) {
+	if !schema.ValidID(generationID) {
+		return schema.AudioAsset{}, msg.Err(msg.ErrAudioIDInvalid, nil)
+	}
+	w.edit.Lock()
+	defer w.edit.Unlock()
+	state := w.Store.Read()
+	index := slices.IndexFunc(state.History, func(g schema.Generation) bool { return g.ID == generationID && g.Segment == nil })
+	if index < 0 {
+		return schema.AudioAsset{}, msg.Err(msg.ErrAudioMissing, nil)
+	}
+	generation := state.History[index]
+	path, err := w.Store.MediaPath("outputs", generation.FileName)
+	if err != nil {
+		return schema.AudioAsset{}, err
+	}
+	workTitle := generation.Settings.Title
+	if index := slices.IndexFunc(state.Drafts, func(d schema.Draft) bool { return d.ID == generation.Settings.ID }); index >= 0 {
+		workTitle = state.Drafts[index].Title
+	}
+	name := truncateRunes(strings.TrimSpace(workTitle+" · "+generation.Title), 120)
 	return w.importTimelineAudio(ctx, path, name)
 }

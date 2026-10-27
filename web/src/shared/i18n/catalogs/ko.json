@@ -1592,6 +1592,12 @@
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "버전에서 추가"
   },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "yovoice에서 추가"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "추가"
+  },
   "@yovoice.nav.library": {
     "defaultMessage": "사운드 라이브러리"
   },

@@ -1592,6 +1592,12 @@
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "バージョンから追加"
   },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "yovoice から追加"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "追加"
+  },
   "@yovoice.nav.library": {
     "defaultMessage": "サウンドライブラリ"
   },

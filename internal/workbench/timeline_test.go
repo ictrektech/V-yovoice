@@ -96,6 +96,48 @@ func TestTimelineUploadPersistsWithoutLibraryEntries(t *testing.T) {
 	}
 }
 
+func TestTimelineGenerationImportCopiesAudio(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	source := schema.DefaultDraft()
+	source.ID, source.Title = schema.NewID(), "环境作品"
+	id := schema.NewID()
+	generation := schema.Generation{ID: id, Title: "雨声", FileName: id + ".wav", CreatedAt: time.Now(), Duration: 1, Settings: source}
+	must(t, os.WriteFile(filepath.Join(w.Store.Root, "outputs", generation.FileName), wav(), 0600))
+	segmented := schema.Generation{ID: schema.NewID(), Title: "逐句", FileName: generation.FileName, Settings: source, Segment: &schema.GenerationSegment{CueID: "cue"}}
+	source.Title = "改名后的环境作品"
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.Drafts = []schema.Draft{source}
+		s.History = []schema.Generation{generation, segmented}
+	}, true))
+	asset, err := w.ImportTimelineGeneration(context.Background(), id)
+	must(t, err)
+	if asset.Name != "改名后的环境作品 · 雨声" || asset.ID == id || asset.FileName == generation.FileName {
+		t.Fatalf("生成音频应复制为独立素材：%+v", asset)
+	}
+	path, err := w.Store.MediaPath("outputs", asset.FileName)
+	must(t, err)
+	copied, err := os.ReadFile(path)
+	must(t, err)
+	if !bytes.Equal(copied, wav()) {
+		t.Fatal("复制后的音频内容不一致")
+	}
+	must(t, w.DeleteMedia("outputs", id))
+	if _, err = os.Stat(path); err != nil {
+		t.Fatal("删除源版本后素材仍应保留", err)
+	}
+	target := schema.DefaultDraft()
+	target.Timeline = &schema.AudioTimeline{Assets: []schema.AudioAsset{asset}, Tracks: []schema.AudioLane{{ID: "lane", Name: "音效", Clips: []schema.AudioClip{{ID: "clip", AssetID: asset.ID, Duration: asset.Duration}}}}}
+	must(t, w.SaveDraft(target))
+	if _, err = w.ImportTimelineGeneration(context.Background(), segmented.ID); err == nil {
+		t.Fatal("不应导入故事配音逐句版本")
+	}
+	if _, err = w.ImportTimelineGeneration(context.Background(), "bad"); err == nil {
+		t.Fatal("不应接受无效版本 ID")
+	}
+}
+
 func TestTimelineEffectValidation(t *testing.T) {
 	timeline := &schema.AudioTimeline{Tracks: []schema.AudioLane{{ID: "t", Name: "t", GainDB: 13}}}
 	if schema.ValidateTimeline(timeline, nil) == nil {

@@ -2,6 +2,7 @@ import { PlaybackToolbar, TrackZoom } from './playback-toolbar';
 import { formatNotice } from '../../shared/i18n/format';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState, useReducer, type PointerEvent as ReactPointerEvent } from 'react';
 import { Popover } from '@astryxdesign/core/Popover';
+import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
 import { Selector } from '../../shared/selector';
 import { AudioLevel } from './audio-level';
 import { ContextMenu } from '@astryxdesign/core/ContextMenu';
@@ -10,25 +11,27 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { ResizeHandle } from '@astryxdesign/core/Resizable';
 import { useAudioPanel } from './use-audio-panel';
-import { useTranslator } from '@astryxdesign/core/i18n';
-import { Upload, History, FileAudio, Plus, Scissors, Trash2, Volume2, VolumeX, RefreshCw, GripVertical, Undo2, Redo2, Magnet, MoreHorizontal, Lock, Unlock, Headphones, SlidersHorizontal } from 'lucide-react';
+import { useLocale, useTranslator } from '@astryxdesign/core/i18n';
+import { Upload, History, FileAudio, Plus, Scissors, Trash2, Volume2, VolumeX, RefreshCw, GripVertical, Undo2, Redo2, Magnet, MoreHorizontal, Lock, Unlock, Headphones, SlidersHorizontal, AudioLines } from 'lucide-react';
 import { AppDialog } from '../../shared/ui/app-dialog';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { SpeakerAvatar } from '../create/subtitles';
 import { encodeWav } from '../../shared/lib/sound';
-import { isDesktop, mediaUrl, saveAudio, saveText, importTimelineFile, releaseMediaUrl } from '../../shared/lib/client';
+import { isDesktop, mediaUrl, saveAudio, saveText, importTimelineFile, importTimelineGeneration, releaseMediaUrl } from '../../shared/lib/client';
 import { noticeMessage } from '../../shared/lib/call-error';
 import { readLocal, writeLocal } from '../../shared/lib/local-store';
-import { formatTime, projectKind, type AudioLane, type AudioAsset, type AudioClip, type AudioTimeline, type Generation, type Draft } from '../../shared/workbench';
+import { formatTime, projectKind, type AudioLane, type AudioAsset, type AudioClip, type AudioTimeline, type Generation, type Draft, type Track } from '../../shared/workbench';
 import { Timeline, TimelineHistory } from './timeline';
 import { resamplePeaks, waveform as readWaveform, type Waveform } from './waveform';
 import { captionsToSrt, captionsToVtt, timelineCaptions } from './caption-export';
+import { Player } from './player';
 
-export function TimelineEditor({ draft, busy, regenerate, exportProject, selectCue, selectedCue, cueSelectionRevision, playbackCue, value, history, change, suspended, onError }: {
-  exportProject: () => Promise<void>; cueSelectionRevision?: number; selectedCue?: number; playbackCue?: (index: number) => void; draft: Draft; busy: boolean; regenerate: (cueId: string, clipId: string) => Promise<void>; selectCue: (index: number) => void;
+export function TimelineEditor({ draft, drafts, busy, regenerate, exportProject, selectCue, selectedCue, cueSelectionRevision, playbackCue, value, history, change, suspended, onError }: {
+  exportProject: () => Promise<void>; cueSelectionRevision?: number; selectedCue?: number; playbackCue?: (index: number) => void; draft: Draft; drafts: Draft[]; busy: boolean; regenerate: (cueId: string, clipId: string) => Promise<void>; selectCue: (index: number) => void;
   value: AudioTimeline; history: Generation[]; change: (value: AudioTimeline) => void; suspended: boolean; onError: (message: string) => void;
 }) {
   const t = useTranslator();
+  const locale = useLocale();
   const panel = useAudioPanel(value.tracks.length > 0, 'audio-multitrack-height');
   const input = useRef<HTMLInputElement>(null);
   const uploadTrack = useRef('');
@@ -37,6 +40,10 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
   const [importing, setImporting] = useState(false);
   const [historyTrack, setHistoryTrack] = useState('');
   const [historyQuery, setHistoryQuery] = useState('');
+  const [generationTrack, setGenerationTrack] = useState('');
+  const [generationKind, setGenerationKind] = useState<'text' | 'sfx' | 'music'>('sfx');
+  const [generationQuery, setGenerationQuery] = useState('');
+  const [generationPreview, setGenerationPreview] = useState<Track | null>(null);
   const [selected, setSelected] = useState('');
   const [selection, setSelection] = useState<string[]>([]);
   const [snap, setSnap] = useState(true);
@@ -152,7 +159,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
     if (!edits.record(next, selected)) return;
     stop(); refreshEdits(); change(next);
   };
-  const historyBlocked = suspended || importing || exporting || regenerating || busy || !!historyTrack || exportOpen;
+  const historyBlocked = suspended || importing || exporting || regenerating || busy || !!historyTrack || !!generationTrack || exportOpen;
   const restoreEdit = (direction: 'undo' | 'redo') => {
     if (historyBlocked || gesture.current) return;
     const snapshot = edits.restore(direction, selected);
@@ -291,6 +298,24 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
     const nextClip: AudioClip = { id: crypto.randomUUID(), ...source, start, offset: 0 };
     edit({ ...current, assets: asset ? [...(current.assets ?? []), asset] : current.assets, tracks: current.tracks.map(t => t.id === trackId ? { ...t, clips: [...t.clips, nextClip] } : t) });
   };
+  const closeGenerations = () => { setGenerationPreview(null); setGenerationTrack(''); };
+  const generationHistory = generationTrack ? history.flatMap(generation => {
+    if (generation.segment || generation.settings.id === draft.id) return [];
+    const source = drafts.find(item => item.id === generation.settings.id);
+    if (!source || projectKind(source) !== generationKind) return [];
+    const name = `${source.title} · ${generation.title}`;
+    return name.toLocaleLowerCase().includes(generationQuery.trim().toLocaleLowerCase()) ? [{ generation, name }] : [];
+  }).sort((a, b) => b.generation.createdAt.localeCompare(a.generation.createdAt)) : [];
+  const importGeneration = async (generation: Generation) => {
+    const trackId = generationTrack;
+    if (!trackId || importing) return;
+    stop(); setGenerationPreview(null); uploadTrack.current = trackId; setImporting(true);
+    try {
+      const asset = await importTimelineGeneration(generation.id);
+      if (!abort.current?.signal.aborted) { append(trackId, { assetId: asset.id, duration: asset.duration }, asset); closeGenerations(); }
+    } catch (error) { onError((error as Error).name === 'EncodingError' ? '@yovoice.error.browserDecode' : (error as Error).message); }
+    finally { setImporting(false); }
+  };
   const selectClip = (c: AudioClip, event?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
     if (event?.metaKey || event?.ctrlKey) setSelection(current => current.includes(c.id) ? current.filter(id => id !== c.id) : [...current, c.id]);
     else if (event?.shiftKey && selected) {
@@ -372,7 +397,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
   ];
   // 菜单打开时 Esc 交给菜单关闭：macOS 上右键菜单打开后焦点可能仍在剪辑上，不能在这里拦下。
   return <VStack as="footer" className="multitrack audio-panel" gap={0} style={{ height: panel.size }} onKeyDown={e => {
-    if (e.key === 'Escape' && !e.defaultPrevented && !(e.target as Element).closest('[role=menu], [role=dialog]') && !document.querySelector('[role=menu]') && !exportOpen && !historyTrack) { finishGesture(false); setSelected(''); setSelection([]); setRange(undefined); e.stopPropagation(); }
+    if (e.key === 'Escape' && !e.defaultPrevented && !(e.target as Element).closest('[role=menu], [role=dialog]') && !document.querySelector('[role=menu]') && !exportOpen && !historyTrack && !generationTrack) { finishGesture(false); setSelected(''); setSelection([]); setRange(undefined); e.stopPropagation(); }
   }}>
     <input ref={input} type="file" hidden accept="audio/*,.aac,.m4a,.mp3,.wav,.flac,.ogg,.opus,.aiff,.aif,.wma,.webm" onChange={async e => {
       const file = e.target.files?.[0]; e.target.value = '';
@@ -395,6 +420,22 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
           }} /><small className="muted">{formatTime(g.duration)} · {new Date(g.createdAt).toLocaleString()}</small>
         </HStack>)}
         {!history.some(g => projectKind(draft) === 'text' && !g.segment && g.settings.id === draft.id && g.title.toLocaleLowerCase().includes(historyQuery.trim().toLocaleLowerCase())) ? <p className="muted">{t('@yovoice.timeline.noHistory')}</p> : null}
+      </VStack>
+    </AppDialog> : null}
+    {generationTrack ? <AppDialog title={t('@yovoice.timeline.fromYovoice')} width={640} busy={importing} onClose={closeGenerations}>
+      <SegmentedControl size="sm" layout="fill" label={t('@yovoice.timeline.fromYovoice')} value={generationKind} onChange={value => { setGenerationPreview(null); setGenerationKind(value as typeof generationKind); }}>
+        <SegmentedControlItem value="text" label={t('@yovoice.project.text')} />
+        <SegmentedControlItem value="sfx" label={t('@yovoice.project.sfx')} />
+        <SegmentedControlItem value="music" label={t('@yovoice.project.music')} />
+      </SegmentedControl>
+      <TextInput label={t('@yovoice.timeline.searchHistory')} isLabelHidden placeholder={t('@yovoice.timeline.searchHistory')} value={generationQuery} onChange={setGenerationQuery} hasClear />
+      <VStack className="timeline-history-list" gap={1}>
+        {generationHistory.map(({ generation, name }) => <HStack key={generation.id} data-generation-id={generation.id} gap={2} vAlign="center">
+          <VStack className="grow timeline-generation-label" gap={0}><b title={name}>{name}</b><small className="muted">{formatTime(generation.duration)} · {new Date(generation.createdAt).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></VStack>
+          <Player inline={{ label: t('@yovoice.app.audition', { name }), select: () => setGenerationPreview({ id: generation.id, name, fileName: generation.fileName, kind: 'outputs', subtitle: '', playRequest: performance.now() }) }} track={generationPreview?.id === generation.id ? generationPreview : null} suspended={importing} onError={message => { setGenerationPreview(null); onError(message); }} />
+          <Button size="sm" variant="secondary" icon={<Plus />} label={t('@yovoice.timeline.addGeneration')} isDisabled={importing} onClick={() => void importGeneration(generation)} />
+        </HStack>)}
+        {!generationHistory.length ? <p className="muted">{t('@yovoice.timeline.noHistory')}</p> : null}
       </VStack>
     </AppDialog> : null}
     <ResizeHandle label={t('@yovoice.timeline.resize')} direction="vertical" pillPlacement="center" isReversed resizable={panel.props} />
@@ -534,6 +575,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
                 button={{ size: 'sm', variant: 'secondary', className: 'timeline-audio-button', icon: <FileAudio />, label: t('@yovoice.timeline.audio'), 'aria-label': t('@yovoice.timeline.importTo', { name: track.name }), isLoading: importing && uploadTrack.current === track.id, isDisabled: importing || track.locked }}
                 items={[
                   { label: t('@yovoice.timeline.upload'), icon: Upload, onClick: () => { uploadTrack.current = track.id; input.current?.click(); } },
+                  { label: t('@yovoice.timeline.fromYovoice'), icon: AudioLines, onClick: () => { stop(); setGenerationPreview(null); setGenerationQuery(''); setGenerationKind('sfx'); setGenerationTrack(track.id); } },
                   ...(projectKind(draft) === 'text' ? [{ label: t('@yovoice.timeline.fromHistory'), icon: History, onClick: () => { stop(); setHistoryQuery(''); setHistoryTrack(track.id); } }] : []),
                 ]} />
             </HStack>
