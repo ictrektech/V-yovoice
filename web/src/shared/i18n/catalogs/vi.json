@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "Cài đặt nâng cao"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "Trộn giọng nói"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "Hủy tạo"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "Phạt lặp lại"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "Giọng thứ hai"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "Tỷ trọng giọng thứ hai"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "Hạt giống ngẫu nhiên"
@@ -838,6 +847,12 @@
   },
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "Hãy hoàn tất các thao tác liên quan trước khi gỡ mô hình này."
+  },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "Ưu tiên hiệu năng"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "Tạo nhanh hơn nhưng dùng nhiều VRAM hơn"
   },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "Gỡ mô hình"

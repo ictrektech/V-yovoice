@@ -459,6 +459,42 @@ func TestSetModelDirectoryAdoptsModels(t *testing.T) {
 	}
 }
 
+// 单文件模型匹配更新前的大小时按旧版本登记；文件缺失时的大小 0 不能触发收养。
+func TestSetModelDirectoryAdoptsLegacyModel(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	dir := t.TempDir()
+	var model *catalog.ModelPackage
+	var legacy catalog.ModelFile
+	for i := range catalog.Models {
+		candidate := &catalog.Models[i]
+		file, ok := catalog.LegacyModelFiles[candidate.ID]
+		if len(candidate.Files) == 0 && ok && file.Size > 0 && file.Size != candidate.Size {
+			model, legacy = candidate, file
+			break
+		}
+	}
+	if model == nil {
+		t.Skip("目录清单缺少大小已变化的单文件模型")
+	}
+	must(t, w.SetModelDirectory(dir))
+	if models := w.Store.Read().Models; len(models) != 0 {
+		t.Fatalf("文件不存在时不应登记模型: %+v", models)
+	}
+	path := filepath.Join(dir, filepath.Base(model.RemotePath))
+	must(t, os.MkdirAll(filepath.Dir(path), 0700))
+	file, err := os.Create(path)
+	must(t, err)
+	must(t, file.Truncate(legacy.Size))
+	must(t, file.Close())
+	must(t, w.SetModelDirectory(dir))
+	models := w.Store.Read().Models
+	if len(models) != 1 || models[0].ID != model.ID || models[0].SHA256 != legacy.SHA256 {
+		t.Fatalf("旧版单文件模型应登记旧主文件摘要: %+v", models)
+	}
+}
+
 // 接口生成被取消时只取消自己那次操作，界面随后开始的生成不受影响。
 func TestCancelOperationOnlyCancelsOwnRun(t *testing.T) {
 	w, err := New(t.TempDir())
@@ -507,5 +543,22 @@ func TestSwapModelFilesWaitsForGeneration(t *testing.T) {
 	}
 	if _, err = os.Stat(path + ".new"); !os.IsNotExist(err) {
 		t.Fatal("替换后不应残留 .new 文件")
+	}
+}
+
+// 性能优先只在开关打开且内核不低于 v0.9.3 时生效，旧内核不认识 cuda_perf。
+func TestPerformanceFirstNeedsEngine093(t *testing.T) {
+	old, current := "v0.9.2", "v0.9.3"
+	cases := []struct {
+		on      bool
+		version *string
+		want    bool
+	}{{false, &current, false}, {true, nil, false}, {true, &old, false}, {true, &current, true}}
+	for _, c := range cases {
+		s := schema.State{RuntimeVersion: c.version}
+		s.Preferences.PerformanceFirst = c.on
+		if performanceFirst(s) != c.want {
+			t.Fatalf("开关 %v 内核 %v：应为 %v", c.on, c.version, c.want)
+		}
 	}
 }

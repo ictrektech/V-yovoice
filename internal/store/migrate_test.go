@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"yovoice/internal/catalog"
 	"yovoice/internal/schema"
 )
 
@@ -75,7 +76,7 @@ func TestMigrateLegacyData(t *testing.T) {
 	if state.RuntimeVersion == nil || *state.RuntimeVersion != "v1.2.3" {
 		t.Fatal("应从安装目录名补记旧内核版本")
 	}
-	if state.Models[0].SHA256 != legacyModelSHA256["kokoro-82m-q8"] || state.Models[0].Managed || state.Models[1].SHA256 != "" {
+	if state.Models[0].SHA256 != catalog.LegacyModelFiles["kokoro-82m-q8"].SHA256 || state.Models[0].Managed || state.Models[1].SHA256 != "" {
 		t.Fatal("旧模型应按冻结目录补记主文件摘要，未知模型保持未知", state.Models)
 	}
 	var version int

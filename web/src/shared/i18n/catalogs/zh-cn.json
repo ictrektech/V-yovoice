@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "高级设置"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "混合音色"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "取消生成"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "重复惩罚"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "第二音色"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "第二音色比例"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "随机种子"
@@ -838,6 +847,12 @@
   },
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "请先结束相关操作，再移除此模型。"
+  },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "性能优先"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "生成更快，占用更多显存"
   },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "移除模型"

@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "Advanced settings"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "Blend voices"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "Cancel generation"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "Repetition penalty"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "Second voice"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "Second voice weight"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "Random seed"
@@ -838,6 +847,12 @@
   },
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "Finish related operations before removing this model."
+  },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "Performance first"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "Faster generation with higher VRAM usage."
   },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "Remove model"

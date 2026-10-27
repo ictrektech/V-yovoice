@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "Дополнительные настройки"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "Смешивание голосов"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "Отменить генерацию"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "Штраф за повторы"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "Второй голос"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "Доля второго голоса"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "Случайное зерно"
@@ -838,6 +847,12 @@
   },
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "Завершите связанные операции, прежде чем удалять эту модель."
+  },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "Производительность прежде всего"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "Быстрее генерация, но больше расход видеопамяти."
   },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "Удалить модель"
