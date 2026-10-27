@@ -13,6 +13,12 @@ V-Scheduler 侧由另一个进程独立实现和发布；仅支持本契约的�
 当前新增节点实测范围为 Kokoro 512 字符/语速 1，以及 SenseVoice 20 秒/24kHz/
 1MiB/无热词，不包括联合声纹或翻译。旧 Thor 未带此字段的既有绑定保持兼容。
 
+Qwen3-ASR 0.6B 与 1.7B 同样接受四项 ASR 输入限制，但必须分别完成节点校准并具有
+自己的执行器映射，不能复制 SenseVoice 的测量或借用其他硬件的旧审批。
+`GET /api/v1/models` 对文件就绪的 ASR 增加 `inference_ready`，不可用时附带
+`inference_error`；文件状态 `status=ready` 仅表示下载完成。识别页优先选已批准模型，
+未批准或校准无效的模型禁用并显示原因；此状态不承诺当前资源空闲。
+
 识别页面通过 `GET /api/v1/models/{key}/input-limits` 读取已验证的逐模型限制与
 `max_upload_bytes`，该响应不包含调度凭据。对于有界模型，浏览器使用上游音频工具
 转换为 16 kHz 单声道 PCM WAV，按 `duration_seconds` 与 `input_bytes`（含 WAV 头）

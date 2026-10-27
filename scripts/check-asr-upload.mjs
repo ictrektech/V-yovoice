@@ -93,7 +93,10 @@ try {
   await ui.route('**/api/**', route => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname.endsWith('/input-limits')) return route.fulfill({ json: { limits: { duration_seconds: 20, sample_rate: 24000, input_bytes: 1048576, hotwords_characters: 0 }, max_upload_bytes: 200 * 1048576 } });
-    return route.fulfill({ json: pathname.endsWith('/models') ? [{ key: 'sensevoice-int8', name: 'SenseVoice', kind: 'asr', status: 'ready' }] : [] });
+    return route.fulfill({ json: pathname.endsWith('/models') ? [
+      { key: 'qwen3-asr-0.6b', name: 'Qwen3', kind: 'asr', status: 'ready', inference_ready: false },
+      { key: 'sensevoice-int8', name: 'SenseVoice', kind: 'asr', status: 'ready', inference_ready: true },
+    ] : [] });
   });
   let uploaded = 0;
   await ui.route('**/v1/audio/transcriptions', route => {
@@ -110,6 +113,8 @@ try {
   wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(wav.length - 44, 40);
   await ui.goto(`http://127.0.0.1:${server.httpServer.address().port}/?standalone=1&page=asr&locale=zh-CN`);
   await ui.getByLabel('音频文件').setInputFiles({ name: 'asr_en.wav', mimeType: 'audio/wav', buffer: wav });
+  assert.equal(await ui.getByLabel('ASR 模型').inputValue(), 'sensevoice-int8');
+  assert.notEqual(await ui.getByRole('option', { name: /Qwen3/ }).getAttribute('disabled'), null);
   await ui.getByRole('button', { name: '开始识别', exact: true }).click();
   await ui.getByText('你好，世界。测试。', { exact: true }).waitFor();
   assert.equal(uploaded, 3);
@@ -117,6 +122,16 @@ try {
   await ui.getByRole('button', { name: '取消识别', exact: true }).click();
   await ui.getByText('已取消识别。', { exact: true }).waitFor();
   await ui.close();
+  // 全部模型仅下载、尚未获准时，显示原因且禁止提交识别。
+  const blocked = await browser.newPage();
+  await blocked.route('**/api/**', route => route.fulfill({ json: route.request().url().endsWith('/models') ? [
+    { key: 'qwen3-asr-0.6b', name: 'Qwen3', kind: 'asr', status: 'ready', inference_ready: false, inference_error: 'Model executor is not approved' },
+  ] : [] }));
+  await blocked.goto(`http://127.0.0.1:${server.httpServer.address().port}/?standalone=1&page=asr&locale=zh-CN`);
+  await blocked.getByText('此模型尚未获准在当前设备执行，请先选择其他模型。', { exact: true }).waitFor();
+  await blocked.getByLabel('音频文件').setInputFiles({ name: 'asr.wav', mimeType: 'audio/wav', buffer: wav });
+  assert(await blocked.getByRole('button', { name: '开始识别', exact: true }).isDisabled());
+  await blocked.close();
   console.log('PASS: 48 kHz stereo file >1 MiB; complete mono resampling, time/byte bounds, sequential uploads, text merge, progress, cancellation, failure and existing WAV cropping');
 } finally {
   await browser?.close();

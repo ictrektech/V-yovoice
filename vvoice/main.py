@@ -265,7 +265,15 @@ def scheduler_contract() -> dict:
 
 @app.get("/api/v1/models")
 async def managed_models():
-    return [{**row, "loaded": registry.is_loaded(row["key"])} for row in await list_models()]
+    rows = [{**row, "loaded": registry.is_loaded(row["key"])} for row in await list_models()]
+    for row in rows:
+        if row["kind"] == "asr" and row["status"] == "ready":
+            try:
+                model_limits(row["key"])
+                row["inference_ready"] = True
+            except HTTPException as exc:
+                row.update(inference_ready=False, inference_error=exc.detail)
+    return rows
 
 
 @app.get("/api/v1/models/{key}/input-limits")

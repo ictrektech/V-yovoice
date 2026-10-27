@@ -6,6 +6,10 @@ export const languageNames: Record<string, string> = { auto: '自动检测', zh:
 const languageLabels = new Set(Object.values(languageNames))
 
 export const messages: Record<string, Translation> = {
+  '· 尚未获准识别': ['· 尚未獲准辨識', '· Transcription not approved'],
+  '个可识别模型': ['個可辨識模型', 'models approved for transcription'],
+  '此模型尚未获准在当前设备执行，请先选择其他模型。': ['此模型尚未獲准在目前裝置執行，請先選擇其他模型。', 'This model is not approved on this device. Choose another model.'],
+  '此模型尚未完成当前设备的输入校准，请先选择其他模型。': ['此模型尚未完成目前裝置的輸入校準，請先選擇其他模型。', 'Input calibration is required for this model on this device. Choose another model.'],
   '上传音频并选择模型，自动转换格式并按模型限制分段识别。': ['上傳音訊並選擇模型，自動轉換格式並按模型限制分段辨識。', 'Choose an audio file and model. Audio is converted and split to fit the model limits.'],
   '请选择音频和模型。': ['請選擇音訊和模型。', 'Choose an audio file and model.'],
   '音频文件超过上传上限，请先拆分文件。': ['音訊檔案超過上傳上限，請先拆分檔案。', 'The audio file exceeds the upload limit. Split the file before trying again.'],
@@ -443,6 +447,8 @@ const dynamicMessages: Array<[RegExp, (match: RegExpMatchArray, locale: Locale) 
 ]
 
 export function translateText(source: string, locale: Locale): string {
+  if (source === 'Model executor is not approved') source = '此模型尚未获准在当前设备执行，请先选择其他模型。'
+  if (source === 'Complete model input calibration required') source = '此模型尚未完成当前设备的输入校准，请先选择其他模型。'
   if (locale === 'zh-CN') return source
   const leading = source.match(/^\s*/)?.[0] || ''
   const trailing = source.match(/\s*$/)?.[0] || ''

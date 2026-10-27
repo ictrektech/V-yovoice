@@ -59,6 +59,8 @@ def model_limits(model: str) -> dict | None:
     if legacy_key in legacy:
         _pin_validated_binding(config)
         return None
+    if not config.get("models", {}).get(model):
+        raise HTTPException(503, "Model executor is not approved")
     if "model_limits" not in config:
         if config.get("input_limits_version"):
             raise HTTPException(503, "Complete model input calibration required")
@@ -68,7 +70,8 @@ def model_limits(model: str) -> dict | None:
         raise HTTPException(503, "Input limit protocol required")
     limits = config["model_limits"].get(model)
     expected = ({"text_characters", "speed_min", "speed_max"} if model == "kokoro-multilang"
-                else {"duration_seconds", "sample_rate", "hotwords_characters", "input_bytes"} if model == "sensevoice-int8" else set())
+                else {"duration_seconds", "sample_rate", "hotwords_characters", "input_bytes"}
+                if model in {"sensevoice-int8", "qwen3-asr-0.6b", "qwen3-asr-1.7b"} else set())
     if not isinstance(limits, dict) or not expected or set(limits) != expected:
         raise HTTPException(503, "Complete model input calibration required")
     if any(type(value) not in (int, float) or not math.isfinite(value) or value < 0 or (value == 0 and name not in {"hotwords_characters", "negative_prompt_characters"}) for name, value in limits.items()):

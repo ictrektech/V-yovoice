@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { languageNames, translateText } from './messages'
 
 describe('interface translations', () => {
+  it('区分未批准模型和缺少输入校准，并提供中文说明', () => {
+    expect(translateText(' · 尚未获准识别', 'en-US')).toBe(' · Transcription not approved')
+    expect(translateText('Model executor is not approved', 'zh-CN')).toContain('尚未获准')
+    expect(translateText('Complete model input calibration required', 'zh-CN')).toContain('输入校准')
+    expect(translateText('Model executor is not approved', 'zh-TW')).toContain('尚未獲准')
+    expect(translateText('Complete model input calibration required', 'en-US')).toContain('Input calibration')
+  })
   it('translates creative API documentation without changing parameter names', () => {
     for (const text of ['创作语音与调度', '声音克隆、设计与情绪控制', 'V-Router 与 V-Scheduler', '参考音频的 Base64 编码，不接受服务器路径。', '音乐、编曲与任务', '音乐生成', '编曲渲染', '任务查询与取消', '结果与参考音色']) {
       expect(translateText(text, 'en-US')).not.toMatch(/[\u3400-\u9fff]/)

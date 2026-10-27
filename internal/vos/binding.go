@@ -106,7 +106,7 @@ func validateBinding(config SchedulerConfig) error {
 		}
 		for model, limits := range config.ModelLimits {
 			fields := []string{"text_characters", "speed_min", "speed_max"}
-			if model == "sensevoice-int8" {
+			if model == "sensevoice-int8" || model == "qwen3-asr-0.6b" || model == "qwen3-asr-1.7b" {
 				fields = []string{"duration_seconds", "sample_rate", "hotwords_characters", "input_bytes"}
 			} else if model != "kokoro-multilang" {
 				return fmt.Errorf("unsupported calibrated model")

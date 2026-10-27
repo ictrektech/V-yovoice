@@ -29,6 +29,8 @@ export type Model = {
   error?: string
   preferred?: boolean
   loaded?: boolean
+  inference_ready?: boolean
+  inference_error?: string
   import_required?: boolean
   hotwords?: {
     supported: boolean

@@ -12,7 +12,7 @@ from vvoice.main import app
 
 @pytest.fixture
 def calibrated(monkeypatch):
-    config = {"input_limits_version": 1, "model_limits": {
+    config = {"input_limits_version": 1, "models": {key: "voice.infer" for key in ["kokoro-multilang", "sensevoice-int8"]}, "model_limits": {
         "kokoro-multilang": {"text_characters": 512, "speed_min": 1.0, "speed_max": 1.0},
         "sensevoice-int8": {"duration_seconds": 20, "sample_rate": 24000, "hotwords_characters": 0, "input_bytes": 1048576},
     }}
@@ -67,6 +67,39 @@ def test_invalid_or_incomplete_calibration_fails_closed(calibrated):
         admission.model_limits("kokoro-multilang")
     with pytest.raises(HTTPException):
         admission.model_limits("whisper-tiny")
+
+
+@pytest.mark.parametrize("model", ["qwen3-asr-0.6b", "qwen3-asr-1.7b"])
+def test_qwen_requires_own_approval_and_complete_limits(calibrated, model):
+    client = TestClient(app)
+    assert client.get(f"/api/v1/models/{model}/input-limits").status_code == 503
+    calibrated["models"][model] = "voice.qwen"
+    assert client.get(f"/api/v1/models/{model}/input-limits").status_code == 503
+    limits = dict(calibrated["model_limits"]["sensevoice-int8"])
+    calibrated["model_limits"][model] = limits
+    response = client.get(f"/api/v1/models/{model}/input-limits")
+    assert response.status_code == 200 and response.json()["limits"] == limits
+    admission.validate_inputs(model, duration_seconds=20, sample_rate=16000, hotwords_characters=0)
+    with pytest.raises(HTTPException) as error:
+        admission.validate_inputs(model, duration_seconds=21)
+    assert error.value.status_code == 422
+    del limits["sample_rate"]
+    assert client.get(f"/api/v1/models/{model}/input-limits").status_code == 503
+
+
+def test_inventory_separates_downloaded_and_approved_asr(calibrated, monkeypatch):
+    async def inventory():
+        return [{"key": key, "kind": "asr", "status": "ready"}
+                for key in ["sensevoice-int8", "qwen3-asr-0.6b"]]
+    monkeypatch.setattr(main, "list_models", inventory)
+    client = TestClient(app)
+    sensevoice, qwen = client.get("/api/v1/models").json()
+    assert sensevoice["inference_ready"] is True
+    assert qwen["status"] == "ready" and qwen["inference_ready"] is False
+    assert qwen["inference_error"] == "Model executor is not approved"
+    calibrated["models"][qwen["key"]] = "voice.qwen"
+    calibrated["model_limits"][qwen["key"]] = dict(calibrated["model_limits"]["sensevoice-int8"])
+    assert client.get("/api/v1/models").json()[1]["inference_ready"] is True
 
 
 def test_direct_and_forwarded_invalid_requests_never_take_or_claim_permit(calibrated, monkeypatch):

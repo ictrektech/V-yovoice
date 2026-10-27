@@ -122,6 +122,31 @@ func TestBindingPreservesCalibratedInputLimits(t *testing.T) {
 	}
 }
 
+func TestQwenBindingRequiresCompletePerModelLimits(t *testing.T) {
+	for _, model := range []string{"qwen3-asr-0.6b", "qwen3-asr-1.7b"} {
+		t.Run(model, func(t *testing.T) {
+			server, config := bindingFixture(t)
+			config.Models = map[string]string{model: "voice.infer"}
+			config.InputLimitsVersion = 1
+			limits := map[string]float64{"duration_seconds": 20, "sample_rate": 24000, "hotwords_characters": 0, "input_bytes": 1048576}
+			config.ModelLimits = map[string]map[string]float64{model: limits}
+			if response := bindRequest(server, schedulerAppID, config); response.Code != 200 {
+				t.Fatalf("Qwen binding rejected: %d %s", response.Code, response.Body.String())
+			}
+			before, _ := os.ReadFile(server.SchedulerPath)
+			config.BindingRevision++
+			delete(limits, "sample_rate")
+			if response := bindRequest(server, schedulerAppID, config); response.Code != 422 {
+				t.Fatalf("incomplete Qwen calibration accepted: %d", response.Code)
+			}
+			after, _ := os.ReadFile(server.SchedulerPath)
+			if !bytes.Equal(before, after) {
+				t.Fatal("invalid calibration replaced approval")
+			}
+		})
+	}
+}
+
 func TestRetiredMusicCannotBeBound(t *testing.T) {
 	server, config := bindingFixture(t)
 	t.Setenv("VVOICE_PROVIDER", "cuda")

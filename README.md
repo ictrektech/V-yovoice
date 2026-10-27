@@ -64,6 +64,12 @@ and cancellation are available. Original files must fit `VVOICE_MAX_UPLOAD_MB`
 approvals keep the original upload path. Public API clients must still prepare
 their own parts; the strict per-request checks remain in effect. The request-body
 cap now follows approved encoded-audio sizes, bounded by the configured upload cap.
+Qwen3-ASR 0.6B and 1.7B accept their own approved duration, source sample-rate,
+encoded-byte and hotword limits; they do not inherit SenseVoice approval. The ASR
+selector distinguishes downloaded files from inference approval on this device
+and disables models missing approval or a valid input calibration. Resource
+availability is still checked for every request. Calibration values must come
+from measurements on the matching device and runtime, including confirmed stop.
 Image preparation also builds the service console into `artifacts/frontend`;
 application and asset overlays copy it along with `artifacts/web`, so console
 fixes reach installed apps without retaining an older frontend from the base image.

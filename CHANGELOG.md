@@ -5,11 +5,13 @@
 ## [Unreleased]
 
 ### 简体中文
+- 修复 Qwen3-ASR 已下载却无法通过输入校准检查的问题；识别页面区分模型文件就绪与当前设备的推理审批，优先选择已获准模型并说明不可用原因。
 - 镜像构建脚本新增 `--dry-run`，可预览目标镜像、构建步骤和飞书登记计划，无需实际构建或上传。
 - 合入上游 v0.2.1：改进音乐播放与歌词校准、历史版本操作、音频导出命名和长文克隆稳定性；保留现有模型、导入方式、语音历史保留策略及 VOS 调度与模型管理。
 - 语音识别页面自动转换并按模型批准范围分段上传音频，显示进度并支持取消；修复已批准的大文件仍被固定 1 MiB 请求体限制拦截的问题，保留逐段调度与输入检查。
 
 ### English
+- Accept approved Qwen3-ASR input limits. Distinguish downloaded models from models approved for transcription on the current device, select an approved model by default, and explain unavailable models.
 - Add `--dry-run` to preview target images, build steps and Feishu updates without building or uploading.
 - Integrate upstream v0.2.1 with improved music playback, lyric timing, history actions, audio export names and long-text cloning. Preserve existing models, imports, speech history retention, and VOS scheduling and model management.
 - Prepare and split ASR uploads within approved model limits, with progress and cancellation. Honor approved upload sizes instead of a fixed 1 MiB request cap, while preserving per-part scheduling and validation.
