@@ -1,5 +1,7 @@
 # V-Voice VOS package
 
+中文逐步操作手册：[VOS V-Voice 正式发布流程](../.agents/runbooks/vos-v-voice-release.md)。
+
 The release contains one pull-mode package for six mutually exclusive profiles:
 
 | Profile | Feishu sheet | Runtime |
@@ -14,6 +16,12 @@ The release contains one pull-mode package for six mutually exclusive profiles:
 Run `docker/build_image.sh --sheet <sheet>` on a matching build host. After every
 required image and Feishu cell is published, run `ictrek.app/scripts/update_version.sh patch`
 locally to trigger packaging and App Store publication.
+
+Preview the selected build and publication plan with
+`bash docker/build_image.sh --sheet l4t --dry-run`. This prints the target image,
+build steps and Feishu sheets without downloading, building, pushing or writing
+Feishu. It also works with `--build-only`, `--publish-only` and the other build
+modes; local artifacts and wheel availability are not checked during preview.
 
 ARM CUDA and Thor share the compiler-cache reference when their validated base
 image is identical. Their runtime images and Feishu records remain separate;
