@@ -24,6 +24,8 @@ import { soundFontId } from '../features/score/score-draft';
 import { ScoreEditor } from '../features/score/score-editor';
 import { ScoreDock } from '../features/score/score-arrangement';
 import { ScoreInspector } from '../features/score/score-inspector';
+import { SfxEditor } from '../features/sfx/sfx-editor';
+import { sfxModelId } from '../features/sfx/sfx-draft';
 import { SelectionAction, type TextSelection } from '../features/create/selection-action';
 import { Timeline } from '../features/media/timeline';
 import { TimelineEditor } from '../features/media/timeline-editor';
@@ -57,7 +59,7 @@ const Settings = lazy(() => import('../features/settings/settings').then(module 
 const VoicePicker = lazy(() => import('../features/media/voice-picker').then(module => ({ default: module.VoicePicker })));
 
 // 工作台界面：导航、页面切换与各页面之间的协作；作品保存由 useDraftSession 负责。
-export function WorkbenchChrome({ state, catalog, engine, ready, session, error, setError }: { state: State; catalog: ModelPackage[]; engine: EngineInfo; ready: boolean; session: DraftSession; error: string; setError: (message: string) => void }) {
+export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready, session, error, setError }: { state: State; catalog: ModelPackage[]; catalogRevision: string; engine: EngineInfo; ready: boolean; session: DraftSession; error: string; setError: (message: string) => void }) {
   const t = useTranslator();
   const { draft, setDraft, draftPersisted, setDraftPersisted, saving, saveFailed, change, persistDraft, setActive, deleteTarget, setDeleteTarget, deleting, deleteError, deleteDraft } = session;
   const navigation = useResizable({ defaultSize: 224, minSize: 180, maxSize: 360, collapsible: true, autoSaveId: 'workbench-sidebar' });
@@ -71,7 +73,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   const [page, setPage] = useState(() => {
     if (isDesktop) {
       const saved = readLocal('yovoice-active-page');
-      const listPages = ['text', 'story', 'music', 'score', 'characters', 'settings'];
+      const listPages = ['text', 'story', 'music', 'score', 'sfx', 'characters', 'settings'];
       return saved && listPages.includes(saved) ? saved : 'text';
     }
     return 'create';
@@ -346,10 +348,11 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
     <Tab value="characters" label={t('@yovoice.library.voicesTab')} panelId="voice-library-panel" />
     <Tab value="voices" label={t('@yovoice.library.referencesTab')} panelId="reference-library-panel" />
   </TabList>;
-  // 音乐生成页内用标签切换「音乐生成」与「编曲生成」两类作品。
-  const musicTabs = <TabList value={page === 'score' ? 'score' : 'music'} onChange={setPage} role="tablist" hasDivider>
+  // 音乐生成页内用标签切换「歌曲」「编曲」与「音效」三类作品。
+  const musicTabs = <TabList value={page === 'score' || page === 'sfx' ? page : 'music'} onChange={setPage} role="tablist" hasDivider>
     <Tab value="music" label={t('@yovoice.project.music')} panelId="projects-music-panel" />
     <Tab value="score" label={t('@yovoice.project.score')} panelId="projects-score-panel" />
+    <Tab value="sfx" label={t('@yovoice.project.sfx')} panelId="projects-sfx-panel" />
   </TabList>;
 
   useEffect(() => {
@@ -393,16 +396,17 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   const editorFooter = (controls?: ReactNode) => <HStack className="editor-status" hAlign="between" vAlign="center" gap={2} wrap="wrap"><HStack gap={1} vAlign="center">{projectKind(draft) === 'story' ? <SubtitleImport onError={onError} onImport={async (title, subtitles) => { await newDraft({ ...createDraft(false, state.preferences.uiLocale), ...synthesisSettings(draft), kind: 'story', title, text: subtitles.cues.map(c => c.text).join('\n'), subtitles }); }} /> : null}{controls}</HStack><HStack vAlign="center" gap={4}><small className="saved"><Check size={14} />{saveFailed ? <Button size="sm" label={t('@yovoice.app.saveFailed')} onClick={() => run(() => persistDraft(draft))} /> : saving ? t('@yovoice.app.saving') : t('@yovoice.app.saved')}</small>{projectKind(draft) === 'score' ? null : <small>{t('@yovoice.app.charCount', { count: Array.from(draft.text).length })}</small>}</HStack></HStack>;
   const defaultModelId = preferredModel(state, 'text', 'index-2.5-q8');
   // 新建作品默认用已下载的模型，并沿用上一次同类作品的选择。
-  const modelFor = (kind: 'text' | 'story' | 'music' | 'score') => preferredModel(state, kind, kind === 'music' ? musicModelId : kind === 'score' ? soundFontId : defaultModelId);
+  const modelFor = (kind: 'text' | 'story' | 'music' | 'score' | 'sfx') => preferredModel(state, kind, kind === 'music' ? musicModelId : kind === 'score' ? soundFontId : kind === 'sfx' ? sfxModelId : defaultModelId);
   const music = projectKind(draft) === 'music';
   const scoring = projectKind(draft) === 'score';
-  // 音乐与编曲作品都不使用配音时间线和“存为声音”。
-  const instrumental = music || scoring;
-  const sidebar = <SidebarNav page={page} setPage={setPage} newDraft={<NewProject hidden={state.preferences.hiddenFeatures} locale={state.preferences.uiLocale} modelId={defaultModelId} modelFor={modelFor} create={newDraft} onError={onError} button={{ 'data-testid': 'nav-new', className: 'new-project', width: '100%', size: 'md' }} />} state={state} draft={draft} selectDraft={selectDraft} removeDraft={setDeleteTarget} resizable={navigation.props} />;
+  const soundEffects = projectKind(draft) === 'sfx';
+  // 音乐、编曲与音效作品都不使用配音时间线和“存为声音”。
+  const instrumental = music || scoring || soundEffects;
+  const sidebar = <SidebarNav page={page} setPage={setPage} catalog={catalog} catalogRevision={catalogRevision} openSettings={openSettings} newDraft={<NewProject hidden={state.preferences.hiddenFeatures} locale={state.preferences.uiLocale} modelId={defaultModelId} modelFor={modelFor} create={newDraft} onError={onError} button={{ 'data-testid': 'nav-new', className: 'new-project', width: '100%', size: 'md' }} />} state={state} draft={draft} selectDraft={selectDraft} removeDraft={setDeleteTarget} resizable={navigation.props} />;
   const currentCharacter = state.characters.find(c => c.id === (activeSpeaker?.characterId ?? selectedCharacter));
   const currentPerformance = activeSpeaker ? activeCue?.performance : draft.performance;
   const performances = currentCharacter?.performances ?? [];
-  const inspector = scoring ? <ScoreInspector draft={draft} state={state} catalog={catalog} change={change} generate={generate} cancel={() => run(() => call('operation.cancel'))} settings={() => openSettings(draft.modelId)} close={() => setShowInspector(false)} /> : music ? <MusicInspector draft={draft} state={state} catalog={catalog} change={change} generate={generate} cancel={() => run(() => call('operation.cancel'))} settings={() => openSettings(draft.modelId)} upgradeEngine={() => openSettings(draft.modelId, 'engine')} close={() => setShowInspector(false)} advanced={advanced} setAdvanced={setAdvanced} /> : <Inspector libraryActions={<VStack gap={2}>
+  const inspector = scoring ? <ScoreInspector draft={draft} state={state} catalog={catalog} change={change} generate={generate} cancel={() => run(() => call('operation.cancel'))} settings={() => openSettings(draft.modelId)} close={() => setShowInspector(false)} /> : music || soundEffects ? <MusicInspector draft={draft} state={state} catalog={catalog} change={change} generate={generate} cancel={() => run(() => call('operation.cancel'))} settings={() => openSettings(draft.modelId)} upgradeEngine={() => openSettings(draft.modelId, 'engine')} close={() => setShowInspector(false)} advanced={advanced} setAdvanced={setAdvanced} soundEffects={soundEffects} /> : <Inspector libraryActions={<VStack gap={2}>
     {activeSpeaker ? <HStack gap={2} vAlign="center"><SpeakerAvatar seed={activeSpeaker.characterId ?? `${draft.id}:${activeSpeaker.id}`} /><h3>{activeSpeaker.sourceName || t('@yovoice.subtitle.speaker', { n: draft.subtitles!.speakers.indexOf(activeSpeaker) + 1 })}</h3></HStack> : null}
     <Selector label={t('@yovoice.character.choose')} isLabelHidden placeholder={t('@yovoice.character.choose')} value={activeSpeaker?.characterId ?? selectedCharacter ?? ''}
       options={[...state.characters.map(c => ({ value: c.id, label: c.name })), ...(state.characters.length ? [{ type: 'divider' as const }] : []), { value: 'new-voice', label: t('@yovoice.character.new'), icon: Plus }, { value: 'save-voice', label: t('@yovoice.character.saveAs'), icon: Save }]}
@@ -428,16 +432,16 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
       ...(projectKind(draft) === 'text' ? [{ label: t('@yovoice.voice.save'), onClick: () => setVoiceEditor(currentVersion) }, { label: t('@yovoice.character.saveAs'), onClick: () => characterFromGeneration(currentVersion) }] : []),
     ]} /> : null}
   </HStack>;
-  // 复用：音乐版本把风格、歌词和参数填回当前作品；其余新建一个同参数的作品。
+  // 复用：音乐与音效版本把描述和参数填回当前作品；其余新建一个同参数的作品。
   const reuseGeneration = (item: Generation) => {
-    if (music && item.settings.id === draft.id) {
-      change({ text: item.settings.text, lyrics: item.settings.lyrics, abc: item.settings.abc, instrumental: item.settings.instrumental, synthesisLanguage: item.settings.synthesisLanguage, modelOptions: item.settings.modelOptions, seed: item.settings.seed });
+    if ((music || soundEffects) && item.settings.id === draft.id) {
+      change({ text: item.settings.text, lyrics: item.settings.lyrics, abc: item.settings.abc, instrumental: item.settings.instrumental, synthesisLanguage: item.settings.synthesisLanguage, modelOptions: item.settings.modelOptions, seed: item.settings.seed, sourceGenerationId: item.settings.sourceGenerationId });
       setPreviewTrack(null); setPage('create'); return;
     }
     run(() => newDraft({ ...structuredClone(item.settings), id: crypto.randomUUID().replaceAll('-', ''), title: (item.title + t('@yovoice.draft.copySuffix')).slice(0, 120), createdAt: undefined, updatedAt: undefined }));
   };
   // 检查器收起时，标题栏保留主操作：生成中显示取消，否则按作品类型显示生成或渲染。
-  const generateLabel = scoring ? t('@yovoice.score.render') : music ? t(isYuE(draft.modelId) && draft.abc?.trim() ? '@yovoice.music.generateFromMelody' : '@yovoice.music.generate') : t('@yovoice.create.generate');
+  const generateLabel = scoring ? t('@yovoice.score.render') : soundEffects ? t('@yovoice.music.generateAudio') : music ? t(isYuE(draft.modelId) && draft.abc?.trim() ? '@yovoice.music.generateFromMelody' : '@yovoice.music.generate') : t('@yovoice.create.generate');
   const generateReady = scoring ? !!draft.score?.tracks.some(item => item.notes.length) : draft.subtitles ? draft.subtitles.cues.some(cue => cue.text.trim()) : !!draft.text.trim();
   const collapsedAction = busy ? <Button size="sm" icon={<LoaderCircle className="generation-spinner" />} label={t('@yovoice.create.cancelGenerate')} onClick={() => run(() => call('operation.cancel'))} />
     : <Button size="sm" variant="primary" label={generateLabel} aria-keyshortcuts="Control+Enter" isDisabled={!generateReady} onClick={generate} />;
@@ -454,10 +458,10 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
             <Studio showInspector={showInspector} inspector={inspector} inspectorCollapsed={inspectorCollapsed} collapsedAction={collapsedAction}
           title={<input className="document-title" aria-label={t('@yovoice.app.titleLabel')} maxLength={120} value={draft.title} onChange={e => change({ title: e.target.value })} />}
           writingClassName={`${draft.subtitles ? 'writing-subtitles' : ''} ${draft.timeline ? 'writing-timeline' : ''} ${scoring ? 'writing-score' : ''}`.trim()}>
-          {scoring ? <><ScoreEditor key={draft.id} draft={draft} change={change} locale={state.preferences.uiLocale} onError={onError} />{editorFooter()}</> : music ? <><MusicEditor key={draft.id} draft={draft} state={state} change={change} locale={state.preferences.uiLocale} onError={onError} />{editorFooter()}</> : draft.subtitles ? <SubtitleEditor key={draft.id} history={state.history} playingCue={playingCue} failedCue={activity?.projectId === draft.id && activity.status === 'failed' ? activity.cueId : undefined} draft={draft} characters={state.characters ?? []} change={change} selectedCue={selectedCue} selectCue={selectCue} renderFooter={editorFooter} /> : <><textarea ref={editor} className="script-editor" aria-label={t('@yovoice.app.scriptLabel')} placeholder={t('@yovoice.app.scriptPlaceholder')} maxLength={12000} value={draft.text} spellCheck={false} dir={draft.language === 'ar' ? 'rtl' : 'auto'} onChange={e => change({ text: e.target.value })} />{editorFooter()}</>}
+          {scoring ? <><ScoreEditor key={draft.id} draft={draft} change={change} locale={state.preferences.uiLocale} onError={onError} />{editorFooter()}</> : soundEffects ? <><SfxEditor key={draft.id} draft={draft} change={change} />{editorFooter()}</> : music ? <><MusicEditor key={draft.id} draft={draft} state={state} change={change} locale={state.preferences.uiLocale} onError={onError} />{editorFooter()}</> : draft.subtitles ? <SubtitleEditor key={draft.id} history={state.history} playingCue={playingCue} failedCue={activity?.projectId === draft.id && activity.status === 'failed' ? activity.cueId : undefined} draft={draft} characters={state.characters ?? []} change={change} selectedCue={selectedCue} selectCue={selectCue} renderFooter={editorFooter} /> : <><textarea ref={editor} className="script-editor" aria-label={t('@yovoice.app.scriptLabel')} placeholder={t('@yovoice.app.scriptPlaceholder')} maxLength={12000} value={draft.text} spellCheck={false} dir={draft.language === 'ar' ? 'rtl' : 'auto'} onChange={e => change({ text: e.target.value })} />{editorFooter()}</>}
         </Studio>
           </PageBoundary></VStack> : null}
-          {(['story', 'music', 'score'] as const).filter(kind => visited.has(kind)).map(kind => <VStack key={kind} id={`projects-${kind}-panel`} className="page-panel" gap={0} style={{ display: page === kind ? 'flex' : 'none' }}><PageBoundary name={`projects-${kind}`}>
+          {(['story', 'music', 'score', 'sfx'] as const).filter(kind => visited.has(kind)).map(kind => <VStack key={kind} id={`projects-${kind}-panel`} className="page-panel" gap={0} style={{ display: page === kind ? 'flex' : 'none' }}><PageBoundary name={`projects-${kind}`}>
             <Projects onError={onError} kind={kind} title={kind === 'story' ? undefined : t('@yovoice.project.music')} controls={kind === 'story' ? undefined : musicTabs} drafts={projectList} open={selectDraft} history={openHistory} create={kind === 'story' ? <HStack gap={2} vAlign="center"><BookImport state={state} modelId={defaultModelId} configureAI={() => openSettings(defaultModelId, 'ai')} create={importBook} onError={onError} /><NewProject kind={kind} locale={state.preferences.uiLocale} modelId={defaultModelId} modelFor={modelFor} create={newDraft} onError={onError} /></HStack> : <NewProject kind={kind} locale={state.preferences.uiLocale} modelId={defaultModelId} modelFor={modelFor} create={newDraft} onError={onError} />} copy={item => run(() => newDraft({ ...structuredClone(item), id: crypto.randomUUID().replaceAll('-', ''), title: (item.title + t('@yovoice.draft.copySuffix')).slice(0, 120), createdAt: undefined, updatedAt: undefined }))} remove={setDeleteTarget} save={async next => { await persistDraft(draft); await persistDraft(next); if (next.id === draft.id) setDraft(next); }} />
           </PageBoundary></VStack>)}
           {visited.has('characters') ? <VStack id="voice-library-panel" className="page-panel" gap={0} style={{ display: page === 'characters' ? 'flex' : 'none' }}><PageBoundary name="characters">

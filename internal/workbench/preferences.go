@@ -78,7 +78,11 @@ func (w *Workbench) SetModelDirectory(path string) error {
 // adoptModels 登记新模型目录中已有的模型：按应用下载时的布局查找（单文件模型在目录根部，
 // 多文件模型在各自子目录），所有文件大小与目录清单一致才视为完整。已登记且文件仍在的模型保持不变。
 func (w *Workbench) adoptModels(dir string) error {
-	found := map[string]string{}
+	type adoptedModel struct {
+		path   string
+		sha256 string
+	}
+	found := map[string]adoptedModel{}
 	for _, m := range catalog.Models {
 		path := filepath.Join(dir, filepath.Base(m.RemotePath))
 		if len(m.Files) > 0 {
@@ -89,7 +93,7 @@ func (w *Workbench) adoptModels(dir string) error {
 		} else if download.FileSize(path) != m.Size {
 			continue
 		}
-		found[m.ID] = path
+		found[m.ID] = adoptedModel{path: path, sha256: m.MainFile().SHA256}
 	}
 	if len(found) == 0 {
 		return nil
@@ -100,9 +104,9 @@ func (w *Workbench) adoptModels(dir string) error {
 				delete(found, m.ID)
 			}
 		}
-		for id, path := range found {
+		for id, adopted := range found {
 			s.Models = slices.DeleteFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == id })
-			s.Models = append(s.Models, schema.InstalledModel{ID: id, Path: path, Managed: true})
+			s.Models = append(s.Models, schema.InstalledModel{ID: id, Path: adopted.path, Managed: true, SHA256: adopted.sha256})
 		}
 		diag.Log(w.Store.Root, "model.directory_adopted", "count", len(found))
 	}, true)

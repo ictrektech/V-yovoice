@@ -12,6 +12,9 @@ export function quickActions(t: TranslatorFn, page: string): QuickAction[] {
       { label: t('@yovoice.assistant.chip.song'), prompt: t('@yovoice.assistant.chip.songPrompt') },
       { label: t('@yovoice.assistant.chip.style'), prompt: t('@yovoice.assistant.chip.stylePrompt') },
     ],
+    sfx: [
+      { label: t('@yovoice.assistant.chip.sfx'), prompt: t('@yovoice.assistant.chip.sfxPrompt') },
+    ],
     text: [
       { label: t('@yovoice.assistant.chip.voice'), prompt: t('@yovoice.assistant.chip.voicePrompt') },
       { label: t('@yovoice.assistant.chip.polish'), prompt: t('@yovoice.assistant.chip.polishPrompt') },

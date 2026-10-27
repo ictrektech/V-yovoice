@@ -4059,7 +4059,37 @@
     "defaultMessage": "Stable Audio only understands English descriptions; no lyrics are sung."
   },
   "@yovoice.music.soundPlaceholder": {
-    "defaultMessage": "Describe the sound, e.g. footsteps on gravel, close perspective"
+    "defaultMessage": "Describe the sound in English, e.g. footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "{count} model updates"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "New version"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "Update"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "Sound effect generation"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "New sound effect"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "Sound description"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "Create a sound effect"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "Create a sound effect project and generate a short sound"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "Your sound effect is ready. Want to refine the description or rework it?"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "Refine the English description of the current sound effect and generate an improved take"
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "Generate audio"

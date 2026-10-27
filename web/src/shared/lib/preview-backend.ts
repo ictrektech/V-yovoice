@@ -1,6 +1,6 @@
 import catalog from './catalog.json';
 import aiPresets from './ai-presets.json';
-import { performanceSettings, createDraft, emptyState, type AudioAsset, type Draft, type State, type Voice, type Preferences, type Character, type SynthesisSettings, type AIProvider, type AITask, type AssistantLive, type AssistantSession, type AssistantBlock, type AssistantToolCardState, type AssistantContext, type Activity, blocksText, type LocalAPIStatus, type LogFilter, type MelodyInspection, type ScoreNote, aiTimeoutDefault, type Asset, type AssetKind, type AssetResult, projectKind } from '../workbench';
+import { performanceSettings, createDraft, emptyState, type AudioAsset, type Draft, type State, type Voice, type Preferences, type Character, type SynthesisSettings, type AIProvider, type AITask, type AssistantLive, type AssistantSession, type AssistantBlock, type AssistantToolCardState, type AssistantContext, type Activity, blocksText, type LocalAPIStatus, type LogFilter, type MelodyInspection, type ScoreNote, aiTimeoutDefault, type Asset, type AssetKind, type AssetResult, projectKind, modelMainFile } from '../workbench';
 import { encodeWav } from './sound';
 import { CallError } from './call-error';
 import { isUiLocale } from '../i18n/locale';
@@ -151,7 +151,7 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
   // 预览不能运行本机程序：Codex 显示为未安装，登录需要桌面端。
   if (method === 'ai.codex.status') return {} as T;
   if (method === 'ai.codex.login') throw new CallError('@yovoice.error.previewDesktopOnly');
-  if (method === 'state.get') return { state, catalog, engine: { version: '', minimum: '' }, desktop: false, assistant } as T;
+  if (method === 'state.get') return { state, catalog, catalogRevision: '874fcb41ececda20bcbc0782d6b4ea7f7d069ea8', engine: { version: '', minimum: '' }, desktop: false, assistant } as T;
   if (method === 'character.save') {
     const character = structuredClone(data as Character);
     if (!character.name.trim() || character.name.length > 120 || character.demoText.length > 2000) throw new CallError('@yovoice.error.characterInvalid');
@@ -580,6 +580,15 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
     const sessions = (state.assistantSessions?.sessions ?? []).filter(session => session.id !== id);
     const currentId = state.assistantSessions?.currentId === id ? sessions[0]?.id ?? '' : state.assistantSessions?.currentId ?? '';
     state.assistantSessions = { currentId, sessions };
+    publish();
+    return true as T;
+  }
+  if (method === 'model.download') {
+    const id = (data as { id: string }).id;
+    const installed = state.models.find(model => model.id === id);
+    const definition = catalog.find(model => model.id === id);
+    if (!installed || !definition) throw new CallError('@yovoice.error.previewDesktopOnly');
+    installed.sha256 = modelMainFile(definition as Parameters<typeof modelMainFile>[0]).sha256;
     publish();
     return true as T;
   }

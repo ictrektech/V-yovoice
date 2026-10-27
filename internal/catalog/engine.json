@@ -1,15 +1,15 @@
 {
-  "version": "v0.9.2",
+  "version": "v0.9.3",
   "minimum": "v0.7.4",
   "archives": {
-    "audio-v0.9.2-bin-ubuntu-x64-cpu-portable.tar.gz": "72bfb07f46bb8f4cc0217a604619dbb78cfc388dfa4e639feb412ca7e2410980",
-    "audio-v0.9.2-bin-ubuntu-x64-vulkan-portable.tar.gz": "37294a0d9d52383475a47df95dc725c83faee0dbfae00088f1509ed4d7f3619d",
-    "audio-v0.9.2-bin-macos-arm64-metal.tar.gz": "827239e1d5824f8294cce461661dc7f20f933869bd333dfc60ba3c089f29faab",
-    "audio-v0.9.2-bin-windows-x64-cpu-portable.zip": "4bea04239d753d2d0a294580ad4af2a0fa81b0de244a1b9146650c7f9fa4e84d",
-    "audio-v0.9.2-bin-windows-x64-vulkan-portable.zip": "4d11a82c560f7a1dc0934e6fef847d6e0b779cf79854aa7d90d8b28e4ad04d93",
-    "audio-v0.9.2-bin-windows-x64-cuda12.4.zip": "099bd43b74a5175fd9e03ac95c9fabe8b97718826d547890a03950483e81b168",
-    "audio-v0.9.2-cudart-windows-x64-cuda12.4.zip": "50e278d213daa38e782a10b501b764c5c0738381898dacee7243101b890eeb0d",
-    "audio-v0.9.2-bin-windows-x64-cuda13.3.zip": "ddf7474656e4c47a1bc5b5a53a268709d968d87132367d646baae5a77c34391f",
-    "audio-v0.9.2-cudart-windows-x64-cuda13.3.zip": "f3bb616e43f4b8aec4be7f2c2b323aec381a1993bac382401a011c121c126e59"
+    "audio-v0.9.3-bin-ubuntu-x64-cpu-portable.tar.gz": "02156f7a7bd9924902cec26be35087d3806c7e348be344b1ec28cac0c1af3929",
+    "audio-v0.9.3-bin-ubuntu-x64-vulkan-portable.tar.gz": "10ac6b5cb72bc9266e5a600407dbcc2a3eaf87139a3e01c064bf3035d11f81b8",
+    "audio-v0.9.3-bin-macos-arm64-metal.tar.gz": "70a84c2b61ce5ef99547a12affab9b0d40daf08666baf7da4f940d5c7b722819",
+    "audio-v0.9.3-bin-windows-x64-cpu-portable.zip": "f5fa4662b7ec323dbe31d37e224e46159b064836a9005da384551a5248771eeb",
+    "audio-v0.9.3-bin-windows-x64-vulkan-portable.zip": "51f8d8ce6cc7789bc9dc3d15f35e05f143aaf2ce1cbecc525a4104bcdde82a42",
+    "audio-v0.9.3-bin-windows-x64-cuda12.4.zip": "976b1fe4329407be45b272fc656d91006f081d22706f453f8879bc69dbb4a9b3",
+    "audio-v0.9.3-cudart-windows-x64-cuda12.4.zip": "866a2bc12c4d887eb3b1b62f82f7a8fdd93391cb77ea02b63b0f360cfb3bb4d8",
+    "audio-v0.9.3-bin-windows-x64-cuda13.3.zip": "0bd3988be10c31ec078c40df2bd0d4266e660804f6d5083aeb05d1309d091e43",
+    "audio-v0.9.3-cudart-windows-x64-cuda13.3.zip": "839eb20f684a8aab64895b1e466b32ce9b29dfc19dc1ce15b2ef35218512ac0a"
   }
 }

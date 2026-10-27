@@ -51,18 +51,18 @@ func TestKokoroOfficialDownload(t *testing.T) {
 		id, precision, file, hash string
 		size                      int64
 	}{
-		{"kokoro-82m-q8", "Q8", "kokoro-82m-q8_0.gguf", "5d800fd204029302c10313daeafdb31c875c7c29ae31974d0d156cc7f512d1d0", 189549408},
-		{"kokoro-82m-bf16", "BF16", "kokoro-82m-bf16.gguf", "51d10c63557d21f70ef5d607e91c11023cf408dbc3af24c283b18106778e1e67", 211954816},
+		{"kokoro-82m-q8", "Q8", "kokoro-82m-q8_0.gguf", "9a4ca6176460cdc8c7845b804c0bbe85a4791ee3ffff568a3fdadbb708c63f47", 189550976},
+		{"kokoro-82m-bf16", "BF16", "kokoro-82m-bf16.gguf", "0d2c2afac39b0ff01fb20b5633a6a5543735e612942b3af571424502b9c2dfaa", 211956384},
 	} {
 		t.Run(test.id, func(t *testing.T) {
 			m, err := catalog.Lookup(test.id)
 			must(t, err)
-			if m.Precision != test.precision || m.Size != test.size || m.SHA256 != test.hash || m.Revision != "0a104324546d2622985e3c676a4b5550cc772127" {
+			if m.Precision != test.precision || m.Size != test.size || m.SHA256 != test.hash || m.Revision != "" {
 				t.Fatal("官方模型下载元数据不匹配", m)
 			}
 			for source, prefix := range map[string]string{
-				"huggingface": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/" + m.Revision,
-				"mirror":      "https://hf-mirror.com/audio-cpp/audio.cpp-gguf/resolve/" + m.Revision,
+				"huggingface": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/" + catalog.Revision,
+				"mirror":      "https://hf-mirror.com/audio-cpp/audio.cpp-gguf/resolve/" + catalog.Revision,
 				"modelscope":  "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/" + catalog.ModelScopeRevision,
 			} {
 				url, err := m.URL(source)

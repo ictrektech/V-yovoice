@@ -1,6 +1,6 @@
 import { VStack } from '@astryxdesign/core/Layout';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
-import { useTranslator } from '@astryxdesign/core/i18n';
+import { useLocale, useTranslator } from '@astryxdesign/core/i18n';
 import { Selector } from '../../shared/selector';
 import definitions from '../../shared/lib/generation-options.json';
 import { formatTime, type Draft, type Generation, type ModelPackage } from '../../shared/workbench';
@@ -20,10 +20,11 @@ export function stableAudioOptions(draft: Draft) {
 export const sourceVersions = (draft: Draft, history: Generation[]) => history.filter(item => item.settings.id === draft.id && !item.segment).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
 // Stable Audio 的常用设置：时长，以及在已生成版本上改编（整体重写）或局部重绘某一段。
-export function StableAudioControls({ draft, model, history, change }: {
-  draft: Draft; model?: ModelPackage; history: Generation[]; change: (patch: Partial<Draft>) => void;
+export function StableAudioControls({ draft, model, history, change, durationPresets: requestedPresets }: {
+  draft: Draft; model?: ModelPackage; history: Generation[]; change: (patch: Partial<Draft>) => void; durationPresets?: readonly number[];
 }) {
   const t = useTranslator();
+  const locale = useLocale();
   const { values, edit, duration, value } = stableAudioOptions(draft);
   const limit = model?.maxDuration ?? 120;
   const update = (patch: Record<string, string | number>) => change({ modelOptions: { ...draft.modelOptions, stable_audio: { ...values, ...patch } } });
@@ -36,12 +37,15 @@ export function StableAudioControls({ draft, model, history, change }: {
     if (next !== 'off' && !source && versions[0]) patch.sourceGenerationId = versions[0].id;
     change(patch);
   };
-  const presets = durationPresets.filter(item => item <= limit);
+  const presets = (requestedPresets ?? durationPresets).filter(item => item <= limit);
+  // 音效的短档位按秒显示（1 秒、3 秒），歌曲档位按分:秒显示。
+  const seconds = new Intl.NumberFormat(locale, { style: 'unit', unit: 'second', unitDisplay: 'short' });
+  const presetLabel = (item: number) => requestedPresets ? seconds.format(item) : formatTime(item);
   return <>
     <VStack gap={3}>
       <h3>{t('@yovoice.music.duration')}</h3>
       <SegmentedControl label={t('@yovoice.music.duration')} size="sm" layout="fill" value={presets.includes(duration as typeof presets[number]) ? String(duration) : ''} onChange={next => update({ duration_seconds: Number(next) })}>
-        {presets.map(item => <SegmentedControlItem key={item} value={String(item)} label={formatTime(item)} />)}
+        {presets.map(item => <SegmentedControlItem key={item} value={String(item)} label={presetLabel(item)} />)}
       </SegmentedControl>
     </VStack>
     <VStack gap={3}>

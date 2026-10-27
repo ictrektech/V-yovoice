@@ -71,8 +71,23 @@ func (d Draft) SubtitleDrafts() ([]Draft, error) {
 }
 
 // Normalize 补齐旧数据与外部输入缺少的部分：台词补上可重复的 ID，后续插入或删除台词不会错配生成结果；
-// 编曲作品缺少乐谱时补一份空乐谱。保存作品、导入作品包与状态库升级都经过这里，界面只按补齐后的格式读取。
+// 音效作品补纯音乐标记与默认五秒时长，编曲作品缺少乐谱时补一份空乐谱。
+// 保存作品、导入作品包与状态库升级都经过这里，界面只按补齐后的格式读取。
 func (d *Draft) Normalize() {
+	if d.Kind == "sfx" {
+		d.Instrumental = true
+		if d.ModelOptions == nil {
+			d.ModelOptions = map[string]map[string]any{}
+		}
+		options := d.ModelOptions["stable_audio"]
+		if options == nil {
+			options = map[string]any{}
+		}
+		if _, ok := options["duration_seconds"]; !ok {
+			options["duration_seconds"] = float64(5)
+		}
+		d.ModelOptions["stable_audio"] = options
+	}
 	if d.Kind == "score" && d.Score == nil {
 		d.Score = &Score{Tempo: 100, TimeSignature: []int{4, 4}}
 	}

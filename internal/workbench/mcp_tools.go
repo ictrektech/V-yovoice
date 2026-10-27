@@ -70,9 +70,9 @@ func (w *Workbench) RegisterRemoteTools(server *mcp.Server, t RemoteTools) {
 		voice, err := w.ImportVoiceFrom(ctx, bytes.NewReader(data), in.Name)
 		return nil, voice, err
 	})
-	mcp.AddTool(server, &mcp.Tool{Name: "generate", Description: "同步生成，长耗时优先使用 submit_generation。完整生成语音，返回 id、duration 和音频位置。" + download}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
-		Text     string         `json:"text" jsonschema:"需要朗读的正文"`
-		Settings map[string]any `json:"settings,omitempty" jsonschema:"声音参数，与 HTTP API 同名，例如 modelId、voiceId、voxMode、voiceDescription、speaker、referenceText、seed、modelOptions"`
+	mcp.AddTool(server, &mcp.Tool{Name: "generate", Description: "同步生成，长耗时优先使用 submit_generation。完整生成语音、音乐或音效，返回 id、duration 和音频位置。" + download}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
+		Text     string         `json:"text" jsonschema:"需要朗读的正文，或音乐、音效的描述"`
+		Settings map[string]any `json:"settings,omitempty" jsonschema:"生成参数，与 HTTP API 同名，例如 kind、modelId、voiceId、voxMode、voiceDescription、speaker、referenceText、seed、modelOptions"`
 	}) (*mcp.CallToolResult, any, error) {
 		if !t.TryLock() {
 			return nil, nil, fmt.Errorf("推理服务繁忙，请稍后重试")
@@ -88,7 +88,7 @@ func (w *Workbench) RegisterRemoteTools(server *mcp.Server, t RemoteTools) {
 		}
 		return nil, t.Audio(g), nil
 	})
-	mcp.AddTool(server, &mcp.Tool{Name: "submit_generation", Description: "提交异步语音生成，立即返回任务状态。requestId 为客户端生成的32位十六进制随机ID；相同ID和参数重试不会重复生成。随后用 get_generation 查询，完成后取得音频。优先使用此工具避免长连接超时"}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
+	mcp.AddTool(server, &mcp.Tool{Name: "submit_generation", Description: "提交异步音频生成，立即返回任务状态。requestId 为客户端生成的32位十六进制随机ID；相同ID和参数重试不会重复生成。随后用 get_generation 查询，完成后取得音频。优先使用此工具避免长连接超时"}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
 		RequestID string         `json:"requestId"`
 		Text      string         `json:"text"`
 		Settings  map[string]any `json:"settings,omitempty"`
@@ -161,6 +161,7 @@ func DecodeRemoteGeneration(body io.Reader) (schema.Draft, error) {
 	d.Title, d.Text, d.Mode, d.EmotionText = "API 语音", "", "speaker", ""
 	input := struct {
 		Text string `json:"text"`
+		Kind string `json:"kind"`
 		schema.SynthesisSettings
 	}{SynthesisSettings: d.SynthesisSettings}
 	decoder := json.NewDecoder(body)
@@ -171,7 +172,8 @@ func DecodeRemoteGeneration(body io.Reader) (schema.Draft, error) {
 	if err := decoder.Decode(new(any)); err != io.EOF {
 		return d, fmt.Errorf("仅允许一个 JSON 对象")
 	}
-	d.Text, d.SynthesisSettings = input.Text, input.SynthesisSettings
+	d.Text, d.Kind, d.SynthesisSettings = input.Text, input.Kind, input.SynthesisSettings
+	d.Normalize()
 	if strings.TrimSpace(d.Text) == "" {
 		return d, fmt.Errorf("正文不能为空")
 	}

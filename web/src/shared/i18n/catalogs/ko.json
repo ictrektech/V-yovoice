@@ -4059,7 +4059,37 @@
     "defaultMessage": "Stable Audio는 영어 설명만 이해하며 가사를 부르지 않습니다."
   },
   "@yovoice.music.soundPlaceholder": {
-    "defaultMessage": "원하는 효과음을 설명하세요. 예: footsteps on gravel, close perspective"
+    "defaultMessage": "원하는 효과음을 영어로 설명하세요. 예: footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "모델 업데이트 {count}개"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "새 버전"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "업데이트"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "효과음 생성"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "새 효과음"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "효과음 설명"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "효과음 만들기"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "효과음 프로젝트를 만들고 짧은 효과음을 생성해 줘"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "효과음이 완성되었습니다. 설명을 다듬어 개선할까요?"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "현재 효과음의 영어 설명을 다듬고 개선된 버전을 생성해 줘"
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "오디오 생성"

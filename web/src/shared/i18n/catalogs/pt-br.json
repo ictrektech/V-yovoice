@@ -4059,7 +4059,37 @@
     "defaultMessage": "O Stable Audio só entende descrições em inglês e não canta letras."
   },
   "@yovoice.music.soundPlaceholder": {
-    "defaultMessage": "Descreva o som, por ex. footsteps on gravel, close perspective"
+    "defaultMessage": "Descreva o som em inglês, por ex. footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "{count} modelos para atualizar"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "Nova versão"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "Atualizar"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "Geração de efeitos sonoros"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "Novo efeito sonoro"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "Descrição do som"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "Criar um efeito sonoro"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "Crie um projeto de efeito sonoro e gere um som curto"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "O efeito está pronto. Quer ajustar a descrição ou melhorá-lo?"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "Ajuste a descrição em inglês do efeito atual e gere uma versão melhorada"
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "Gerar áudio"

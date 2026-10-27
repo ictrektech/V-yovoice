@@ -43,6 +43,81 @@ var migrations = []migration{
 		}
 		return runtimeVersion(tx, root)
 	}},
+	// 3：按本次模型目录更新前的清单，为已安装模型补记主文件 SHA256。
+	{data: func(tx *sql.Tx, root string) error {
+		return rewriteRows(tx, "models", func(_ string, data []byte) ([]byte, error) {
+			return backfillModelSHA256(data)
+		})
+	}},
+}
+
+// legacyModelSHA256 冻结本次目录更新前的主文件摘要，不能改成读取运行时目录，否则以后的目录更新会让旧记录冒充新版本。
+var legacyModelSHA256 = map[string]string{
+	"index-2.5-q8":                   "5e827b2072042e4a1b21ccf24a5cb4f71cb1011403067a0a9b039311d8b38628",
+	"index-2.5-f16":                  "87bed9b82fc8f22119a1a1042332091016c28e37f29b0e93343ccdbfa76ef66a",
+	"index-2.5-orig":                 "2c736df55a306155df4e607f49fe963cf2192fc2193ad449a4bdffb15e52b93a",
+	"index-2-q8":                     "f9be73ac5b6cbdc5f603f04dcb6c9fe37b3a301a365a1ea8d580d3ef7ba22e8e",
+	"index-2-f16":                    "0f7b95d3d32e18bf9352912a7b21a0bd4a8406853a0aaa2c9180f77389c21523",
+	"index-2-orig":                   "c96cb948339b7169b7240f43dbd42ad6354ae3d0a22465e292ec8e090c338e16",
+	"voxcpm2-q8":                     "c8e01ab4416011e12a28f24ede298a1aa5ce64b43f8e8aaad53b1e2fe7c96432",
+	"voxcpm2-bf16":                   "0c0cd2515c7a1145c0ddba06c871724656c36cb53ee3b0118116b34cb4153699",
+	"voxcpm2-orig":                   "13181e01e15d555c9eae7779626eb395c69334f15e948c9ea265ddf37ab50b16",
+	"omnivoice-q8":                   "2f4be637278043c6842de5b85d681532030e9eb6ffe0f8b0e320f68238e3da8b",
+	"omnivoice-bf16":                 "7301a41a0a5a2cb04430c1831a705e3906bfca51562c5cdb2f30a90d505a819c",
+	"omnivoice-f16":                  "7421b6c387351d2cdce7eb8b931fa279739d628ef25acd4ff2062a70e6e1ab63",
+	"qwen3-tts-base-q8":              "b55e06c7890d43c208d15aed8b4ed3f18215f295e47d5960e061b15bff338ab0",
+	"qwen3-tts-base-bf16":            "f5cf4c37b969335e0ffb657119e52025e26192553119590d59fa17b8d36e8b29",
+	"qwen3-tts-base-orig":            "7ab774d56ab9ed9ee7d0ae50917798cda23c7bcc11eaa6c3a4ae32068718b1c1",
+	"qwen3-tts-customvoice-q8":       "3cfaac8e9f13554f6daea3c5e0c53fede71ef5500cbaae7445e5fc3a5bb12e72",
+	"qwen3-tts-customvoice-bf16":     "ef55652c7aa919dc5eeb7967c782a17a6f5d9a8b775337376a4678d37e71a11c",
+	"qwen3-tts-base-0.6b-q8":         "771420bd20ff5f35407b4fa9cf9c5461e153800d3d772ef51c9febc0a520855d",
+	"qwen3-tts-base-0.6b-bf16":       "97d418048b07b5b267628da955b27db4c57b353ded8089de01a469b474255b8d",
+	"qwen3-tts-voicedesign-q8":       "1bcef9a8c021072fca40e00498e00af9091fbe6d3ae4f87567cfee885d6c7554",
+	"qwen3-tts-voicedesign-bf16":     "f4cebcd68023a2db7c3fc8d52d1d28eafb22d4e3b7a64e12c4f946a300536f86",
+	"breeze-tts-2-q8":                "0de52d61560f9f6b2dfeca79f9100f8fce0c2b17c52ec30622e23e150df1ad88",
+	"breeze-tts-2-q4":                "b1c2467ac542d9ba05ad0e7bd331b09137f3752f1be2d3c491bd1b2045df6767",
+	"breeze-tts-2-bf16":              "a00c9f678b4c5ae03d1dcd228f636b329352cda200823faef4e01d3bd97c0a89",
+	"kokoro-82m-q8":                  "5d800fd204029302c10313daeafdb31c875c7c29ae31974d0d156cc7f512d1d0",
+	"kokoro-82m-bf16":                "51d10c63557d21f70ef5d607e91c11023cf408dbc3af24c283b18106778e1e67",
+	"kokoro-1.1-zh-q8":               "44d58f231606d7cb9c17eee649ed195a680f356de368068d03a83d9f188ec9c7",
+	"ace-step-1.5-turbo-bf16":        "93974239a29a1a821b3cc1b1ca7e1c6229b1a900a0e44a1a9770bb2271d2be5f",
+	"ace-step-1.5-turbo-q8":          "cd7bf272588f548d4a253f57483132ef0f8f54a549f26471b09caa72c654270b",
+	"ace-step-1.5-xl-turbo-bf16":     "9529c24b3b929c701b34d0eee3686c76084b99e993539802f95ed171e954ff65",
+	"ace-step-1.5-xl-turbo-q8":       "60ddf6d4ebec685c89fb451af8a7983aca65c58baa6aa6e5e25d168b4b7613f8",
+	"stable-audio-3-small-music-q8":  "89bb22db5fa68ab8f1d90af0a9f88121977c945bdb99a57c96b1e88fa34bf1c8",
+	"stable-audio-3-small-music-f16": "66f36741c19f9ca08e7239f89253141fe08a1f88de92f4459385ad80fc1c0e23",
+	"stable-audio-3-small-sfx-q8":    "5bb1ec653134e63dac46264e336ae198a2590195fc996fcd0605021215e9b26f",
+	"stable-audio-3-small-sfx-f16":   "0d8948b947f137c163983f060973d80e9bb699ea11c303327cd7005402f93918",
+	"stable-audio-3-medium-q8":       "262c8259cfeac055258d28bfc126bcafb5c776fac44165222b186270f99b07ca",
+	"stable-audio-3-medium-f16":      "d701796858eb54347ade9e80240a58d4eccf1890a9ccff3ed3b0640be5273a23",
+	"yue2-3b-q8":                     "52be345b5155bf9ef0b2411e7df8d1d2b8e13b6d977a2f70c35612ec69b1f591",
+	"yue2-3b-bf16":                   "4cf3fdffbaaed2d8e30a3122ac7cd27d0c96f8921805f173da9758c685b3c7d6",
+	"yue2-3b-q4":                     "b80215b59a7fe41a4c76b6163c0ae1031672f892b5951d66fefaa2053a815029",
+	"sheetsage2-orig":                "d858bfdf5ac7be16261ac6ee38754d6fca502149131b44a5262b4039fb72876e",
+	"lyric-align-q8":                 "75209490b11cec2b0db749ca5f4ff92266f58efd30f7fd04d9eb2a3ac9cc929f",
+	"musescore-general-sf2":          "ee51d2c4b1525e70f19a45909c4fd7a2e26d91d115fa89dbf5a6bc413d8b9bf3",
+	"generaluser-gs-sf2":             "9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe",
+	"sgm-v2-sf2":                     "86f2dc4b6983257ce7f983e62afedd22ea35e6e53e3f391360d9f125ce1ea088",
+}
+
+func backfillModelSHA256(data []byte) ([]byte, error) {
+	var model schema.InstalledModel
+	if err := json.Unmarshal(data, &model); err != nil {
+		return nil, err
+	}
+	if model.SHA256 != "" || legacyModelSHA256[model.ID] == "" {
+		return nil, nil
+	}
+	model.SHA256 = legacyModelSHA256[model.ID]
+	return json.Marshal(model)
+}
+
+func backfillModelSHA256State(state *schema.State) {
+	for i := range state.Models {
+		if state.Models[i].SHA256 == "" {
+			state.Models[i].SHA256 = legacyModelSHA256[state.Models[i].ID]
+		}
+	}
 }
 
 // schemaVersion 是当前应用对应的状态库版本。

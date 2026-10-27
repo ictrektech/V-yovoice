@@ -5,7 +5,7 @@ import { VStack } from '@astryxdesign/core/Layout';
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { Copy, FileMusic, FileText, FolderInput, History, Mic, MoreHorizontal, Music, Pencil, Plus, Trash2 } from 'lucide-react';
+import { AudioWaveform, Copy, FileMusic, FileText, FolderInput, History, Mic, MoreHorizontal, Music, Pencil, Plus, Trash2 } from 'lucide-react';
 import { AppDialog } from '../../shared/ui/app-dialog';
 import { createDraft, formatTime, projectKind, type Draft, type Feature, type UiLocale } from '../../shared/workbench';
 import { call, isDesktop } from '../../shared/lib/client';
@@ -14,17 +14,19 @@ import { SpeakerAvatar } from '../create/subtitles';
 import { importAccept, readImport } from '../create/file-import';
 import { createMusicDraft } from '../music/music-draft';
 import { createScoreDraft, scoreDuration } from '../score/score-draft';
+import { createSfxDraft } from '../sfx/sfx-draft';
 import { RecordCover } from './record-cover';
 import { LibraryEmpty, LibraryPage, Ticket } from './library-layout';
 import { TapeCover } from './tape-cover';
+import { WaveRing } from './wave-ring';
 import { overflowTitle } from '../../shared/ui/overflow-title';
 
 export function NewProject({ locale, modelId, modelFor, create, onError, button, kind, hidden = [] }: {
-  kind?: 'text' | 'story' | 'music' | 'score'; locale: UiLocale; modelId?: string;
-  // 在设置中隐藏的功能不出现在新建菜单里；编曲随音乐生成一起隐藏。
+  kind?: 'text' | 'story' | 'music' | 'score' | 'sfx'; locale: UiLocale; modelId?: string;
+  // 在设置中隐藏的功能不出现在新建菜单里；编曲与音效随音乐生成一起隐藏。
   hidden?: Feature[];
   // 按作品类型给出默认模型（优先已下载的），不给时用各类型的内置默认。
-  modelFor?: (kind: 'text' | 'story' | 'music' | 'score') => string; create: (draft: Draft) => Promise<void>; onError: (error: string) => void;
+  modelFor?: (kind: 'text' | 'story' | 'music' | 'score' | 'sfx') => string; create: (draft: Draft) => Promise<void>; onError: (error: string) => void;
   button?: Omit<ComponentProps<typeof Button>, 'onClick' | 'label'> & { label?: string };
 }) {
   const t = useTranslator();
@@ -41,9 +43,9 @@ export function NewProject({ locale, modelId, modelFor, create, onError, button,
     } catch (error) { onError(noticeMessage(error)); }
     finally { setBusy(false); }
   }
-  async function start(kind: 'text' | 'story' | 'music' | 'score') {
+  async function start(kind: 'text' | 'story' | 'music' | 'score' | 'sfx') {
     setBusy(true);
-    const base: Draft = kind === 'music' ? createMusicDraft(locale, false) : kind === 'score' ? createScoreDraft(locale, false) : { ...createDraft(false, locale, modelId), kind };
+    const base: Draft = kind === 'music' ? createMusicDraft(locale, false) : kind === 'score' ? createScoreDraft(locale, false) : kind === 'sfx' ? createSfxDraft(locale) : { ...createDraft(false, locale, modelId), kind };
     const next: Draft = modelFor ? { ...base, modelId: modelFor(kind) } : base;
     if (kind === 'story') next.subtitles = { speakers: [{ id: crypto.randomUUID(), sourceName: t('@yovoice.library.narrator') }], cues: [] };
     try { await create(next); }
@@ -60,6 +62,7 @@ export function NewProject({ locale, modelId, modelFor, create, onError, button,
       ...(hidden.includes('music') ? [] : [
         { id: 'music', label: t('@yovoice.project.music'), icon: <Music className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('music') },
         { id: 'score', label: t('@yovoice.project.score'), icon: <FileMusic className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('score') },
+        { id: 'sfx', label: t('@yovoice.project.sfx'), icon: <AudioWaveform className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('sfx') },
       ]),
       { id: 'file', label: t('@yovoice.import.file'), icon: <FileText className="project-menu-icon" strokeWidth={1.5} />, onClick: () => fileInput.current?.click() },
       ...(isDesktop ? [{ id: 'import', label: t('@yovoice.timeline.importProject'), icon: <FolderInput className="project-menu-icon" strokeWidth={1.5} />, onClick: () => { setBusy(true); void call<Draft | null>('project.import').then(d => d ? create(d) : undefined).catch(e => onError(noticeMessage(e))).finally(() => setBusy(false)); } }] : []),
@@ -72,7 +75,7 @@ export function NewProject({ locale, modelId, modelFor, create, onError, button,
 }
 
 export function Projects({ drafts, kind, title, controls, open, create, copy, save, remove, history, onError }: { onError: (error: string) => void;
-  drafts: Draft[]; kind: 'text' | 'story' | 'music' | 'score'; title?: string; controls?: ReactNode; open: (draft: Draft) => void; create: ReactNode;
+  drafts: Draft[]; kind: 'text' | 'story' | 'music' | 'score' | 'sfx'; title?: string; controls?: ReactNode; open: (draft: Draft) => void; create: ReactNode;
   history: (draft: Draft) => void; copy: (draft: Draft) => void; save: (draft: Draft) => Promise<void>; remove: (draft: Draft) => void;
 }) {
   const t = useTranslator();
@@ -86,6 +89,7 @@ export function Projects({ drafts, kind, title, controls, open, create, copy, sa
   const projectMeta = (draft: Draft) => kind === 'story' ? [t('@yovoice.subtitle.cues', { count: draft.subtitles?.cues.length ?? 0 }), ...(draft.subtitles?.speakers ?? []).slice(0, 3).map(s => s.sourceName)].join(' · ')
     : kind === 'music' ? [draft.instrumental ? t('@yovoice.music.instrumental') : '', draft.text.split(/[,，]/)[0]?.trim()].filter(Boolean).join(' · ') || t('@yovoice.project.music')
     : kind === 'score' ? draft.score?.tracks.length ? `${draft.score.tempo} BPM · ${formatTime(scoreDuration(draft.score))}` : t('@yovoice.project.score')
+    : kind === 'sfx' ? formatTime(Number(draft.modelOptions?.stable_audio?.duration_seconds ?? 5))
     : t('@yovoice.app.charCount', { count: [...draft.text].length });
   // 摘录：歌曲取第一句歌词，编曲列出声部，其余取正文。
   const excerpt = (draft: Draft) => kind === 'music' ? (draft.lyrics ?? '').split('\n').map(line => line.trim()).find(line => line && !/^\[.*\]$/.test(line)) ?? ''
@@ -102,14 +106,15 @@ export function Projects({ drafts, kind, title, controls, open, create, copy, sa
     <LibraryPage title={title ?? t(`@yovoice.project.${kind}`)} controls={controls} layout="tickets" actions={create}
       query={query} onQueryChange={setQuery} searchLabel={t('@yovoice.project.search')} hasItems={drafts.some(d => projectKind(d) === kind)} hasResults={filtered.length > 0}
       noResults={t('@yovoice.library.noSearchResults')}
-      empty={<LibraryEmpty art={kind === 'text' ? <TapeCover seed={`empty-${kind}`} title={t(`@yovoice.project.${kind}`)} /> : <RecordCover seed={`empty-${kind}`} title={t(`@yovoice.project.${kind}`)} />} title={t('@yovoice.project.empty')} action={create} />}>
+      empty={<LibraryEmpty art={kind === 'text' ? <TapeCover seed={`empty-${kind}`} title={t(`@yovoice.project.${kind}`)} /> : kind === 'sfx' ? <WaveRing seed={`empty-${kind}`} duration={5}><AudioWaveform /></WaveRing> : <RecordCover seed={`empty-${kind}`} title={t(`@yovoice.project.${kind}`)} />} title={t('@yovoice.project.empty')} action={create} />}>
       {filtered.map((draft, index) => {
         const stamp = draft.updatedAt ?? draft.createdAt, date = new Date(stamp ?? 0);
         const month = monthOf(draft), newMonth = !!month && month !== monthOf(filtered[index - 1]);
         const lead = draft.subtitles?.speakers ?? [];
         const avatarSeed = (id: string, characterId?: string) => characterId ?? `${draft.id}:${id}`;
-        // 歌曲和编曲是唱片封套；故事是封套上站着出场角色的有声唱片；语音是一盒写着标题的磁带。
+        // 歌曲和编曲是唱片封套；音效是声波环；故事是封套上站着出场角色的有声唱片；语音是一盒写着标题的磁带。
         const cover = kind === 'music' || kind === 'score' ? <RecordCover seed={draft.id} title={draft.title} />
+          : kind === 'sfx' ? <WaveRing seed={draft.id} duration={Number(draft.modelOptions?.stable_audio?.duration_seconds ?? 5)}><AudioWaveform /></WaveRing>
           : kind === 'story' ? <RecordCover seed={draft.id} title={draft.title} cast={lead.slice(0, 3).map(s => <SpeakerAvatar key={s.id} seed={avatarSeed(s.id, s.characterId)} />)} />
           : <TapeCover seed={draft.id} title={draft.title} />;
         return <VStack key={draft.id} gap={2}>

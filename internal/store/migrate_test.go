@@ -30,6 +30,8 @@ func TestMigrateLegacyData(t *testing.T) {
 		{"INSERT INTO settings (key, pos, data) VALUES ('assistantSessions', 0, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data", []any{`{"currentId":"s","sessions":[{"id":"s","title":"t","messages":[{"id":"m","role":"assistant","text":"好了","tools":[{"tool":"create_work","state":"done"}],"createdAt":"2026-10-01T00:00:00Z"}],"updatedAt":"2026-10-01T00:00:00Z"}]}`}},
 		{"INSERT INTO settings (key, pos, data) VALUES ('runtimePath', 0, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data", []any{string(runtimePath)}},
 		{"DELETE FROM settings WHERE key = 'runtimeVersion'", nil},
+		{"INSERT INTO models (key, pos, data) VALUES ('kokoro', 0, ?)", []any{`{"id":"kokoro-82m-q8","path":"/models/kokoro.gguf","managed":false}`}},
+		{"INSERT INTO models (key, pos, data) VALUES ('custom', 1, ?)", []any{`{"id":"custom","path":"/models/custom.gguf","managed":true}`}},
 		{"PRAGMA user_version = 1", nil},
 	} {
 		_, err = s.db.Exec(step.query, step.args...)
@@ -72,6 +74,9 @@ func TestMigrateLegacyData(t *testing.T) {
 	}
 	if state.RuntimeVersion == nil || *state.RuntimeVersion != "v1.2.3" {
 		t.Fatal("应从安装目录名补记旧内核版本")
+	}
+	if state.Models[0].SHA256 != legacyModelSHA256["kokoro-82m-q8"] || state.Models[0].Managed || state.Models[1].SHA256 != "" {
+		t.Fatal("旧模型应按冻结目录补记主文件摘要，未知模型保持未知", state.Models)
 	}
 	var version int
 	must(t, s.db.QueryRow("PRAGMA user_version").Scan(&version))

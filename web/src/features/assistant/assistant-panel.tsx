@@ -212,7 +212,7 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
 }
 
 // 空状态插图：按当前页面换一张（台词/语音、音乐/编曲、故事配音）。
-const emptyArt: Record<string, string> = { text: voiceArt, voices: voiceArt, music: musicArt, score: musicArt, story: storyArt };
+const emptyArt: Record<string, string> = { text: voiceArt, voices: voiceArt, music: musicArt, score: musicArt, sfx: musicArt, story: storyArt };
 
 // generationCard 找到 generate_work 已完成且该作品已有版本的结果，供试听。
 function generationCard(blocks: AssistantBlock[], state: State): Generation | null {

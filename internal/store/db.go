@@ -283,6 +283,7 @@ func createDB(path string, state schema.State, private map[string]string) error 
 	if e != nil {
 		return e
 	}
+	backfillModelSHA256State(&state)
 	snap, e := encode(&state)
 	if e == nil {
 		_, e = commit(db, snapshot{}, snap)

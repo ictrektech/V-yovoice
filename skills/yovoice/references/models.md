@@ -1,6 +1,6 @@
 # 模型能力与高级参数
 
-以 yovoice 内置 audio.cpp v0.9.1 为准。App 和独立 CLI 共用模型与生成实现；所有模型均完整生成后播放，不提供流式。
+以 yovoice 内置 audio.cpp v0.9.3 为准。App 和独立 CLI 共用模型与生成实现；所有模型均完整生成后播放，不提供流式。
 
 ## 能力覆盖
 
@@ -18,7 +18,7 @@
 
 官方 Qwen3-TTS 还有 0.6B CustomVoice；当前固定模型仓库未发布对应独立 GGUF，暂不列为可下载模型。Safetensors 多文件包未接入当前单文件 GGUF 管理流程。
 
-`yovoice models list --json` 里的 ACE-Step、YuE2、Stable Audio 3 是音乐模型，SheetSage2 是翻唱用的扒谱模型，`lyric-align-q8` 是播放页逐字对齐歌词的可选模型，都只在桌面端“音乐生成”使用，`generate` 不支持；`*-sf2` 是编曲音色库，见[编曲参考](score.md)。
+`yovoice models list --json` 里的 ACE-Step、YuE2、Stable Audio 3 是音乐模型，SheetSage2 是翻唱用的扒谱模型，`lyric-align-q8` 是播放页逐字对齐歌词的可选模型，都只在桌面端“音乐生成”使用，`generate` 不支持；Stable Audio Small SFX 与 Medium 也可在独立“音效”作品中生成短音效；`*-sf2` 是编曲音色库，见[编曲参考](score.md)。
 
 ## 下载与精度
 
@@ -181,9 +181,9 @@ VoxCPM2 的 `stateless` 适合普通文本或参考克隆长文，跨段风格�
 
 ## 上游依据
 
-- [audio.cpp IndexTTS 文档（v0.9.1）](https://github.com/0xShug0/audio.cpp/blob/v0.9.1/docs/models/index_tts.md)
-- [audio.cpp VoxCPM2 文档（v0.9.1）](https://github.com/0xShug0/audio.cpp/blob/v0.9.1/docs/tts.md#voxcpm2)
-- [audio.cpp OmniVoice 文档（v0.9.1）](https://github.com/0xShug0/audio.cpp/blob/v0.9.1/docs/models/omnivoice.md)
-- [audio.cpp Qwen3 文档（v0.9.1）](https://github.com/0xShug0/audio.cpp/blob/v0.9.1/docs/models/qwen3.md)
-- [audio.cpp BreezeTTS 2 文档（v0.9.1）](https://github.com/0xShug0/audio.cpp/blob/v0.9.1/docs/models/breeze_tts.md)
+- [audio.cpp IndexTTS 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/index_tts.md)
+- [audio.cpp VoxCPM2 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/tts.md#voxcpm2)
+- [audio.cpp OmniVoice 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/omnivoice.md)
+- [audio.cpp Qwen3 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/qwen3.md)
+- [audio.cpp BreezeTTS 2 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/breeze_tts.md)
 - [Qwen 官方模型与说话人](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice)

@@ -3,17 +3,17 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack, StackItem, VStack } from '@astryxdesign/core/Layout';
 import { Text } from '@astryxdesign/core/Text';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { ArrowRight, FileMusic, Mic, Music, Pencil } from 'lucide-react';
+import { ArrowRight, AudioWaveform, FileMusic, Mic, Music, Pencil } from 'lucide-react';
 import { playParticles } from './intro-particles';
 
-const kinds = [['text', Mic], ['story', Pencil], ['music', Music], ['score', FileMusic]] as const;
+const kinds = [['text', Mic], ['story', Pencil], ['music', Music], ['score', FileMusic], ['sfx', AudioWaveform]] as const;
 // 按钮在约 7.3 秒时出现，与 styles.css 中 .intro-cta 的动画延迟一致。
 const buttonDelayMs = 7300;
 const leaveMs = 800;
 
 /**
  * 首次启动的开场画面（约 8 秒）：粒子汇成随声音起伏的 3D 球体，再聚成声波条；
- * 随后依次出现流光标题、标语、四种创作方式和「开始探索」，点击后淡出进入主界面。
+ * 随后依次出现流光标题、标语、五种创作方式和「开始探索」，点击后淡出进入主界面。
  * 减少动态效果时直接显示最终画面。
  */
 export function IntroScreen({ onStart }: { onStart: () => void }) {

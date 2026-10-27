@@ -13,8 +13,9 @@ yovoice runs every model locally through its inference engine. Models and the en
 | --- | --- | --- |
 | text | 语音生成 Voice | One script read by one voice. Model, voice and advanced options sit in the right inspector. |
 | story | 故事配音 Story | Multi-speaker dubbing: speakers, lines (cues) and a timeline. Each line can be regenerated alone. Novels and subtitle files can be imported. |
-| music | 音乐 Music | Songs or instrumentals from a style prompt and lyrics (ACE-Step, YuE2), or instrumental music and sound effects from an English description (Stable Audio 3). YuE2 can write an editable melody score first or extract one from a song (cover). |
+| music | 音乐 Music | Songs or instrumentals from a style prompt and lyrics (ACE-Step, YuE2), or instrumental music from an English description (Stable Audio 3). YuE2 can write an editable melody score first or extract one from a song (cover). |
 | score | 编曲 Arrangement | Multi-track score rendered through a SoundFont. |
+| sfx | 音效 Sound effects | Short sound effects from an English description (Stable Audio 3 Small SFX or Medium), default 5 s; rework or inpaint an existing take. |
 | characters | 声音库 Voice library | Saved characters: designed or cloned voices with a preview, reusable across works. |
 | voices | 参考音色 References | Uploaded reference recordings (≤ 20 MB, one clean speaker). Recordings longer than 60 s (up to 10 min) are trimmed automatically to the clearest 5–15 s; the crop dialog's Auto pick does the same for an existing reference. |
 | history | 历史 History | Every generated take; play, reuse settings, save as a voice. |
@@ -43,7 +44,7 @@ Recommend in this order: what the user already has installed (list_models), then
 
 - ACE-Step 1.5 Turbo / XL Turbo: songs or instrumentals from style (≤ 512 chars) + lyrics (≤ 4000 chars, [verse] [chorus] tags). Duration auto or 10–300 s. XL is higher quality and much larger.
 - YuE2 3B: vocal songs (length follows the lyrics) or instrumentals (writes a score, then instruments play the vocal melody; lyrics optional), non-commercial licence. Can plan an ABC melody score first or cover a song via SheetSage2 (yovoice-music skill).
-- Stable Audio 3 Small Music / Small SFX / Medium: instrumental music (Small Music, Medium) or sound effects (Small SFX) from an English description; no lyrics or vocals. Duration 1–120 s (Small) or up to 380 s (Medium), default 30 s. The 生成方式 setting can also start from an existing take of the same work: 改编 Rework (`edit` = `init_audio`, `init_noise_level` 0–1, lower stays closer) or 局部重绘 Inpaint (`edit` = `inpaint_audio`, `inpaint_start`/`inpaint_end` seconds), with `sourceGenerationId` naming the take. Stability AI Community License (free under USD 1M yearly revenue).
+- Stable Audio 3 Small Music / Small SFX / Medium: instrumental music (Small Music, Medium) or sound effects (Small SFX) from an English description; no lyrics or vocals. Duration 1–120 s (Small) or up to 380 s (Medium), default 30 s for music and 5 s for sound effects. The 生成方式 setting can also start from an existing take of the same work: 改编 Rework (`edit` = `init_audio`, `init_noise_level` 0–1, lower stays closer) or 局部重绘 Inpaint (`edit` = `inpaint_audio`, `inpaint_start`/`inpaint_end` seconds), with `sourceGenerationId` naming the take. Stability AI Community License (free under USD 1M yearly revenue).
 - SheetSage2: extracts melody and chords from a song for YuE2 covers.
 - Lyric Aligner (optional): on the playback page, Auto-align separates the vocals and aligns the lyrics word by word to a generated song; saved with the version.
 - SoundFonts (MuseScore General, GeneralUser GS, SGM-V2.01) render arrangements on the score page.
