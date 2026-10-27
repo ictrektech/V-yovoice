@@ -99,7 +99,7 @@ bash docker/build_image.sh --sheet AMD_with_cuda --publish-only
 )
 ```
 
-打包使用现有飞书读凭据（优先 `~/.feishu.components.json`，其次 `~/.feishu.json`，或由 `FEISHU_CONFIG_FILE` 指定）。V-Scheduler 依赖从已发布的 GitHub 包查询，可使用已配置的 `GH_TOKEN`；私有仓库无法读取时，可通过已授权的本机隧道设置 `VVOICE_APPSTORE_API_URL` 查询商店记录。依赖查询失败时先解决凭据或通道问题，不提前触发正式发布。
+打包使用现有飞书读凭据（优先 `~/.feishu.components.json`，其次 `~/.feishu.json`，或由 `FEISHU_CONFIG_FILE` 指定）。V-Scheduler 依赖从已发布的 GitHub 包查询，依次使用 `GH_TOKEN`、`GITHUB_TOKEN` 或本机 `gh auth login` 已保存的登录，避免匿名 API 限流；无需手动导出 CLI 令牌。私有仓库无法读取时，可通过已授权的本机隧道设置 `VVOICE_APPSTORE_API_URL` 查询商店记录。依赖查询失败时先解决凭据或通道问题，不提前触发正式发布。
 
 外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、六个平台镜像引用和依赖，产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。
 

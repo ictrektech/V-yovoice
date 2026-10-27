@@ -40,6 +40,8 @@ verify its packaged Python hash, HTTP metadata, tests and UI before publishing.
 
 Packaging resolves the current published V-Scheduler version, never a guessed
 version. Its built-in shared model repository needs no separate Model Hub app.
+Local packaging uses `GH_TOKEN`, then `GITHUB_TOKEN`, then the existing GitHub CLI
+login (`gh auth login`) to query releases without anonymous API rate limits.
 When the dependency repository is private, the existing
 App Store credentials open the approved loopback SSH tunnel; the packager reads
 the latest App Store record and confirms that its `app.tar.gz` exists and matches

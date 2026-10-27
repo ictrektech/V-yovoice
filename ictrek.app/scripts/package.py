@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import tarfile
 import urllib.error
 import urllib.parse
@@ -76,7 +77,16 @@ def appstore_version(app_id: str, base: str) -> str:
 
 def resolve_dependencies(manifest: dict) -> None:
     headers = {"Accept": "application/vnd.github+json", "User-Agent": "V-Voice VOS packaging"}
-    token = os.getenv("GH_TOKEN")
+    token = os.getenv("GH_TOKEN") or os.getenv("GITHUB_TOKEN")
+    if not token and shutil.which("gh"):
+        # 本机复用已有登录，不要求用户把凭据复制到命令行或配置文件。
+        try:
+            login = subprocess.run(["gh", "auth", "token", "--hostname", "github.com"],
+                                   capture_output=True, text=True, timeout=10)
+            if login.returncode == 0:
+                token = login.stdout.strip()
+        except (OSError, subprocess.TimeoutExpired):
+            pass
     if token:
         headers["Authorization"] = "Bearer " + token
     for dependency in manifest.get("dependencies", {}).get("apps", []):
@@ -89,7 +99,8 @@ def resolve_dependencies(manifest: dict) -> None:
         except urllib.error.HTTPError as exc:
             base = os.getenv("VVOICE_APPSTORE_API_URL", "")
             if exc.code not in {401, 403, 404} or not base:
-                raise RuntimeError(f"{repository}: cannot verify published dependency; App Store tunnel required for private repositories") from exc
+                raise RuntimeError(f"{repository}: cannot verify published dependency (GitHub HTTP {exc.code}); "
+                                   "use gh auth login, GH_TOKEN/GITHUB_TOKEN, or configure VVOICE_APPSTORE_API_URL through the approved App Store tunnel") from exc
             version = appstore_version(dependency["id"], base)
             source = "VOS App Store"
         else:

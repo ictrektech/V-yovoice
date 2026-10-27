@@ -2,6 +2,7 @@ import importlib.util
 import io
 import json
 import os
+import subprocess
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -13,6 +14,14 @@ spec.loader.exec_module(package)
 
 
 class DependencyTests(unittest.TestCase):
+    def setUp(self):
+        self.environment = patch.dict(os.environ, {"GH_TOKEN": "", "GITHUB_TOKEN": "", "VVOICE_APPSTORE_API_URL": ""})
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
+        self.cli = patch.object(package.shutil, "which", return_value=None)
+        self.cli.start()
+        self.addCleanup(self.cli.stop)
+
     def manifest(self, app="com.ictrek.v-scheduler"):
         return {"dependencies": {"apps": [{"id": app, "version": "latest"}]}}
 
@@ -21,11 +30,11 @@ class DependencyTests(unittest.TestCase):
                 "versions": [version], "app_tar_gz": {"size": size,
                 "download_path": f"appstore/apps/com.ictrek.v-scheduler/{version}/app.tar.gz"}}}
 
-    def opener(self, record):
+    def opener(self, record, github_status=404):
         def open_url(request, **kwargs):
             url = request if isinstance(request, str) else request.full_url
             if url.startswith("https://api.github.com/"):
-                raise HTTPError(url, 404, "private", {}, None)
+                raise HTTPError(url, github_status, "GitHub rejected lookup", {}, None)
             if not isinstance(request, str) and request.has_header("Range"):
                 response = io.BytesIO(b"\x1f\x8b")
                 response.status = 206
@@ -38,6 +47,37 @@ class DependencyTests(unittest.TestCase):
         release = {"tag_name": "v0.0.24", "published_at": "2026-10-15", "assets": [{"name": "v_scheduler_0.0.24_pull.tar"}]}
         manifest = self.manifest()
         with patch.object(package.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps(release).encode())):
+            package.resolve_dependencies(manifest)
+        self.assertEqual(manifest["dependencies"]["apps"][0]["version"], ">=0.0.24")
+
+    def test_local_cli_login_authenticates_release_lookup(self):
+        release = {"tag_name": "v0.0.81", "published_at": "2026-10-27", "assets": [{"name": "v_scheduler_0.0.81_pull.tar"}]}
+        manifest = self.manifest()
+        login = subprocess.CompletedProcess([], 0, "fixture-cli-token\n", "")
+        with patch.object(package.shutil, "which", return_value="/usr/bin/gh"), \
+                patch.object(package.subprocess, "run", return_value=login) as cli, \
+                patch.object(package.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps(release).encode())) as fetch:
+            package.resolve_dependencies(manifest)
+        self.assertEqual(fetch.call_args.args[0].get_header("Authorization"), "Bearer fixture-cli-token")
+        self.assertEqual(cli.call_args.args[0], ["gh", "auth", "token", "--hostname", "github.com"])
+        self.assertEqual(manifest["dependencies"]["apps"][0]["version"], ">=0.0.81")
+
+    def test_environment_tokens_take_precedence_over_cli(self):
+        release = {"tag_name": "v0.0.24", "published_at": "2026-10-15", "assets": [{"name": "v_scheduler_0.0.24_pull.tar"}]}
+        for name in ["GH_TOKEN", "GITHUB_TOKEN"]:
+            with self.subTest(name=name), patch.dict(os.environ, {name: "fixture-env-token"}), \
+                    patch.object(package.subprocess, "run") as cli, \
+                    patch.object(package.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps(release).encode())) as fetch:
+                package.resolve_dependencies(self.manifest())
+                self.assertEqual(fetch.call_args.args[0].get_header("Authorization"), "Bearer fixture-env-token")
+                cli.assert_not_called()
+
+    def test_cli_timeout_preserves_rate_limit_store_fallback(self):
+        with patch.dict(os.environ, {"VVOICE_APPSTORE_API_URL": "http://127.0.0.1:18899"}), \
+                patch.object(package.shutil, "which", return_value="/usr/bin/gh"), \
+                patch.object(package.subprocess, "run", side_effect=subprocess.TimeoutExpired("gh", 10)), \
+                patch.object(package.urllib.request, "urlopen", side_effect=self.opener(self.store_response(), github_status=403)):
+            manifest = self.manifest()
             package.resolve_dependencies(manifest)
         self.assertEqual(manifest["dependencies"]["apps"][0]["version"], ">=0.0.24")
 
@@ -65,7 +105,7 @@ class DependencyTests(unittest.TestCase):
 
     def test_private_repo_without_tunnel_fails(self):
         with patch.dict(os.environ, {"VVOICE_APPSTORE_API_URL": ""}), patch.object(package.urllib.request, "urlopen", side_effect=self.opener(self.store_response())):
-            with self.assertRaisesRegex(RuntimeError, "tunnel required"):
+            with self.assertRaisesRegex(RuntimeError, "approved App Store tunnel"):
                 package.resolve_dependencies(self.manifest())
 
     def test_actual_archive_size_must_match(self):
