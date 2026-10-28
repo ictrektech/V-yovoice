@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"yovoice/internal/catalog"
 	"yovoice/internal/msg"
 )
 
@@ -75,42 +74,6 @@ func (d Draft) SubtitleDrafts() ([]Draft, error) {
 // 音效作品补纯音乐标记与默认五秒时长，编曲作品缺少乐谱时补一份空乐谱。
 // 保存作品、导入作品包与状态库升级都经过这里，界面只按补齐后的格式读取。
 func (d *Draft) Normalize() {
-	// 按模型家族补齐默认音色、模式和语言。
-	if m, e := catalog.Lookup(d.ModelID); e == nil {
-		auto := d.SynthesisLanguage == "" || d.SynthesisLanguage == "auto"
-		switch m.Family {
-		case "voxtral_tts":
-			if d.Speaker == "" {
-				d.Speaker = "casual_male"
-			}
-		case "plapre":
-			if d.VoiceMode == "" {
-				d.VoiceMode = "design"
-			}
-			if d.Speaker == "" {
-				d.Speaker = "tor"
-			}
-		case "xtts_v2":
-			if auto {
-				d.SynthesisLanguage = "zh-cn"
-			}
-		case "gradium_phonon":
-			if auto {
-				d.SynthesisLanguage = "en"
-			}
-		case "fish_drama3":
-			if d.VoiceMode == "" {
-				d.VoiceMode = "design"
-			}
-		case "ming3_tts":
-			if d.VoiceMode == "" {
-				d.VoiceMode = "design"
-			}
-			if d.SynthesisLanguage == "" {
-				d.SynthesisLanguage = "auto"
-			}
-		}
-	}
 	if d.Kind == "sfx" {
 		d.Instrumental = true
 		if d.ModelOptions == nil {

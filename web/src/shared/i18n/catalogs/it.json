@@ -1337,8 +1337,8 @@
   "@yovoice.error.omniReferenceRequired": {
     "defaultMessage": "La clonazione OmniVoice richiede la trascrizione di riferimento."
   },
-  "@yovoice.error.breezeReferenceRequired": {
-    "defaultMessage": "La clonazione Breeze TTS 2 richiede la trascrizione completa di riferimento."
+  "@yovoice.error.referenceTextRequired": {
+    "defaultMessage": "La clonazione {model} richiede la trascrizione completa di riferimento."
   },
   "@yovoice.reference.omniTranscriptHelp": {
     "defaultMessage": "La trascrizione deve corrispondere all’audio di riferimento."
@@ -4121,24 +4121,58 @@
   "@yovoice.music.generateAudio": {
     "defaultMessage": "Genera audio"
   },
-  "@yovoice.language.da": {"defaultMessage": "Danese"},
-  "@yovoice.language.nl": {"defaultMessage": "Olandese"},
-  "@yovoice.language.pl": {"defaultMessage": "Polacco"},
-  "@yovoice.language.tr": {"defaultMessage": "Turco"},
-  "@yovoice.language.cs": {"defaultMessage": "Ceco"},
-  "@yovoice.language.hu": {"defaultMessage": "Ungherese"},
-  "@yovoice.language.zh-cn": {"defaultMessage": "Cinese semplificato"},
-  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9 lingue · 20 voci integrate · 24 kHz"},
-  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "Danese · Voci integrate e clonazione · 24 kHz"},
-  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17 lingue · Clonazione vocale · 24 kHz"},
-  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "Inglese · Voce predefinita · 24 kHz"},
-  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "Tag di parlante ed evento · Voce predefinita e clonazione · 44.1 kHz"},
-  "@yovoice.options.silence_duration_sec": {"defaultMessage": "Silenzio tra i segmenti (secondi)"},
-  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "Token di testo per segmento"},
-  "@yovoice.voxtral.generalVoices": {"defaultMessage": "Voci generali"},
-  "@yovoice.reference.builtInVoice": {"defaultMessage": "Voce integrata"},
-  "@yovoice.reference.defaultVoice": {"defaultMessage": "Voce predefinita"},
-  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "La clonazione richiede la trascrizione esatta dell’audio di riferimento."},
-  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2 richiede 6–30 secondi di audio di riferimento."},
-  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "La clonazione Drama 3 richiede la trascrizione completa del riferimento."}
+  "@yovoice.language.nl": {
+    "defaultMessage": "Olandese"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "Polacco"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "Turco"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "Ceco"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "Ungherese"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "Cinese semplificato"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9 lingue · 20 voci integrate · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "Danese · Voci integrate e clonazione · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17 lingue · Clonazione vocale · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "Inglese · Voce predefinita · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "Tag di parlante ed evento · Voce predefinita e clonazione · 44.1 kHz"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "Silenzio tra i segmenti (secondi)"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "Token di testo per segmento"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "Voci generali"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "Voce integrata"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "Voce predefinita"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "La clonazione richiede la trascrizione esatta dell’audio di riferimento."
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "XTTS v2 richiede 6–30 secondi di audio di riferimento."
+  }
 }

@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 import { seedState } from './seed';
 import { emptyState } from '../src/shared/workbench';
 
-async function openModel(page: Parameters<typeof seedState>[0], modelId: string) {
+async function openModel(page: Parameters<typeof seedState>[0], modelId: string, patch: Partial<ReturnType<typeof emptyState>['drafts'][number]> = {}) {
   const state = emptyState();
-  Object.assign(state.drafts[0], { modelId, text: '测试正文。' });
+  Object.assign(state.drafts[0], { modelId, text: '测试正文。' }, patch);
   await seedState(page, state);
   await page.goto('/');
 }
@@ -37,7 +37,8 @@ test('Plapre 在内置音色和克隆之间切换', async ({ page }) => {
 });
 
 test('XTTS 提供 17 种语言且缺少参考音频时先打开选择器', async ({ page }) => {
-  await openModel(page, 'xtts-v2-q8');
+  // 从其他模型切换过来时语言为 auto，XTTS 按简体中文显示。
+  await openModel(page, 'xtts-v2-q8', { synthesisLanguage: 'auto' });
   const language = page.getByRole('combobox', { name: '语言', exact: true });
   await expect(language).toContainText('简体中文');
   await language.click();

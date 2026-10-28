@@ -1337,8 +1337,8 @@
   "@yovoice.error.omniReferenceRequired": {
     "defaultMessage": "OmniVoice 克隆需要填寫參考音訊原文。"
   },
-  "@yovoice.error.breezeReferenceRequired": {
-    "defaultMessage": "Breeze TTS 2 克隆需要填寫參考音訊的完整原文。"
+  "@yovoice.error.referenceTextRequired": {
+    "defaultMessage": "{model} 克隆需要填寫參考音訊的完整原文。"
   },
   "@yovoice.reference.omniTranscriptHelp": {
     "defaultMessage": "原文須與參考音訊一致。"
@@ -4121,24 +4121,58 @@
   "@yovoice.music.generateAudio": {
     "defaultMessage": "產生音訊"
   },
-  "@yovoice.language.da": {"defaultMessage": "丹麥語"},
-  "@yovoice.language.nl": {"defaultMessage": "荷蘭語"},
-  "@yovoice.language.pl": {"defaultMessage": "波蘭語"},
-  "@yovoice.language.tr": {"defaultMessage": "土耳其語"},
-  "@yovoice.language.cs": {"defaultMessage": "捷克語"},
-  "@yovoice.language.hu": {"defaultMessage": "匈牙利語"},
-  "@yovoice.language.zh-cn": {"defaultMessage": "簡體中文"},
-  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9 種語言 · 20 種內建音色 · 24 kHz"},
-  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "丹麥語 · 內建音色與音色複製 · 24 kHz"},
-  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17 種語言 · 音色複製 · 24 kHz"},
-  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "英語 · 預設音色 · 24 kHz"},
-  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "說話者與事件標籤 · 預設音色與音色複製 · 44.1 kHz"},
-  "@yovoice.options.silence_duration_sec": {"defaultMessage": "段落間靜音（秒）"},
-  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "每段文字 Token 數"},
-  "@yovoice.voxtral.generalVoices": {"defaultMessage": "通用音色"},
-  "@yovoice.reference.builtInVoice": {"defaultMessage": "內建音色"},
-  "@yovoice.reference.defaultVoice": {"defaultMessage": "預設音色"},
-  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "複製音色時必須填寫參考音訊的逐字原文。"},
-  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2 需要 6–30 秒的參考音訊。"},
-  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "Drama 3 音色複製必須填寫參考音訊的完整原文。"}
+  "@yovoice.language.nl": {
+    "defaultMessage": "荷蘭語"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "波蘭語"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "土耳其語"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "捷克語"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "匈牙利語"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "簡體中文"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9 種語言 · 20 種內建音色 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "丹麥語 · 內建音色與音色複製 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17 種語言 · 音色複製 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "英語 · 預設音色 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "說話者與事件標籤 · 預設音色與音色複製 · 44.1 kHz"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "段落間靜音（秒）"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "每段文字 Token 數"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "通用音色"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "內建音色"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "預設音色"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "複製音色時必須填寫參考音訊的逐字原文。"
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "XTTS v2 需要 6–30 秒的參考音訊。"
+  }
 }

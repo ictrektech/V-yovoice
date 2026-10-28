@@ -226,16 +226,11 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 				unsupported = f.Name
 			}
 		})
-		family := ""
-		for _, model := range catalog.Models {
-			if model.ID == d.ModelID {
-				family = model.Family
-				break
-			}
-		}
-		if family == "" {
+		model, err := catalog.Lookup(d.ModelID)
+		if err != nil {
 			return fmt.Errorf("未知模型：%s", d.ModelID)
 		}
+		family := model.Family
 		d.ModelOptions = map[string]map[string]any{family: nativeOptions}
 		if omni || qwen || ming || xtts || gradium {
 			d.SynthesisLanguage = "auto"
@@ -278,17 +273,8 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 		if omni && ((d.VoiceMode == "design" && d.ReferenceText != "") || (d.VoiceMode == "clone" && d.VoiceDescription != "")) {
 			return fmt.Errorf("OmniVoice 声音设计使用 --voice-description；克隆使用参考音频和 --reference-text")
 		}
-		if breeze && d.VoiceMode == "design" && d.ReferenceText != "" {
-			return fmt.Errorf("Breeze TTS 2 的 --reference-text 需要 clone 模式")
-		}
-		if ming && d.VoiceMode == "design" && d.ReferenceText != "" {
-			return fmt.Errorf("Ming 3.0 TTS 的 --reference-text 需要 clone 模式")
-		}
-		if plapre && d.VoiceMode == "design" && d.ReferenceText != "" {
-			return fmt.Errorf("Plapre 3 的 --reference-text 需要 clone 模式")
-		}
-		if drama && d.VoiceMode == "design" && d.ReferenceText != "" {
-			return fmt.Errorf("Drama 3 的 --reference-text 需要 clone 模式")
+		if (breeze || ming || plapre || drama) && d.VoiceMode == "design" && d.ReferenceText != "" {
+			return fmt.Errorf("%s 的 --reference-text 需要 clone 模式", model.Name)
 		}
 		if reference != "" && voice != "" {
 			return fmt.Errorf("--reference 和 --voice 只能指定一个")

@@ -1337,8 +1337,8 @@
   "@yovoice.error.omniReferenceRequired": {
     "defaultMessage": "Для клонирования в OmniVoice нужна расшифровка референса."
   },
-  "@yovoice.error.breezeReferenceRequired": {
-    "defaultMessage": "Для клонирования в Breeze TTS 2 нужна полная расшифровка референса."
+  "@yovoice.error.referenceTextRequired": {
+    "defaultMessage": "Для клонирования в {model} нужна полная расшифровка референса."
   },
   "@yovoice.reference.omniTranscriptHelp": {
     "defaultMessage": "Расшифровка должна совпадать с референсным аудио."
@@ -4121,24 +4121,58 @@
   "@yovoice.music.generateAudio": {
     "defaultMessage": "Создать аудио"
   },
-  "@yovoice.language.da": {"defaultMessage": "Датский"},
-  "@yovoice.language.nl": {"defaultMessage": "Нидерландский"},
-  "@yovoice.language.pl": {"defaultMessage": "Польский"},
-  "@yovoice.language.tr": {"defaultMessage": "Турецкий"},
-  "@yovoice.language.cs": {"defaultMessage": "Чешский"},
-  "@yovoice.language.hu": {"defaultMessage": "Венгерский"},
-  "@yovoice.language.zh-cn": {"defaultMessage": "Упрощённый китайский"},
-  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9 языков · 20 встроенных голосов · 24 кГц"},
-  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "Датский · Встроенные голоса и клонирование · 24 кГц"},
-  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17 языков · Клонирование голоса · 24 кГц"},
-  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "Английский · Голос по умолчанию · 24 кГц"},
-  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "Метки говорящего и событий · Голос по умолчанию и клонирование · 44,1 кГц"},
-  "@yovoice.options.silence_duration_sec": {"defaultMessage": "Пауза между фрагментами (секунды)"},
-  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "Текстовых токенов на фрагмент"},
-  "@yovoice.voxtral.generalVoices": {"defaultMessage": "Общие голоса"},
-  "@yovoice.reference.builtInVoice": {"defaultMessage": "Встроенный голос"},
-  "@yovoice.reference.defaultVoice": {"defaultMessage": "Голос по умолчанию"},
-  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "Для клонирования нужна точная расшифровка референсного аудио."},
-  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2 требует 6–30 секунд референсного аудио."},
-  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "Для клонирования Drama 3 нужна полная расшифровка референса."}
+  "@yovoice.language.nl": {
+    "defaultMessage": "Нидерландский"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "Польский"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "Турецкий"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "Чешский"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "Венгерский"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "Упрощённый китайский"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9 языков · 20 встроенных голосов · 24 кГц"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "Датский · Встроенные голоса и клонирование · 24 кГц"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17 языков · Клонирование голоса · 24 кГц"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "Английский · Голос по умолчанию · 24 кГц"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "Метки говорящего и событий · Голос по умолчанию и клонирование · 44,1 кГц"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "Пауза между фрагментами (секунды)"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "Текстовых токенов на фрагмент"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "Общие голоса"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "Встроенный голос"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "Голос по умолчанию"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "Для клонирования нужна точная расшифровка референсного аудио."
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "XTTS v2 требует 6–30 секунд референсного аудио."
+  }
 }
