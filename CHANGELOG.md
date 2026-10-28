@@ -4,23 +4,39 @@
 
 ## [Unreleased]
 
-- 新增 Ming 3.0 TTS、Voxtral TTS、Plapre 3、XTTS v2、Gradium Phonon 和 Fish Audio Drama 3：覆盖内置音色、声音设计与多语言音色克隆，Drama 3 还支持说话人和事件标签；故事配音的每个角色也可分别使用，均需要 audio.cpp v0.9.3 内核。
-- 故事配音可直接把 yovoice 生成的语音、音效和音乐复制到音轨；Ocho 也能帮你给故事配音加音效、更新模型和开启“性能优先”。
-- 设置“资源”页精简表格：去掉“所属作品”列，打开作品、打开所在位置和删除收进每行的“更多”菜单，表格在窗口内一屏放下；窄窗口下也可以左右滚动。
-- 生成完成后自动体检音频：发现爆音、咔哒声、结尾截断、长静音、几乎无声或音量过小时，在播放栏和故事配音的对应句子旁显示提醒，悬停可看问题和时间位置。
-- 导出时可选目标响度：有声书 -18、播客 -16、视频平台 -14 LUFS，只整体调整音量，峰值不超过 -1 dBTP。
-- 参考音频支持最长 10 分钟的录音：超过 60 秒时自动截取人声最清楚的 5–15 秒；裁剪时也可点“自动挑选”。
-- Ocho 交付前会检查生成的音频，故事配音只重新生成有问题的句子。
+## [0.5.0] - 2026-10-28
+
+### English
+
+- Six new speech models: Ming 3.0 TTS, Voxtral TTS, Plapre 3, XTTS v2, Gradium Phonon and Fish Audio Drama 3, covering built-in voices, voice design and multilingual voice cloning; Drama 3 also takes speaker and event tags. Each story-narration role can use them separately. They need the audio.cpp v0.9.3 engine.
+- Music generation adds Stable Audio 3 (Small Music, Small SFX, Medium; Q8 / F16): generate instrumentals from an English description, up to 2 minutes with Small and about 6 with Medium, remix a whole existing version, or redraw part of it. New "Sound effects" generates 1–30 s effects from a description. Stable Audio 3 uses the Stability AI Community License (free below US$1M annual revenue).
+- The engine is upgraded to audio.cpp v0.9.3: fixes occasional wrong results on Metal and CUDA and speeds up several models. Engines v0.7.4 and later keep working; update from Settings. A new CUDA "Performance first" mode speeds up ACE-Step, Qwen3-TTS, YuE2, VoxCPM2 and Drama 3 at the cost of more VRAM.
+- Kokoro can blend two voices of the same language, set per story-narration role.
+- Downloaded models show "Update available" in Settings when upstream releases a new version, with one-click update and a dismissible sidebar notice; old versions keep working.
+- Audio check after every generation: clipping, clicks, cut-off endings, long silences, near-silence or low volume are flagged in the player and next to the affected story lines, with details and timestamps on hover. Ocho checks audio before handing it over and regenerates only the faulty story lines.
+- Export to a target loudness: audiobook −18, podcast −16 or video platforms −14 LUFS, with peaks kept under −1 dBTP.
+- Reference recordings up to 10 minutes: clips over 60 s are trimmed to the clearest 5–15 s of speech automatically, and "Auto pick" is available when trimming.
+- Story narration can add yovoice-generated speech, sound effects and music straight to a track; Ocho can add sound effects to a story, update models and turn on "Performance first".
+- Smoother background-music ducking: it dips before speech starts, holds through short pauses and recovers smoothly.
+- The Settings › Resources table is simpler and fits on one screen, with row actions in a "More" menu; narrow windows scroll sideways.
+- Clearer errors: picking a ChatGPT subscription in the Ocho panel explains right away that the assistant can't use it and lets you switch back; an engine crash mid-generation now says "The inference engine exited unexpectedly" with the reason, instead of a network-like error.
+- Interface polish: the asset dialog in story narration keeps a stable height when switching types, and the editor scrollbar sits against the divider.
+
+### 简体中文
+
+- 新增 6 个语音模型：Ming 3.0 TTS、Voxtral TTS、Plapre 3、XTTS v2、Gradium Phonon 和 Fish Audio Drama 3，覆盖内置音色、声音设计与多语言音色克隆，Drama 3 还支持说话人和事件标签；故事配音的每个角色可分别使用，需要 audio.cpp v0.9.3 内核。
+- 音乐生成支持 Stable Audio 3（Small Music、Small SFX、Medium，Q8 / F16）：按英文描述生成纯音乐，Small 最长 2 分钟、Medium 约 6 分钟，可以已生成的版本为起点整体改编或局部重绘；新增“音效生成”，按描述生成 1–30 秒音效。模型采用 Stability AI 社区许可，年收入低于 100 万美元可免费使用。
+- 推理内核升级到 audio.cpp v0.9.3：修复 Metal 与 CUDA 上偶发的计算错误，多个模型生成更快；已装 v0.7.4 及以上内核的仍可使用，设置页可选更新。CUDA 新增“性能优先”模式，为 ACE-Step、Qwen3-TTS、YuE2、VoxCPM2 和 Drama 3 加速，但占用更多显存。
+- Kokoro 支持按比例混合两种同语言音色，故事配音的每个角色可分别设置。
+- 已下载的模型在上游发布新版本后，设置里标出“有新版本”并可一键更新，侧栏给出一次可关闭的提示；旧版本仍可使用。
+- 生成后自动体检音频：发现爆音、咔哒声、结尾截断、长静音、几乎无声或音量过小时，在播放栏和故事配音对应句子旁提醒，悬停可看问题和时间位置；Ocho 交付前也会检查，故事配音只重新生成有问题的句子。
+- 导出时可选目标响度：有声书 −18、播客 −16、视频平台 −14 LUFS，峰值不超过 −1 dBTP。
+- 参考音频支持最长 10 分钟的录音：超过 60 秒时自动截取人声最清楚的 5–15 秒，裁剪时也可点“自动挑选”。
+- 故事配音可直接把 yovoice 生成的语音、音效和音乐加到音轨；Ocho 能给故事配音加音效、更新模型和开启“性能优先”。
 - 背景音乐压低更自然：说话前提前让位，句间短停顿不再忽高忽低，说完后平滑恢复。
-- Ocho 面板选中 ChatGPT 订阅时直接说明助手用不了，并可就地切回接口类服务，不再等发送后才报错。
-- 推理引擎生成中途崩溃时，提示“推理引擎意外退出”并附上原因，不再显示像网络故障的“远程主机强迫关闭了一个现有的连接”。
-- 音乐生成支持 Stable Audio 3（Small Music、Small SFX、Medium，Q8 / F16）：根据英文描述生成纯音乐或音效，Small 最长 2 分钟、Medium 约 6 分钟；还能以作品已生成的版本为起点整体改编，或只重绘其中一段。模型采用 Stability AI 社区许可，年收入低于 100 万美元可免费使用。
-- 音乐生成新增“音效生成”：只需写一段英文描述，用 Small SFX 或 Medium 生成 1–30 秒的音效，同样支持改编和局部重绘。
-- 推理内核升级到 audio.cpp v0.9.3：修复 Metal 与 CUDA 上偶发的计算错误，多个模型生成更快；已装 v0.7.4 及以上内核的仍可继续使用，设置页可选更新。
-- Kokoro 支持按比例混合两种同语言音色，故事配音的每个角色也可分别设置；CUDA 后端新增“性能优先”模式，为 ACE-Step、Qwen3-TTS、YuE2、VoxCPM2 和 Drama 3 加快生成，但会占用更多显存（需 audio.cpp v0.9.3）。
-- 已下载的模型在上游发布新版本后，设置里会标出“有新版本”并可一键更新，侧栏给出一次可关闭的提示；旧版本仍可正常使用。
-- 故事配音从已有音频添加素材时，弹窗高度保持稳定，切换语音、音效与音乐类型不再忽大忽小跳动。
-- 优化作品编辑区滚动条位置：贴靠右侧分割线展示，不再内缩悬空，正文内容与标题保持整齐边距。
+- 设置“资源”页表格精简，一屏放下，每行操作收进“更多”菜单；窄窗口可左右滚动。
+- 提示更清楚：Ocho 面板选中 ChatGPT 订阅时直接说明助手用不了并可就地切回；推理引擎中途崩溃时提示“推理引擎意外退出”并附上原因，不再显示像网络故障的报错。
+- 界面细节：故事配音素材弹窗切换类型时高度保持稳定，作品编辑区滚动条贴靠右侧分割线。
 
 ## [0.4.1] - 2026-10-21
 
