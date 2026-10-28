@@ -1013,6 +1013,12 @@
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "中文、英語 · 聲音設計與音色克隆 · 建議使用顯示卡。模型授權僅限研究與非商業用途。"
   },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 種語言 · 聲音設計與音色克隆 · 44.1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "裁剪靜音"
+  },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 種語言 · 參考音訊克隆"
   },

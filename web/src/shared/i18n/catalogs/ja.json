@@ -1013,6 +1013,12 @@
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "中国語、英語 · ボイスデザインとクローン · GPU 推奨。モデルのライセンスは研究および非商用利用に限られます。"
   },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 言語 · ボイスデザインとクローン · 44.1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "無音をトリム"
+  },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 言語 · 参照音声からのクローン"
   },

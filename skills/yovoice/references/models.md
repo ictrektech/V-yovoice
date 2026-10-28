@@ -13,6 +13,7 @@
 | Qwen3-TTS 1.7B CustomVoice | 9 种内置音色、文字风格/情绪、语言、主/子解码器采样、种子、长文分段 | 不使用外部参考音频 |
 | Qwen3-TTS 1.7B VoiceDesign | 自然语言声音设计、语言、主/子解码器采样、种子、长文分段 | 必须填写声音描述，不使用外部参考音频 |
 | Breeze TTS 2 | 自然语言声音设计、参考克隆、克隆时演绎指导、CFG、主/细节解码器采样、种子、长文分段、单段生成上限、正文 [笑]/(laugh) 等声音事件 | 中英；克隆必须提供逐字原文；需要 v0.9.1 内核，建议 GPU；权重仅限非商业 |
+| Ming 3.0 TTS | 自然语言声音设计、参考克隆、可选原文声学前缀、7 种语言、流匹配引导与温度、种子、长文分段、尾部静音裁剪 | 设计描述可选；克隆原文可选；需要 v0.9.3 内核 |
 
 此处覆盖语音生成能力，并非 audio.cpp 的全部底层调优开关。图内存、运行时重量化、缓存槽位、调试用噪声文件等引擎参数继续使用默认值，不作为声音设置展示。训练、微调、ASR、对齐及批量训练数据处理不属于此 TTS 接入。
 
@@ -57,10 +58,12 @@ Windows/Linux 后端选择见 [引擎与模型下载](setup.md)。精度影响�
 | `breeze-tts-2-q4` | Breeze TTS 2 | Q4 | 3.79 GB |
 | `breeze-tts-2-q8` | Breeze TTS 2 | Q8 | 5.08 GB |
 | `breeze-tts-2-bf16` | Breeze TTS 2 | BF16 | 7.34 GB |
+| `ming3-tts-0.5b-q8` | Ming 3.0 TTS 0.5B | Q8 | 1.74 GB |
+| `ming3-tts-0.5b-bf16` | Ming 3.0 TTS 0.5B | BF16 | 3.00 GB |
 
 ## 调用方式
 
-Qwen 的语言可选 `auto|zh|en|ja|ko|de|fr|ru|pt|es|it`，默认自动。
+Qwen 的语言可选 `auto|zh|en|ja|ko|de|fr|ru|pt|es|it`，默认自动。Ming 的语言可选 `auto|zh|en|ja|ko|de|fr|es`。
 
 ```sh
 # 内置音色，可用文字控制演绎
@@ -177,6 +180,18 @@ yovoice generate --model qwen3-tts-customvoice-q8 --speaker Ryan --text-file nar
 
 Breeze TTS 2 用 `--voice-mode design|clone` 选择方式（有参考音频时默认克隆），`--voice-description` 在设计时描述音色、克隆时作为演绎指导。拖音时先缩短 `text_chunk_size`，再降低 `temperature`；CPU 后端无法使用 bf16 参考路径，长文更容易拖音。
 
+### ming3_tts
+
+| 参数 | 含义 | 默认值 | 可用范围 |
+| --- | --- | --- | --- |
+| `text_chunk_size` | 长文分段码点数（0 为上游自动） | `0` | 0–12000 |
+| `text_chunk_mode` | 分段方式 | `"tag_aware"` | default, tag_aware, japanese, endline |
+| `guidance_scale` | 流匹配引导强度 | `2` | 0–10 |
+| `temperature` | 流采样温度 | `0` | 0–2 |
+| `trim_silence` | 裁剪每段尾部低能量音频并保留短尾音 | `true` | true / false |
+
+Ming 3.0 TTS 用 `--voice-mode design|clone` 选择方式（有参考音频时默认克隆），设计描述可选；克隆原文可选，省略时仅参考说话人音色。上游默认按中日韩 50 码点、其他语言 300 码点分段，无参考音色时后续段锁定首段音色，不要无目的强制分段大小。
+
 VoxCPM2 的 `stateless` 适合普通文本或参考克隆长文，跨段风格延续应保留默认 `continuation`。VoxCPM2 的 CFG 和步数继续用 `--guidance-scale`、`--inference-steps`，与 App 控件一致。
 
 ## 上游依据
@@ -186,4 +201,5 @@ VoxCPM2 的 `stateless` 适合普通文本或参考克隆长文，跨段风格�
 - [audio.cpp OmniVoice 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/omnivoice.md)
 - [audio.cpp Qwen3 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/qwen3.md)
 - [audio.cpp BreezeTTS 2 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/breeze_tts.md)
+- [audio.cpp Ming 3.0 TTS 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/ming3_tts.md)
 - [Qwen 官方模型与说话人](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice)

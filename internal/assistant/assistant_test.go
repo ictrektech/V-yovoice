@@ -372,7 +372,7 @@ func TestVoiceReferencesCoverCatalogOptions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	families := map[string]string{"index_tts2": "indextts", "omnivoice": "omnivoice", "qwen3_tts": "qwen3-tts", "voxcpm2": "voxcpm2", "breeze_tts": "breeze", "kokoro_tts": "kokoro"}
+	families := map[string]string{"index_tts2": "indextts", "omnivoice": "omnivoice", "qwen3_tts": "qwen3-tts", "voxcpm2": "voxcpm2", "breeze_tts": "breeze", "ming3_tts": "ming3_tts", "kokoro_tts": "kokoro"}
 	if entries, _ := skillFS.ReadDir("skills/yovoice-voice/references"); len(entries) != len(families) {
 		t.Fatalf("参考文档数量不对：%d", len(entries))
 	}

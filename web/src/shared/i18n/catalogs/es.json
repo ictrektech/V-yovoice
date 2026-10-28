@@ -1013,6 +1013,12 @@
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "Chino, inglés · diseño y clonación de voz · se recomienda GPU. La licencia del modelo solo permite uso de investigación y no comercial."
   },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 idiomas · diseño y clonación de voz · 44,1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "Recortar silencio"
+  },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 idiomas · Clonación de voz de referencia"
   },

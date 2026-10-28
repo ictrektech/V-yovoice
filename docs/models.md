@@ -13,6 +13,7 @@ Choose a model based on whether you have a reference recording or want a built-i
 | Qwen3-TTS CustomVoice · 1.7B | Built-in voices with style instructions | Speaker ID; optional style description |
 | Qwen3-TTS VoiceDesign · 1.7B | Voice design | A voice description |
 | Breeze TTS 2 | Chinese and English voice design, cloning, and voice direction | A description is optional for designed voices; cloning requires reference audio and its full transcript; a GPU is recommended |
+| Ming 3.0 TTS | Voice design and cloning in 7 languages | A description is optional for design; cloning requires audio, with an optional transcript; requires engine v0.9.3 |
 | Kokoro | Lightweight built-in voices | Speaker ID; no reference audio |
 
 Use `yovoice models list --json` for model IDs, available precisions, file sizes, voices, and advanced parameter definitions. The app lists models in Settings. See the [CLI guide](cli.md) to download an engine and model.
@@ -30,6 +31,7 @@ Use `yovoice models list --json` for model IDs, available precisions, file sizes
 | Qwen3-TTS CustomVoice | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | 9 built-in voices, text-guided style and emotion |
 | Qwen3-TTS VoiceDesign | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | Voice design from natural-language descriptions, no reference audio required |
 | Breeze TTS 2 | ~3B | Q4 · 3.79 GB<br>Q8 · 5.08 GB<br>BF16 · 7.34 GB | Chinese and English voice design, cloning and voice direction; GPU recommended, requires the v0.9.1 engine |
+| Ming 3.0 TTS | 0.5B | Q8 · 1.74 GB<br>BF16 · 3.00 GB | Voice design and cloning in Chinese, English, Japanese, Korean, German, French and Spanish; 44.1 kHz output; requires engine v0.9.3 |
 | Kokoro-82M 1.0 Official | 82M | Q8 · 189.55 MB<br>BF16 · 211.95 MB | 49 built-in voices, multilingual speech excluding Japanese |
 | Kokoro-82M 1.1-zh | 82M | Q8 · 255.32 MB | 100 Chinese and 3 English voices; experimental |
 | ACE-Step 1.5 Turbo | — | Q8 · 6.19 GB<br>BF16 · 10.09 GB | Songs and instrumentals from a style prompt and lyrics, 50+ vocal languages; requires engine v0.9.1 |
@@ -55,9 +57,10 @@ yovoice generate --model voxcpm2-q8 --text-file narration.txt --reference voice.
 yovoice generate --model omnivoice-q8 --text-file narration.txt --reference voice.wav --reference-text "The exact words spoken in the recording." --output omni.wav
 yovoice generate --model qwen3-tts-base-0.6b-q8 --text-file narration.txt --reference voice.wav --output qwen.wav
 yovoice generate --model breeze-tts-2-q8 --text-file narration.txt --reference voice.wav --reference-text "The exact words spoken in the recording." --voice-description "Slightly faster, relaxed tone" --output breeze.wav
+yovoice generate --model ming3-tts-0.5b-q8 --text-file narration.txt --reference voice.wav --reference-text "The exact words spoken in the recording." --language en --output ming.wav
 ```
 
-For VoxCPM2, omit `--reference-text` for ordinary cloning. For Qwen3-TTS Base, adding an accurate transcript enables transcript-guided cloning. OmniVoice and Breeze TTS 2 cloning always require a matching transcript. For Breeze, `--voice-description` acts as voice direction when cloning: it keeps the voice and steers pace, emotion and tone.
+For VoxCPM2, omit `--reference-text` for ordinary cloning. For Qwen3-TTS Base, adding an accurate transcript enables transcript-guided cloning. OmniVoice and Breeze TTS 2 cloning always require a matching transcript. For Breeze, `--voice-description` acts as voice direction when cloning: it keeps the voice and steers pace, emotion and tone. Ming 3.0 TTS accepts an optional transcript: include it for an acoustic reference prefix, or omit it to condition only on the reference speaker.
 
 Use a clear recording with one speaker and little background noise. Reference audio must be 1 second to 10 minutes and no larger than 20 MB; recordings over 60 seconds are trimmed automatically to their clearest 5–15 seconds.
 
@@ -67,6 +70,7 @@ Use a clear recording with one speaker and little background noise. Reference au
 yovoice generate --model voxcpm2-q8 --voice-description "A warm, calm adult narrator" --text-file narration.txt --output vox-design.wav
 yovoice generate --model omnivoice-q8 --voice-description "female, young adult, moderate pitch" --text-file narration.txt --output omni-design.wav
 yovoice generate --model breeze-tts-2-q8 --voice-description "A warm female voice, steady pace, clear diction" --text-file narration.txt --output breeze-design.wav
+yovoice generate --model ming3-tts-0.5b-q8 --voice-description "A warm, calm adult narrator" --language en --text-file narration.txt --output ming-design.wav
 yovoice generate --model qwen3-tts-voicedesign-q8 --voice-description "A deep, resonant adult narrator" --text-file narration.txt --output qwen-design.wav
 yovoice generate --model qwen3-tts-customvoice-q8 --speaker Ryan --voice-description "Speak softly and slowly" --language en --text-file narration.txt --output custom.wav
 ```
@@ -91,6 +95,8 @@ VoxCPM2 uses voice descriptions for speed, emotion, and dialect. `--guidance-sca
 VoxCPM2 generates autoregressively at 6.25 frames per second. When one chunk runs too long, the voice drifts or breaks into noise, and pitch and loudness slowly sag within the chunk. YoVoice defaults to 200 characters per chunk with a 400-character limit. The default continuation strategy feeds the previous chunk into the next to keep transitions smooth; when cloning, set the long-text strategy to `stateless` to anchor every chunk directly on the reference audio.
 
 OmniVoice supports `--speed`, `--language`, `--guidance-scale`, and `--inference-steps`. Sound tags such as `[laughter]` and `[sigh]` can be inserted into the text. Qwen3-TTS supports `--language auto|zh|en|ja|ko|de|fr|ru|pt|es|it`.
+
+Ming 3.0 TTS supports `--language auto|zh|en|ja|ko|de|fr|es`, with `guidance_scale`, `temperature`, `trim_silence` and long-text chunking under Advanced settings. By default, CJK text is chunked at 50 codepoints and other text at 300; later chunks without reference audio keep the first chunk's voice. YoVoice does not override the chunk size.
 
 ### Breeze TTS 2 and dragging speech
 

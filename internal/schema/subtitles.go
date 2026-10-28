@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"yovoice/internal/catalog"
 	"yovoice/internal/msg"
 )
 
@@ -74,6 +75,14 @@ func (d Draft) SubtitleDrafts() ([]Draft, error) {
 // 音效作品补纯音乐标记与默认五秒时长，编曲作品缺少乐谱时补一份空乐谱。
 // 保存作品、导入作品包与状态库升级都经过这里，界面只按补齐后的格式读取。
 func (d *Draft) Normalize() {
+	if m, e := catalog.Lookup(d.ModelID); e == nil && m.Family == "ming3_tts" {
+		if d.VoiceMode == "" {
+			d.VoiceMode = "design"
+		}
+		if d.SynthesisLanguage == "" {
+			d.SynthesisLanguage = "auto"
+		}
+	}
 	if d.Kind == "sfx" {
 		d.Instrumental = true
 		if d.ModelOptions == nil {

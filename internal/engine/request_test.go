@@ -463,3 +463,82 @@ func TestBreezeRequest(t *testing.T) {
 		}
 	}
 }
+
+func TestMingRequest(t *testing.T) {
+	d := schema.DefaultDraft()
+	d.ModelID = "ming3-tts-0.5b-q8"
+	d.Text = " 你好，世界。\n"
+	d.VoiceDescription = "温暖的女声"
+	d.SynthesisLanguage = "zh"
+	// IndexTTS 的模式、语言与采样参数不能泄漏到 Ming 请求中。
+	d.Mode = "reference"
+	d.Language = "ja"
+	p, err := BuildRequest(d, "voice.wav", "emotion.wav")
+	must(t, err)
+	r := p["request"].(map[string]any)
+	o := r["options"].(map[string]any)
+	if r["text"] != "你好，世界。" || r["language"] != "zh" || r["voice_ref"] != nil || o["template_name"] != "voice_design" || o["instruct"] != d.VoiceDescription || len(o) != 2 {
+		t.Fatal(r)
+	}
+	// 无描述时是普通 TTS；自动语言与长文分段都交给上游决定。
+	d.VoiceDescription = ""
+	d.SynthesisLanguage = "auto"
+	p, err = BuildRequest(d, "", "")
+	must(t, err)
+	r = p["request"].(map[string]any)
+	o = r["options"].(map[string]any)
+	if _, ok := r["language"]; ok || len(o) != 0 {
+		t.Fatal(r)
+	}
+
+	d.VoiceMode = "clone"
+	d.VoiceDescription = "克隆时不透传描述"
+	d.ReferenceText = " 参考原文 "
+	d.ModelOptions = map[string]map[string]any{"ming3_tts": {"text_chunk_size": float64(0), "guidance_scale": float64(3), "temperature": 0.5, "trim_silence": false}}
+	seed := 7
+	d.Seed = &seed
+	if !d.RequiresVoice() {
+		t.Fatal("克隆应要求参考音频")
+	}
+	p, err = BuildRequest(d, "voice.wav", "")
+	must(t, err)
+	r = p["request"].(map[string]any)
+	o = r["options"].(map[string]any)
+	if r["voice_ref"] != "voice.wav" || o["reference_text"] != "参考原文" || o["guidance_scale"] != float64(3) || o["temperature"] != 0.5 || o["trim_silence"] != false || o["seed"] != seed || len(o) != 5 {
+		t.Fatal(r)
+	}
+	for _, key := range []string{"template_name", "instruct", "text_chunk_size"} {
+		if _, ok := o[key]; ok {
+			t.Fatal("不应下发", key, o)
+		}
+	}
+	// Ming 无原文时只使用说话人条件，不像 Breeze 那样强制原文。
+	d.ReferenceText = ""
+	p, err = BuildRequest(d, "voice.wav", "")
+	must(t, err)
+	o = p["request"].(map[string]any)["options"].(map[string]any)
+	if _, ok := o["reference_text"]; ok {
+		t.Fatal(o)
+	}
+	if _, err = BuildRequest(d, "", ""); err == nil {
+		t.Fatal("克隆缺少参考音频时应报错")
+	}
+	for _, patch := range []func(*schema.Draft){
+		func(d *schema.Draft) { d.VoiceMode = "continuation" },
+		func(d *schema.Draft) { d.SynthesisLanguage = "ru" },
+		func(d *schema.Draft) { d.ModelOptions = map[string]map[string]any{"ming3_tts": {"temperature": -0.1}} },
+		func(d *schema.Draft) { negative := -1; d.Seed = &negative },
+	} {
+		invalid := d
+		patch(&invalid)
+		if schema.Validate(invalid) == nil {
+			t.Fatal("应拒绝无效参数", invalid)
+		}
+	}
+	normalized := schema.DefaultDraft()
+	normalized.ModelID = "ming3-tts-0.5b-bf16"
+	normalized.Normalize()
+	if normalized.VoiceMode != "design" || normalized.SynthesisLanguage != "auto" {
+		t.Fatal(normalized.SynthesisSettings)
+	}
+}

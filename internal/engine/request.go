@@ -96,6 +96,29 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 		// 使用各引擎原生默认值，不透传 IndexTTS 的采样、情绪或语速参数。
 		return map[string]any{"model": "index", "request": r}, nil
 	}
+	if m.Family == "ming3_tts" {
+		o, _ := d.GenerationOptions(m.Family)
+		if d.Seed != nil {
+			o["seed"] = *d.Seed
+		}
+		r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
+		if d.SynthesisLanguage != "" && d.SynthesisLanguage != "auto" {
+			r["language"] = d.SynthesisLanguage
+		}
+		if d.RequiresVoice() {
+			if voice == "" {
+				return nil, msg.Err(msg.ErrVoiceRequired, nil)
+			}
+			r["voice_ref"] = voice
+			if transcript := strings.TrimSpace(d.ReferenceText); transcript != "" {
+				o["reference_text"] = transcript
+			}
+		} else if description := strings.TrimSpace(d.VoiceDescription); description != "" {
+			o["template_name"] = "voice_design"
+			o["instruct"] = description
+		}
+		return map[string]any{"model": "index", "request": r}, nil
+	}
 	if m.Family == "breeze_tts" {
 		o, _ := d.GenerationOptions(m.Family)
 		// Breeze TTS 2 以 12.5 帧/秒生成，官方上下文为 2048 帧；audio.cpp 默认每段 600 字、上限 1500 帧，

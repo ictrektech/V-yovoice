@@ -95,6 +95,21 @@ func Validate(d Draft) error {
 		}
 		return nil
 	}
+	if m.Family == "ming3_tts" {
+		if d.VoiceMode != "" && d.VoiceMode != "design" && d.VoiceMode != "clone" {
+			return msg.Err(msg.ErrModeInvalid, nil)
+		}
+		if TextLen(d.VoiceDescription) > 500 || TextLen(d.ReferenceText) > 2000 {
+			return msg.Err(msg.ErrDraftLimits, nil)
+		}
+		if !slices.Contains([]string{"", "auto", "zh", "en", "ja", "ko", "de", "fr", "es"}, d.SynthesisLanguage) {
+			return msg.Err(msg.ErrLanguageUnsupported, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
 	if m.Family == "breeze_tts" {
 		if d.VoiceMode != "" && d.VoiceMode != "design" && d.VoiceMode != "clone" {
 			return msg.Err(msg.ErrModeInvalid, nil)
@@ -256,7 +271,7 @@ func (d Draft) RequiresVoice() bool {
 	if err == nil && (m.Family == "kokoro_tts" || catalog.IsMusic(m.Family)) {
 		return false
 	}
-	if err == nil && (m.Family == "omnivoice" || m.Family == "breeze_tts") {
+	if err == nil && (m.Family == "omnivoice" || m.Family == "breeze_tts" || m.Family == "ming3_tts") {
 		return d.VoiceMode == "clone"
 	}
 	if err == nil && m.Family == "qwen3_tts" {

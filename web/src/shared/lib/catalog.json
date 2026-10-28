@@ -273,6 +273,34 @@
     "sha256": "5620623371e2011e9bb22389f12252d3969061adad139b3cdda6b1473a82a0d5"
   },
   {
+    "id": "ming3-tts-0.5b-q8",
+    "name": "Ming 3.0 TTS",
+    "family": "ming3_tts",
+    "version": "3.0",
+    "task": "tts",
+    "engineMinimum": "v0.9.3",
+    "repo": "audio-cpp/Ming-3.0-TTS-0.5B-GGUF",
+    "revision": "2eb8d37c7f10672e69c8aa33091baa04c461b66c",
+    "precision": "Q8",
+    "remotePath": "ming-3.0-tts-0.5b-q8_0.gguf",
+    "size": 1742280896,
+    "sha256": "fcf2aa25e8e9cf2065a936e506581735c64d6255fb7869f09fbb61a2dde09aa1"
+  },
+  {
+    "id": "ming3-tts-0.5b-bf16",
+    "name": "Ming 3.0 TTS",
+    "family": "ming3_tts",
+    "version": "3.0",
+    "task": "tts",
+    "engineMinimum": "v0.9.3",
+    "repo": "audio-cpp/Ming-3.0-TTS-0.5B-GGUF",
+    "revision": "2eb8d37c7f10672e69c8aa33091baa04c461b66c",
+    "precision": "BF16",
+    "remotePath": "ming-3.0-tts-0.5b-bf16.gguf",
+    "size": 2998284288,
+    "sha256": "43f108a4e6bb54af13071d0cb345a094e0b011b3b8318d8fb2c61753733f5312"
+  },
+  {
     "id": "kokoro-82m-q8",
     "name": "Kokoro-82M 1.0 Official",
     "family": "kokoro_tts",

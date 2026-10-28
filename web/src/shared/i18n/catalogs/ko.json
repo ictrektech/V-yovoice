@@ -1013,6 +1013,12 @@
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "중국어, 영어 · 음성 디자인 및 클론 · GPU 권장. 모델 라이선스상 연구 및 비상업적 용도로만 사용할 수 있습니다."
   },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7개 언어 · 음성 디자인 및 복제 · 44.1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "무음 제거"
+  },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10개 언어 · 참조 음성 클론"
   },

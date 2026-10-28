@@ -1013,6 +1013,12 @@
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "Китайский, английский · дизайн и клонирование голоса · рекомендуется GPU. Лицензия модели разрешает только исследовательское и некоммерческое использование."
   },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 языков · дизайн и клонирование голоса · 44,1 кГц"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "Обрезать тишину"
+  },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 языков · клонирование референсного голоса"
   },

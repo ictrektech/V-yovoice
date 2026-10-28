@@ -37,6 +37,8 @@ test('参考音频需求随模型和模式变化', () => {
   expect(needs('omnivoice-q8', { voiceMode: 'clone' })).toBe(true);
   expect(needs('breeze-tts-2-q8')).toBe(false);
   expect(needs('breeze-tts-2-q8', { voiceMode: 'clone' })).toBe(true);
+  expect(needs('ming3-tts-0.5b-q8')).toBe(false);
+  expect(needs('ming3-tts-0.5b-q8', { voiceMode: 'clone' })).toBe(true);
   expect(needs('voxcpm2-q8')).toBe(false);
   expect(needs('voxcpm2-q8', { voxMode: 'clone' })).toBe(true);
   expect(needs('voxcpm2-q8', { voxMode: 'continuation' })).toBe(true);
