@@ -17,6 +17,12 @@ Run `docker/build_image.sh --sheet <sheet>` on a matching build host. After ever
 required image and Feishu cell is published, run `ictrek.app/scripts/update_version.sh patch`
 locally to trigger packaging and App Store publication.
 
+The AMD CUDA image uses CPU-only Python ONNX Runtime for SeACo and sherpa-onnx
+for CUDA inference. Both share the provider bridge shipped with sherpa-onnx,
+preventing different bridge versions or a second CUDA provider from hanging or
+crashing session creation. Verify alternating Python ORT CPU and sherpa CUDA
+inference on the target GPU before publishing.
+
 Preview the selected build and publication plan with
 `bash docker/build_image.sh --sheet l4t --dry-run`. This prints the target image,
 build steps and Feishu sheets without downloading, building, pushing or writing

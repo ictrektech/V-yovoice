@@ -33,11 +33,20 @@ ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 # 安装包只读挂载到安装步骤，不进入任何成品镜像层。
 RUN --mount=type=bind,from=sherpa_wheels,source=/,target=/tmp/sherpa-wheels \
     python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" --upgrade pip setuptools wheel \
-    && python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . "onnxruntime-gpu>=1.22,<2" \
+    && python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . "onnxruntime>=1.22,<2" \
     && python3 -m pip install --no-cache-dir --verbose --timeout 120 \
       "sherpa-onnx==${SHERPA_ONNX_VERSION}+cuda12.cudnn9.onnxruntime1.28.2" \
       --no-index -f /tmp/sherpa-wheels
+# 共用 sherpa 配套的桥接库，避免两套 ORT 的同名库冲突导致 CUDA 会话挂起。
+RUN python3 -c "from importlib.util import find_spec; from pathlib import Path; \
+    bridge=Path(find_spec('onnxruntime').origin).parent/'capi/libonnxruntime_providers_shared.so'; \
+    native=Path(find_spec('sherpa_onnx').origin).parent/'lib/libonnxruntime_providers_shared.so'; \
+    assert native.is_file(); bridge.unlink(); bridge.symlink_to(native)"
 COPY --from=frontend /src/frontend/dist ./frontend/dist
-RUN python3 -c "import sherpa_onnx; assert '+cuda' in sherpa_onnx.__version__; print(sherpa_onnx.__version__)"
+RUN python3 -c "from pathlib import Path; import sherpa_onnx, onnxruntime; \
+    assert '+cuda' in sherpa_onnx.__version__; \
+    assert 'CUDAExecutionProvider' not in onnxruntime.get_available_providers(); \
+    assert (Path(onnxruntime.__file__).parent/'capi/libonnxruntime_providers_shared.so').resolve() == (Path(sherpa_onnx.__file__).parent/'lib/libonnxruntime_providers_shared.so').resolve(); \
+    print(sherpa_onnx.__version__, onnxruntime.__version__)"
 EXPOSE 7070
 CMD ["python3", "-m", "uvicorn", "vvoice.main:app", "--host", "0.0.0.0", "--port", "7070"]
