@@ -17,6 +17,12 @@ Run `docker/build_image.sh --sheet <sheet>` on a matching build host. After ever
 required image and Feishu cell is published, run `ictrek.app/scripts/update_version.sh patch`
 locally to trigger packaging and App Store publication.
 
+Image tags use the platform prefix and the next patch version from `ictrek.app/VERSION`,
+for example `amd_cu128_0.0.31`. Use `--version X.Y.Z` to select a version explicitly;
+pass the same version to both `--build-only` and `--publish-only`. Published tags must
+not be overwritten with different images. Existing date tags remain valid, and profiles
+that have not changed can retain their previously published images.
+
 The AMD CUDA image uses CPU-only Python ONNX Runtime for SeACo and sherpa-onnx
 for CUDA inference. Both share the provider bridge shipped with sherpa-onnx,
 preventing different bridge versions or a second CUDA provider from hanging or
@@ -33,16 +39,11 @@ ARM CUDA and Thor share the compiler-cache reference when their validated base
 image is identical. Their runtime images and Feishu records remain separate;
 the source archive and CUDA build arguments still participate in cache checks.
 
-For frontend-only changes after the current day's full backend image is built,
-use `docker/build_image.sh --sheet <sheet> --assets-only` with freshly built
+For frontend-only changes, set `VVOICE_STUDIO_BASE_IMAGE` to a verified local base image
+and use `docker/build_image.sh --sheet <sheet> --version X.Y.Z --assets-only` with freshly built
 `artifacts/web`. This preserves the validated inference runtime and refreshes only
 the creation UI. It builds without publishing; verify the resulting image before
-the usual `--publish-only` step. Use the normal full build for backend changes.
-
-The narrowly scoped `--music-ui-only` variant also copies `vvoice/music.py` to
-refresh effective input-limit metadata alongside the UI. It must only be used
-when native adapters, admission logic, dependencies and binaries are unchanged;
-verify its packaged Python hash, HTTP metadata, tests and UI before publishing.
+the usual `--publish-only --version X.Y.Z` step. Use the normal full build for backend changes.
 
 Packaging resolves the current published V-Scheduler version, never a guessed
 version. Its built-in shared model repository needs no separate Model Hub app.

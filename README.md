@@ -312,7 +312,7 @@ VOS 安装后，应用通过 Scheduler 的可信绑定获得 `lifecycle_protocol
 
 完整流程、身份和接口见 [V-Scheduler 统一接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md#unified-lifecycle)。
 
-发布纯应用层改动时，可在对应架构构建机上使用 `VVOICE_STUDIO_BASE_IMAGE=<已核验的同 profile 发布镜像> bash docker/build_image.sh --sheet <sheet> --application-only`，复用已校准的原生环境，仅更新当前 `vvoice/`、预先编译的 Go 程序和网页资产。随后用原脚本 `--publish-only` 推送并记录飞书。改变原生依赖、内核或目录契约时仍须完整构建。
+发布纯应用层改动时，可在对应架构构建机上使用 `VVOICE_STUDIO_BASE_IMAGE=<已核验的同 profile 发布镜像> bash docker/build_image.sh --sheet <sheet> --version <版本> --application-only`，复用已校准的原生环境，仅更新当前 `vvoice/`、预先编译的 Go 程序和网页资产。随后用相同版本执行 `--publish-only --version <版本>` 推送并记录飞书。改变原生依赖、内核或目录契约时仍须完整构建。
 
 构建机已有同架构编译工具链时，可用 `VVOICE_AUDIOCPP_BUILD_BASE_IMAGE=<编译镜像>` 复用 audio.cpp 的编译环境。该参数仅影响多阶段构建的编译阶段，不改变所选 profile 的运行基础镜像或 CPU/CUDA 后端；成品仍检查不得包含 PyTorch。
 

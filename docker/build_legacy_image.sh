@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 REGISTRY="${REGISTRY:-swr.cn-southwest-2.myhuaweicloud.com/ictrek}"
 REPOSITORY="${REGISTRY}/v-voice"
-DATE="$(date +%Y%m%d)"
+VERSION="${VVOICE_IMAGE_VERSION:?VVOICE_IMAGE_VERSION is required}"
 SHERPA_ONNX_VERSION="${SHERPA_ONNX_VERSION:-1.13.8}"
 
 case "$(uname -m)" in
@@ -93,7 +93,7 @@ if [[ "$sheet" == l4t ]]; then
   build_args+=(--build-context "ort_wheels=${ort_root}")
 fi
 
-tag="${tag_prefix}_${DATE}"
+tag="${tag_prefix}_${VERSION}"
 image="${REPOSITORY}:${tag}"
 if [[ "$build" == true ]]; then
   docker buildx build --builder default --load --provenance=false --sbom=false \

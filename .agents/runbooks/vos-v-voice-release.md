@@ -58,26 +58,28 @@ bash docker/build_image.sh --sheet l4t --dry-run
 
 | Profile | `--sheet` | 镜像标签 | 构建机 |
 | --- | --- | --- | --- |
-| `amd` | `AMD_with_mxn100` | `amd_YYYYMMDD` | x86_64 |
-| `amd-cuda` | `AMD_with_cuda` | `amd_cu128_YYYYMMDD` | x86_64 CUDA |
-| `arm` | `ARM_without_cuda` | `arm_YYYYMMDD` | ARM64 |
-| `arm-cuda` | `ARM_with_cuda` | `arm_cu130_YYYYMMDD` | ARM64 CUDA |
-| `l4t` | `l4t` | `l4t_YYYYMMDD` | Jetson L4T |
-| `thor` | `thor_spark` | `thor_YYYYMMDD` | Thor / Spark |
+| `amd` | `AMD_with_mxn100` | `amd_X.Y.Z` | x86_64 |
+| `amd-cuda` | `AMD_with_cuda` | `amd_cu128_X.Y.Z` | x86_64 CUDA |
+| `arm` | `ARM_without_cuda` | `arm_X.Y.Z` | ARM64 |
+| `arm-cuda` | `ARM_with_cuda` | `arm_cu130_X.Y.Z` | ARM64 CUDA |
+| `l4t` | `l4t` | `l4t_X.Y.Z` | Jetson L4T |
+| `thor` | `thor_spark` | `thor_X.Y.Z` | Thor / Spark |
 
 例如 AMD CUDA：
 
 ```bash
-bash docker/build_image.sh --sheet AMD_with_cuda
+bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION"
 ```
 
 默认命令会完成构建、推送到 `swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice`，并更新飞书对应 sheet 的 `v-voice` 列。`ARM_without_cuda` 会同时更新 `SOPHON_bm1688`。
 
-如需分开构建和推送，改用以下两步，并在同一天执行：
+默认版本为 `ictrek.app/VERSION` 的下一个 patch；发布时建议明确传入候选版本。已推送的标签不能用不同镜像覆盖；需要修改时使用新版本。未受影响的平台可以沿用旧镜像，包括日期标签。
+
+如需分开构建和推送，使用相同的明确版本：
 
 ```bash
-bash docker/build_image.sh --sheet AMD_with_cuda --build-only
-bash docker/build_image.sh --sheet AMD_with_cuda --publish-only
+bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --build-only
+bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --publish-only
 ```
 
 本次上游合并包含 Go 和前端改动，使用完整构建。一个 VOS 包包含六个平台，先完成所有受影响平台的镜像和飞书记录，再生成测试包；打包器从飞书读取镜像引用，CI 不会代为构建镜像。

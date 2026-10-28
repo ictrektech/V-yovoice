@@ -5,11 +5,13 @@ registry="${REGISTRY:-swr.cn-southwest-2.myhuaweicloud.com/ictrek}"
 build_root="${VVOICE_BUILD_ROOT:-${HOME}/dev/build/v-yovoice}"
 artifacts="${build_root}/artifacts"
 sheet=""; mode=full
+version=""
 prepare=true
 dry_run=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --sheet) sheet="$2"; shift 2 ;;
+    --version) version="$2"; shift 2 ;;
     --build-only) mode=build; shift ;;
     --publish-only) mode=publish; shift ;;
     --prepare-only) mode=prepare; shift ;;
@@ -17,9 +19,13 @@ while [[ $# -gt 0 ]]; do
     --application-only) mode=application; prepare=false; shift ;;
     --reuse-prepared-artifacts) prepare=false; shift ;;
     --dry-run) dry_run=true; shift ;;
-    *) echo "Usage: $0 --sheet <sheet> [--build-only|--publish-only|--prepare-only|--assets-only|--application-only] [--reuse-prepared-artifacts] [--dry-run]" >&2; exit 1 ;;
+    *) echo "Usage: $0 --sheet <sheet> [--version X.Y.Z] [--build-only|--publish-only|--prepare-only|--assets-only|--application-only] [--reuse-prepared-artifacts] [--dry-run]" >&2; exit 1 ;;
   esac
 done
+if [[ "$mode" == publish && -z "$version" ]]; then
+  echo "--publish-only requires the same explicit --version used for the build" >&2
+  exit 1
+fi
 case "$(uname -m)" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) exit 1 ;; esac
 cuda=OFF
 backend=cpu
@@ -32,7 +38,13 @@ case "$sheet" in
   thor_spark) [[ "$arch" == arm64 ]]; prefix=thor; cuda=ON ;;
   *) echo "Explicit supported --sheet required" >&2; exit 1 ;;
 esac
-tag="${prefix}_$(date +%Y%m%d)"
+if [[ -z "$version" ]]; then
+  current_version="$(tr -d '[:space:]' < "$root/ictrek.app/VERSION")"
+  [[ "$current_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo "Invalid VOS version: $current_version" >&2; exit 1; }
+  version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((10#${BASH_REMATCH[3]} + 1))"
+fi
+[[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo "Invalid version: $version" >&2; exit 1; }
+tag="${prefix}_${version}"
 image="${registry}/v-voice:${tag}"
 # 预览在任何下载、编译、文件写入或外部服务调用之前退出。
 if [[ "$dry_run" == true ]]; then
@@ -47,7 +59,7 @@ if [[ "$dry_run" == true ]]; then
   fi
   case "$mode" in
     full|build) echo '[DRY-RUN] 构建基础语音服务及包含 audio.cpp 的最终镜像' ;;
-    assets) printf '[DRY-RUN] 基于当日镜像 %s 更新前端资产\n' "$image" ;;
+    assets) printf '[DRY-RUN] 基于 %s 更新前端资产\n' "${VVOICE_STUDIO_BASE_IMAGE:-未设置，实际构建时必须提供 VVOICE_STUDIO_BASE_IMAGE}" ;;
     application) printf '[DRY-RUN] 基于 %s 更新应用代码、Go 服务和前端资产\n' "${VVOICE_STUDIO_BASE_IMAGE:-未设置，实际构建时必须提供 VVOICE_STUDIO_BASE_IMAGE}" ;;
   esac
   if [[ "$mode" == full || "$mode" == publish ]]; then
@@ -59,12 +71,11 @@ if [[ "$dry_run" == true ]]; then
   exit 0
 fi
 if [[ "$mode" == assets || "$mode" == application ]]; then
-  # 仅用于前端变更：沿用已完成的当日后端镜像，验证通过后仍须显式发布。
+  # 增量构建沿用经过验证的基础镜像，验证通过后仍须显式发布。
   test -s "$artifacts/web/index.html"
   test -s "$artifacts/frontend/index.html"
-  source_image="$image"
+  source_image="${VVOICE_STUDIO_BASE_IMAGE:?incremental builds require the verified VVOICE_STUDIO_BASE_IMAGE}"
   if [[ "$mode" == application ]]; then
-    source_image="${VVOICE_STUDIO_BASE_IMAGE:?--application-only requires the verified published VVOICE_STUDIO_BASE_IMAGE}"
     test -s "$artifacts/linux-${arch}/vvoice-studio"
   fi
   docker run --rm --pull never --entrypoint test "$source_image" -f /opt/vvoice/web/index.html
@@ -120,7 +131,7 @@ if [[ "$mode" == full || "$mode" == build ]]; then
       l4t) platform_base="${registry}/pytorch_py312:jet_2.7.0" ;;
       *) platform_base="${registry}/nvidia-pytorch:arm_25.08-py3" ;;
   esac
-  REGISTRY="$registry" VVOICE_LEGACY_STAGE=1 bash docker/build_legacy_image.sh --sheet "$sheet" --build-only
+  REGISTRY="$registry" VVOICE_LEGACY_STAGE=1 VVOICE_IMAGE_VERSION="$version" bash docker/build_legacy_image.sh --sheet "$sheet" --build-only
   docker tag "$image" "$base"
   compiler="${VVOICE_AUDIOCPP_BUILD_BASE_IMAGE:-$platform_base}"
   docker buildx build --builder default --load --provenance=false --sbom=false \

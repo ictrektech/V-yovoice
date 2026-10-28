@@ -128,7 +128,8 @@ the same sheet names/options as the previous V-Voice release. It builds the
 original service stage from the current source using the migrated profile
 Dockerfiles, then adds the pinned audio.cpp runtime and Go/React workbench.
 `--build-only` does not publish; `--publish-only` pushes the validated image and
-records its fixed `platform_YYYYMMDD` tag in the canonical Feishu spreadsheet.
+records its `platform_X.Y.Z` tag in the canonical Feishu spreadsheet. Specify the
+same `--version X.Y.Z` for both steps; the default build version is the next VOS patch.
 Intermediate base images are local build artifacts, never a second publication.
 Same-architecture hosts may reuse the prepared Go/web artifacts and pinned source
 archive via `--reuse-prepared-artifacts`; synchronize current source first. This
