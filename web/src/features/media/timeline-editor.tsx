@@ -410,7 +410,7 @@ export function TimelineEditor({ draft, drafts, busy, regenerate, exportProject,
       } catch (error) { onError((error as Error).name === 'EncodingError' ? '@yovoice.error.browserDecode' : (error as Error).message); }
       finally { setImporting(false); }
     }} />
-    {historyTrack ? <AppDialog title={t('@yovoice.timeline.fromHistory')} onClose={() => setHistoryTrack('')}>
+    {historyTrack ? <AppDialog title={t('@yovoice.timeline.fromHistory')} closeLabel={t('@yovoice.action.close')} onClose={() => setHistoryTrack('')}>
       <TextInput label={t('@yovoice.timeline.searchHistory')} isLabelHidden placeholder={t('@yovoice.timeline.searchHistory')} value={historyQuery} onChange={setHistoryQuery} hasClear />
       <VStack className="timeline-history-list" gap={1}>
         {history.filter(g => projectKind(draft) === 'text' && !g.segment && g.settings.id === draft.id && g.title.toLocaleLowerCase().includes(historyQuery.trim().toLocaleLowerCase())).map(g => <HStack key={g.id} gap={2} vAlign="center">
@@ -422,7 +422,7 @@ export function TimelineEditor({ draft, drafts, busy, regenerate, exportProject,
         {!history.some(g => projectKind(draft) === 'text' && !g.segment && g.settings.id === draft.id && g.title.toLocaleLowerCase().includes(historyQuery.trim().toLocaleLowerCase())) ? <HStack className="grow timeline-history-empty" hAlign="center" vAlign="center"><p className="muted">{t('@yovoice.timeline.noHistory')}</p></HStack> : null}
       </VStack>
     </AppDialog> : null}
-    {generationTrack ? <AppDialog title={t('@yovoice.timeline.fromYovoice')} width={640} busy={importing} onClose={closeGenerations}>
+    {generationTrack ? <AppDialog title={t('@yovoice.timeline.fromYovoice')} width={640} busy={importing} closeLabel={t('@yovoice.action.close')} onClose={closeGenerations}>
       <SegmentedControl size="sm" layout="fill" label={t('@yovoice.timeline.fromYovoice')} value={generationKind} onChange={value => { setGenerationPreview(null); setGenerationKind(value as typeof generationKind); }}>
         <SegmentedControlItem value="text" label={t('@yovoice.project.text')} />
         <SegmentedControlItem value="sfx" label={t('@yovoice.project.sfx')} />

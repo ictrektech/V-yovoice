@@ -127,18 +127,18 @@
   .content-frame { height: 100%; min-height: 0; }
   .studio { flex: 1; min-height: 0; height: 100%; overflow: hidden; position: relative; }
   .document { flex: 1; min-width: 0; overflow: auto; }
-  .document-heading { flex-shrink: 0; min-height: var(--spacing-10); }
+  .document-heading { flex-shrink: 0; min-height: var(--spacing-10); padding-inline-end: var(--spacing-4); }
   .document-heading .document-title { flex: 1; min-width: 0; }
   .saved { display: inline-flex; align-items: center; gap: var(--spacing-2); }
   .inspector-toggle, .inspector-document-actions { display: none; }
   .inspector-collapsed-action { flex-shrink: 0; }
   .document-heading > .inspector-collapsed-action { display: none; }
-  .writing { flex: 1; min-height: 0; overflow: hidden; padding: 0 var(--spacing-4); padding-top: var(--spacing-5); }
+  .writing { flex: 1; min-height: 0; overflow: hidden; padding: var(--spacing-5) 0 0 var(--spacing-4); }
   .document-title { width: 100%; padding: 0; border: 0; outline: 0; border-radius: var(--radius-inner); background: transparent; font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); line-height: 1.25; letter-spacing: -.025em; }
   .document-title:focus-visible { outline: var(--border-width) solid var(--app-wave); outline-offset: 0; }
-  .script-editor { flex: 1; width: 100%; resize: none; min-height: 0; padding: calc(var(--spacing-6) + var(--spacing-5) - var(--app-editor-font) * .95) 0 var(--spacing-6); font-size: var(--app-editor-font); line-height: 1.9; font-weight: 400; border: none; outline: none; background: transparent; }
+  .script-editor { flex: 1; width: 100%; resize: none; min-height: 0; padding: calc(var(--spacing-6) + var(--spacing-5) - var(--app-editor-font) * .95) var(--spacing-4) var(--spacing-6) 0; font-size: var(--app-editor-font); line-height: 1.9; font-weight: 400; border: none; outline: none; background: transparent; }
   .script-editor:focus-visible { box-shadow: inset 0 calc(-1 * var(--border-width)) var(--app-line); }
-  .subtitle-editor { padding-inline-end: var(--spacing-2); flex: 1; min-height: 0; overflow-y: auto; padding-top: calc(var(--spacing-6) + var(--spacing-5) - var(--app-editor-font) * .95); padding-bottom: var(--spacing-2); }
+  .subtitle-editor { padding-inline-end: var(--spacing-4); flex: 1; min-height: 0; overflow-y: auto; padding-top: calc(var(--spacing-6) + var(--spacing-5) - var(--app-editor-font) * .95); padding-bottom: var(--spacing-2); }
   .subtitle-speaker-row { padding-block: var(--spacing-2); }
   .subtitle-speaker-row > .astryx-field, .subtitle-speaker-row > .astryx-stack { min-width: 0; }
   .subtitle-speaker-name { flex: 0 0 calc(var(--spacing-8) * 3); }
@@ -204,7 +204,7 @@
   .multitrack-playhead { position: absolute; top: 0; bottom: 0; width: var(--border-width); background: var(--app-ink); pointer-events: none; z-index: 1; }
   .selection-action { position: fixed; z-index: 20; padding: var(--spacing-1); background: var(--app-white); border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); box-shadow: 0 var(--spacing-2) var(--spacing-6) var(--app-line); }
   .selection-action .astryx-button { padding: var(--spacing-2) var(--spacing-3); gap: var(--spacing-2); }
-  .editor-status { padding-block: var(--spacing-2); flex-shrink: 0; }
+  .editor-status { padding-block: var(--spacing-2); padding-inline-end: var(--spacing-4); flex-shrink: 0; }
   .inspector { display: grid; grid-template-rows: auto minmax(0, 1fr); width: var(--app-inspector); flex-shrink: 0; border-left: var(--border-width) solid var(--app-line); background: var(--app-white); height: 100%; }
   .inspector-scroll > * { flex-shrink: 0; }
   .inspector-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--spacing-6) var(--spacing-6); }
@@ -426,7 +426,7 @@
   @media (forced-colors: active) { .waveform line { stroke: CanvasText; } .astryx-button { border: var(--border-width) solid ButtonText; } }
   .character-editor { width: 100%; height: 100%; min-height: 0; }
   /* 音乐作品：创作区可滚动；版本在“版本记录”里，播放页使用版本封面。 */
-  .music-editor { flex: 1; min-height: 0; overflow-y: auto; padding-block: var(--spacing-4) var(--spacing-6); }
+  .music-editor { flex: 1; min-height: 0; overflow-y: auto; padding-block: var(--spacing-4) var(--spacing-6); padding-inline-end: var(--spacing-4); }
   .music-editor h2 { font-size: var(--app-ui-font); }
   .music-style textarea { font-size: calc(var(--app-ui-font) + var(--spacing-0-5)); }
   .music-tag-group { min-width: var(--spacing-10); }
@@ -434,7 +434,7 @@
   .song-cover { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1; border-radius: var(--radius-container); background: var(--app-ink); }
   .project-avatars .song-cover { width: var(--spacing-10); border-radius: var(--radius-element); }
   /* 编曲作品：音块总览用深底发光块呈现每个声部，声部表按角色色点区分。 */
-  .score-editor { flex: 1; min-height: 0; overflow-y: auto; padding-block: var(--spacing-4) var(--spacing-6); }
+  .score-editor { flex: 1; min-height: 0; overflow-y: auto; padding-block: var(--spacing-4) var(--spacing-6); padding-inline-end: var(--spacing-4); }
   .score-editor h2 { font-size: var(--app-ui-font); }
   .score-summary { color: var(--app-muted); font-family: var(--font-family-code); font-variant-numeric: tabular-nums; }
   /* 旋律谱标题下的概要只占一行，放不下时省略，完整内容在悬停提示里（不换行写在后面的排版层里）。 */
