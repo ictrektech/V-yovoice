@@ -14,6 +14,11 @@
 | Qwen3-TTS VoiceDesign · 1.7B | 声音设计 | 必须填写声音描述 |
 | Breeze TTS 2 | 中英声音设计、音色克隆与演绎指导 | 设计描述可选；克隆需音频和完整原文；建议使用显卡 |
 | Ming 3.0 TTS | 7 种语言的声音设计与音色克隆 | 设计描述可选；克隆需音频，原文可选；需要 v0.9.3 内核 |
+| Voxtral 4B TTS | 9 种语言的 20 个内置音色 | 音色 ID，不支持参考音频或克隆；CC BY-NC 4.0；需要 v0.9.3 内核 |
+| Plapre 3 | 丹麦语内置音色与音色克隆 | 音色 ID，或参考音频与可选原文；需要 v0.9.3 内核 |
+| XTTS v2 | 17 种语言的音色克隆 | 6–30 秒参考音频与明确语言；Coqui Public Model License；需要 v0.9.3 内核 |
+| Gradium Phonon | 轻量英文语音 | 仅默认音色，不支持参考音频或克隆；需要 v0.9.3 内核 |
+| Drama 3 / Drama3-small | 说话人与事件标签、默认音色与克隆 | 克隆需参考音频及完整原文；Fish Audio Community License；需要 v0.9.3 内核 |
 | Kokoro | 轻量内置音色 | 音色 ID，无需参考音频 |
 
 通过 `yovoice models list --json` 查询模型 ID、精度、文件大小、音色和高级参数定义。App 的设置中也可查看模型。引擎和模型下载见 [CLI 指南](cli_zh.md)。
@@ -113,6 +118,50 @@ App 在高级设置中展示可用参数。CLI 使用可重复的 `--option KEY=
 
 ```sh
 yovoice generate --model qwen3-tts-customvoice-q8 --speaker Serena --text-file narration.txt --option 'temperature=0.7' --option 'text_chunk_size=512' --output advanced.wav
+```
+
+## 其他 TTS 家族
+
+### Voxtral 4B TTS
+
+Q8（4.72 GB，默认）和 BF16（8.03 GB）提供覆盖 9 种语言的 20 个内置音色。用 `--speaker` 选择，默认 `casual_male`；不支持参考音频克隆。高级参数为 `num_inference_steps`、`guidance_scale`、`max_tokens`、`text_chunk_size`。模型权重与预设音色采用 CC BY-NC 4.0。
+
+```sh
+yovoice generate --model voxtral-tts-4b-q8 --speaker fr_female --text "Bonjour." --output voxtral.wav
+```
+
+### Plapre 3
+
+Plapre 生成 24 kHz 丹麦语语音，提供 BF16（1.15 GB，默认）与 F32（2.28 GB）。可用 `--speaker tor|ida|liv|ask|kaj`，也可用参考音频和可选的准确原文克隆。高级参数覆盖采样、段间静音和长文分段。
+
+```sh
+yovoice generate --model plapre-3-bf16 --speaker tor --text "Hej." --output plapre.wav
+yovoice generate --model plapre-3-bf16 --voice-mode clone --reference voice.wav --reference-text "Ordene i referenceoptagelsen." --text "I morgen kommer jeg igen." --output plapre-clone.wav
+```
+
+### XTTS v2
+
+XTTS 支持 17 种语言，必须提供 6–30 秒参考音频。Q8（0.57 GB，默认）、Q4_K_M（0.37 GB）和原始包（1.75 GB）均包含 GPT、声码器和归一化数据。用 `--language en|es|fr|de|it|pt|pl|tr|ru|nl|cs|ar|zh-cn|hu|ko|ja|hi` 指定语言，默认 `zh-cn`。高级参数包括采样、重复惩罚和分段。权重采用 Coqui Public Model License。
+
+```sh
+yovoice generate --model xtts-v2-q8 --reference voice.wav --language en --text "Hello from XTTS." --output xtts.wav
+```
+
+### Gradium Phonon
+
+英文 Q8 包（85.5 MB）包含模型和默认音色，不支持克隆。高级设置仅提供 `temperature`、`text_chunk_tokens` 和 `seed`。
+
+```sh
+yovoice generate --model gradium-phonon-31m-en-q8 --language en --text "Hello from Phonon." --output phonon.wav
+```
+
+### Fish Audio Drama 3
+
+Drama3-small IQ3_XXS（10.46 GB，默认）、Drama 3 Q2_K（17.05 GB）和 Q4_K_S（24.60 GB）属于同一家族。默认音色无需参考；克隆必须提供音频及完整原文。正文支持 `<|speaker:0|>` 至 `<|speaker:15|>`，以及 `[laughs]`、`[sighs]` 等事件标签。高级参数为 `top_p`、`temperature`、`max_tokens`、`text_chunk_size`。CUDA“性能优先”会启用 `fish_drama3.perf_mode=cuda_perf`；磁盘专家与 CPU 专家卸载仍需显式开启。权重采用 Fish Audio Community License。
+
+```sh
+yovoice generate --model fish-drama3-small-iq3 --text "<|speaker:0|>Hello. [laughs]" --output drama.wav
+yovoice generate --model fish-drama3-small-iq3 --voice-mode clone --reference voice.wav --reference-text "参考音频的逐字原文。" --text "<|speaker:0|>克隆的一段台词。" --output drama-clone.wav
 ```
 
 ## Kokoro

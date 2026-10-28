@@ -57,6 +57,63 @@ func Validate(d Draft) error {
 		}
 		return nil
 	}
+	if m.Family == "voxtral_tts" {
+		if d.Speaker != "" && !slices.Contains(m.Voices, d.Speaker) {
+			return msg.Err(msg.ErrSpeakerInvalid, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "plapre" {
+		if d.VoiceMode != "" && d.VoiceMode != "design" && d.VoiceMode != "clone" {
+			return msg.Err(msg.ErrModeInvalid, nil)
+		}
+		if d.VoiceMode != "clone" && d.Speaker != "" && !slices.Contains(m.Voices, d.Speaker) {
+			return msg.Err(msg.ErrSpeakerInvalid, nil)
+		}
+		if TextLen(d.ReferenceText) > 2000 {
+			return msg.Err(msg.ErrDraftLimits, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "xtts_v2" {
+		if !slices.Contains([]string{"", "auto", "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "hu", "ko", "ja", "hi"}, d.SynthesisLanguage) {
+			return msg.Err(msg.ErrLanguageUnsupported, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || int64(*d.Seed) > 4294967295) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "gradium_phonon" {
+		if !slices.Contains([]string{"", "auto", "en"}, d.SynthesisLanguage) {
+			return msg.Err(msg.ErrLanguageUnsupported, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || int64(*d.Seed) > 4294967295) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "fish_drama3" {
+		if d.VoiceMode != "" && d.VoiceMode != "design" && d.VoiceMode != "clone" {
+			return msg.Err(msg.ErrModeInvalid, nil)
+		}
+		if TextLen(d.ReferenceText) > 2000 {
+			return msg.Err(msg.ErrDraftLimits, nil)
+		}
+		if d.VoiceMode == "clone" && strings.TrimSpace(d.ReferenceText) == "" {
+			return msg.Err(msg.ErrDramaReferenceRequired, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
 	if m.Family == "omnivoice" || m.Family == "qwen3_tts" {
 		if TextLen(d.VoiceDescription) > 500 || TextLen(d.ReferenceText) > 2000 {
 			return msg.Err(msg.ErrDraftLimits, nil)
@@ -268,10 +325,10 @@ func InRange(v, min, max float64) bool {
 
 func (d Draft) RequiresVoice() bool {
 	m, err := catalog.Lookup(d.ModelID)
-	if err == nil && (m.Family == "kokoro_tts" || catalog.IsMusic(m.Family)) {
+	if err == nil && (m.Family == "kokoro_tts" || m.Family == "voxtral_tts" || m.Family == "gradium_phonon" || catalog.IsMusic(m.Family)) {
 		return false
 	}
-	if err == nil && (m.Family == "omnivoice" || m.Family == "breeze_tts" || m.Family == "ming3_tts") {
+	if err == nil && (m.Family == "omnivoice" || m.Family == "breeze_tts" || m.Family == "ming3_tts" || m.Family == "plapre" || m.Family == "fish_drama3") {
 		return d.VoiceMode == "clone"
 	}
 	if err == nil && m.Family == "qwen3_tts" {

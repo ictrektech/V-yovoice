@@ -4120,5 +4120,25 @@
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "Audio erzeugen"
-  }
+  },
+  "@yovoice.language.da": {"defaultMessage": "Dänisch"},
+  "@yovoice.language.nl": {"defaultMessage": "Niederländisch"},
+  "@yovoice.language.pl": {"defaultMessage": "Polnisch"},
+  "@yovoice.language.tr": {"defaultMessage": "Türkisch"},
+  "@yovoice.language.cs": {"defaultMessage": "Tschechisch"},
+  "@yovoice.language.hu": {"defaultMessage": "Ungarisch"},
+  "@yovoice.language.zh-cn": {"defaultMessage": "Vereinfachtes Chinesisch"},
+  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9 Sprachen · 20 integrierte Stimmen · 24 kHz"},
+  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "Dänisch · Integrierte Stimmen und Klonen · 24 kHz"},
+  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17 Sprachen · Stimmen klonen · 24 kHz"},
+  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "Englisch · Standardstimme · 24 kHz"},
+  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "Sprecher- und Ereignis-Tags · Standardstimme und Klonen · 44.1 kHz"},
+  "@yovoice.options.silence_duration_sec": {"defaultMessage": "Stille zwischen Abschnitten (Sekunden)"},
+  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "Text-Tokens pro Abschnitt"},
+  "@yovoice.voxtral.generalVoices": {"defaultMessage": "Allgemeine Stimmen"},
+  "@yovoice.reference.builtInVoice": {"defaultMessage": "Integrierte Stimme"},
+  "@yovoice.reference.defaultVoice": {"defaultMessage": "Standardstimme"},
+  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "Zum Klonen ist das genaue Transkript des Referenzaudios erforderlich."},
+  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2 benötigt 6–30 Sekunden Referenzaudio."},
+  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "Drama 3 benötigt zum Klonen das vollständige Referenztranskript."}
 }

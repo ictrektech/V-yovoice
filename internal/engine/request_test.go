@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"math"
+	"slices"
 	"strings"
 	"testing"
 	"yovoice/internal/catalog"
@@ -135,7 +136,13 @@ func TestModelVariantsAndOptions(t *testing.T) {
 			d := schema.DefaultDraft()
 			d.ModelID = m.ID
 			d.VoiceDescription = "female, young adult"
-			d.ModelOptions = map[string]map[string]any{m.Family: {"text_chunk_size": float64(512), "text_chunk_mode": "tag_aware"}}
+			d.ModelOptions = map[string]map[string]any{m.Family: {"text_chunk_size": float64(512)}}
+			if slices.ContainsFunc(catalog.GenerationOptions[m.Family], func(spec catalog.GenerationOption) bool { return spec.Key == "text_chunk_mode" }) {
+				d.ModelOptions[m.Family]["text_chunk_mode"] = "tag_aware"
+			}
+			if m.Family == "gradium_phonon" {
+				d.ModelOptions[m.Family] = map[string]any{"text_chunk_tokens": float64(64)}
+			}
 			if m.Family == "voxcpm2" {
 				d.ModelOptions[m.Family]["text_chunk_size"] = float64(300)
 			}
@@ -540,5 +547,237 @@ func TestMingRequest(t *testing.T) {
 	normalized.Normalize()
 	if normalized.VoiceMode != "design" || normalized.SynthesisLanguage != "auto" {
 		t.Fatal(normalized.SynthesisSettings)
+	}
+}
+
+func TestVoxtralRequest(t *testing.T) {
+	d := schema.DefaultDraft()
+	d.ModelID = "voxtral-tts-4b-q8"
+	d.Text = " Bonjour. "
+	d.ModelOptions = map[string]map[string]any{"voxtral_tts": {"num_inference_steps": float64(9), "guidance_scale": 1.4, "max_tokens": float64(1024), "text_chunk_size": float64(200)}}
+	seed := 42
+	d.Seed = &seed
+	p, err := BuildRequest(d, "ignored.wav", "")
+	must(t, err)
+	r := p["request"].(map[string]any)
+	o := r["options"].(map[string]any)
+	if r["text"] != "Bonjour." || r["voice_id"] != "casual_male" || r["voice_ref"] != nil || o["num_inference_steps"] != float64(9) || o["guidance_scale"] != 1.4 || o["max_tokens"] != float64(1024) || o["text_chunk_size"] != float64(200) || o["seed"] != seed || d.RequiresVoice() {
+		t.Fatal(r)
+	}
+	d.Speaker = "fr_female"
+	p, err = BuildRequest(d, "", "")
+	must(t, err)
+	if p["request"].(map[string]any)["voice_id"] != "fr_female" {
+		t.Fatal(p)
+	}
+	for _, patch := range []func(*schema.Draft){
+		func(d *schema.Draft) { d.Speaker = "unknown" },
+		func(d *schema.Draft) {
+			d.ModelOptions = map[string]map[string]any{"voxtral_tts": {"num_inference_steps": float64(0)}}
+		},
+		func(d *schema.Draft) { negative := -1; d.Seed = &negative },
+	} {
+		invalid := d
+		patch(&invalid)
+		if schema.Validate(invalid) == nil {
+			t.Fatal("应拒绝无效参数", invalid)
+		}
+	}
+	normalized := schema.DefaultDraft()
+	normalized.ModelID = "voxtral-tts-4b-bf16"
+	normalized.Normalize()
+	if normalized.Speaker != "casual_male" {
+		t.Fatal(normalized.Speaker)
+	}
+}
+
+func TestPlapreRequest(t *testing.T) {
+	d := schema.DefaultDraft()
+	d.ModelID = "plapre-3-bf16"
+	d.Text = " Hej. "
+	d.ModelOptions = map[string]map[string]any{"plapre": {"temperature": 0.7, "top_k": float64(40), "top_p": 0.9, "silence_duration_sec": 0.2, "text_chunk_size": float64(200)}}
+	seed := 8
+	d.Seed = &seed
+	p, err := BuildRequest(d, "ignored.wav", "")
+	must(t, err)
+	r := p["request"].(map[string]any)
+	o := r["options"].(map[string]any)
+	if r["text"] != "Hej." || r["voice_id"] != "tor" || r["voice_ref"] != nil || o["temperature"] != 0.7 || o["top_k"] != float64(40) || o["top_p"] != 0.9 || o["silence_duration_sec"] != 0.2 || o["text_chunk_size"] != float64(200) || o["seed"] != seed || d.RequiresVoice() {
+		t.Fatal(r)
+	}
+	d.Speaker = "ida"
+	p, err = BuildRequest(d, "", "")
+	must(t, err)
+	if p["request"].(map[string]any)["voice_id"] != "ida" {
+		t.Fatal(p)
+	}
+	d.VoiceMode = "clone"
+	d.ReferenceText = " Referenceoptagelsen. "
+	p, err = BuildRequest(d, "voice.wav", "")
+	must(t, err)
+	r = p["request"].(map[string]any)
+	o = r["options"].(map[string]any)
+	if r["voice_ref"] != "voice.wav" || r["voice_id"] != nil || o["reference_text"] != "Referenceoptagelsen." || !d.RequiresVoice() {
+		t.Fatal(r)
+	}
+	d.ReferenceText = ""
+	p, err = BuildRequest(d, "voice.wav", "")
+	must(t, err)
+	if _, ok := p["request"].(map[string]any)["options"].(map[string]any)["reference_text"]; ok {
+		t.Fatal(p)
+	}
+	if _, err = BuildRequest(d, "", ""); err == nil {
+		t.Fatal("克隆缺少参考音频时应报错")
+	}
+	for _, patch := range []func(*schema.Draft){
+		func(d *schema.Draft) { d.VoiceMode = "continuation" },
+		func(d *schema.Draft) { d.VoiceMode = "design"; d.Speaker = "unknown" },
+		func(d *schema.Draft) { d.ReferenceText = strings.Repeat("字", 2001) },
+		func(d *schema.Draft) { negative := -1; d.Seed = &negative },
+	} {
+		invalid := d
+		patch(&invalid)
+		if schema.Validate(invalid) == nil {
+			t.Fatal("应拒绝无效参数", invalid)
+		}
+	}
+	normalized := schema.DefaultDraft()
+	normalized.ModelID = "plapre-3-f32"
+	normalized.Normalize()
+	if normalized.VoiceMode != "design" || normalized.Speaker != "tor" {
+		t.Fatal(normalized.SynthesisSettings)
+	}
+}
+
+func TestXTTSRequest(t *testing.T) {
+	d := schema.DefaultDraft()
+	d.ModelID = "xtts-v2-q8"
+	d.Text = " 你好。 "
+	d.ModelOptions = map[string]map[string]any{"xtts_v2": {"temperature": 0.8, "top_k": float64(40), "top_p": 0.9, "repetition_penalty": 8.0, "text_chunk_size": float64(200)}}
+	seed := 4294967295
+	d.Seed = &seed
+	if !d.RequiresVoice() {
+		t.Fatal("XTTS 必须要求参考音频")
+	}
+	p, err := BuildRequest(d, "voice.wav", "")
+	must(t, err)
+	r := p["request"].(map[string]any)
+	o := r["options"].(map[string]any)
+	if r["text"] != "你好。" || r["voice_ref"] != "voice.wav" || r["language"] != "zh-cn" || o["temperature"] != 0.8 || o["top_k"] != float64(40) || o["top_p"] != 0.9 || o["repetition_penalty"] != 8.0 || o["text_chunk_size"] != float64(200) || o["seed"] != seed {
+		t.Fatal(r)
+	}
+	d.SynthesisLanguage = "ja"
+	p, err = BuildRequest(d, "voice.wav", "")
+	must(t, err)
+	if p["request"].(map[string]any)["language"] != "ja" {
+		t.Fatal(p)
+	}
+	if _, err = BuildRequest(d, "", ""); err == nil {
+		t.Fatal("缺少参考音频时应报错")
+	}
+	for _, language := range []string{"en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "hu", "ko", "ja", "hi"} {
+		d.SynthesisLanguage = language
+		must(t, schema.Validate(d))
+	}
+	d.SynthesisLanguage = "auto"
+	p, err = BuildRequest(d, "voice.wav", "")
+	must(t, err)
+	if p["request"].(map[string]any)["language"] != "zh-cn" {
+		t.Fatal(p)
+	}
+	d.SynthesisLanguage = "en-US"
+	if schema.Validate(d) == nil {
+		t.Fatal("应拒绝不支持的语言")
+	}
+	negative := -1
+	d.Seed = &negative
+	if schema.Validate(d) == nil {
+		t.Fatal("应拒绝无效种子")
+	}
+	normalized := schema.DefaultDraft()
+	normalized.ModelID = "xtts-v2-q4"
+	normalized.Normalize()
+	if normalized.SynthesisLanguage != "zh-cn" {
+		t.Fatal(normalized.SynthesisLanguage)
+	}
+}
+
+func TestGradiumRequest(t *testing.T) {
+	d := schema.DefaultDraft()
+	d.ModelID = "gradium-phonon-31m-en-q8"
+	d.Text = " Hello from Phonon. "
+	d.ModelOptions = map[string]map[string]any{"gradium_phonon": {"temperature": 0.4, "text_chunk_tokens": float64(64)}}
+	seed := 4294967295
+	d.Seed = &seed
+	p, err := BuildRequest(d, "ignored.wav", "")
+	must(t, err)
+	r := p["request"].(map[string]any)
+	o := r["options"].(map[string]any)
+	if r["text"] != "Hello from Phonon." || r["voice_ref"] != nil || r["voice_id"] != nil || r["language"] != nil || o["temperature"] != 0.4 || o["text_chunk_tokens"] != float64(64) || o["seed"] != seed || d.RequiresVoice() {
+		t.Fatal(r)
+	}
+	d.SynthesisLanguage = "zh"
+	if schema.Validate(d) == nil {
+		t.Fatal("Phonon 只支持英文")
+	}
+	negative := -1
+	d.Seed = &negative
+	if schema.Validate(d) == nil {
+		t.Fatal("应拒绝无效种子")
+	}
+	normalized := schema.DefaultDraft()
+	normalized.ModelID = d.ModelID
+	normalized.Normalize()
+	if normalized.SynthesisLanguage != "en" {
+		t.Fatal(normalized.SynthesisLanguage)
+	}
+}
+
+func TestDramaRequest(t *testing.T) {
+	d := schema.DefaultDraft()
+	d.ModelID = "fish-drama3-small-iq3"
+	d.Text = " <|speaker:0|>Hello [laughs] "
+	d.ModelOptions = map[string]map[string]any{"fish_drama3": {"top_p": 0.8, "temperature": 0.9, "max_tokens": float64(512), "text_chunk_size": float64(96)}}
+	seed := 12
+	d.Seed = &seed
+	p, err := BuildRequest(d, "ignored.wav", "")
+	must(t, err)
+	r := p["request"].(map[string]any)
+	o := r["options"].(map[string]any)
+	if r["text"] != "<|speaker:0|>Hello [laughs]" || r["voice_ref"] != nil || o["reference_text"] != nil || o["top_p"] != 0.8 || o["temperature"] != 0.9 || o["max_tokens"] != float64(512) || o["text_chunk_size"] != float64(96) || o["seed"] != seed || d.RequiresVoice() {
+		t.Fatal(r)
+	}
+	d.VoiceMode = "clone"
+	d.ReferenceText = " Reference transcript. "
+	p, err = BuildRequest(d, "voice.wav", "")
+	must(t, err)
+	r = p["request"].(map[string]any)
+	o = r["options"].(map[string]any)
+	if r["voice_ref"] != "voice.wav" || o["reference_text"] != "Reference transcript." || !d.RequiresVoice() {
+		t.Fatal(r)
+	}
+	if _, err = BuildRequest(d, "", ""); err == nil {
+		t.Fatal("克隆缺少参考音频时应报错")
+	}
+	d.ReferenceText = " "
+	if schema.Validate(d) == nil {
+		t.Fatal("Drama 克隆必须提供参考原文")
+	}
+	for _, patch := range []func(*schema.Draft){
+		func(d *schema.Draft) { d.VoiceMode = "continuation" },
+		func(d *schema.Draft) { d.ReferenceText = strings.Repeat("字", 2001) },
+		func(d *schema.Draft) { negative := -1; d.Seed = &negative },
+	} {
+		invalid := d
+		patch(&invalid)
+		if schema.Validate(invalid) == nil {
+			t.Fatal("应拒绝无效参数", invalid)
+		}
+	}
+	normalized := schema.DefaultDraft()
+	normalized.ModelID = "fish-drama3-q2"
+	normalized.Normalize()
+	if normalized.VoiceMode != "design" {
+		t.Fatal(normalized.VoiceMode)
 	}
 }

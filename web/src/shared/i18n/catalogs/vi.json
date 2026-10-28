@@ -4120,5 +4120,25 @@
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "Tạo âm thanh"
-  }
+  },
+  "@yovoice.language.da": {"defaultMessage": "Tiếng Đan Mạch"},
+  "@yovoice.language.nl": {"defaultMessage": "Tiếng Hà Lan"},
+  "@yovoice.language.pl": {"defaultMessage": "Tiếng Ba Lan"},
+  "@yovoice.language.tr": {"defaultMessage": "Tiếng Thổ Nhĩ Kỳ"},
+  "@yovoice.language.cs": {"defaultMessage": "Tiếng Séc"},
+  "@yovoice.language.hu": {"defaultMessage": "Tiếng Hungary"},
+  "@yovoice.language.zh-cn": {"defaultMessage": "Tiếng Trung giản thể"},
+  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9 ngôn ngữ · 20 giọng tích hợp · 24 kHz"},
+  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "Tiếng Đan Mạch · Giọng tích hợp và nhân bản · 24 kHz"},
+  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17 ngôn ngữ · Nhân bản giọng nói · 24 kHz"},
+  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "Tiếng Anh · Giọng mặc định · 24 kHz"},
+  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "Speaker and event tags · Default voice and cloning · 44.1 kHz"},
+  "@yovoice.options.silence_duration_sec": {"defaultMessage": "Khoảng lặng giữa các đoạn (giây)"},
+  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "Số token văn bản mỗi đoạn"},
+  "@yovoice.voxtral.generalVoices": {"defaultMessage": "Giọng phổ thông"},
+  "@yovoice.reference.builtInVoice": {"defaultMessage": "Giọng tích hợp"},
+  "@yovoice.reference.defaultVoice": {"defaultMessage": "Giọng mặc định"},
+  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "Nhân bản giọng cần bản chép chính xác của âm thanh tham chiếu."},
+  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2 cần 6–30 giây âm thanh tham chiếu."},
+  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "Nhân bản Drama 3 cần bản chép đầy đủ của âm thanh tham chiếu."}
 }

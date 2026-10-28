@@ -445,14 +445,14 @@ func TestSetModelDirectoryAdoptsModels(t *testing.T) {
 	sparse(filepath.Join(dir, filepath.Base(single.RemotePath)), single.Size)
 	// 多文件模型缺一个文件，不应登记。
 	for _, f := range multi.Files[1:] {
-		sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(f.Path)), f.Size)
+		sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(multi.LocalPath(f.Path))), f.Size)
 	}
 	must(t, w.SetModelDirectory(dir))
 	models := w.Store.Read().Models
 	if len(models) != 1 || models[0].ID != single.ID || !models[0].Managed || models[0].SHA256 != single.MainFile().SHA256 {
 		t.Fatalf("应只登记完整的单文件模型并记录主文件摘要: %+v", models)
 	}
-	sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(multi.Files[0].Path)), multi.Files[0].Size)
+	sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(multi.LocalPath(multi.Files[0].Path))), multi.Files[0].Size)
 	must(t, w.SetModelDirectory(dir))
 	if len(w.Store.Read().Models) != 2 {
 		t.Fatalf("文件齐全的多文件模型应登记: %+v", w.Store.Read().Models)

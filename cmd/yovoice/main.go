@@ -203,20 +203,26 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 		kokoro := strings.HasPrefix(d.ModelID, "kokoro-")
 		breeze := strings.HasPrefix(d.ModelID, "breeze-tts-")
 		ming := strings.HasPrefix(d.ModelID, "ming3-tts-")
+		voxtral := strings.HasPrefix(d.ModelID, "voxtral-tts-")
+		plapre := strings.HasPrefix(d.ModelID, "plapre-")
+		xtts := strings.HasPrefix(d.ModelID, "xtts-v2-")
+		gradium := strings.HasPrefix(d.ModelID, "gradium-phonon-")
+		drama := strings.HasPrefix(d.ModelID, "fish-drama3-")
+		native := vox || omni || qwen || kokoro || breeze || ming || voxtral || plapre || xtts || gradium || drama
 		var unsupported string
 		fs.Visit(func(f *flag.Flag) {
-			if vox || omni || qwen || kokoro || breeze || ming {
+			if native {
 				switch f.Name {
 				case "emotion-mode", "emotion-reference", "emotion-vector", "emotion-strength", "infer-emotion", "random-emotion", "do-sample", "temperature", "top-p", "top-k", "repetition-penalty", "max-tokens", "interval-silence-ms", "num-beams", "length-penalty":
 					unsupported = f.Name
 				}
 			}
-			if (vox || kokoro || breeze) && f.Name == "language" || (vox || qwen || kokoro || breeze || ming) && f.Name == "speed" || (vox || omni || qwen || kokoro || breeze || ming) && f.Name == "emotion-text" ||
+			if (vox || kokoro || breeze || voxtral || plapre || drama) && f.Name == "language" || native && !omni && f.Name == "speed" || native && f.Name == "emotion-text" ||
 				!vox && f.Name == "vox-mode" || !(vox || omni) && (f.Name == "guidance-scale" || f.Name == "inference-steps") ||
-				!(strings.Contains(d.ModelID, "customvoice") || kokoro) && f.Name == "speaker" ||
-				!(omni || breeze || ming) && f.Name == "voice-mode" ||
+				!(strings.Contains(d.ModelID, "customvoice") || kokoro || voxtral || plapre) && f.Name == "speaker" ||
+				!(omni || breeze || ming || plapre || drama) && f.Name == "voice-mode" ||
 				!(vox || omni || breeze || ming || strings.Contains(d.ModelID, "customvoice") || strings.Contains(d.ModelID, "voicedesign")) && f.Name == "voice-description" ||
-				!(vox || omni || qwen || breeze || ming) && f.Name == "reference-text" {
+				!(vox || omni || qwen || breeze || ming || plapre || drama) && f.Name == "reference-text" {
 				unsupported = f.Name
 			}
 		})
@@ -231,7 +237,7 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 			return fmt.Errorf("未知模型：%s", d.ModelID)
 		}
 		d.ModelOptions = map[string]map[string]any{family: nativeOptions}
-		if omni || qwen || ming {
+		if omni || qwen || ming || xtts || gradium {
 			d.SynthesisLanguage = "auto"
 			fs.Visit(func(f *flag.Flag) {
 				if f.Name == "language" {
@@ -263,7 +269,7 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 				d.VoxMode = "continuation"
 			}
 		}
-		if (omni || breeze || ming) && d.VoiceMode == "" {
+		if (omni || breeze || ming || plapre || drama) && d.VoiceMode == "" {
 			d.VoiceMode = "design"
 			if reference != "" || voice != "" {
 				d.VoiceMode = "clone"
@@ -278,6 +284,12 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 		if ming && d.VoiceMode == "design" && d.ReferenceText != "" {
 			return fmt.Errorf("Ming 3.0 TTS 的 --reference-text 需要 clone 模式")
 		}
+		if plapre && d.VoiceMode == "design" && d.ReferenceText != "" {
+			return fmt.Errorf("Plapre 3 的 --reference-text 需要 clone 模式")
+		}
+		if drama && d.VoiceMode == "design" && d.ReferenceText != "" {
+			return fmt.Errorf("Drama 3 的 --reference-text 需要 clone 模式")
+		}
 		if reference != "" && voice != "" {
 			return fmt.Errorf("--reference 和 --voice 只能指定一个")
 		}
@@ -285,7 +297,7 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 			return fmt.Errorf("当前模式需要 --reference 或 --voice")
 		}
 		if !d.RequiresVoice() && (reference != "" || voice != "") {
-			return fmt.Errorf("声音设计不使用参考音频，请选择 clone 或 continuation")
+			return fmt.Errorf("当前方式不使用参考音频，请选择 clone 或 continuation")
 		}
 		if qwen && !d.RequiresVoice() && d.ReferenceText != "" {
 			return fmt.Errorf("仅 Base 模型使用 --reference-text")
@@ -296,8 +308,12 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 		if vox && d.VoxMode == "continuation" && d.VoiceDescription != "" {
 			return fmt.Errorf("精细克隆不使用 --voice-description")
 		}
-		if seed < -1 || seed > 2147483647 {
-			return fmt.Errorf("随机种子必须在 0–2147483647 之间，或 -1 自动")
+		seedMax := int64(2147483647)
+		if xtts || gradium {
+			seedMax = 4294967295
+		}
+		if seed < -1 || seed > seedMax {
+			return fmt.Errorf("随机种子必须在 0–%d 之间，或 -1 自动", seedMax)
 		}
 		if seed >= 0 {
 			n := int(seed)
