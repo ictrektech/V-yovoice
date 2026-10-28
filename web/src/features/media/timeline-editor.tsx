@@ -419,7 +419,7 @@ export function TimelineEditor({ draft, drafts, busy, regenerate, exportProject,
             catch (error) { onError((error as Error).message); }
           }} /><small className="muted">{formatTime(g.duration)} · {new Date(g.createdAt).toLocaleString()}</small>
         </HStack>)}
-        {!history.some(g => projectKind(draft) === 'text' && !g.segment && g.settings.id === draft.id && g.title.toLocaleLowerCase().includes(historyQuery.trim().toLocaleLowerCase())) ? <p className="muted">{t('@yovoice.timeline.noHistory')}</p> : null}
+        {!history.some(g => projectKind(draft) === 'text' && !g.segment && g.settings.id === draft.id && g.title.toLocaleLowerCase().includes(historyQuery.trim().toLocaleLowerCase())) ? <HStack className="grow timeline-history-empty" hAlign="center" vAlign="center"><p className="muted">{t('@yovoice.timeline.noHistory')}</p></HStack> : null}
       </VStack>
     </AppDialog> : null}
     {generationTrack ? <AppDialog title={t('@yovoice.timeline.fromYovoice')} width={640} busy={importing} onClose={closeGenerations}>
@@ -435,7 +435,7 @@ export function TimelineEditor({ draft, drafts, busy, regenerate, exportProject,
           <Player inline={{ label: t('@yovoice.app.audition', { name }), select: () => setGenerationPreview({ id: generation.id, name, fileName: generation.fileName, kind: 'outputs', subtitle: '', playRequest: performance.now() }) }} track={generationPreview?.id === generation.id ? generationPreview : null} suspended={importing} onError={message => { setGenerationPreview(null); onError(message); }} />
           <Button size="sm" variant="secondary" icon={<Plus />} label={t('@yovoice.timeline.addGeneration')} isDisabled={importing} onClick={() => void importGeneration(generation)} />
         </HStack>)}
-        {!generationHistory.length ? <p className="muted">{t('@yovoice.timeline.noHistory')}</p> : null}
+        {!generationHistory.length ? <HStack className="grow timeline-history-empty" hAlign="center" vAlign="center"><p className="muted">{t('@yovoice.timeline.noHistory')}</p></HStack> : null}
       </VStack>
     </AppDialog> : null}
     <ResizeHandle label={t('@yovoice.timeline.resize')} direction="vertical" pillPlacement="center" isReversed resizable={panel.props} />

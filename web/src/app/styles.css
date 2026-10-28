@@ -187,7 +187,8 @@
   .timeline-audio-menu .astryx-dropdown-menu-item { min-height: var(--spacing-8); padding: var(--spacing-1) var(--spacing-2); gap: var(--spacing-2); font-size: var(--app-small-font); }
   .timeline-audio-menu .astryx-dropdown-menu-item span { font-size: inherit; line-height: var(--spacing-5); }
   .timeline-audio-menu svg, .timeline-audio-button svg { width: var(--spacing-4); height: var(--spacing-4); stroke-width: 1.5; }
-  .timeline-history-list { max-height: calc(var(--spacing-8) * 10); overflow-y: auto; }
+  .timeline-history-list { height: calc(var(--spacing-8) * 10); max-height: calc(var(--spacing-8) * 10); overflow-y: auto; scrollbar-gutter: stable; }
+  .timeline-history-empty { flex: 1; min-height: calc(var(--spacing-8) * 7); justify-content: center; align-items: center; }
   .timeline-generation-label { min-width: 0; }
   .timeline-generation-label b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .multitrack-region { position: absolute; top: var(--spacing-1); height: var(--spacing-10); min-width: 0; }
@@ -632,21 +633,30 @@
   .sidebar-update { padding: var(--spacing-3); border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); }
   .sidebar-update-title { justify-content: start; width: 100%; padding-inline: 0; font-weight: var(--font-weight-medium); }
   .sidebar-update-title svg { color: var(--color-accent); }
-  /* 模型更新提示：同侧栏导航项尺寸对齐，带有整体浮起阴影与微弱提示底色。 */
-  .model-update-notice { width: 100%; min-height: var(--spacing-10); border-radius: var(--radius-element);
+  /* 模型更新提示：同侧栏导航项尺寸对齐，带有整体浮起阴影与微弱提示底色；整条卡片统一承载悬停背景，覆盖末尾的关闭按钮。 */
+  .model-update-notice { position: relative; width: 100%; min-height: var(--spacing-10); border-radius: var(--radius-element);
     background: color-mix(in srgb, var(--color-accent) 7%, var(--app-white));
     border: var(--border-width) solid color-mix(in srgb, var(--color-accent) 24%, var(--app-line));
-    box-shadow: var(--shadow-low); padding-inline: 0 var(--spacing-1-5);
-    transition: box-shadow var(--duration-fast) var(--app-ease-swift), border-color var(--duration-fast) var(--app-ease-swift); }
-  .model-update-notice:hover { box-shadow: var(--shadow-med); border-color: color-mix(in srgb, var(--color-accent) 40%, var(--app-line)); }
-  .model-update-action.astryx-button { justify-content: start; width: 100%; min-height: var(--spacing-10); height: 100%;
-    border: 0; border-radius: var(--radius-element); background: transparent; gap: var(--spacing-3);
+    box-shadow: var(--shadow-low); padding-inline: 0 var(--spacing-1-5); overflow: hidden;
+    transition: background-color var(--duration-fast) var(--app-ease-swift), box-shadow var(--duration-fast) var(--app-ease-swift), border-color var(--duration-fast) var(--app-ease-swift); }
+  .model-update-notice:hover { background: color-mix(in srgb, var(--color-accent) 14%, var(--app-white)); box-shadow: var(--shadow-med); border-color: color-mix(in srgb, var(--color-accent) 42%, var(--app-line)); }
+  .model-update-notice:focus-within { outline: calc(var(--border-width) * 2) solid var(--app-wave); outline-offset: var(--border-width); }
+  .model-update-action.astryx-button,
+  .model-update-action.astryx-button:hover,
+  .model-update-action.astryx-button:focus,
+  .model-update-action.astryx-button:focus-visible,
+  .model-update-action.astryx-button:active { justify-content: start; width: 100%; min-height: var(--spacing-10); height: 100%;
+    border: 0; border-radius: 0; background: transparent !important; background-color: transparent !important; background-image: none !important;
+    box-shadow: none !important; outline: none !important; gap: var(--spacing-3);
     font-size: var(--app-ui-font); font-weight: var(--font-weight-medium); padding-inline: var(--spacing-4) var(--spacing-2); color: var(--app-ink); }
   .model-update-action.astryx-button svg { color: var(--color-accent); flex-shrink: 0; }
-  .model-update-action.astryx-button:hover { background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
-  .model-update-dismiss.astryx-button { flex-shrink: 0; width: var(--spacing-7); height: var(--spacing-7); min-width: 0; min-height: 0;
-    padding: 0; border: 0; border-radius: var(--radius-full); color: var(--app-muted); background: transparent; }
-  .model-update-dismiss.astryx-button:hover { color: var(--app-ink); background: color-mix(in srgb, var(--color-accent) 15%, transparent); }
+  .model-update-dismiss.astryx-button,
+  .model-update-dismiss.astryx-button:focus,
+  .model-update-dismiss.astryx-button:focus-visible { flex-shrink: 0; width: var(--spacing-7); height: var(--spacing-7); min-width: 0; min-height: 0;
+    padding: 0; border: 0; border-radius: var(--radius-full); color: var(--app-muted);
+    background: transparent !important; background-color: transparent !important; background-image: none !important;
+    transition: background-color var(--duration-fast) var(--app-ease-swift), color var(--duration-fast) var(--app-ease-swift); }
+  .model-update-dismiss.astryx-button:hover { color: var(--app-ink); background-color: color-mix(in srgb, var(--color-accent) 22%, transparent) !important; }
   .update-progress { width: 100%; }
   .update-progress-row .settings-row-control { flex: 1 1 calc(var(--spacing-10) * 6); }
   .release-notes-panel { padding-top: var(--spacing-4); border-top: var(--border-width) solid var(--app-line); }
