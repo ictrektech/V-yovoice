@@ -542,11 +542,16 @@ func TestMingRequest(t *testing.T) {
 			t.Fatal("应拒绝无效参数", invalid)
 		}
 	}
-	normalized := schema.DefaultDraft()
-	normalized.ModelID = "ming3-tts-0.5b-bf16"
-	normalized.Normalize()
-	if normalized.VoiceMode != "design" || normalized.SynthesisLanguage != "auto" {
-		t.Fatal(normalized.SynthesisSettings)
+	// 未设置的模式、音色和语言按默认处理。
+	defaults := schema.DefaultDraft()
+	defaults.ModelID = "ming3-tts-0.5b-bf16"
+	defaults.Text = "Hello."
+	p, err = BuildRequest(defaults, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := p["request"].(map[string]any); r["voice_ref"] != nil || r["language"] != nil {
+		t.Fatal(r)
 	}
 }
 
@@ -583,11 +588,16 @@ func TestVoxtralRequest(t *testing.T) {
 			t.Fatal("应拒绝无效参数", invalid)
 		}
 	}
-	normalized := schema.DefaultDraft()
-	normalized.ModelID = "voxtral-tts-4b-bf16"
-	normalized.Normalize()
-	if normalized.Speaker != "casual_male" {
-		t.Fatal(normalized.Speaker)
+	// 未设置的模式、音色和语言按默认处理。
+	defaults := schema.DefaultDraft()
+	defaults.ModelID = "voxtral-tts-4b-bf16"
+	defaults.Text = "Hello."
+	p, err = BuildRequest(defaults, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := p["request"].(map[string]any); r["voice_id"] != "casual_male" {
+		t.Fatal(r)
 	}
 }
 
@@ -641,11 +651,16 @@ func TestPlapreRequest(t *testing.T) {
 			t.Fatal("应拒绝无效参数", invalid)
 		}
 	}
-	normalized := schema.DefaultDraft()
-	normalized.ModelID = "plapre-3-f32"
-	normalized.Normalize()
-	if normalized.VoiceMode != "design" || normalized.Speaker != "tor" {
-		t.Fatal(normalized.SynthesisSettings)
+	// 未设置的模式、音色和语言按默认处理。
+	defaults := schema.DefaultDraft()
+	defaults.ModelID = "plapre-3-f32"
+	defaults.Text = "Hello."
+	p, err = BuildRequest(defaults, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := p["request"].(map[string]any); r["voice_id"] != "tor" || r["voice_ref"] != nil {
+		t.Fatal(r)
 	}
 }
 
@@ -694,11 +709,16 @@ func TestXTTSRequest(t *testing.T) {
 	if schema.Validate(d) == nil {
 		t.Fatal("应拒绝无效种子")
 	}
-	normalized := schema.DefaultDraft()
-	normalized.ModelID = "xtts-v2-q4"
-	normalized.Normalize()
-	if normalized.SynthesisLanguage != "zh-cn" {
-		t.Fatal(normalized.SynthesisLanguage)
+	// 未设置的模式、音色和语言按默认处理。
+	defaults := schema.DefaultDraft()
+	defaults.ModelID = "xtts-v2-q4"
+	defaults.Text = "Hello."
+	p, err = BuildRequest(defaults, "voice.wav", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := p["request"].(map[string]any); r["language"] != "zh-cn" {
+		t.Fatal(r)
 	}
 }
 
@@ -725,11 +745,16 @@ func TestGradiumRequest(t *testing.T) {
 	if schema.Validate(d) == nil {
 		t.Fatal("应拒绝无效种子")
 	}
-	normalized := schema.DefaultDraft()
-	normalized.ModelID = d.ModelID
-	normalized.Normalize()
-	if normalized.SynthesisLanguage != "en" {
-		t.Fatal(normalized.SynthesisLanguage)
+	// 未设置的模式、音色和语言按默认处理。
+	defaults := schema.DefaultDraft()
+	defaults.ModelID = d.ModelID
+	defaults.Text = "Hello."
+	p, err = BuildRequest(defaults, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := p["request"].(map[string]any); r["language"] != nil || r["voice_ref"] != nil {
+		t.Fatal(r)
 	}
 }
 
@@ -774,10 +799,15 @@ func TestDramaRequest(t *testing.T) {
 			t.Fatal("应拒绝无效参数", invalid)
 		}
 	}
-	normalized := schema.DefaultDraft()
-	normalized.ModelID = "fish-drama3-q2"
-	normalized.Normalize()
-	if normalized.VoiceMode != "design" {
-		t.Fatal(normalized.VoiceMode)
+	// 未设置的模式、音色和语言按默认处理。
+	defaults := schema.DefaultDraft()
+	defaults.ModelID = "fish-drama3-q2"
+	defaults.Text = "Hello."
+	p, err = BuildRequest(defaults, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := p["request"].(map[string]any); r["voice_ref"] != nil {
+		t.Fatal(r)
 	}
 }

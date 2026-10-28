@@ -286,6 +286,7 @@ export function preferredModel(state: Pick<State, 'models' | 'drafts'>, kind: 't
   const recent = state.drafts.filter(d => installed.has(d.modelId) && fits(d.modelId)).sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0];
   return recent?.modelId ?? state.models.find(model => fits(model.id))?.id ?? fallback;
 }
+export const isIndexModel = (id: string) => id.startsWith('index-');
 export const isVoxModel = (id: string) => id.startsWith('voxcpm2-');
 export const isReferenceModel = (id: string) => id.startsWith('omnivoice-') || id.startsWith('qwen3-tts-');
 export const isBreezeModel = (id: string) => id.startsWith('breeze-tts-');

@@ -1337,8 +1337,8 @@
   "@yovoice.error.omniReferenceRequired": {
     "defaultMessage": "OmniVoice 클론에는 참조 대본이 필요합니다."
   },
-  "@yovoice.error.breezeReferenceRequired": {
-    "defaultMessage": "Breeze TTS 2 클론에는 전체 참조 대본이 필요합니다."
+  "@yovoice.error.referenceTextRequired": {
+    "defaultMessage": "{model} 클론에는 전체 참조 대본이 필요합니다."
   },
   "@yovoice.reference.omniTranscriptHelp": {
     "defaultMessage": "대본은 참조 오디오와 일치해야 합니다."
@@ -4121,24 +4121,58 @@
   "@yovoice.music.generateAudio": {
     "defaultMessage": "오디오 생성"
   },
-  "@yovoice.language.da": {"defaultMessage": "Danish"},
-  "@yovoice.language.nl": {"defaultMessage": "네덜란드어"},
-  "@yovoice.language.pl": {"defaultMessage": "폴리시어"},
-  "@yovoice.language.tr": {"defaultMessage": "튀르키예어"},
-  "@yovoice.language.cs": {"defaultMessage": "체코어"},
-  "@yovoice.language.hu": {"defaultMessage": "헝가리어"},
-  "@yovoice.language.zh-cn": {"defaultMessage": "중국어 간체"},
-  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9개 언어 · 내장 음성 20개 · 24 kHz"},
-  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "Danish · 내장 음성 및 복제 · 24 kHz"},
-  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17개 언어 · 음성 복제 · 24 kHz"},
-  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "영어 · 기본 음성 · 24 kHz"},
-  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "화자 및 이벤트 태그 · 기본 음성 및 복제 · 44.1 kHz"},
-  "@yovoice.options.silence_duration_sec": {"defaultMessage": "청크 사이 무음(초)"},
-  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "청크당 텍스트 토큰 수"},
-  "@yovoice.voxtral.generalVoices": {"defaultMessage": "일반 음성"},
-  "@yovoice.reference.builtInVoice": {"defaultMessage": "내장 음성"},
-  "@yovoice.reference.defaultVoice": {"defaultMessage": "기본 음성"},
-  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "복제하려면 참조 오디오의 정확한 전사를 입력해야 합니다."},
-  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2에는 6–30초의 참조 오디오가 필요합니다."},
-  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "Drama 3 복제에는 참조 오디오의 전체 전사가 필요합니다."}
+  "@yovoice.language.nl": {
+    "defaultMessage": "네덜란드어"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "폴리시어"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "튀르키예어"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "체코어"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "헝가리어"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "중국어 간체"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9개 언어 · 내장 음성 20개 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "Danish · 내장 음성 및 복제 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17개 언어 · 음성 복제 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "영어 · 기본 음성 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "화자 및 이벤트 태그 · 기본 음성 및 복제 · 44.1 kHz"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "청크 사이 무음(초)"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "청크당 텍스트 토큰 수"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "일반 음성"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "내장 음성"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "기본 음성"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "복제하려면 참조 오디오의 정확한 전사를 입력해야 합니다."
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "XTTS v2에는 6–30초의 참조 오디오가 필요합니다."
+  }
 }

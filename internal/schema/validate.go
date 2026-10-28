@@ -107,7 +107,7 @@ func Validate(d Draft) error {
 			return msg.Err(msg.ErrDraftLimits, nil)
 		}
 		if d.VoiceMode == "clone" && strings.TrimSpace(d.ReferenceText) == "" {
-			return msg.Err(msg.ErrDramaReferenceRequired, nil)
+			return msg.Err(msg.ErrReferenceTextRequired, msg.Params{"model": m.Name})
 		}
 		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
 			return msg.Err(msg.ErrParamsOutOfRange, nil)
@@ -176,7 +176,7 @@ func Validate(d Draft) error {
 		}
 		// 官方克隆模板要求参考音频的完整原文；原文缺失或不符时容易把参考内容续进正文、拖音或串词。
 		if d.VoiceMode == "clone" && strings.TrimSpace(d.ReferenceText) == "" {
-			return msg.Err(msg.ErrBreezeReferenceRequired, nil)
+			return msg.Err(msg.ErrReferenceTextRequired, msg.Params{"model": m.Name})
 		}
 		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
 			return msg.Err(msg.ErrParamsOutOfRange, nil)

@@ -17,8 +17,7 @@ const (
 	ErrCharacterInvalid       Code = "@yovoice.error.characterInvalid"
 
 	ErrOmniReferenceRequired    Code = "@yovoice.error.omniReferenceRequired"
-	ErrBreezeReferenceRequired  Code = "@yovoice.error.breezeReferenceRequired"
-	ErrDramaReferenceRequired   Code = "@yovoice.error.dramaReferenceRequired"
+	ErrReferenceTextRequired    Code = "@yovoice.error.referenceTextRequired"
 	ErrXTTSReferenceDuration    Code = "@yovoice.error.xttsReferenceDuration"
 	ErrVoiceDescriptionRequired Code = "@yovoice.error.voiceDescriptionRequired"
 	ErrOmniAttributes           Code = "@yovoice.error.omniAttributes"
@@ -210,7 +209,7 @@ func Encode(err error) map[string]any {
 func All() []Code {
 	return []Code{ErrProjectPackage, ErrProjectPackageLimit, ErrTimelineImportDuration, ErrTimelineInvalid, ErrTimelineInUse, ErrSubtitleInvalid, ActivitySubtitle,
 		ErrVoiceInUse, ErrVoiceReferenced, ErrCharacterInvalid,
-		ErrOmniReferenceRequired, ErrBreezeReferenceRequired, ErrDramaReferenceRequired, ErrXTTSReferenceDuration,
+		ErrOmniReferenceRequired, ErrReferenceTextRequired, ErrXTTSReferenceDuration,
 		ErrVoiceDescriptionRequired, ErrOmniAttributes, ErrSpeakerInvalid,
 		ActivityDownload, ActivityDownloading, ActivityVerifying,
 		ActivityRuntimeDownload, ActivityRuntimeExtract, ActivityEngineStart,
