@@ -28,6 +28,7 @@ def test_creative_discovery_is_dynamic_and_public(monkeypatch):
     index = next(row for row in result if row["id"] == "audiocpp-index-2.5-q8")
     assert index["endpoints"] == ["audio/speech"]
     assert "audiocpp-sheetsage2-orig" not in {row["id"] for row in result}
+    assert "audiocpp-lyric-align-q8" not in {row["id"] for row in result}
     assert next(row for row in rows if row["key"] == "audiocpp-sheetsage2-orig")["capabilities"] == ["midi"]
     assert "emotion_control" in index["capabilities"]
     assert index["voices"]["endpoint"].startswith("/v1/audio/voices?")

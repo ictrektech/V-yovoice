@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"yovoice/internal/audio"
 	"yovoice/internal/schema"
 )
 
@@ -251,5 +252,44 @@ func TestLegacySchedulerIdentityIsVerifiedBySameVOS(t *testing.T) {
 				t.Fatal("legacy service fallback leaked into browser user authentication")
 			}
 		})
+	}
+}
+
+// 新增的逐字编辑与参考音频建议也只能读取、修改当前用户的数据。
+func TestBrowserWordTimingAndVoiceSuggestionAreUserScoped(t *testing.T) {
+	s := testServer(t)
+	request := httptest.NewRequest("POST", "/studio-api/call", nil)
+	request.Header.Set("Authorization", "Bearer alice")
+	identity, err := s.identity(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := s.user(identity.Key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := schema.NewID()
+	if err = audio.WriteMono(filepath.Join(w.Store.Root, "voices", id+".wav"), make([]float32, 32000), 16000); err != nil {
+		t.Fatal(err)
+	}
+	if err = w.Store.Update(func(state *schema.State) {
+		state.Voices = []schema.Voice{{ID: id, FileName: id + ".wav", Duration: 2}}
+		state.History = []schema.Generation{{ID: id, FileName: id + ".wav", Duration: 3, Settings: schema.DefaultDraft()}}
+	}, true); err != nil {
+		t.Fatal(err)
+	}
+	for method, data := range map[string]string{
+		"voice.suggest":         `{"id":"` + id + `"}`,
+		"generation.lyricWords": `{"id":"` + id + `","words":[{"word":"你","start":0.1,"end":1}]}`,
+	} {
+		if response := rpc(s, "", method, data); response.Code != 401 {
+			t.Fatal("未登录请求被接受", method)
+		}
+		if response := rpc(s, "bob", method, data); !strings.Contains(response.Body.String(), `"error"`) {
+			t.Fatal("跨用户访问被接受", method, response.Body.String())
+		}
+		if response := rpc(s, "alice", method, data); response.Code != 200 || strings.Contains(response.Body.String(), `"error"`) {
+			t.Fatal("本人操作失败", method, response.Body.String())
+		}
 	}
 }

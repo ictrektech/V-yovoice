@@ -55,6 +55,8 @@ type Job struct {
 	Fence           uint64          `json:"fence"`
 	Stopped         bool            `json:"stopped"`
 	Error           string          `json:"error,omitempty"`
+	BeforeLyrics    *lyricTiming    `json:"before_lyrics,omitempty"`
+	OutputLyrics    *lyricTiming    `json:"output_lyrics,omitempty"`
 	BeforeMelodyID  string          `json:"before_melody_id,omitempty"`
 	OutputMelodyID  string          `json:"output_melody_id,omitempty"`
 	BeforeFiles     []string        `json:"before_files,omitempty"`
@@ -214,6 +216,19 @@ func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage) (string, 
 		}
 		return old.ID, nil
 	}
+	if method == "generation.alignLyrics" {
+		var input alignmentInput
+		if err := json.Unmarshal(data, &input); err != nil {
+			return "", err
+		}
+		pending, err := j.pendingAlignment(user, input.ID)
+		if err != nil {
+			return "", err
+		}
+		if pending {
+			return "", msg.Err(msg.ErrBusy, nil)
+		}
+	}
 	// 固定模板必须显式覆盖作品中所有模型，不接受客户端自报资源预算。
 	models := map[string]bool{}
 	var collect func(any)
@@ -364,7 +379,7 @@ func (j *Jobs) withoutPending(user string, action func() (any, error)) (any, err
 		if err != nil {
 			return nil, err
 		}
-		if job.User == user && job.Status != "succeeded" && job.Status != "failed" && job.Status != "cancelled" {
+		if job.User == user && ((job.Status != "succeeded" && job.Status != "failed" && job.Status != "cancelled") || (job.Attempt != "" && !job.Stopped)) {
 			return nil, msg.Err(msg.ErrBusy, nil)
 		}
 	}
@@ -430,7 +445,14 @@ func (j *Jobs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Workbench unavailable", 503)
 				return
 			}
-			before := workbench.Store.Read()
+			before := j.visibleLyrics(job.User, workbench.Store.Read())
+			if job.Method == "generation.alignLyrics" {
+				var input struct {
+					ID string `json:"id"`
+				}
+				_ = json.Unmarshal(job.Data, &input)
+				job.BeforeLyrics = timingOf(before, input.ID)
+			}
 			job.BeforeFiles = stateFiles(before)
 			if before.Melody != nil {
 				job.BeforeMelodyID = before.Melody.ID
@@ -533,6 +555,9 @@ func (j *Jobs) execute(ctx context.Context, job Job, run *execution) {
 	current.Stopped = true
 	if w != nil {
 		state := w.Store.Read()
+		if current.BeforeLyrics != nil {
+			current.OutputLyrics = timingOf(state, current.BeforeLyrics.ID)
+		}
 		if state.Melody != nil && state.Melody.ID != current.BeforeMelodyID {
 			current.OutputMelodyID = state.Melody.ID
 		}
@@ -576,6 +601,12 @@ func startSnapshot(ctx context.Context, w *workbench.Workbench, job Job) error {
 			return err
 		}
 		return w.GenerateSnapshot(input.Draft, input.CueID, input.ClipID)
+	case "generation.alignLyrics":
+		var input alignmentInput
+		if err := json.Unmarshal(job.Data, &input); err != nil {
+			return err
+		}
+		return w.AlignLyricsSnapshot(input.ID, input.ModelID, input.Lines)
 	case "melody.plan", "melody.cover", "melody.listen":
 		return runMusicSnapshot(ctx, w, job)
 	case "character.preview":
@@ -647,6 +678,7 @@ func (j *Jobs) VisibleState(user string, state schema.State) schema.State {
 			}
 		}
 	}
+	state = j.visibleLyrics(user, state)
 	hidden, pending := j.hiddenFiles(user, state)
 	state.History = slices.DeleteFunc(state.History, func(g schema.Generation) bool { return hidden[g.FileName] })
 	state.Previews = slices.DeleteFunc(state.Previews, func(g schema.CharacterPreview) bool { return hidden[g.FileName] })

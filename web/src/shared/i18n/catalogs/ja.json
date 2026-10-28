@@ -390,7 +390,7 @@
     "defaultMessage": "音声をデコードできません。ファイルが破損・暗号化されていないか、トラックがあるか確認してください。"
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "1〜60 秒の参照音声を選択してください。"
+    "defaultMessage": "1 秒〜10 分の音声を選択してください。60 秒を超える録音は最も明瞭な部分が自動で切り出されます。"
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "有効なモノラルまたはステレオの PCM / Float WAV ファイルを選択してください。"
@@ -720,7 +720,7 @@
     "defaultMessage": "{current} / {total}"
   },
   "@yovoice.player.reveal": {
-    "defaultMessage": "音声の場所を開く"
+    "defaultMessage": "場所を開く"
   },
   "@yovoice.player.skipEnd": {
     "defaultMessage": "末尾へ移動"
@@ -4411,5 +4411,224 @@
   },
   "@yovoice.settings.aiGroup": {
     "defaultMessage": "AI writing"
+  },
+  "@yovoice.error.engineCrashed": {
+    "defaultMessage": "生成中に推論エンジンが予期せず終了しました。再試行できます。繰り返し起きる場合は、メモリや GPU を使うアプリを閉じるか、より小さいモデルに切り替えてください。（{detail}）"
+  },
+  "@yovoice.library.showEarlier": {
+    "defaultMessage": "さらに前の {n} 件を表示"
+  },
+  "@yovoice.music.lyricStyle": {
+    "defaultMessage": "歌詞スタイル"
+  },
+  "@yovoice.music.lyricStyleScroll": {
+    "defaultMessage": "スクロール"
+  },
+  "@yovoice.music.lyricStyleScrollHint": {
+    "defaultMessage": "曲全体がスクロールし、今の行が一文字ずつ光る"
+  },
+  "@yovoice.music.lyricStyleStage": {
+    "defaultMessage": "スポットライト"
+  },
+  "@yovoice.music.lyricStyleStageHint": {
+    "defaultMessage": "一行ずつ表示し、文字が歌に合わせて飛び出して光る。画面録画向け"
+  },
+  "@yovoice.music.exportWordLrc": {
+    "defaultMessage": "単語単位の歌詞を書き出す"
+  },
+  "@yovoice.music.exportWordLrcHint": {
+    "defaultMessage": "すべての文字に時刻が付いた拡張 LRC。カラオケ歌詞対応のプレーヤー向け"
+  },
+  "@yovoice.music.lyricTools": {
+    "defaultMessage": "歌詞ツール"
+  },
+  "@yovoice.music.editWords": {
+    "defaultMessage": "歌詞のタイミングを調整"
+  },
+  "@yovoice.music.editWordsHint": {
+    "defaultMessage": "再生中に行をクリックすると現在位置から歌い出します。行ごとの前後調整や単語ごとの微調整も可能"
+  },
+  "@yovoice.music.syncLyricsHint": {
+    "defaultMessage": "聴きながら各行の開始を記録"
+  },
+  "@yovoice.music.editThisLine": {
+    "defaultMessage": "再生中にクリック：この行をここから開始"
+  },
+  "@yovoice.music.wordEditor": {
+    "defaultMessage": "歌詞タイミング調整"
+  },
+  "@yovoice.music.wordEditorHint": {
+    "defaultMessage": "再生中に歌詞の行をクリックすると再生位置に固定。←/→ で行を微調整、↑/↓ で行を移動。ブロックや端をドラッグして単語ごとに調整"
+  },
+  "@yovoice.music.wordTap": {
+    "defaultMessage": "タップで記録"
+  },
+  "@yovoice.music.wordTapStop": {
+    "defaultMessage": "記録を停止"
+  },
+  "@yovoice.music.wordTapHint": {
+    "defaultMessage": "各語が歌い出すときに ↓ か Enter を押すと次の語へ進みます。Esc で停止"
+  },
+  "@yovoice.music.wordLine": {
+    "defaultMessage": "{n}/{total} 行目"
+  },
+  "@yovoice.music.prevLine": {
+    "defaultMessage": "前の行"
+  },
+  "@yovoice.music.nextLine": {
+    "defaultMessage": "次の行"
+  },
+  "@yovoice.music.playLine": {
+    "defaultMessage": "この行を再生"
+  },
+  "@yovoice.music.wordUndo": {
+    "defaultMessage": "元に戻す"
+  },
+  "@yovoice.music.wordCancel": {
+    "defaultMessage": "キャンセル"
+  },
+  "@yovoice.music.wordSave": {
+    "defaultMessage": "保存"
+  },
+  "@yovoice.music.wordStart": {
+    "defaultMessage": "「{word}」の開始を調整"
+  },
+  "@yovoice.music.wordEnd": {
+    "defaultMessage": "「{word}」の終了を調整"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "再生位置に固定"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "この行を現在の再生位置から開始（Enter）"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n} 秒早く"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n} 秒遅く"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "調整方法"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "後続の行も移動"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "この行だけ"
+  },
+  "@yovoice.music.alignLyrics": {
+    "defaultMessage": "自動アライン"
+  },
+  "@yovoice.music.aligningLyrics": {
+    "defaultMessage": "アライン中"
+  },
+  "@yovoice.music.alignLyricsHint": {
+    "defaultMessage": "ボーカルを分離して歌詞を一語ずつ歌に合わせます。結果はこのバージョンに保存されます"
+  },
+  "@yovoice.music.alignLyricsDownload": {
+    "defaultMessage": "先にオプションの歌詞アライナーをダウンロードしてください（約 1.3 GB）"
+  },
+  "@yovoice.music.lyricsAligned": {
+    "defaultMessage": "歌詞を歌に合わせて一語ずつ配置しました。手動で調整もできます"
+  },
+  "@yovoice.activity.separateVocals": {
+    "defaultMessage": "ボーカルを分離しています"
+  },
+  "@yovoice.activity.alignLyrics": {
+    "defaultMessage": "歌詞をアライン中（{done}/{total}）"
+  },
+  "@yovoice.error.alignModelRequired": {
+    "defaultMessage": "先に設定の音楽モデルで歌詞アライナーをダウンロードしてください"
+  },
+  "@yovoice.error.alignLyrics": {
+    "defaultMessage": "このバージョンにはアラインする歌詞がありません"
+  },
+  "@yovoice.error.alignEmpty": {
+    "defaultMessage": "ボーカルと歌詞を合わせられませんでした。手動で調整してください"
+  },
+  "@yovoice.settings.modelDesc.lyricAlign": {
+    "defaultMessage": "オプション：ボーカルを分離し、歌詞を一語ずつ歌に合わせます。逐語歌詞アニメーションと逐語 LRC の書き出しに使います。中国語・英語・日本語・韓国語など 11 言語に対応。"
+  },
+  "@yovoice.assets.more": {
+    "defaultMessage": "{name} のその他の操作"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "作品「{name}」を開く"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "フォルダーに表示"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "削除"
+  },
+  "@yovoice.settings.features": {
+    "defaultMessage": "機能の表示"
+  },
+  "@yovoice.settings.featuresHint": {
+    "defaultMessage": "オフにするとサイドバーと新規作成メニューから入口が隠れます。既存の作品とダウンロード済みのモデルはそのまま残ります。"
+  },
+  "@yovoice.settings.featureStoryHint": {
+    "defaultMessage": "テキストや字幕を読み込み、キャラクターごとに一行ずつ吹き替えます。"
+  },
+  "@yovoice.settings.featureMusicHint": {
+    "defaultMessage": "歌、インスト、スコアの生成と、対応するモデルとサウンドフォントの設定。"
+  },
+  "@yovoice.settings.featureAssistantHint": {
+    "defaultMessage": "フローティングアシスタント、タイトルバーの入口、提案。音楽生成もオフにすると、AI サービスの設定と書籍の AI 配役も隠れます。"
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "音声に問題がある可能性があります：{issues}。試聴して、必要なら再生成してください。"
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "、"
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "クリッピング {count} か所（最初は {at}）"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "クリック音 {count} か所（最初は {at}）"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "語尾が途切れています"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "{at}–{end} に長い無音"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "ほとんど音がありません"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "音量が小さい（{loudness} LUFS）。書き出し時に目標ラウドネスを選べます"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "DC オフセット"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "ラウドネス"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "調整しない"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "オーディオブック（-18 LUFS）"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "ポッドキャスト（-16 LUFS）"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "動画プラットフォーム（-14 LUFS）"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "ダイナミクスを圧縮せず全体の音量だけを調整し、ピークは -1 dBTP 以下に抑えます。"
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "自動選択"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "クリッピングや長い間のない、最も明瞭な 5〜15 秒を選びます"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "録音が {total} あるため、最も明瞭な {start}–{end} を参照音声にしました。「トリミング」で調整できます。"
   }
 }

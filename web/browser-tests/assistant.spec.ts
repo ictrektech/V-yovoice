@@ -161,3 +161,26 @@ test('未配置 AI 服务：面板引导去设置，配置后即可用', async (
   await page.keyboard.press('ControlOrMeta+j');
   await expect(page.getByTestId('assistant-panel').getByRole('textbox')).toBeVisible();
 });
+
+test('助手：当前服务是 ChatGPT 订阅时提前说明，并可在面板里切回接口类服务', async ({ page }) => {
+  await page.goto('/');
+  await configureAI(page);
+  await page.getByRole('button', { name: 'ChatGPT (Codex)', exact: true }).click();
+  await page.getByRole('textbox', { name: '当前模型' }).fill('gpt-5.6-sol');
+  await page.getByRole('button', { name: '添加服务', exact: true }).click();
+  await page.keyboard.press('ControlOrMeta+j');
+  const panel = page.getByTestId('assistant-panel');
+  await expect(panel.getByRole('textbox')).toBeVisible();
+  // 面板的模型选择也是写作切换服务的入口，ChatGPT 订阅仍可选；选中后直接说明助手用不了，不等发送后报错。
+  await panel.getByTestId('assistant-model').click();
+  await page.getByRole('option', { name: 'gpt-5.6-sol' }).click();
+  const notice = panel.getByTestId('assistant-codex');
+  await expect(notice).toContainText('当前 AI 服务（ChatGPT 订阅）不能用于助手');
+  await expect(panel.getByRole('textbox')).toHaveCount(0);
+  await panel.screenshot({ path: shot('assistant-codex.png') });
+  // 说明旁保留模型选择，可直接切回接口类服务继续对话。
+  await notice.getByTestId('assistant-model').click();
+  await page.getByRole('option', { name: 'qwen3' }).click();
+  await expect(notice).toHaveCount(0);
+  await expect(panel.getByRole('textbox')).toBeVisible();
+});

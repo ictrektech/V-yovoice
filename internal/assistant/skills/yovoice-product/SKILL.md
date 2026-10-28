@@ -16,9 +16,9 @@ yovoice runs every model locally through its inference engine. Models and the en
 | music | 音乐 Music | Songs or instrumentals from a style prompt and lyrics (ACE-Step, YuE2). YuE2 can write an editable melody score first or extract one from a song (cover). |
 | score | 编曲 Arrangement | Multi-track score rendered through a SoundFont. |
 | characters | 声音库 Voice library | Saved characters: designed or cloned voices with a preview, reusable across works. |
-| voices | 参考音色 References | Uploaded reference recordings (1–60 s, ≤ 20 MB, one clean speaker). |
+| voices | 参考音色 References | Uploaded reference recordings (≤ 20 MB, one clean speaker). Recordings longer than 60 s (up to 10 min) are trimmed automatically to the clearest 5–15 s; the crop dialog's Auto pick does the same for an existing reference. |
 | history | 历史 History | Every generated take; play, reuse settings, save as a voice. |
-| settings | 设置 Settings | Tabs: 常规 General (language, proxy, download source, storage location), 语音模型 Voice models and 音乐模型 Music models (ACE-Step, YuE2, SheetSage2; download/remove), 推理引擎 Engine (install, compute device), 编曲音色库 SoundFonts, AI 服务 AI provider (also the model Ocho uses), 资源 Assets (files and cleanup), 日志 Logs (filter, export diagnostics), 本机接口 Local API (HTTP/MCP for other apps). |
+| settings | 设置 Settings | Tabs: 常规 General (language, proxy, download source, storage location), 语音模型 Voice models and 音乐模型 Music models (ACE-Step, YuE2, SheetSage2, optional Lyric Aligner; download/remove), 推理引擎 Engine (install, compute device), 编曲音色库 SoundFonts, AI 服务 AI provider (also the model Ocho uses), 资源 Assets (files and cleanup), 日志 Logs (filter, export diagnostics), 本机接口 Local API (HTTP/MCP for other apps). |
 
 The assistant opens with ⌘J / Ctrl+J, the launcher in the corner, or the title bar button.
 
@@ -44,6 +44,7 @@ Recommend in this order: what the user already has installed (list_models), then
 - ACE-Step 1.5 Turbo / XL Turbo: songs or instrumentals from style (≤ 512 chars) + lyrics (≤ 4000 chars, [verse] [chorus] tags). Duration auto or 10–300 s. XL is higher quality and much larger.
 - YuE2 3B: vocal songs (length follows the lyrics) or instrumentals (writes a score, then instruments play the vocal melody; lyrics optional), non-commercial licence. Can plan an ABC melody score first or cover a song via SheetSage2 (yovoice-music skill).
 - SheetSage2: extracts melody and chords from a song for YuE2 covers.
+- Lyric Aligner (optional): on the playback page, Auto-align separates the vocals and aligns the lyrics word by word to a generated song; saved with the version.
 - SoundFonts (MuseScore General, GeneralUser GS, SGM-V2.01) render arrangements on the score page.
 - All music models need inference engine v0.9.1 or later.
 
@@ -52,6 +53,7 @@ Recommend in this order: what the user already has installed (list_models), then
 - Dragging, repeating or trailing silence on long text (Breeze, VoxCPM2): shorten text_chunk_size in Advanced, then lower temperature to 0.6–0.8.
 - Voice changes between chunks without a reference: design the voice on a short line, save it to the voice library, then clone from it.
 - Cloning sounds wrong: use one clear speaker, little noise, 5–15 s; transcripts must match word for word for OmniVoice and Breeze.
+- Audio check warnings (shown on a take, a story line or in `inspect_audio`): clipping / clicks / cutoff / silence / silent → regenerate that take or line; quiet → pick a target loudness when exporting (Audiobook −18, Podcast −16, Video −14 LUFS), no need to regenerate; dc → ignore.
 - Slow or out of memory: pick Q8 or a smaller model, close other GPU apps, or switch compute device in Settings › Engine.
 - Model missing or engine too old: the user installs it in Settings › Voice models, Settings › Music models (ACE-Step, YuE2, SheetSage2) or Settings › Engine; you can propose it with propose_action.
 
@@ -96,7 +98,7 @@ Errors reach you as stable codes (in <ui_context>, get_generation_status, get_re
 - `error.audioKindInvalid` 音频类型无效。
 - `error.audioIDInvalid` 音频编号无效。
 - `error.audioTooLarge` 参考音频需小于 20 MB。
-- `error.audioDuration` 请选择 1–60 秒的参考音频。
+- `error.audioDuration` 请选择 1 秒到 10 分钟的音频；超过 60 秒的录音会自动截取最清楚的一段。
 - `error.audioFormat` 请选择有效的单声道或双声道 PCM / Float WAV 音频。
 - `error.audioDecode` 无法解码音频，请检查文件是否损坏、加密或缺少音轨。
 - `error.audioConverterMissing` 安装包缺少音频转换器，请重新安装完整的 yovoice 安装包。
@@ -128,6 +130,7 @@ Errors reach you as stable codes (in <ui_context>, get_generation_status, get_re
 - `error.engineStartFailed` 引擎启动失败，请检查运行库或更换计算设备。
 - `error.engineStartTimeout` 引擎启动超时，请打开日志查看详情。
 - `error.engineNoAudio` 引擎没有返回音频。
+- `error.engineCrashed` 推理引擎在生成时意外退出，可以直接重试；反复出现时请关闭占用内存或显卡的程序，或换用更小的模型。（{detail}）
 - `error.cpuBundleInvalid` 内置内核不是有效文件。
 - `error.backendUnsupported` 不支持的计算设备或平台。
 - `error.platformArch` 不支持的平台架构。
@@ -151,6 +154,9 @@ Errors reach you as stable codes (in <ui_context>, get_generation_status, get_re
 - `error.melodyEmpty` 模型没有写出旋律谱，请重试或调整歌词。
 - `error.coverModelRequired` 从歌曲提取旋律需要 SheetSage2 模型，请在“设置 › 音乐模型”中下载。
 - `error.melodySoundFontRequired` 试听旋律谱需要一个音色库，请在“设置 › 编曲音色库”中下载。
+- `error.alignModelRequired` 请先在设置的音乐模型里下载歌词对齐模型
+- `error.alignLyrics` 这个版本没有可对齐的歌词
+- `error.alignEmpty` 没能从人声里对上歌词，可以手动校准
 - `error.engineUpgradeRequired` 该模型需要 {version} 及以上的推理内核，请在设置中更新内核。
 - `error.aiProviderInvalid` AI 服务配置无效，请检查地址、名称和模型。
 - `error.aiNotConfigured` 还没有可用的 AI 服务，请在“设置 › AI”中添加服务并选择模型。

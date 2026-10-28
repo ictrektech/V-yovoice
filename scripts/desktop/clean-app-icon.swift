@@ -62,5 +62,7 @@ for y in 0..<size {
     }
 }
 precondition(pixels[(size / 2) * bitmap.bytesPerRow + (size / 2) * 4 + 3] == 255)
+// 不写 gAMA：AppKit 会带上读入时的伽马值，Safari、Firefox 等会按它改亮度，各浏览器看到的底色不一致。
+bitmap.setProperty(.gamma, withValue: nil)
 try bitmap.representation(using: .png, properties: [:])!.write(to: url, options: .atomic)
 print("已重建透明蒙版：底板完全不透明，轮廓外透明，仅边缘保留抗锯齿。")

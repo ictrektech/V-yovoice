@@ -214,3 +214,22 @@ are never included in public model discovery or the shared speech API.
 ABC 结果通过用户状态发布，试听通过 `melody.result` 查询，音频下载仍需身份认证并等待调度确认。
 SheetSage2 不会作为 TTS 暴露给标准语音发现接口。模型镜像发布与目标设备审批需另行完成，
 加入模型目录不表示已下载或已批准。桌面 Ocho、任意路径导入、文件导出和命令执行不在 VOS 白名单中。
+
+
+## 第三批：逐字歌词与数据库升级
+
+`generation.lyricWords` 是经身份认证的时间戳元数据操作，参数为 `{id, words: [{word, start, end}]}`；
+沿用每用户历史的所有权校验，范围必须落在该版本音频时长内。`voice.suggest` 接受 `{id}`，
+只分析当前用户的参考录音并返回建议范围，不加载推理模型。
+
+`generation.alignLyrics` 参数为 `{id, lines?: [{text, start, end}]}`，必须携带稳定 `requestId`。
+服务端固定使用已安装且获审批的 `lyric-align-q8`，整首最长 20 分钟，按不超过 100 秒的人声片段处理；
+由原有 Scheduler 队列执行，不能通过客户端 `modelId` 自报预算。状态仍通过 `state.get` 查询，
+取消仍用 `operation.cancel`。同一版本的上一次对齐确认终态并停止后才能重试；
+排队期间不允许修改歌词校准或删除输入。新时间戳在调度确认前不可见，失败或取消保留此前可见的校准；
+已确认的重试结果不会被旧失败任务遮住。
+
+状态库升级到版本 2，升级前会在用户目录留下 `yovoice.upgrade-v1-*.db` 快照；
+旧代码不支持直接打开新版数据库，回滚代码时须使用升级前的数据库副本。
+VOS 原有共享路径、历史保留和仅导入模型不变。Kokoro 在 VOS 中沿用镜像内的系统库，
+桌面端才使用按模型下载的 wheel。新增模型仍需另行发布 ModelScope 镜像并在目标设备审批。

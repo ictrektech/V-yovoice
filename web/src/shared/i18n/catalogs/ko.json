@@ -390,7 +390,7 @@
     "defaultMessage": "오디오를 디코딩할 수 없습니다. 파일이 손상되었거나 암호화되었거나 트랙이 없는지 확인하세요."
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "1~60초 길이의 참조 오디오를 선택하세요."
+    "defaultMessage": "1초~10분 길이의 오디오를 선택하세요. 60초가 넘는 녹음은 가장 깨끗한 부분을 자동으로 잘라 사용합니다."
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "유효한 모노 또는 스테레오 PCM / Float WAV 파일을 선택하세요."
@@ -720,7 +720,7 @@
     "defaultMessage": "{current} / {total}"
   },
   "@yovoice.player.reveal": {
-    "defaultMessage": "오디오 위치 열기"
+    "defaultMessage": "위치 열기"
   },
   "@yovoice.player.skipEnd": {
     "defaultMessage": "끝으로 이동"
@@ -4411,5 +4411,224 @@
   },
   "@yovoice.settings.aiGroup": {
     "defaultMessage": "AI writing"
+  },
+  "@yovoice.error.engineCrashed": {
+    "defaultMessage": "생성 중 추론 엔진이 예기치 않게 종료되었습니다. 다시 시도할 수 있으며, 계속 발생하면 메모리나 GPU를 사용하는 앱을 닫거나 더 작은 모델로 바꾸세요. ({detail})"
+  },
+  "@yovoice.library.showEarlier": {
+    "defaultMessage": "이전 {n}개 더 보기"
+  },
+  "@yovoice.music.lyricStyle": {
+    "defaultMessage": "가사 스타일"
+  },
+  "@yovoice.music.lyricStyleScroll": {
+    "defaultMessage": "스크롤"
+  },
+  "@yovoice.music.lyricStyleScrollHint": {
+    "defaultMessage": "곡 전체가 스크롤되고 현재 줄이 한 글자씩 밝아짐"
+  },
+  "@yovoice.music.lyricStyleStage": {
+    "defaultMessage": "스포트라이트"
+  },
+  "@yovoice.music.lyricStyleStageHint": {
+    "defaultMessage": "한 줄씩 보여 주며 글자가 노래에 맞춰 튀어나와 빛남. 화면 녹화에 적합"
+  },
+  "@yovoice.music.exportWordLrc": {
+    "defaultMessage": "글자 단위 가사 내보내기"
+  },
+  "@yovoice.music.exportWordLrcHint": {
+    "defaultMessage": "모든 글자에 시간이 있는 확장 LRC. 노래방 가사를 지원하는 플레이어용"
+  },
+  "@yovoice.music.lyricTools": {
+    "defaultMessage": "가사 도구"
+  },
+  "@yovoice.music.editWords": {
+    "defaultMessage": "가사 타이밍 조정"
+  },
+  "@yovoice.music.editWordsHint": {
+    "defaultMessage": "재생 중 줄을 클릭하면 현재 위치에서 시작합니다. 줄 단위로 앞뒤 조정하거나 단어별로 세밀하게 조정할 수 있습니다"
+  },
+  "@yovoice.music.syncLyricsHint": {
+    "defaultMessage": "들으면서 줄마다 시작 지점을 표시"
+  },
+  "@yovoice.music.editThisLine": {
+    "defaultMessage": "재생 중 클릭: 이 줄을 여기서 시작"
+  },
+  "@yovoice.music.wordEditor": {
+    "defaultMessage": "가사 타이밍 조정"
+  },
+  "@yovoice.music.wordEditorHint": {
+    "defaultMessage": "재생 중 가사 줄을 클릭하면 재생 위치에 고정됩니다. ←/→ 줄 미세 조정, ↑/↓ 줄 이동, 블록이나 양 끝을 끌어 단어별 조정"
+  },
+  "@yovoice.music.wordTap": {
+    "defaultMessage": "탭으로 기록"
+  },
+  "@yovoice.music.wordTapStop": {
+    "defaultMessage": "기록 중지"
+  },
+  "@yovoice.music.wordTapHint": {
+    "defaultMessage": "각 단어가 시작될 때 ↓ 또는 Enter를 누르면 다음 단어로 넘어갑니다. Esc로 중지"
+  },
+  "@yovoice.music.wordLine": {
+    "defaultMessage": "{n}/{total}번째 줄"
+  },
+  "@yovoice.music.prevLine": {
+    "defaultMessage": "이전 줄"
+  },
+  "@yovoice.music.nextLine": {
+    "defaultMessage": "다음 줄"
+  },
+  "@yovoice.music.playLine": {
+    "defaultMessage": "이 줄 재생"
+  },
+  "@yovoice.music.wordUndo": {
+    "defaultMessage": "실행 취소"
+  },
+  "@yovoice.music.wordCancel": {
+    "defaultMessage": "취소"
+  },
+  "@yovoice.music.wordSave": {
+    "defaultMessage": "저장"
+  },
+  "@yovoice.music.wordStart": {
+    "defaultMessage": "“{word}” 시작 조정"
+  },
+  "@yovoice.music.wordEnd": {
+    "defaultMessage": "“{word}” 끝 조정"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "재생 위치에 고정"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "이 줄을 현재 재생 위치에서 시작(Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n}초 앞당기기"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n}초 늦추기"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "조정 방식"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "뒤 줄도 함께 이동"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "이 줄만"
+  },
+  "@yovoice.music.alignLyrics": {
+    "defaultMessage": "자동 정렬"
+  },
+  "@yovoice.music.aligningLyrics": {
+    "defaultMessage": "정렬 중"
+  },
+  "@yovoice.music.alignLyricsHint": {
+    "defaultMessage": "보컬을 분리한 뒤 가사를 단어별로 노래에 맞춥니다. 결과는 이 버전에 저장됩니다"
+  },
+  "@yovoice.music.alignLyricsDownload": {
+    "defaultMessage": "먼저 선택 사항인 가사 정렬 모델을 다운로드하세요(약 1.3 GB)"
+  },
+  "@yovoice.music.lyricsAligned": {
+    "defaultMessage": "가사를 노래에 맞춰 단어별로 정렬했습니다. 직접 보정할 수도 있습니다"
+  },
+  "@yovoice.activity.separateVocals": {
+    "defaultMessage": "보컬 분리 중"
+  },
+  "@yovoice.activity.alignLyrics": {
+    "defaultMessage": "가사 정렬 중({done}/{total})"
+  },
+  "@yovoice.error.alignModelRequired": {
+    "defaultMessage": "먼저 설정의 음악 모델에서 가사 정렬 모델을 다운로드하세요"
+  },
+  "@yovoice.error.alignLyrics": {
+    "defaultMessage": "이 버전에는 정렬할 가사가 없습니다"
+  },
+  "@yovoice.error.alignEmpty": {
+    "defaultMessage": "보컬에서 가사를 맞추지 못했습니다. 직접 보정해 보세요"
+  },
+  "@yovoice.settings.modelDesc.lyricAlign": {
+    "defaultMessage": "선택 사항: 보컬을 분리하고 가사를 단어별로 노래에 맞춥니다. 단어별 가사 애니메이션과 단어별 LRC 내보내기에 사용합니다. 중국어, 영어, 일본어, 한국어 등 11개 언어를 지원합니다."
+  },
+  "@yovoice.assets.more": {
+    "defaultMessage": "{name} 추가 작업"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "작품 “{name}” 열기"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "폴더에서 보기"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "삭제"
+  },
+  "@yovoice.settings.features": {
+    "defaultMessage": "기능 표시"
+  },
+  "@yovoice.settings.featuresHint": {
+    "defaultMessage": "끄면 사이드바와 새로 만들기 메뉴에서 해당 항목이 숨겨집니다. 기존 작품과 다운로드한 모델은 그대로 유지됩니다."
+  },
+  "@yovoice.settings.featureStoryHint": {
+    "defaultMessage": "텍스트나 자막을 가져와 캐릭터별로 한 줄씩 더빙합니다."
+  },
+  "@yovoice.settings.featureMusicHint": {
+    "defaultMessage": "노래, 연주곡, 편곡 생성과 관련 모델 및 사운드폰트 설정."
+  },
+  "@yovoice.settings.featureAssistantHint": {
+    "defaultMessage": "플로팅 어시스턴트, 제목 표시줄 항목과 제안. 음악 생성도 끄면 AI 서비스 설정과 책의 AI 배역 지정도 함께 숨겨집니다."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "오디오에 문제가 있을 수 있습니다: {issues}. 들어 보고 필요하면 다시 생성하세요."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "클리핑 {count}곳, 처음 {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "클릭음 {count}곳, 처음 {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "끝부분이 잘렸습니다"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "{at}–{end} 긴 무음"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "거의 소리가 없습니다"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "음량이 작습니다({loudness} LUFS). 내보낼 때 목표 라우드니스를 선택하세요"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "DC 오프셋"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "라우드니스"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "조정 안 함"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "오디오북(-18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "팟캐스트(-16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "동영상 플랫폼(-14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "다이내믹을 압축하지 않고 전체 음량만 조정하며 피크는 -1 dBTP 이하로 유지합니다."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "자동 선택"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "클리핑과 긴 멈춤이 없는 가장 깨끗한 5~15초를 고릅니다"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "녹음이 {total}이라 가장 깨끗한 {start}–{end} 구간을 참조로 사용했습니다. '자르기'로 조정할 수 있습니다."
   }
 }

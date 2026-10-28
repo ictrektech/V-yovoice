@@ -17,7 +17,7 @@ OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非�
 与作者署名，不统一改标为应用许可。
 
 - Astryx 0.6.1：https://astryx.atmeta.com/ ，保留 npm 包中的许可。
-- audio.cpp v0.9.1：https://github.com/0xShug0/audio.cpp ，Apache-2.0，Copyright 2026 ShugoAI LLC。macOS 包内置 Metal 服务，Windows 包内置 CPU 服务及 DLL；原始 LICENSE 随 engine 目录分发；其他运行包从官方发行页下载并保留许可。
+- audio.cpp v0.9.2：https://github.com/0xShug0/audio.cpp ，Apache-2.0，Copyright 2026 ShugoAI LLC。macOS 包内置 Metal 服务，Windows 包内置 CPU 服务及 DLL；原始 LICENSE 随 engine 目录分发；其他运行包从官方发行页下载并保留许可。
 - IndexTTS：https://github.com/index-tts/index-tts ，模型不随应用分发。中文模型协议原文保存在 web/public/model-license.txt，下载和使用模型须遵守该协议。
 - React、Vite、TypeScript、Lucide、StyleX、WebView2 的许可与版权声明以对应依赖包为准。
 
@@ -44,9 +44,10 @@ OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非�
 
 ## Kokoro 与发音资源
 
-- [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) 和 [Kokoro-82M-v1.1-zh](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh)：Apache-2.0，模型单独导入，不随应用安装包分发。
-- [eSpeak-ng 1.52.0](https://github.com/espeak-ng/espeak-ng/tree/4870adfa25b1a32b4361592f1be8a40337c58d6c)：GPL-3.0-or-later。原生库来自 espeakng-loader 0.2.4，许可证位于 `tools/kokoro/espeak-ng-COPYING.txt`。完整对应源码见[固定版本源码](https://github.com/espeak-ng/espeak-ng/archive/4870adfa25b1a32b4361592f1be8a40337c58d6c.tar.gz)，构建方法见[上游构建脚本](https://github.com/thewh1teagle/espeakng-loader/blob/e5e9200dc3fd894b7415942c2602fc31526d60fc/build.sh)。由独立 audio.cpp 进程加载，Go 服务不链接该库。
-- [MeCab](https://taku910.github.io/mecab/)：BSD / LGPL / GPL 多许可，按 BSD 条款分发；原生库来自 fugashi 1.5.2，`LICENSE.mecab` 与 fugashi 的许可随库保留。
+- [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) 和 [Kokoro-82M-v1.1-zh](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh)：Apache-2.0，模型单独下载或导入，不随应用安装包分发。
+- [eSpeak-ng 1.52.0](https://github.com/espeak-ng/espeak-ng/tree/4870adfa25b1a32b4361592f1be8a40337c58d6c)：GPL-3.0-or-later。原生库与数据来自 espeakng-loader 0.2.4 的 PyPI wheel，下载 Kokoro 模型时由应用从 PyPI（或阿里云 PyPI 镜像）获取到用户数据目录，不随应用安装包分发。完整对应源码见[固定版本源码](https://github.com/espeak-ng/espeak-ng/archive/4870adfa25b1a32b4361592f1be8a40337c58d6c.tar.gz)，构建方法见[上游构建脚本](https://github.com/thewh1teagle/espeakng-loader/blob/e5e9200dc3fd894b7415942c2602fc31526d60fc/build.sh)。由独立 audio.cpp 进程加载，Go 服务不链接该库。
+- [MeCab](https://taku910.github.io/mecab/)：BSD / LGPL / GPL 多许可；原生库来自 fugashi 1.5.2 的 PyPI wheel，与 eSpeak-ng 一样在下载 Kokoro 模型时获取，不随应用安装包分发。
+- VOS 镜像沿用系统 eSpeak-ng / MeCab 及其许可证，不在每个用户目录下载发音库；以上 wheel 下载流程适用于桌面端。
 - [Misaki](https://github.com/hexgrad/misaki)：Apache-2.0；[jieba](https://github.com/fxsjy/jieba) 和 [pypinyin](https://github.com/mozillazg/python-pinyin)：MIT。模型中的字词发音映射由这些组件生成，对应许可内嵌在模型资源中。
 - [UniDic 3.1.0](https://github.com/polm/unidic-py)：日文词典与许可内嵌在 v1.0 多语言模型包中。模型版本与语言支持见 [Kokoro 说明](docs/models_zh.md#kokoro)。
 

@@ -45,6 +45,39 @@ func New(root string) *Engine {
 	return &Engine{root: root, client: &http.Client{Transport: &http.Transport{Proxy: nil}}}
 }
 
+// KokoroDir 是 Kokoro 发音库的安装目录；发音库不随安装包分发，下载 Kokoro 模型时写入。
+func KokoroDir(root string) string {
+	// VOS 复用镜像内的系统发音库，不能为每个用户下载桌面 wheel。
+	if os.Getenv("VVOICE_SHARED_MODELS") == "true" {
+		if library, err := platform.PackagedTool(filepath.Join("kokoro", KokoroLibraries()[0])); err == nil {
+			return filepath.Dir(library)
+		}
+	}
+	return filepath.Join(root, "runtime", "kokoro")
+}
+
+// KokoroLibraries 返回当前系统 eSpeak NG 与 MeCab 动态库的文件名。
+func KokoroLibraries() [2]string {
+	switch runtime.GOOS {
+	case "darwin":
+		return [2]string{"libespeak-ng.dylib", "libmecab.2.dylib"}
+	case "windows":
+		return [2]string{"espeak-ng.dll", "libmecab.dll"}
+	}
+	return [2]string{"libespeak-ng.so", "libmecab.so.2"}
+}
+
+// KokoroReady 判断发音库的两个动态库与 eSpeak 数据是否齐全。
+func KokoroReady(root string) bool {
+	dir, names := KokoroDir(root), KokoroLibraries()
+	for _, name := range []string{names[0], names[1], filepath.Join("espeak-ng-data", "phontab")} {
+		if info, err := os.Stat(filepath.Join(dir, name)); err != nil || !info.Mode().IsRegular() {
+			return false
+		}
+	}
+	return true
+}
+
 func pidPath(root string) string { return filepath.Join(root, "runtime", "engine.pid") }
 
 // ReapOrphan 结束上次服务异常退出后残留的推理进程：它仍占用显存和端口，Windows 上还会锁住内核文件。
@@ -139,23 +172,15 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 	c := exec.Command(executable, "--config", path, "--no-ui")
 	c.Dir = filepath.Dir(executable)
 	if family == "kokoro_tts" {
-		names := map[string][2]string{
-			"darwin":  {"libespeak-ng.dylib", "libmecab.2.dylib"},
-			"windows": {"espeak-ng.dll", "libmecab.dll"},
-			"linux":   {"libespeak-ng.so", "libmecab.so.2"},
-		}[runtime.GOOS]
-		c.Env = os.Environ()
-		for i, key := range []string{"AUDIOCPP_ESPEAK_LIBRARY", "AUDIOCPP_MECAB_LIBRARY"} {
-			library, err := platform.PackagedTool(filepath.Join("kokoro", names[i]))
-			if err != nil {
-				return msg.Err(msg.ErrRuntimeMissing, nil)
-			}
-			c.Env = append(c.Env, key+"="+library)
+		if !KokoroReady(e.root) {
+			return msg.Err(msg.ErrRuntimeMissing, nil)
 		}
-		// 官方小包不包含 eSpeak 数据，由安装包提供；完整包仍可沿用内嵌资源。
-		if data, err := platform.PackagedTool(filepath.Join("kokoro", "espeak-ng-data", "phontab")); err == nil {
-			c.Env = append(c.Env, "AUDIOCPP_ESPEAK_DATA="+filepath.Dir(data))
-		}
+		dir, names := KokoroDir(e.root), KokoroLibraries()
+		c.Env = append(os.Environ(),
+			"AUDIOCPP_ESPEAK_LIBRARY="+filepath.Join(dir, names[0]),
+			"AUDIOCPP_MECAB_LIBRARY="+filepath.Join(dir, names[1]),
+			// 官方小包不包含 eSpeak 数据，统一使用发音库自带的数据目录。
+			"AUDIOCPP_ESPEAK_DATA="+filepath.Join(dir, "espeak-ng-data"))
 	}
 	platform.ConfigureProcess(c)
 	// 推理日志追加写入，崩溃后重试重新启动引擎时，上一轮的出错原因仍保留在同一文件中。
@@ -421,9 +446,120 @@ func (e *Engine) Transcribe(ctx context.Context, executable string, m schema.Ins
 	return score, nil
 }
 
-// taskResult 是 /v1/tasks/run 的结果：音频为 base64 WAV，附加产物（如 ABC 谱）也以 base64 承载。
+// AlignedWord 是强制对齐给出的一个字（拉丁文为一个词）及其起止秒数。
+type AlignedWord struct {
+	Word  string  `json:"word"`
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
+}
+
+// alignerRate 是 Qwen3 Forced Aligner 的输入采样率，返回的时间也以这个采样率的样本数计。
+const alignerRate = 16000
+
+// lyricStage 在歌词对齐模型包里找出某一步的模型文件，并给出启动内核所需的家族与任务。
+func lyricStage(ctx context.Context, m schema.InstalledModel, prefix, family, task string) (string, catalog.ModelPackage, error) {
+	definition, err := catalog.Lookup(m.ID)
+	if err != nil {
+		return "", definition, err
+	}
+	if definition.Family != "lyric_align" {
+		return "", definition, msg.Err(msg.ErrModelUnsupported, nil)
+	}
+	for _, f := range definition.Files {
+		if strings.HasPrefix(f.Path, prefix) {
+			if os.Getenv("VVOICE_SHARED_MODELS") == "true" {
+				resolved, err := filepath.EvalSymlinks(m.Path)
+				if err != nil {
+					return "", definition, err
+				}
+				if err = catalog.VerifyPackage(ctx, definition, resolved); err != nil {
+					return "", definition, err
+				}
+				m.Path = resolved
+			}
+			return filepath.Join(m.Path, filepath.FromSlash(f.Path)), catalog.ModelPackage{ID: definition.ID, Family: family, Task: task}, nil
+		}
+	}
+	return "", definition, msg.Err(msg.ErrModelUnsupported, nil)
+}
+
+// SeparateVocals 用歌词对齐模型包里的 BS-RoFormer 从混音分出人声，写到 output；input 须为 44.1 kHz WAV。
+func (e *Engine) SeparateVocals(ctx context.Context, executable string, m schema.InstalledModel, backend, input, output string, progress func(msg.Code, msg.Params)) (err error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	defer func() {
+		if err != nil {
+			e.stop()
+		}
+	}()
+	path, definition, err := lyricStage(ctx, m, "BS-RoFormer", "bs_roformer", "sep")
+	if err != nil {
+		return err
+	}
+	// 包内默认 4 次重叠推理是为了分轨音质；对齐只需要听得清人声，单遍推理快约 4 倍。
+	definition.SessionOptions = map[string]string{"bs_roformer.num_overlap": "1"}
+	if err = e.start(ctx, executable, path, definition, backend, 0, progress); err != nil {
+		return err
+	}
+	progress(msg.ActivitySeparateVocals, nil)
+	result, err := e.run(ctx, map[string]any{"model": "index", "request": map[string]any{"audio": input}})
+	if err != nil {
+		return err
+	}
+	for _, stem := range result.Stems {
+		if stem.ID != "vocals" {
+			continue
+		}
+		b, err := base64.StdEncoding.DecodeString(stem.Audio)
+		if err != nil || len(b) <= 44 {
+			return msg.Err(msg.ErrEngineNoAudio, nil)
+		}
+		return os.WriteFile(output, b, 0600)
+	}
+	return msg.Err(msg.ErrEngineNoAudio, nil)
+}
+
+// AlignWords 用歌词对齐模型包里的 Qwen3 Forced Aligner 把 text 逐字对到 wav（16 kHz 人声）上；
+// language 是 Chinese、English 这类英文语言名。返回的时间相对于 wav 开头。
+func (e *Engine) AlignWords(ctx context.Context, executable string, m schema.InstalledModel, backend, wav, text, language string, progress func(msg.Code, msg.Params)) (words []AlignedWord, err error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	defer func() {
+		if err != nil {
+			e.stop()
+		}
+	}()
+	path, definition, err := lyricStage(ctx, m, "Qwen3-ForcedAligner", "qwen3_forced_aligner", "align")
+	if err != nil {
+		return nil, err
+	}
+	if err = e.start(ctx, executable, path, definition, backend, 0, progress); err != nil {
+		return nil, err
+	}
+	result, err := e.run(ctx, map[string]any{"model": "index", "request": map[string]any{"audio": wav, "text": text, "language": language,
+		"options": map[string]string{"clamp_timestamps_to_audio": "true"}}})
+	if err != nil {
+		return nil, err
+	}
+	for _, w := range result.Words {
+		words = append(words, AlignedWord{Word: w.Word, Start: float64(w.StartSample) / alignerRate, End: float64(w.EndSample) / alignerRate})
+	}
+	return words, nil
+}
+
+// taskResult 是 /v1/tasks/run 的结果：音频为 base64 WAV，附加产物（如 ABC 谱）也以 base64 承载；
+// 分离任务的各个分轨在 named_audio_outputs，对齐任务的逐字时间在 words（以样本数计）。
 type taskResult struct {
-	Audio     string `json:"audio"`
+	Audio string `json:"audio"`
+	Stems []struct {
+		ID    string `json:"id"`
+		Audio string `json:"audio"`
+	} `json:"named_audio_outputs"`
+	Words []struct {
+		Word        string `json:"word"`
+		StartSample int64  `json:"start_sample"`
+		EndSample   int64  `json:"end_sample"`
+	} `json:"words"`
 	Artifacts []struct {
 		ID      string            `json:"id"`
 		Payload string            `json:"payload"`
@@ -460,7 +596,7 @@ func (e *Engine) run(ctx context.Context, payload map[string]any) (taskResult, e
 	req.Header.Set("Content-Type", "application/json")
 	res, err := e.client.Do(req)
 	if err != nil {
-		return result, err
+		return result, e.crashed(ctx, err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
@@ -468,6 +604,61 @@ func (e *Engine) run(ctx context.Context, payload map[string]any) (taskResult, e
 		_ = os.WriteFile(filepath.Join(e.root, "logs", "last-inference-error.txt"), b, 0600)
 		return result, msg.Err(msg.ErrGenerateFailed, nil)
 	}
-	err = json.NewDecoder(io.LimitReader(res.Body, 256<<20)).Decode(&result)
-	return result, err
+	if err = json.NewDecoder(io.LimitReader(res.Body, 256<<20)).Decode(&result); err != nil {
+		return result, e.crashed(ctx, err)
+	}
+	return result, nil
+}
+
+// crashed 判断推理中途断开的连接是不是引擎进程退出造成的：Windows 上表现为“远程主机强迫关闭了一个现有的连接”，
+// 容易被误认为网络问题。引擎随即退出时改报“引擎意外退出”，并附上 engine.log 的最后一行（通常是断言或内存分配失败）；
+// 等它退出也让退出日志先于调用方的 stop 记下，意外退出不会被记成主动停止。
+func (e *Engine) crashed(ctx context.Context, err error) error {
+	if ctx.Err() != nil {
+		return err
+	}
+	var exit error
+	select {
+	case exit = <-e.done:
+	case <-time.After(2 * time.Second):
+		return err
+	}
+	detail := lastLogError(filepath.Join(e.root, "logs", "engine.log"))
+	if detail == "" && exit != nil {
+		detail = exit.Error()
+	}
+	if detail == "" {
+		detail = err.Error()
+	}
+	return msg.Err(msg.ErrEngineCrashed, msg.Params{"detail": detail})
+}
+
+// lastLogError 返回本次引擎输出的最后一行错误（断言、内存不足等），只读最后 4 KB；没有时返回空。
+func lastLogError(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	if info, err := f.Stat(); err == nil && info.Size() > 4096 {
+		_, _ = f.Seek(-4096, io.SeekEnd)
+	}
+	b, _ := io.ReadAll(f)
+	lines := strings.Split(strings.TrimSpace(string(b)), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(line, "=====") {
+			return ""
+		}
+		lower := strings.ToLower(line)
+		for _, mark := range []string{"assert", "error", "failed", "abort", "exception", "out of memory"} {
+			if strings.Contains(lower, mark) {
+				if len(line) > 300 {
+					line = line[:300]
+				}
+				return line
+			}
+		}
+	}
+	return ""
 }

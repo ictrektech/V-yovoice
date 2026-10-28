@@ -48,8 +48,8 @@ test('四种表达方式、草稿持久化与模型协议', async ({ page }) => 
   await page.getByRole('button', { name: '设置', exact: true }).click();
   // 语音模型与音乐模型分页显示，各自带下载设置。
   await page.getByRole('tab', { name: '音乐模型', exact: true }).click();
-  // 同一模型的多种量化合并为一行，用精度切换。
-  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(4);
+  // 同一模型的多种量化合并为一行，用精度切换；含可选的歌词对齐模型。
+  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(5);
   const yue = page.locator('[data-model-id^="yue2-"]');
   await expect(yue).toHaveCount(1);
   await expect(yue).toHaveAttribute('data-model-id', 'yue2-3b-q8');
@@ -91,14 +91,14 @@ test('真实 WAV 导入、播放、裁剪和空状态', async ({ page }) => {
   const originalWidth = await page.locator('.waveform').evaluate(el => el.getBoundingClientRect().width);
   await page.getByRole('button', { name: '放大音轨', exact: true }).click();
   await expect(page.getByRole('button', { name: '适应完整音轨' })).toHaveText('200%');
-  expect(await page.locator('.waveform').evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(originalWidth * 1.9);
+  await expect.poll(() => page.locator('.waveform').evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(originalWidth * 1.9);
   await lane.evaluate(el => { el.scrollLeft = el.scrollWidth; });
   expect(await lane.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
   await progress.fill('1.5');
   await expect.poll(() => page.locator('footer audio').evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(1.5, 1);
   await page.getByRole('button', { name: '适应完整音轨' }).click();
   await expect(page.getByRole('button', { name: '缩小音轨' })).toBeDisabled();
-  expect(await lane.evaluate(el => el.scrollLeft)).toBe(0);
+  await expect.poll(() => lane.evaluate(el => el.scrollLeft)).toBe(0);
   await progress.fill('1');
   await expect.poll(() => page.locator('footer audio').evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(1, 1);
   await page.getByRole('button', { name: '回到开头' }).click();
@@ -257,12 +257,13 @@ test('语音生成只有历史生成：工具栏进入历史页，试听不改�
   await expect(page.getByRole('button', { name: '新增音轨', exact: true })).toHaveCount(0);
   await expect(page.locator('.player .waveform')).toBeVisible();
   await expect.poll(() => page.locator('footer audio').evaluate((audio: HTMLAudioElement) => audio.duration)).toBe(1);
-  // 工具栏放导出、历史生成和“音频操作”菜单；删除只在历史页；“保存为角色”在右侧角色选择里。
+  // 浏览器工具栏保留导出与历史；桌面另有打开位置，删除只在历史页。
   const transport = page.locator('.player .transport');
+  await expect(transport.getByRole('button', { name: '打开位置', exact: true })).toHaveCount(0);
   await expect(transport.getByRole('button', { name: '导出音频', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '保存为角色', exact: true })).toHaveCount(0);
   await transport.getByRole('button', { name: '音频操作', exact: true }).click();
-  await expect(page.getByRole('menuitem')).toHaveText(['保存为参考音频', '保存为角色']);
+  await expect(page.getByRole('menuitem')).toHaveText(['导出音频', '保存为参考音频', '保存为角色']);
   await page.keyboard.press('Escape');
 
   // 历史生成汇总所有语音作品的结果，不分版本；改过名的显示名称，其余显示正文。
@@ -299,12 +300,12 @@ test('语音生成只有历史生成：工具栏进入历史页，试听不改�
   await expect(page.getByRole('radio', { name: '文字指导', exact: true })).toBeChecked();
   await expect(page.getByRole('combobox', { name: '模型', exact: true })).toContainText('IndexTTS 2.5');
   await page.reload();
-  await expect(transport.getByRole('button', { name: '导出音频', exact: true })).toBeVisible();
+  await expect(transport.getByRole('button', { name: '打开位置', exact: true })).toHaveCount(0);
   // 新建的语音作品没有自己的音频，但仍能从工具栏查看历史生成。
   await page.getByTestId('nav-new').click();
   await page.getByRole('menuitem', { name: '语音生成', exact: true }).click();
   await expect(page.getByRole('button', { name: '播放', exact: true })).toBeDisabled();
-  await expect(transport.getByRole('button', { name: '导出音频', exact: true })).toHaveCount(0);
+  await expect(transport.getByRole('button', { name: '打开位置', exact: true })).toHaveCount(0);
   await expect(transport.getByRole('button', { name: '历史生成', exact: true })).toBeVisible();
 });
 
@@ -407,4 +408,35 @@ test('窄屏下展开检查器：保持宽屏时的固定宽度，不覆盖全�
   expect(box).not.toBeNull();
   expect(box!.width).toBeLessThan(400);
   expect(box!.width).toBeGreaterThan(300);
+});
+
+test('生成结果体检有问题时，播放栏显示提醒和问题位置', async ({ page }) => {
+  const state = emptyState();
+  const draft = state.drafts[0];
+  state.history = [{
+    id: 'checked', title: draft.title, fileName: 'checked.wav', createdAt: '2026-09-15T10:00:00Z', duration: 1, settings: { ...draft },
+    check: { loudness: -20, peak: 0, issues: [{ code: 'clipping', at: 0.5, count: 3 }, { code: 'cutoff', at: 0.9 }, { code: 'dc', at: 0 }] },
+  }];
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const bytes = new Uint8Array(32044); const view = new DataView(bytes.buffer);
+    const text = (offset: number, value: string) => bytes.set(new TextEncoder().encode(value), offset);
+    text(0, 'RIFF'); view.setUint32(4, 32036, true); text(8, 'WAVEfmt '); view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, 16000, true); view.setUint32(28, 32000, true);
+    view.setUint16(32, 2, true); view.setUint16(34, 16, true); text(36, 'data'); view.setUint32(40, 32000, true);
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('voice-workbench-audio', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('audio');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => { const db = request.result; const tx = db.transaction('audio', 'readwrite'); tx.objectStore('audio').put(new Blob([bytes], { type: 'audio/wav' }), 'checked.wav'); tx.oncomplete = () => { db.close(); resolve(); }; };
+    });
+  });
+  await seedState(page, state); await page.reload();
+  // 直流偏移只给助手看；削波和截断写进提醒，附带时间位置。
+  const badge = page.locator('.player').getByTestId('audio-check');
+  await expect(badge).toBeVisible();
+  const label = await badge.getAttribute('aria-label');
+  expect(label).toContain('爆音（削波）3 处');
+  expect(label).toContain('结尾被截断');
+  expect(label).not.toContain('偏离中线');
 });

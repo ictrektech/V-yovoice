@@ -59,7 +59,7 @@ def models(include_non_speech: bool = False) -> list[dict]:
     selection = json.loads(selection_path.read_text())
     result = []
     for row in json.loads(source.read_text()):
-        non_speech = row.get("task") in {"gen", "instrument", "midi"}
+        non_speech = row.get("task") in {"gen", "instrument", "midi", "align"}
         if non_speech and not include_non_speech:
             continue
         # 仅导入模型由管理员校验原文件后发布到同一 ModelScope 仓库，不能伪造下载来源。

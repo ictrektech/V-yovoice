@@ -14,7 +14,7 @@ import (
 // 新的音乐入口也必须校验共享目录中的实际权重，不能只校验语音生成入口。
 func TestMelodyTasksRejectCorruptedSharedWeightsBeforeStartingEngine(t *testing.T) {
 	t.Setenv("VVOICE_SHARED_MODELS", "true")
-	for _, id := range []string{"yue2-3b-q8", "sheetsage2-orig"} {
+	for _, id := range []string{"yue2-3b-q8", "sheetsage2-orig", "lyric-align-q8"} {
 		t.Run(id, func(t *testing.T) {
 			model, err := catalog.Lookup(id)
 			if err != nil {
@@ -40,6 +40,12 @@ func TestMelodyTasksRejectCorruptedSharedWeightsBeforeStartingEngine(t *testing.
 				d := schema.DefaultDraft()
 				d.ModelID, d.Kind, d.Text, d.Lyrics = id, "music", "gentle pop", "Hello world"
 				_, _, err = e.PlanMelody(context.Background(), "missing-engine", installed, "cpu", d, progress)
+			} else if model.Family == "lyric_align" {
+				err = e.SeparateVocals(context.Background(), "missing-engine", installed, "cpu", "song.wav", "vocals.wav", progress)
+				if err == nil || !strings.Contains(err.Error(), "model file size mismatch") {
+					t.Fatal("分离人声未校验权重", err)
+				}
+				_, err = e.AlignWords(context.Background(), "missing-engine", installed, "cpu", "song.wav", "你好", "Chinese", progress)
 			} else {
 				_, err = e.Transcribe(context.Background(), "missing-engine", installed, "cpu", "song.wav", progress)
 			}

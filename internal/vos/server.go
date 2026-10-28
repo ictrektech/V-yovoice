@@ -106,8 +106,8 @@ func jsonReply(w http.ResponseWriter, v any) {
 var allowed = map[string]bool{
 	"draft.save": true, "draft.delete": true, "generation.start": true, "generation.cue": true,
 	"character.save": true, "character.preview": true, "character.delete": true, "character.discardPreview": true,
-	"voice.fromGeneration": true, "voice.update": true, "voice.record": true, "timeline.import": true,
-	"media.rename": true, "media.delete": true, "generation.lyricTimes": true, "melody.inspect": true, "melody.transform": true, "melody.dismiss": true, "operation.cancel": true, "diag.client": true,
+	"voice.fromGeneration": true, "voice.suggest": true, "voice.update": true, "voice.record": true, "timeline.import": true,
+	"media.rename": true, "media.delete": true, "generation.lyricTimes": true, "generation.lyricWords": true, "melody.inspect": true, "melody.transform": true, "melody.dismiss": true, "operation.cancel": true, "diag.client": true,
 }
 
 func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
@@ -201,6 +201,15 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 				return
 			}
 			result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, call.Data)
+		case "generation.alignLyrics":
+			if s.Jobs == nil {
+				http.Error(out, "V-Scheduler configuration required", 503)
+				return
+			}
+			var snapshot json.RawMessage
+			if snapshot, err = s.Jobs.alignmentSnapshot(id, w, call.Data); err == nil {
+				result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, snapshot)
+			}
 		case "melody.plan", "melody.cover", "melody.listen":
 			if s.Jobs == nil {
 				http.Error(out, "V-Scheduler configuration required", 503)
@@ -253,7 +262,7 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 				return
 			}
 			invoke := func() (any, error) { return desktop.Call(r.Context(), w, call.Method, call.Data) }
-			if s.Jobs != nil && (call.Method == "draft.delete" || call.Method == "character.delete" || call.Method == "media.delete") {
+			if s.Jobs != nil && (call.Method == "draft.delete" || call.Method == "character.delete" || call.Method == "media.delete" || call.Method == "generation.lyricWords" || call.Method == "generation.lyricTimes") {
 				result, err = s.Jobs.withoutPending(id, invoke)
 			} else {
 				result, err = invoke()

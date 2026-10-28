@@ -35,10 +35,10 @@ type RemoteTools struct {
 // RegisterRemoteTools 把对外 MCP 的全部工具注册到 server；HTTP 与 stdio 两种传输共用同一份定义。
 func (w *Workbench) RegisterRemoteTools(server *mcp.Server, t RemoteTools) {
 	download := "通过服务端地址加 downloadPath 下载 WAV，HTTP 请求需携带相同 Bearer Token；不返回服务器本地路径"
-	upload := "上传 Base64 编码的参考音频，限 20 MB、1–60 秒，返回 voiceId。大文件优先通过 HTTP POST /v1/voices 上传"
+	upload := "上传 Base64 编码的参考音频，限 20 MB、1 秒到 10 分钟（超过 60 秒自动截取最清楚的一段），返回 voiceId。大文件优先通过 HTTP POST /v1/voices 上传"
 	if t.Local {
 		download = "path 为本机 WAV 文件的绝对路径"
-		upload = "导入参考音频，返回 voiceId。传 path（本机音频文件路径，常见格式自动转换）或 Base64 编码的 audio，限 20 MB、1–60 秒"
+		upload = "导入参考音频，返回 voiceId。传 path（本机音频文件路径，常见格式自动转换）或 Base64 编码的 audio，限 20 MB、1 秒到 10 分钟（超过 60 秒自动截取最清楚的一段）"
 	}
 	w.registerStatusTool(server)
 	w.registerListModelsTool(server)

@@ -103,20 +103,20 @@ if [[ "$prepare" == true && ( "$mode" == prepare || "$mode" == full || "$mode" =
   npm --prefix frontend run build
   mkdir -p "$artifacts/frontend"
   rsync -a --delete frontend/dist/ "$artifacts/frontend/"
-  archive="$build_root/sources/audio.cpp-v0.9.1.tar.gz"
+  archive="$build_root/sources/audio.cpp-v0.9.2.tar.gz"
   if [[ ! -f "$archive" ]]; then
     curl -fL --retry 4 --connect-timeout 15 --max-time 900 \
-      https://codeload.github.com/0xShug0/audio.cpp/tar.gz/refs/tags/v0.9.1 -o "$archive.partial"
+      https://codeload.github.com/0xShug0/audio.cpp/tar.gz/refs/tags/v0.9.2 -o "$archive.partial"
     mv "$archive.partial" "$archive"
   fi
-  echo "20f589b7f891eee1e9d35d1fcea5382c925cf3413f4db5ba71d70cd9a991c938  $archive" | sha256sum -c -
+  echo "5588807a15486d4fdb81cb759a71b83870bb89217c2e609186ca740fe3a2ea96  $archive" | sha256sum -c -
 fi
 if [[ "$mode" == prepare ]]; then exit 0; fi
 if [[ "$mode" == full || "$mode" == build ]]; then
   test -s "$artifacts/linux-${arch}/vvoice-studio"
   test -s "$artifacts/web/index.html"
   test -s "$artifacts/frontend/index.html"
-  echo "20f589b7f891eee1e9d35d1fcea5382c925cf3413f4db5ba71d70cd9a991c938  $build_root/sources/audio.cpp-v0.9.1.tar.gz" | sha256sum -c -
+  echo "5588807a15486d4fdb81cb759a71b83870bb89217c2e609186ca740fe3a2ea96  $build_root/sources/audio.cpp-v0.9.2.tar.gz" | sha256sum -c -
   mkdir -p "$build_root/source"
   rsync -a --exclude=.git --exclude=node_modules --exclude=dist --exclude=__pycache__ "$root/" "$build_root/source/"
   if [[ "$cuda" == ON ]]; then backend=cuda; fi

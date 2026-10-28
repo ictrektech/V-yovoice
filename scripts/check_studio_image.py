@@ -32,7 +32,7 @@ def main():
     assert not Path('/opt/vvoice/music-python').exists()
     assert hashlib.sha256(Path("/app/catalog/models.json").read_bytes()).hexdigest() == (
         "3f5eaa724ca756ead7f711096a41a2075cba9e935cea1952138cb12241e8c835")
-    assert len(json.loads(Path("/app/catalog/audio-cpp.json").read_text())) == 39
+    assert len(json.loads(Path("/app/catalog/audio-cpp.json").read_text())) == 40
     from vvoice.catalog import catalog
     assert len(catalog()) > 17
     from vvoice.main import app
@@ -108,7 +108,7 @@ def main():
                     assert not (thread / "children").read_text().strip()
                 except FileNotFoundError:
                     pass
-            print("PASS: packaged logo, 17 legacy descriptors, 39 creative variants, UI/API, fail-closed admission, native speech and confirmed unload")
+            print("PASS: packaged logo, 17 legacy descriptors, 40 creative variants, UI/API, fail-closed admission, native speech and confirmed unload")
         finally:
             for child in reversed(children):
                 child.terminate()

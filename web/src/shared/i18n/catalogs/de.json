@@ -390,7 +390,7 @@
     "defaultMessage": "Audio konnte nicht dekodiert werden. Prüfen Sie, ob die Datei beschädigt, verschlüsselt oder ohne Tonspur ist."
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "Wählen Sie Referenzaudio mit 1 bis 60 Sekunden Länge."
+    "defaultMessage": "Wählen Sie Audio zwischen 1 Sekunde und 10 Minuten. Aufnahmen über 60 Sekunden werden automatisch auf den klarsten Abschnitt gekürzt."
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "Wählen Sie eine gültige Mono- oder Stereo-WAV-Datei (PCM / Float)."
@@ -720,7 +720,7 @@
     "defaultMessage": "{current} von {total}"
   },
   "@yovoice.player.reveal": {
-    "defaultMessage": "Speicherort öffnen"
+    "defaultMessage": "Im Ordner zeigen"
   },
   "@yovoice.player.skipEnd": {
     "defaultMessage": "Zum Ende"
@@ -4411,5 +4411,224 @@
   },
   "@yovoice.settings.aiGroup": {
     "defaultMessage": "AI writing"
+  },
+  "@yovoice.error.engineCrashed": {
+    "defaultMessage": "Die Inferenz-Engine wurde beim Generieren unerwartet beendet. Versuche es erneut; tritt es wiederholt auf, schließe Apps, die Arbeitsspeicher oder GPU belegen, oder wähle ein kleineres Modell. ({detail})"
+  },
+  "@yovoice.library.showEarlier": {
+    "defaultMessage": "{n} ältere anzeigen"
+  },
+  "@yovoice.music.lyricStyle": {
+    "defaultMessage": "Liedtextstil"
+  },
+  "@yovoice.music.lyricStyleScroll": {
+    "defaultMessage": "Scrollend"
+  },
+  "@yovoice.music.lyricStyleScrollHint": {
+    "defaultMessage": "Der ganze Text scrollt mit, die aktuelle Zeile leuchtet Wort für Wort auf"
+  },
+  "@yovoice.music.lyricStyleStage": {
+    "defaultMessage": "Spotlight"
+  },
+  "@yovoice.music.lyricStyleStageHint": {
+    "defaultMessage": "Eine Zeile pro Bild, jedes Wort springt hervor und leuchtet. Ideal für Bildschirmaufnahmen"
+  },
+  "@yovoice.music.exportWordLrc": {
+    "defaultMessage": "Liedtext mit Wortzeiten exportieren"
+  },
+  "@yovoice.music.exportWordLrcHint": {
+    "defaultMessage": "Erweitertes LRC mit Zeitstempel pro Wort, für Player mit Karaoke-Liedtexten"
+  },
+  "@yovoice.music.lyricTools": {
+    "defaultMessage": "Liedtext-Werkzeuge"
+  },
+  "@yovoice.music.editWords": {
+    "defaultMessage": "Liedtext-Timing anpassen"
+  },
+  "@yovoice.music.editWordsHint": {
+    "defaultMessage": "Beim Abspielen eine Zeile anklicken, damit sie an der aktuellen Stelle beginnt; ganze Zeilen verschieben oder einzelne Wörter feinjustieren"
+  },
+  "@yovoice.music.syncLyricsHint": {
+    "defaultMessage": "Beim Zuhören den Beginn jeder Zeile markieren"
+  },
+  "@yovoice.music.editThisLine": {
+    "defaultMessage": "Beim Abspielen klicken: Zeile beginnt hier"
+  },
+  "@yovoice.music.wordEditor": {
+    "defaultMessage": "Liedtext-Timing"
+  },
+  "@yovoice.music.wordEditorHint": {
+    "defaultMessage": "Beim Abspielen eine Zeile anklicken, um sie an der Abspielposition zu verankern; ←/→ verschiebt die Zeile, ↑/↓ wechselt die Zeile; Wortblöcke oder Ränder ziehen für einzelne Wörter"
+  },
+  "@yovoice.music.wordTap": {
+    "defaultMessage": "Mittippen"
+  },
+  "@yovoice.music.wordTapStop": {
+    "defaultMessage": "Tippen beenden"
+  },
+  "@yovoice.music.wordTapHint": {
+    "defaultMessage": "Drücke ↓ oder Eingabe, wenn ein Wort beginnt; es geht automatisch zum nächsten. Esc beendet"
+  },
+  "@yovoice.music.wordLine": {
+    "defaultMessage": "Zeile {n}/{total}"
+  },
+  "@yovoice.music.prevLine": {
+    "defaultMessage": "Vorherige Zeile"
+  },
+  "@yovoice.music.nextLine": {
+    "defaultMessage": "Nächste Zeile"
+  },
+  "@yovoice.music.playLine": {
+    "defaultMessage": "Diese Zeile abspielen"
+  },
+  "@yovoice.music.wordUndo": {
+    "defaultMessage": "Rückgängig"
+  },
+  "@yovoice.music.wordCancel": {
+    "defaultMessage": "Abbrechen"
+  },
+  "@yovoice.music.wordSave": {
+    "defaultMessage": "Speichern"
+  },
+  "@yovoice.music.wordStart": {
+    "defaultMessage": "Beginn von „{word}“ anpassen"
+  },
+  "@yovoice.music.wordEnd": {
+    "defaultMessage": "Ende von „{word}“ anpassen"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "An Abspielposition verankern"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Diese Zeile an der aktuellen Abspielposition beginnen (Eingabe)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "{n} s früher"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "{n} s später"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Anpassungsmodus"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Folgende Zeilen mitverschieben"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Nur diese Zeile"
+  },
+  "@yovoice.music.alignLyrics": {
+    "defaultMessage": "Automatisch ausrichten"
+  },
+  "@yovoice.music.aligningLyrics": {
+    "defaultMessage": "Wird ausgerichtet"
+  },
+  "@yovoice.music.alignLyricsHint": {
+    "defaultMessage": "Trennt den Gesang ab und richtet jedes Wort des Textes am Gesang aus; wird mit dieser Version gespeichert"
+  },
+  "@yovoice.music.alignLyricsDownload": {
+    "defaultMessage": "Lade zuerst den optionalen Liedtext-Aligner herunter (ca. 1,3 GB)"
+  },
+  "@yovoice.music.lyricsAligned": {
+    "defaultMessage": "Liedtext Wort für Wort am Gesang ausgerichtet; zum Feinjustieren synchronisieren"
+  },
+  "@yovoice.activity.separateVocals": {
+    "defaultMessage": "Gesang wird getrennt"
+  },
+  "@yovoice.activity.alignLyrics": {
+    "defaultMessage": "Liedtext wird ausgerichtet ({done}/{total})"
+  },
+  "@yovoice.error.alignModelRequired": {
+    "defaultMessage": "Lade zuerst den Liedtext-Aligner unter Musikmodelle in den Einstellungen herunter"
+  },
+  "@yovoice.error.alignLyrics": {
+    "defaultMessage": "Diese Version hat keinen Liedtext zum Ausrichten"
+  },
+  "@yovoice.error.alignEmpty": {
+    "defaultMessage": "Der Liedtext ließ sich nicht dem Gesang zuordnen; synchronisiere ihn von Hand"
+  },
+  "@yovoice.settings.modelDesc.lyricAlign": {
+    "defaultMessage": "Optional: trennt den Gesang ab und richtet den Liedtext Wort für Wort am Gesang aus, für Wort-für-Wort-Animationen und den Export als Wort-LRC. Unterstützt 11 Sprachen, darunter Chinesisch, Englisch, Japanisch und Koreanisch."
+  },
+  "@yovoice.assets.more": {
+    "defaultMessage": "Weitere Aktionen für {name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "Projekt „{name}“ öffnen"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "Im Ordner anzeigen"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "Löschen"
+  },
+  "@yovoice.settings.features": {
+    "defaultMessage": "Funktionen"
+  },
+  "@yovoice.settings.featuresHint": {
+    "defaultMessage": "Ausgeschaltete Funktionen verschwinden aus der Seitenleiste und dem Menü „Neu“. Vorhandene Werke und heruntergeladene Modelle bleiben erhalten."
+  },
+  "@yovoice.settings.featureStoryHint": {
+    "defaultMessage": "Text oder Untertitel importieren und jede Zeile pro Figur vertonen."
+  },
+  "@yovoice.settings.featureMusicHint": {
+    "defaultMessage": "Songs, Instrumentals und Partituren samt Modell- und Soundfont-Einstellungen."
+  },
+  "@yovoice.settings.featureAssistantHint": {
+    "defaultMessage": "Der schwebende Assistent, sein Eintrag in der Titelleiste und seine Vorschläge. Ist auch die Musikgenerierung aus, werden die KI-Dienst-Einstellungen und die KI-Rollenvergabe für Bücher ebenfalls ausgeblendet."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "Dieses Audio hat möglicherweise Probleme: {issues}. Anhören und bei Bedarf neu generieren."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "Übersteuerung an {count} Stellen, zuerst bei {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "{count} Klicks, zuerst bei {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "das Ende ist abgeschnitten"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "lange Stille von {at} bis {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "fast kein Ton"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "leise ({loudness} LUFS); beim Export eine Ziellautheit wählen"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "Gleichspannungsversatz"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Lautheit"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Unverändert"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Hörbuch (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Podcast (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Videoplattformen (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Passt nur die Gesamtlautstärke an, ohne die Dynamik zu komprimieren; Spitzen bleiben unter −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Automatisch wählen"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Wählt die klarsten 5–15 s Sprache ohne Übersteuerung und lange Pausen"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "Die Aufnahme ist {total} lang, daher wurde der klarste Teil ({start}–{end}) als Referenz verwendet. Mit Zuschneiden anpassen."
   }
 }

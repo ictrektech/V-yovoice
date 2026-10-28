@@ -104,7 +104,8 @@ func safeFields(fields map[string]any) map[string]any {
 			out[key] = value
 			continue
 		}
-		if filepath.IsAbs(text) || strings.HasPrefix(text, "~") {
+		// Windows 上不带盘符的 \Users\... 不算绝对路径，但同样会暴露本机目录。
+		if filepath.IsAbs(text) || filepath.VolumeName(text) != "" || strings.HasPrefix(text, "/") || strings.HasPrefix(text, `\`) || strings.HasPrefix(text, "~") {
 			text = filepath.Base(text)
 		}
 		text = strings.TrimPrefix(text, "@yovoice.")

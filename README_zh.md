@@ -57,10 +57,15 @@ VOS 工作台支持 12 种界面语言，独立 API 文档保留英文、简体�
 <p align="center">让文字拥有你的声音，让创意谱成完整乐章。</p>
 <p align="center">
   <a href="https://yovoice.leemysw.com"><img src="https://img.shields.io/badge/website-yovoice.leemysw.com-10b981?style=flat-square" alt="官网" /></a>
-  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.3.0-blue?style=flat-square" alt="Version 0.3.0" /></a>
+  <a href="https://github.com/leemysw/yovoice/releases/latest"><img src="https://img.shields.io/github/v/release/leemysw/yovoice?style=flat-square&label=release&color=blue" alt="最新版本" /></a>
+  <a href="https://github.com/leemysw/yovoice/releases"><img src="https://img.shields.io/github/downloads/leemysw/yovoice/total?style=flat-square&color=8b5cf6" alt="下载量" /></a>
+  <a href="https://github.com/leemysw/yovoice/actions/workflows/check.yml"><img src="https://img.shields.io/github/actions/workflow/status/leemysw/yovoice/check.yml?branch=main&style=flat-square" alt="构建状态" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-orange?style=flat-square" alt="License: Apache-2.0" /></a>
+  <a href="https://glama.ai/mcp/servers/leemysw/yovoice"><img src="https://glama.ai/mcp/servers/leemysw/yovoice/badges/score.svg" alt="Glama MCP 服务评分" /></a>
+  <a href="https://mcpservers.org/servers/leemysw/yovoice"><img src="https://mcpservers.org/badge.svg" alt="已收录于 mcpservers.org" /></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-black?style=flat-square" alt="macOS 14+ (Apple Silicon)" />
   <img src="https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square" alt="Windows 10/11 (x64)" />
+  <img src="https://img.shields.io/badge/Linux-x64-FCC624?style=flat-square" alt="Linux (x64)" />
 </p>
 <p align="center">
   <a href="https://www.star-history.com/leemysw/yovoice">
@@ -80,7 +85,7 @@ VOS 工作台支持 12 种界面语言，独立 API 文档保留英文、简体�
 
 ---
 
-yovoice 是一款适用于 macOS 和 Windows 的开源、本地优先（Local-first）声音与音乐创作工作台。
+yovoice 是一款适用于 macOS、Windows 和 Linux 的开源、本地优先（Local-first）声音与音乐创作工作台。
 
 在本地将文字转化为自然逼真的语音、整首带人声歌曲或多轨乐谱。支持零样本音色克隆、情绪风格控制、带歌词人声的 AI 音乐生成、多轨 MIDI 编曲渲染与音频工程管理。**完全在本地运行，无云端 API 调用，无按字/按秒扣费开销，无需复杂的 Python 环境配置**，让旁白、配音、有声内容与音乐创作更自主、更私密、更低成本。
 
@@ -92,7 +97,7 @@ yovoice 是一款适用于 macOS 和 Windows 的开源、本地优先（Local-fi
 
 - 🔒 **100% 本地离线与数据隐私**：所有模型均在本地显卡/CPU 推理，文本稿件和声音样本永远不会上传到第三方云端。
 - 💸 **零按字/按秒扣费**：无需订阅昂贵的云端 API（告别 ElevenLabs、Suno、商用配音会员计费）。
-- ⚡ **原生 C++ 极速引擎，免配 Python**：基于 [audio.cpp](https://github.com/0xShug0/audio.cpp) v0.9.1 原生构建，支持 macOS Metal 与 Windows NVIDIA CUDA 12.4/13.3 开箱即用，告别 Conda 与 PyTorch 依赖地狱。
+- ⚡ **原生 C++ 极速引擎，免配 Python**：基于 [audio.cpp](https://github.com/0xShug0/audio.cpp) v0.9.2 原生构建，支持 macOS Metal 与 Windows NVIDIA CUDA 12.4/13.3 开箱即用，告别 Conda 与 PyTorch 依赖地狱。
 - 🎛️ **全流程专业创作流**：多版本试听对比（Takes）、多轨时间轴吸附裁剪、General MIDI 音色库本地渲染与分轨导出（Stems）。
 - 🤖 **原生 MCP 与 AI Agent 协创**：接入 DeepSeek、通义千问、Claude、OpenAI 或本地 Ollama，用对话完成写歌写谱到生成的全流程，并提供 Model Context Protocol (MCP) 服务，支持在 Cursor 或 Claude Code 中直接调用。
 
@@ -154,8 +159,12 @@ yovoice 是一款适用于 macOS 和 Windows 的开源、本地优先（Local-fi
 | Windows 10/11 · x64 | `-setup.exe` | 运行安装向导，安装后从开始菜单打开 |
 | Windows 10/11 · x64 · NVIDIA 显卡 | `-cuda12.4-setup.exe` | 内置 CUDA 12.4 内核，兼容较旧的显卡与驱动，首次启动即用 GPU |
 | Windows 10/11 · x64 · NVIDIA 显卡 | `-cuda13.3-setup.exe` | 内置 CUDA 13.3 内核，需要较新的驱动，安装包更小 |
+| Linux · x64（Debian/Ubuntu） | `-linux-x64.deb` | `sudo apt install ./yovoice-<版本>-linux-x64.deb`，安装后从应用菜单打开 |
+| Linux · x64（其他发行版） | `-linux-x64.tar.gz` | 解压后运行 `./install.sh`，为当前用户添加到应用菜单 |
 
 Windows 安装器会在缺少时联网安装 [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。模型在应用内下载。卸载应用保留 `~/.yovoice` 中的作品和模型。
+
+Linux 版需要 WebKitGTK 4.1（Debian/Ubuntu 为 `libwebkit2gtk-4.1-0`，Fedora 为 `webkit2gtk4.1`，Arch 为 `webkit2gtk-4.1`），`.deb` 会自动安装。Linux 开箱使用 CPU，可在 设置 → 推理引擎 中下载 Vulkan GPU 内核。Linux 版暂不支持自动更新，请从 Releases 下载新版本。
 
 macOS 和 Windows 均支持在应用菜单中检查更新，也会自动检查并后台下载；下载完成后可选择重启安装。Windows 自动更新只下载应用本体（`-update.exe`），保留已安装的内核；新版本推荐更高的内核时，可在 设置 → 推理引擎 中选择升级。
 
@@ -185,6 +194,8 @@ Agent 通过独立 CLI 完成配音，无需打开桌面应用。详细用法见
 ---
 
 运行 `yovoice serve` 可为其他机器提供带认证的 HTTP API 与 MCP 推理服务，支持上传参考音频与生成 WAV。部署和调用示例见[API / MCP 部署指南](docs/api_zh.md)。
+
+<a href="https://glama.ai/mcp/servers/leemysw/yovoice"><img width="380" height="200" src="https://glama.ai/mcp/servers/leemysw/yovoice/badges/card.svg" alt="yovoice 在 Glama 上的 MCP 服务页" /></a>
 
 ## 开发
 

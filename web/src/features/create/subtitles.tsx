@@ -7,9 +7,10 @@ import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
 import { AppDialog } from '../../shared/ui/app-dialog';
 import { Plus, Clock3 } from 'lucide-react';
 import { Selector } from '../../shared/selector';
-import { cueAudioStatus, type Generation, type Character, type Draft, type SubtitleDocument } from '../../shared/workbench';
+import { cueAudioStatus, cueGeneration, type Generation, type Character, type Draft, type SubtitleDocument } from '../../shared/workbench';
 import { SubtitleParser } from './subtitle-parser';
 import { fileTitle, readTextFile, subtitleAccept } from './file-import';
+import { AudioCheckBadge } from '../media/audio-check';
 
 const SeededAvatar = lazy(() => import('../../shared/ui/seeded-avatar').then(module => ({ default: module.SeededAvatar })));
 
@@ -126,6 +127,7 @@ export function SubtitleEditor({ draft, characters, change, renderFooter, select
         return <HStack key={cue.id ?? index} data-cue-index={index} className="subtitle-cue" data-selected={selectedCue === index} data-playing={playingCue === index} onFocusCapture={() => selectCue(index)} onClick={() => selectCue(index)} gap={3} vAlign="start">
           <DropdownMenu presentation="popover" hasChevron={false} menuWidth="max-content" button={{ size: 'sm', variant: 'ghost', isIconOnly: true, className: 'subtitle-speaker-trigger', label: t('@yovoice.subtitle.lineSpeaker', { n: index + 1 }), icon: <SpeakerAvatar seed={speaker.characterId ?? `${draft.id}:${speaker.id}`} /> }} items={document.speakers.map((s, i) => ({ id: s.id, label: label(i), description: s.sourceName || undefined, icon: <SpeakerAvatar seed={s.characterId ?? `${draft.id}:${s.id}`} />, onClick: () => update({ ...document, cues: document.cues.map((c, j) => j === index ? { ...c, speakerId: s.id, performance: s.id === c.speakerId ? c.performance : undefined } : c) }) }))} />
           {cue.text.trim() && statuses.get(cue.id) !== 'ready' ? <i className="cue-audio-status" data-status={statuses.get(cue.id)} role="img" aria-label={t(`@yovoice.timeline.${statuses.get(cue.id)}Cue`)} title={t(`@yovoice.timeline.${statuses.get(cue.id)}Cue`)} /> : null}
+          {statuses.get(cue.id) === 'ready' ? <AudioCheckBadge className="cue-audio-check" check={cueGeneration(draft, history, cue)?.check} /> : null}
           <VStack gap={0} className="grow">
             {showTimes ? <small className="subtitle-time">{timestamp(cue.start)} – {timestamp(cue.end)}</small> : null}
             <CueText onSplit={(start, end) => {

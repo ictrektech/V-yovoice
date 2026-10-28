@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import { seedState } from './seed';
 import { saveAsCharacter } from './project-actions';
 import { SubtitleParser } from '../src/features/create/subtitle-parser';
@@ -55,12 +55,13 @@ test('导入新作品、统一角色映射、逐句分配和重载持久化', as
   await expect(page.locator('.subtitle-time')).toHaveCount(2);
   await page.getByRole('button', { name: '隐藏时间', exact: true }).click();
   await expect(page.getByRole('combobox', { name: '说话人 1 (Alice)', exact: true })).toHaveCount(0);
-  const titleBox = await page.getByLabel('作品名称').boundingBox();
-  const newBox = await page.getByTestId('nav-new').boundingBox();
-  expect(Math.abs(titleBox!.y + titleBox!.height / 2 - newBox!.y - newBox!.height / 2)).toBeLessThan(2);
-  const textBox = await page.getByLabel('第 1 句台词', { exact: true }).boundingBox();
-  const navBox = await page.locator('.nav-item').first().boundingBox();
-  expect(Math.abs(textBox!.y + textBox!.height / 2 - navBox!.y - navBox!.height / 2)).toBeLessThan(2);
+  // 关闭浮层和切换时间列后布局还在过渡，等位置稳定再比对齐。
+  const offset = async (a: Locator, b: Locator) => {
+    const [boxA, boxB] = [await a.boundingBox(), await b.boundingBox()];
+    return Math.abs(boxA!.y + boxA!.height / 2 - boxB!.y - boxB!.height / 2);
+  };
+  await expect.poll(() => offset(page.getByLabel('作品名称'), page.getByTestId('nav-new'))).toBeLessThan(2);
+  await expect.poll(() => offset(page.getByLabel('第 1 句台词', { exact: true }), page.locator('.nav-item').first())).toBeLessThan(2);
   const cueBox = await page.locator('.subtitle-cue').first().boundingBox();
   expect(cueBox!.height).toBeLessThan(60);
   await page.screenshot({ path: testInfo.outputPath('subtitle-editor.png') });

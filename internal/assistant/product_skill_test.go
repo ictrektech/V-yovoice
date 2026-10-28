@@ -38,6 +38,8 @@ func TestProductSkillErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Windows 检出时可能换成 CRLF，按 LF 比较。
+	body = []byte(strings.ReplaceAll(string(body), "\r\n", "\n"))
 	section := regexp.MustCompile(`(?s)<!-- errors:begin -->.*<!-- errors:end -->`)
 	want := section.ReplaceAllLiteralString(string(body), "<!-- errors:begin -->\n"+strings.Join(lines, "\n")+"\n<!-- errors:end -->")
 	if want == string(body) {

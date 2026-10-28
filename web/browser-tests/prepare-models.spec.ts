@@ -42,8 +42,9 @@ test('各功能页可原地准备相关模型，关闭不离开原页面，未�
       await expect(rows.first()).toBeVisible();
       const ids = await rows.evaluateAll(items => items.map(item => item.getAttribute('data-model-id')));
       if (destination === 'music') {
-        expect(ids.every(id => id?.startsWith('ace-step-') || id?.startsWith('yue2-') || id?.startsWith('sheetsage2-') || id?.endsWith('-sf2'))).toBeTruthy();
+        expect(ids.every(id => id?.startsWith('ace-step-') || id?.startsWith('yue2-') || id?.startsWith('sheetsage2-') || id?.startsWith('lyric-align-') || id?.endsWith('-sf2'))).toBeTruthy();
         expect(ids).toContain('sheetsage2-orig');
+        expect(ids).toContain('lyric-align-q8');
         expect(ids.some(id => id?.endsWith('-sf2'))).toBeTruthy();
       }
       if (destination === 'score') expect(ids.every(id => id?.endsWith('-sf2'))).toBeTruthy();

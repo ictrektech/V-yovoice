@@ -44,6 +44,9 @@ const (
 	ActivityRelocate        Code = "@yovoice.activity.relocate"
 	ActivityPlanMelody      Code = "@yovoice.activity.planMelody"
 	ActivityTranscribe      Code = "@yovoice.activity.transcribe"
+	// 歌词逐字对齐：先分离人声，再按段对齐（参数含当前段与总段数）。
+	ActivitySeparateVocals Code = "@yovoice.activity.separateVocals"
+	ActivityAlignLyrics    Code = "@yovoice.activity.alignLyrics"
 
 	ErrBusy                  Code = "@yovoice.error.busy"
 	ErrProxyURL              Code = "@yovoice.error.proxyURL"
@@ -98,6 +101,7 @@ const (
 	ErrEngineStartFailed     Code = "@yovoice.error.engineStartFailed"
 	ErrEngineStartTimeout    Code = "@yovoice.error.engineStartTimeout"
 	ErrEngineNoAudio         Code = "@yovoice.error.engineNoAudio"
+	ErrEngineCrashed         Code = "@yovoice.error.engineCrashed"
 	ErrCPUBundleInvalid      Code = "@yovoice.error.cpuBundleInvalid"
 	ErrBackendUnsupported    Code = "@yovoice.error.backendUnsupported"
 	ErrPlatformArch          Code = "@yovoice.error.platformArch"
@@ -122,7 +126,11 @@ const (
 	ErrMelodyEmpty             Code = "@yovoice.error.melodyEmpty"
 	ErrCoverModelRequired      Code = "@yovoice.error.coverModelRequired"
 	ErrMelodySoundFontRequired Code = "@yovoice.error.melodySoundFontRequired"
-	ErrEngineUpgradeRequired   Code = "@yovoice.error.engineUpgradeRequired"
+	// 歌词逐字对齐：对齐模型未下载、没有可对齐的歌词、模型没有对上任何字。
+	ErrAlignModelRequired    Code = "@yovoice.error.alignModelRequired"
+	ErrAlignLyrics           Code = "@yovoice.error.alignLyrics"
+	ErrAlignEmpty            Code = "@yovoice.error.alignEmpty"
+	ErrEngineUpgradeRequired Code = "@yovoice.error.engineUpgradeRequired"
 	// AI 服务（可选）：未配置、鉴权、限流、网络、响应异常与结果无效。
 	ErrAIProviderInvalid Code = "@yovoice.error.aiProviderInvalid"
 	ErrAINotConfigured   Code = "@yovoice.error.aiNotConfigured"
@@ -207,7 +215,7 @@ func All() []Code {
 		ActivityDownload, ActivityDownloading, ActivityVerifying, ActivityImport,
 		ActivityRuntimeDownload, ActivityRuntimeExtract, ActivityEngineStart,
 		ActivityGenerate, ActivitySynthesizing, ActivitySavingAudio, ActivityRendering,
-		ActivityCompleted, ActivityCancelled, ActivityPaused, ActivityFailed, ActivityInterrupted, ActivityRelocate, ActivityPlanMelody, ActivityTranscribe,
+		ActivityCompleted, ActivityCancelled, ActivityPaused, ActivityFailed, ActivityInterrupted, ActivityRelocate, ActivityPlanMelody, ActivityTranscribe, ActivitySeparateVocals, ActivityAlignLyrics,
 		ErrBusy, ErrProxyURL, ErrModelDirAbsolute, ErrModelDirSpace,
 		ErrDownloadHTTP, ErrDownloadRange, ErrDownloadSize, ErrDownloadIncomplete,
 		ErrDownloadStale, ErrDownloadChecksum, ErrDownloadOversized,
@@ -220,11 +228,11 @@ func All() []Code {
 		ErrModelRequired, ErrModelUnsupported, ErrModelMoved, ErrModelImportNone, ErrModelForgetBlocked,
 		ErrDownloadSource, ErrRuntimeRequired, ErrRuntimeMissing, ErrRuntimeUnique,
 		ErrRuntimeArchivePath, ErrRuntimeArchiveLink, ErrRuntimeArchiveSize,
-		ErrEngineStartFailed, ErrEngineStartTimeout, ErrEngineNoAudio,
+		ErrEngineStartFailed, ErrEngineStartTimeout, ErrEngineNoAudio, ErrEngineCrashed,
 		ErrCPUBundleInvalid, ErrBackendUnsupported, ErrPlatformArch, ErrMacBackend, ErrMacAppleSilicon,
 		ErrRequestInvalid, ErrMethodUnsupported,
 		ErrVoxModeInvalid, ErrVoxTextLimits, ErrVoxReferenceRequired, ErrVoxParams,
-		ErrMusicStyle, ErrMusicLyrics, ErrMusicParams, ErrMusicLyricsRequired, ErrEngineUpgradeRequired, ErrScoreInvalid, ErrScoreTooLong, ErrMidiInvalid, ErrMelodyInvalid, ErrMelodyEmpty, ErrCoverModelRequired, ErrMelodySoundFontRequired,
+		ErrMusicStyle, ErrMusicLyrics, ErrMusicParams, ErrMusicLyricsRequired, ErrEngineUpgradeRequired, ErrScoreInvalid, ErrScoreTooLong, ErrMidiInvalid, ErrMelodyInvalid, ErrMelodyEmpty, ErrCoverModelRequired, ErrMelodySoundFontRequired, ErrAlignModelRequired, ErrAlignLyrics, ErrAlignEmpty,
 		ErrAIProviderInvalid, ErrAINotConfigured, ErrAIAuth, ErrAIRateLimit, ErrAINetwork, ErrAIResponse, ErrAIModelsPath, ErrAIResultInvalid, ErrAITimeout, ErrAssistantMissing, ErrAssistantProvider,
 		ErrAIFreeRate, ErrAIFreeBusy, ErrAIFreePromptCap, ErrAIFreeAccess, ErrCodexMissing, ErrCodexLoggedOut, ErrCodexFailed, ErrCodexLimit, ErrCodexNoImage,
 		ErrLocalAPIPort, ErrLocalAPIPortInUse,

@@ -30,7 +30,7 @@ func TestFrontendTypesMatchSchema(t *testing.T) {
 		schema.SynthesisSettings{}, schema.SubtitleSpeaker{}, schema.CharacterPerformance{}, schema.SubtitleCue{}, schema.SubtitleDocument{},
 		schema.AudioClip{}, schema.AudioLane{}, schema.AudioAsset{}, schema.AudioMarker{}, schema.AudioTimeline{}, schema.Draft{},
 		schema.CharacterPreview{}, schema.Character{}, schema.Voice{}, schema.InstalledModel{}, schema.Generation{},
-		schema.GenerationSegment{}, schema.Activity{}, schema.Preferences{}, schema.State{}, catalog.ModelPackage{},
+		schema.GenerationSegment{}, schema.AudioCheck{}, schema.AudioIssue{}, schema.VoiceExcerpt{}, schema.Activity{}, schema.Preferences{}, schema.State{}, catalog.ModelPackage{},
 		schema.Score{}, schema.ScoreSection{}, schema.ScoreTrack{}, schema.Humanize{}, schema.ScoreRamp{}, schema.ScoreNote{},
 		schema.AIProvider{}, schema.AITest{}, schema.AITask{}, schema.MelodyResult{},
 		schema.AssistantMessage{}, schema.AssistantBlock{}, schema.AssistantToolCard{}, schema.AssistantSession{}, schema.AssistantSessions{}, schema.AssistantTurn{}, schema.AssistantNav{}, schema.AssistantUpdate{}, schema.AssistantLive{},

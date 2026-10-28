@@ -168,6 +168,15 @@ type Voice struct {
 	Name               string  `json:"name"`
 	FileName           string  `json:"fileName"`
 	Duration           float64 `json:"duration"`
+	// Excerpt 记录导入的录音过长时自动截取的片段。
+	Excerpt *VoiceExcerpt `json:"excerpt,omitempty"`
+}
+
+// VoiceExcerpt 是从较长录音里自动挑出的参考片段：Start/End 为片段在原录音里的秒数，Total 为原录音时长。
+type VoiceExcerpt struct {
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
+	Total float64 `json:"total"`
 }
 type InstalledModel struct {
 	ID      string `json:"id"`
@@ -184,6 +193,33 @@ type Generation struct {
 	Segment   *GenerationSegment `json:"segment,omitempty"`
 	// LyricTimes 是播放页校准的歌词时间：按顺序记录每一行（含器乐段落）的开始秒数。
 	LyricTimes []float64 `json:"lyricTimes,omitempty"`
+	// LyricWords 是强制对齐得到的逐字时间，按歌词顺序排列；与 LyricTimes 只保留较新的一份。
+	LyricWords []LyricWord `json:"lyricWords,omitempty"`
+	// Check 是生成后对音频的测量体检；导入旧版本或文件丢失时为空。
+	Check *AudioCheck `json:"check,omitempty"`
+}
+
+// AudioCheck 是不用模型的音频体检：整体响度、真峰值与发现的问题。
+type AudioCheck struct {
+	Loudness float64      `json:"loudness"` // LUFS，静音为 -70
+	Peak     float64      `json:"peak"`     // 真峰值 dBTP
+	Issues   []AudioIssue `json:"issues,omitempty"`
+}
+
+// AudioIssue 是体检发现的一处问题，At/End 为秒。Code：
+// clipping 削波（爆音），clicks 咔哒声，cutoff 结尾被截断，silence 长时间静音，silent 整段几乎无声，quiet 音量过小，dc 直流偏移。
+type AudioIssue struct {
+	Code  string  `json:"code"`
+	At    float64 `json:"at"`
+	End   float64 `json:"end,omitempty"`
+	Count int     `json:"count,omitempty"`
+}
+
+// LyricWord 是对齐到音频上的一个字（拉丁文为一个词），时间以秒计。
+type LyricWord struct {
+	Word  string  `json:"word"`
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
 }
 
 // GenerationSegment 保留单句来源；剪辑与原音频通过生成版本关联。
@@ -202,7 +238,7 @@ type Activity struct {
 	CharacterID string `json:"characterId,omitempty"`
 	RequestID   string `json:"requestId,omitempty"`
 	Kind        string `json:"kind"`
-	// Task 区分同一类操作里的具体任务：melody 为出谱或扒谱，界面据此在旋律谱区域显示进度。
+	// Task 区分同一类操作里的具体任务：melody 为出谱或扒谱，界面据此在旋律谱区域显示进度；align 为歌词对齐，在播放页显示。
 	Task        string     `json:"task,omitempty"`
 	Code        msg.Code   `json:"code"`
 	Params      msg.Params `json:"params"`
@@ -262,7 +298,13 @@ type Preferences struct {
 	TourSeen bool `json:"tourSeen,omitempty"`
 	// AssistantQuiet 关闭助手的主动提示（生成完成、失败等时刻在角落出现的气泡）。
 	AssistantQuiet bool `json:"assistantQuiet,omitempty"`
+	// HiddenFeatures 是在设置中隐藏的功能入口（见 OptionalFeatures），为空时全部显示。
+	HiddenFeatures []string `json:"hiddenFeatures,omitempty"`
 }
+
+// OptionalFeatures 是可在设置中隐藏的功能：故事配音、音乐生成（含编曲）与 Ocho 助手。
+var OptionalFeatures = []string{"story", "music", "assistant"}
+
 type State struct {
 	Characters     []Character        `json:"characters"`
 	Previews       []CharacterPreview `json:"previews"`

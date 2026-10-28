@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+### 简体中文
+
+- 合入上游 v0.4.1 之后的更新，推理内核升级为 audio.cpp v0.9.2；修复引擎意外退出提示、模型镜像下载和桌面更新兼容性。
+- 音乐播放页支持逐字歌词、时间编辑和逐字 LRC 导出，新增可选歌词对齐模型；VOS 对齐任务经过调度审批，成功确认后才更新可见时间戳。
+- 改善长音频波形、历史列表和页面切换性能，新增生成音频体检及长录音参考片段建议；浏览器保留直接下载，桌面改进大文件导出和目标响度设置。
+- 旧作品在数据库升级前自动备份，保留既有模型、历史和歌词校准；VOS 继续复用系统 Kokoro 发音库，并保留平台鉴权、共享模型和语音服务入口。
+
+### English
+
+- Integrate upstream updates through the post-v0.4.1 checkpoint and upgrade audio.cpp to v0.9.2. Improve engine crash reporting, pinned model mirror downloads and desktop update compatibility.
+- Add word-level lyrics, timing editing, word-timed LRC export and an optional lyric alignment model. VOS alignment requires Scheduler approval and publishes timestamps only after confirmed success.
+- Improve long-audio waveforms, history lists and page switching; add generated-audio checks and reference excerpt suggestions for long recordings. Preserve browser downloads and improve desktop large-file exports and target loudness controls.
+- Back up existing projects before database migration while preserving models, history and lyric calibration. VOS retains system Kokoro libraries, authentication, shared models and speech service entry points.
+
 ## [0.0.31] - 2026-10-28
 
 ### 简体中文

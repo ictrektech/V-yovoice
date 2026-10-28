@@ -627,7 +627,7 @@
     "defaultMessage": "無法解碼音訊，請檢查檔案是否損毀、加密或缺少音軌。"
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "請選擇 1–60 秒的參考音訊。"
+    "defaultMessage": "請選擇 1 秒到 10 分鐘的音訊；超過 60 秒的錄音會自動擷取最清楚的一段。"
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "請選擇有效的單聲道或立體聲 PCM / Float WAV 音訊。"
@@ -993,7 +993,7 @@
     "defaultMessage": "{current}，共 {total}"
   },
   "@yovoice.player.reveal": {
-    "defaultMessage": "開啟音訊位置"
+    "defaultMessage": "開啟位置"
   },
   "@yovoice.player.skipEnd": {
     "defaultMessage": "跳到結尾"
@@ -4411,5 +4411,224 @@
   },
   "@yovoice.create.precision": {
     "defaultMessage": "精度"
+  },
+  "@yovoice.error.engineCrashed": {
+    "defaultMessage": "推理引擎在生成時意外結束，可以直接重試；反覆出現時請關閉佔用記憶體或顯示卡的程式，或改用較小的模型。（{detail}）"
+  },
+  "@yovoice.library.showEarlier": {
+    "defaultMessage": "顯示更早的 {n} 筆"
+  },
+  "@yovoice.music.lyricStyle": {
+    "defaultMessage": "歌詞樣式"
+  },
+  "@yovoice.music.lyricStyleScroll": {
+    "defaultMessage": "滾動歌詞"
+  },
+  "@yovoice.music.lyricStyleScrollHint": {
+    "defaultMessage": "整首歌詞隨播放滾動，當前句逐字點亮"
+  },
+  "@yovoice.music.lyricStyleStage": {
+    "defaultMessage": "浮光"
+  },
+  "@yovoice.music.lyricStyleStageHint": {
+    "defaultMessage": "一句一屏，字隨演唱逐個躍出並發光，適合錄影"
+  },
+  "@yovoice.music.exportWordLrc": {
+    "defaultMessage": "匯出逐字歌詞"
+  },
+  "@yovoice.music.exportWordLrcHint": {
+    "defaultMessage": "增強 LRC，每個字都帶時間，支援卡拉 OK 歌詞的播放器可逐字顯示"
+  },
+  "@yovoice.music.lyricTools": {
+    "defaultMessage": "歌詞工具"
+  },
+  "@yovoice.music.editWords": {
+    "defaultMessage": "調整歌詞時間"
+  },
+  "@yovoice.music.editWordsHint": {
+    "defaultMessage": "播放中點一句就從目前位置開始唱，可整句前後微調，也能逐字細調"
+  },
+  "@yovoice.music.syncLyricsHint": {
+    "defaultMessage": "邊聽邊逐行標記每句的開始"
+  },
+  "@yovoice.music.editThisLine": {
+    "defaultMessage": "播放中點擊：這一句從目前位置開始"
+  },
+  "@yovoice.music.wordEditor": {
+    "defaultMessage": "歌詞時間調整"
+  },
+  "@yovoice.music.wordEditorHint": {
+    "defaultMessage": "播放中點歌詞裡的一句即錨定到目前位置；←/→ 整句微調，↑/↓ 換句；拖曳字塊或兩端逐字細調"
+  },
+  "@yovoice.music.wordTap": {
+    "defaultMessage": "跟唱打點"
+  },
+  "@yovoice.music.wordTapStop": {
+    "defaultMessage": "停止打點"
+  },
+  "@yovoice.music.wordTapHint": {
+    "defaultMessage": "每個字開始唱時按 ↓ 或 Enter，自動跳到下一個字；Esc 停止"
+  },
+  "@yovoice.music.wordLine": {
+    "defaultMessage": "第 {n}/{total} 句"
+  },
+  "@yovoice.music.prevLine": {
+    "defaultMessage": "上一句"
+  },
+  "@yovoice.music.nextLine": {
+    "defaultMessage": "下一句"
+  },
+  "@yovoice.music.playLine": {
+    "defaultMessage": "播放這一句"
+  },
+  "@yovoice.music.wordUndo": {
+    "defaultMessage": "復原"
+  },
+  "@yovoice.music.wordCancel": {
+    "defaultMessage": "取消"
+  },
+  "@yovoice.music.wordSave": {
+    "defaultMessage": "儲存"
+  },
+  "@yovoice.music.wordStart": {
+    "defaultMessage": "調整「{word}」的開始"
+  },
+  "@yovoice.music.wordEnd": {
+    "defaultMessage": "調整「{word}」的結束"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "錨定到播放位置"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "這一句從目前播放位置開始唱（Enter）"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "提前 {n} 秒"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "延後 {n} 秒"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "調整方式"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "後面跟著移"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "只改這一句"
+  },
+  "@yovoice.music.alignLyrics": {
+    "defaultMessage": "智慧對齊"
+  },
+  "@yovoice.music.aligningLyrics": {
+    "defaultMessage": "正在對齊"
+  },
+  "@yovoice.music.alignLyricsHint": {
+    "defaultMessage": "分離人聲後把歌詞逐字對到演唱上，結果隨版本儲存"
+  },
+  "@yovoice.music.alignLyricsDownload": {
+    "defaultMessage": "需要先下載可選的歌詞對齊模型（約 1.3 GB）"
+  },
+  "@yovoice.music.lyricsAligned": {
+    "defaultMessage": "歌詞已按演唱逐字對齊，可再手動校準"
+  },
+  "@yovoice.activity.separateVocals": {
+    "defaultMessage": "正在分離人聲"
+  },
+  "@yovoice.activity.alignLyrics": {
+    "defaultMessage": "正在對齊歌詞（{done}/{total}）"
+  },
+  "@yovoice.error.alignModelRequired": {
+    "defaultMessage": "請先在設定的音樂模型裡下載歌詞對齊模型"
+  },
+  "@yovoice.error.alignLyrics": {
+    "defaultMessage": "這個版本沒有可對齊的歌詞"
+  },
+  "@yovoice.error.alignEmpty": {
+    "defaultMessage": "沒能從人聲裡對上歌詞，可以手動校準"
+  },
+  "@yovoice.settings.modelDesc.lyricAlign": {
+    "defaultMessage": "可選：先分離人聲，再把歌詞逐字對齊到演唱上，用於逐字歌詞動畫和匯出逐字 LRC。支援中文、英語、日語、韓語等 11 種語言。"
+  },
+  "@yovoice.assets.more": {
+    "defaultMessage": "更多操作：{name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "開啟作品「{name}」"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "開啟所在位置"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "刪除"
+  },
+  "@yovoice.settings.features": {
+    "defaultMessage": "功能顯示"
+  },
+  "@yovoice.settings.featuresHint": {
+    "defaultMessage": "關閉後對應入口會從側欄和新增選單中隱藏，現有作品與已下載的模型不受影響。"
+  },
+  "@yovoice.settings.featureStoryHint": {
+    "defaultMessage": "匯入文字或字幕，依角色逐句配音。"
+  },
+  "@yovoice.settings.featureMusicHint": {
+    "defaultMessage": "歌曲、純音樂與編曲生成，以及對應的模型和音色庫設定。"
+  },
+  "@yovoice.settings.featureAssistantHint": {
+    "defaultMessage": "浮窗助手、標題列入口和主動提示。與音樂生成都關閉時，AI 服務設定和有聲書的 AI 分配角色也一併隱藏。"
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "音訊可能有問題：{issues}。請試聽確認，需要時重新生成。"
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "；"
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "爆音（削波）{count} 處，首次在 {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "喀噠聲 {count} 處，首次在 {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "結尾被截斷"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "{at}–{end} 有長時間靜音"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "幾乎沒有聲音"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "音量偏小（{loudness} LUFS），匯出時可選目標響度"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "波形偏離中線"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "響度"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "不調整"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "有聲書（-18 LUFS）"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Podcast（-16 LUFS）"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "影音平台（-14 LUFS）"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "整體調整音量，不壓縮動態，峰值不超過 -1 dBTP。"
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "自動挑選"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "挑出人聲最清楚、沒有爆音和長停頓的 5–15 秒"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "錄音長 {total}，已自動擷取最清楚的 {start}–{end} 作為參考，可用「裁剪」調整。"
   }
 }

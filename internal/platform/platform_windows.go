@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"unsafe"
@@ -80,7 +81,14 @@ func TieToParent(c *exec.Cmd) error {
 }
 
 // ProcessCommand 在 Windows 上不读取命令行：推理进程已由作业对象随服务结束。
-func ProcessCommand(int) (string, error) { return "", errors.ErrUnsupported }
+// ProcessCommand 通过 WMI 读取进程命令行，只在启动时回收残留进程用，几秒的开销可以接受。
+func ProcessCommand(pid int) (string, error) {
+	query := "(Get-CimInstance Win32_Process -Filter 'ProcessId=" + strconv.Itoa(pid) + "').CommandLine"
+	c := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", query)
+	ConfigureProcess(c)
+	out, err := c.Output()
+	return strings.TrimSpace(string(out)), err
+}
 
 func KillGroup(pid int) {
 	p := exec.Command("taskkill", "/PID", strconv.Itoa(pid), "/T", "/F")

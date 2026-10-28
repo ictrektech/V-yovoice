@@ -110,7 +110,7 @@ func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID str
 	if d.Kind == "score" {
 		return w.startScore(d, saveDraft)
 	}
-	d.EnsureCueIDs()
+	d.Normalize()
 	original := d
 	if cueID != "" {
 		if d.Subtitles == nil {
@@ -166,6 +166,9 @@ func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID str
 		}
 	}
 	return w.start("generate", msg.ActivityGenerate, nil, nil, func(ctx context.Context) error {
+		if e := w.ensureKokoro(ctx, s, parts); e != nil {
+			return e
+		}
 		if d.Subtitles != nil && previewID == "" {
 			return w.generateSegments(ctx, s, parts, clipID)
 		}
@@ -214,7 +217,7 @@ func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID str
 		if generatedScore != "" {
 			snapshot.Abc = generatedScore
 		}
-		g := schema.Generation{ID: id, Title: d.Title, FileName: file, CreatedAt: time.Now().UTC(), Duration: duration, Settings: snapshot}
+		g := schema.Generation{ID: id, Title: d.Title, FileName: file, CreatedAt: time.Now().UTC(), Duration: duration, Settings: snapshot, Check: w.checkAudio(path, workKindOf(d), id)}
 		if e = w.Store.Update(func(s *schema.State) { s.History = append([]schema.Generation{g}, s.History...) }, true); e != nil {
 			_ = os.Remove(path)
 			return e

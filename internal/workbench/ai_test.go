@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -239,14 +240,24 @@ func TestAssistantProxyEnv(t *testing.T) {
 		t.Helper()
 		b, err := os.ReadFile(dump)
 		must(t, err)
+		// Windows 的环境变量名不分大小写，HTTPS_PROXY 与 https_proxy 是同一个变量，只会留下一份。
+		if runtime.GOOS == "windows" {
+			return strings.ToUpper(string(b))
+		}
 		return string(b)
+	}
+	has := func(text, entry string) bool {
+		if runtime.GOOS == "windows" {
+			entry = strings.ToUpper(entry)
+		}
+		return strings.Contains(text, entry)
 	}
 	for _, name := range []string{"HTTPS_PROXY", "https_proxy", "NO_PROXY"} {
 		t.Setenv(name, "http://from-host:7890")
 	}
 	ask()
-	if text := dumpText(); !strings.Contains(text, "HTTPS_PROXY=http://from-host:7890") ||
-		!strings.Contains(text, "https_proxy=http://from-host:7890") || !strings.Contains(text, "NO_PROXY=http://from-host:7890") {
+	if text := dumpText(); !has(text, "HTTPS_PROXY=http://from-host:7890") ||
+		!has(text, "https_proxy=http://from-host:7890") || !has(text, "NO_PROXY=http://from-host:7890") {
 		t.Fatal("未配置时应透传宿主代理变量")
 	}
 	p := w.Store.Read().Preferences
@@ -254,9 +265,9 @@ func TestAssistantProxyEnv(t *testing.T) {
 	p.ProxyEnabled, p.ProxyURL = &enabled, "http://127.0.0.1:7890"
 	must(t, w.SavePreferences(p))
 	ask()
-	if text := dumpText(); !strings.Contains(text, "HTTPS_PROXY=http://127.0.0.1:7890") ||
-		!strings.Contains(text, "HTTP_PROXY=http://127.0.0.1:7890") || !strings.Contains(text, "ALL_PROXY=http://127.0.0.1:7890") ||
-		!strings.Contains(text, "NO_PROXY=localhost,127.0.0.1,::1") {
+	if text := dumpText(); !has(text, "HTTPS_PROXY=http://127.0.0.1:7890") ||
+		!has(text, "HTTP_PROXY=http://127.0.0.1:7890") || !has(text, "ALL_PROXY=http://127.0.0.1:7890") ||
+		!has(text, "NO_PROXY=localhost,127.0.0.1,::1") {
 		t.Fatal("启用代理时应设置三变量并保留本机直连")
 	}
 	disabled := false

@@ -5,9 +5,9 @@ import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { Slider } from '@astryxdesign/core/Slider';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { Upload, Mic, Square, Play, Pause, AudioLines, Check, Search } from 'lucide-react';
-import { call, importVoiceFile, mediaUrl, isMac, CallError } from '../../shared/lib/client';
-import { encodeWav, toBase64 } from '../../shared/lib/sound';
+import { Upload, Mic, Square, Play, Pause, AudioLines, Check, Search, ScanSearch } from 'lucide-react';
+import { call, importVoiceFile, mediaUrl, isMac, CallError, releaseMediaUrl } from '../../shared/lib/client';
+import { bufferPeaks, decodeAudio, encodeWav, toBase64 } from '../../shared/lib/sound';
 import { formatCallError } from '../../shared/i18n/format';
 import { Player } from './player';
 import { formatTime, type Track, type Voice } from '../../shared/workbench';
@@ -39,9 +39,11 @@ export function VoicePicker({ voices, onClose, onSelect, adding = false }: { add
   const [recording, setRecording] = useState(false); const [busy, setBusy] = useState(false);
   const [name, setName] = useState(() => t('@yovoice.voice.defaultName')); const [crop, setCrop] = useState<Voice | null>(null); const [range, setRange] = useState<[number, number]>([0, 10]);
   useEffect(() => () => { clearTimeout(timer.current); if (recorder.current?.state === 'recording') { recorder.current.onstop = null; recorder.current.stop(); } recorder.current?.stream.getTracks().forEach(t => t.stop()); }, []);
+  // 超过 60 秒的录音由本地服务自动截取最清楚的一段，告诉用户截了哪里，可以再用“裁剪”调整。
+  const [excerpt, setExcerpt] = useState<Voice | null>(null);
   async function importing(file?: File) {
-    setBusy(true); setError('');
-    try { const voice = file ? await importVoiceFile(file) : null; if (voice) choose(voice); }
+    setBusy(true); setError(''); setExcerpt(null);
+    try { const voice = file ? await importVoiceFile(file) : null; if (voice) { choose(voice); if (voice.excerpt) setExcerpt(voice); } }
     catch (e) { setError((e as Error).name === 'EncodingError' ? t('@yovoice.error.browserDecode') : formatCallError(t, e)); } finally { setBusy(false); }
   }
   async function record() {
@@ -56,19 +58,12 @@ export function VoicePicker({ voices, onClose, onSelect, adding = false }: { add
       instance.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
       instance.onstop = async () => {
         setStream(null); clearTimeout(timer.current); stream.getTracks().forEach(t => t.stop()); setRecording(false); setBusy(true);
-        const context = new AudioContext();
         try {
-          const buffer = await context.decodeAudioData(await new Blob(chunks).arrayBuffer());
+          const buffer = await decodeAudio(new Blob(chunks));
           if (buffer.duration < 1) throw new CallError('@yovoice.error.recordTooShort');
-          const data = buffer.getChannelData(0);
-          const length = Math.min(data.length, Math.floor(buffer.sampleRate * 60));
-          setWaveform(Array.from({ length: 96 }, (_, index) => {
-            let peak = 0;
-            for (let i = Math.floor(index * length / 96); i < Math.floor((index + 1) * length / 96); i++) peak = Math.max(peak, Math.abs(data[i]));
-            return peak;
-          }));
+          setWaveform(bufferPeaks(buffer, 96, 60));
           setRecorded(encodeWav(buffer, 0, Math.min(60, buffer.duration)));
-        } catch (e) { setError(formatCallError(t, e)); } finally { await context.close(); setBusy(false); }
+        } catch (e) { setError(formatCallError(t, e)); } finally { setBusy(false); }
       };
       setRecorded(null); setPreview(null); instance.start(); setStream(stream); setRecording(true); timer.current = setTimeout(() => { if (instance.state === 'recording') instance.stop(); }, 60000);
     } catch (e) {
@@ -82,14 +77,19 @@ export function VoicePicker({ voices, onClose, onSelect, adding = false }: { add
       }
     } finally { setBusy(false); }
   }
+  async function suggest() {
+    if (!crop) return; setBusy(true); setError('');
+    try { const span = await call<{ start: number; end: number }>('voice.suggest', { id: crop.id }); setRange([span.start, span.end]); }
+    catch (e) { setError(formatCallError(t, e)); } finally { setBusy(false); }
+  }
   async function trim() {
-    if (!crop) return; setBusy(true); let url = ''; const context = new AudioContext();
+    if (!crop) return; setBusy(true); let url = '';
     try {
       if (range[1] - range[0] < 1) throw new CallError('@yovoice.error.trimTooShort');
       url = await mediaUrl('voices', crop.fileName);
-      const buffer = await context.decodeAudioData(await (await fetch(url)).arrayBuffer());
+      const buffer = await decodeAudio(await (await fetch(url)).arrayBuffer());
       const voice = await call<Voice>('voice.record', { name: crop.name + t('@yovoice.voice.croppedSuffix'), base64: await toBase64(encodeWav(buffer, range[0], range[1])) }); choose(voice);
-    } catch (e) { setError(formatCallError(t, e)); } finally { await context.close(); if (url.startsWith('blob:')) URL.revokeObjectURL(url); setBusy(false); }
+    } catch (e) { setError(formatCallError(t, e)); } finally { releaseMediaUrl(url); setBusy(false); }
   }
   return <AppDialog title={t(adding ? '@yovoice.voice.addTitle' : '@yovoice.voice.pickTitle')}
     width={adding ? 400 : 560} busy={busy} error={error} onClose={() => { cancelRecording(); onClose(); }} closeLabel={t(adding ? '@yovoice.voice.closeAdd' : '@yovoice.voice.closePick')}
@@ -116,7 +116,8 @@ export function VoicePicker({ voices, onClose, onSelect, adding = false }: { add
           onError={message => { setPreview(null); setError(formatCallError(t, new Error(message))); }} />
         <Button label={t('@yovoice.voice.crop')} size="sm" variant="secondary" isDisabled={recording || busy} onClick={() => { setPreview(null); setCrop(voice); setShowRecording(false); setRange([0, voice.duration]); }} />
       </HStack>) : null}</VStack> : null}
-      {crop ? <VStack gap={3}><h3>{t('@yovoice.voice.cropTitle', { name: crop.name })}</h3><Slider label={t('@yovoice.voice.cropRange')} value={range} min={0} max={crop.duration} step={0.1} onChange={(value: [number, number]) => setRange(value)} formatValue={formatTime} valueDisplay="text" /><Button label={t('@yovoice.voice.saveCrop')} variant="primary" isLoading={busy} onClick={() => void trim()} /></VStack> : null}
+      {crop ? <VStack gap={3}><h3>{t('@yovoice.voice.cropTitle', { name: crop.name })}</h3><Slider label={t('@yovoice.voice.cropRange')} value={range} min={0} max={crop.duration} step={0.1} onChange={(value: [number, number]) => setRange(value)} formatValue={formatTime} valueDisplay="text" /><HStack gap={2}><Button label={t('@yovoice.voice.autoPick')} tooltip={t('@yovoice.voice.autoPickHint')} icon={<ScanSearch size={16} />} isDisabled={busy} onClick={() => void suggest()} /><Button label={t('@yovoice.voice.saveCrop')} variant="primary" isLoading={busy} onClick={() => void trim()} /></HStack></VStack> : null}
+      {excerpt?.excerpt ? <small role="status" data-testid="voice-excerpt">{t('@yovoice.voice.excerpt', { total: formatTime(excerpt.excerpt.total), start: formatTime(excerpt.excerpt.start), end: formatTime(excerpt.excerpt.end) })}</small> : null}
   </AppDialog>;
 }
 

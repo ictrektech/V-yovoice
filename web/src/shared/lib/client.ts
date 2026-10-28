@@ -1,12 +1,12 @@
 import type { AudioAsset, State, Voice } from '../workbench';
 import { toBase64 } from './sound';
 import { CallError, parseCallError } from './call-error';
-import { desktopCall, desktopMediaUrl, isDesktop, isMac, reportDesktop, subscribeDesktop } from './bridge';
+import { desktopCall, desktopMediaUrl, isDesktop, isLinux, isMac, reportDesktop, subscribeDesktop } from './bridge';
 import { assertUploadSize, previewCall, previewImportTimeline, previewImportVoice, previewMediaUrl, subscribePreview } from './preview-backend';
 import { isVos, vosCall, vosMedia, subscribeVos } from './vos';
 
 // 界面统一的后端入口：桌面端经宿主桥接调用 Go 服务，浏览器预览使用本地模拟后端。
-export { CallError, parseCallError, isDesktop, isMac };
+export { CallError, parseCallError, isDesktop, isLinux, isMac };
 
 export function subscribe(listener: (state: State) => void) {
   return isVos ? subscribeVos(listener) : isDesktop ? subscribeDesktop(listener) : subscribePreview(listener);
@@ -48,8 +48,14 @@ export async function listenMelody(abc: string, isCurrent: () => boolean): Promi
   return null;
 }
 
+// 音频地址：桌面端是服务上的固定地址，浏览器预览是临时 blob 地址；用完交给 releaseMediaUrl 释放。
 export async function mediaUrl(kind: 'voices' | 'outputs', file: string): Promise<string> {
   return isVos ? vosMedia(kind, file) : isDesktop ? desktopMediaUrl(kind, file) : previewMediaUrl(file);
+}
+
+// 释放 mediaUrl 返回的地址；固定地址无需释放，可以对任何结果调用。
+export function releaseMediaUrl(url: string) {
+  if (url.startsWith('blob:')) URL.revokeObjectURL(url);
 }
 
 const exportName = (name: string, fallback = 'yovoice') => name.replace(/[\\/:*?"<>|]/g, '_').slice(0, 100) || fallback;
@@ -79,13 +85,27 @@ async function logged(format: string, save: () => Promise<boolean>): Promise<boo
   }
 }
 
-export async function saveAudio(blob: Blob, name: string): Promise<boolean> {
+// 界面合成的音频（时间线导出）：桌面端先直接上传给本地服务落成临时文件，宿主再弹保存框复制，
+// 不经宿主消息通道传音频字节，长音频不受消息大小限制；浏览器预览直接下载。
+// loudness 为目标响度（LUFS）时由本地服务整体调整音量后再保存；浏览器预览没有本地服务，原样下载。
+export async function saveAudio(blob: Blob, name: string, loudness?: number): Promise<boolean> {
   const fileName = `${exportName(name)}.wav`;
   return logged('wav', async () => {
-    if (isDesktop) return call<boolean>('audio.export', { name: fileName, base64: await toBase64(blob) });
-    download(blob, fileName);
-    return true;
+    if (!isDesktop) { download(blob, fileName); return true; }
+    const response = await fetch(loudness ? `/api/export-audio?loudness=${loudness}` : '/api/export-audio', { method: 'POST', body: blob });
+    const reply = await response.json().catch(() => ({})) as { id?: string; error?: unknown };
+    if (!response.ok || !reply.id) throw reply.error ? parseCallError(reply.error) : new CallError('@yovoice.error.unknown', { detail: `export upload ${response.status}` });
+    return call<boolean>('audio.export', { id: reply.id, name: fileName });
   });
+}
+
+// 导出已生成的版本：桌面端由宿主弹出保存框后直接复制 outputs 中的文件，不经页面传音频字节，长歌也不受消息大小限制；
+// 浏览器预览没有文件可复制，取回音频后下载。
+export async function exportOutput(id: string, fileName: string, name: string): Promise<boolean> {
+  if (isDesktop) return logged('wav', () => call<boolean>('output.export', { kind: 'outputs', id, name: `${exportName(name)}.wav` }));
+  const url = await mediaUrl('outputs', fileName);
+  try { return await saveAudio(await (await fetch(url)).blob(), name); }
+  finally { releaseMediaUrl(url); }
 }
 
 // 字幕、歌词与 ABC 谱面等 UTF-8 文本：桌面端由宿主弹出保存对话框并写文件，用户取消时返回 false。

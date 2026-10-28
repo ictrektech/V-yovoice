@@ -37,6 +37,8 @@ type Workbench struct {
 	closeOnce     sync.Once
 	engine        *engine.Engine
 	client        *http.Client
+	// kokoro 串行化 Kokoro 发音库的安装。
+	kokoro sync.Mutex
 	// bundled 记录随安装包分发的内核，键为后端；启动时登记，之后只读。
 	bundled         map[string]bundledRuntime
 	ai              aiState
@@ -70,10 +72,6 @@ func New(root string) (*Workbench, error) {
 		return nil, e
 	}
 	w.removeStale()
-	if e = w.recordLegacyRuntimeVersion(); e != nil {
-		s.Close()
-		return nil, e
-	}
 	return w, nil
 }
 

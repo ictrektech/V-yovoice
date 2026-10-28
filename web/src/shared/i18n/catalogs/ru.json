@@ -390,7 +390,7 @@
     "defaultMessage": "Не удалось декодировать аудио. Проверьте, не повреждён ли файл, не зашифрован ли он и есть ли в нём дорожка."
   },
   "@yovoice.error.audioDuration": {
-    "defaultMessage": "Выберите референсное аудио длительностью от 1 до 60 секунд."
+    "defaultMessage": "Выберите аудио длительностью от 1 секунды до 10 минут. Из записей длиннее 60 секунд автоматически вырезается самый чистый фрагмент."
   },
   "@yovoice.error.audioFormat": {
     "defaultMessage": "Выберите корректный WAV-файл (PCM / Float, моно или стерео)."
@@ -720,7 +720,7 @@
     "defaultMessage": "{current} из {total}"
   },
   "@yovoice.player.reveal": {
-    "defaultMessage": "Показать аудиофайл"
+    "defaultMessage": "Показать в папке"
   },
   "@yovoice.player.skipEnd": {
     "defaultMessage": "В конец"
@@ -4411,5 +4411,224 @@
   },
   "@yovoice.settings.aiGroup": {
     "defaultMessage": "AI writing"
+  },
+  "@yovoice.error.engineCrashed": {
+    "defaultMessage": "Движок инференса неожиданно завершился во время генерации. Повторите попытку; если это повторяется, закройте приложения, занимающие память или GPU, или выберите модель поменьше. ({detail})"
+  },
+  "@yovoice.library.showEarlier": {
+    "defaultMessage": "Показать ещё {n} более ранних"
+  },
+  "@yovoice.music.lyricStyle": {
+    "defaultMessage": "Стиль текста"
+  },
+  "@yovoice.music.lyricStyleScroll": {
+    "defaultMessage": "Прокрутка"
+  },
+  "@yovoice.music.lyricStyleScrollHint": {
+    "defaultMessage": "Весь текст прокручивается, текущая строка подсвечивается по словам"
+  },
+  "@yovoice.music.lyricStyleStage": {
+    "defaultMessage": "Прожектор"
+  },
+  "@yovoice.music.lyricStyleStageHint": {
+    "defaultMessage": "По одной строке: слова выпрыгивают и светятся. Удобно для записи экрана"
+  },
+  "@yovoice.music.exportWordLrc": {
+    "defaultMessage": "Экспорт текста по словам"
+  },
+  "@yovoice.music.exportWordLrcHint": {
+    "defaultMessage": "Расширенный LRC с отметкой времени для каждого слова, для плееров с караоке"
+  },
+  "@yovoice.music.lyricTools": {
+    "defaultMessage": "Инструменты текста"
+  },
+  "@yovoice.music.editWords": {
+    "defaultMessage": "Настроить тайминг текста"
+  },
+  "@yovoice.music.editWordsHint": {
+    "defaultMessage": "Во время воспроизведения нажмите на строку, чтобы она начиналась с текущей позиции; сдвигайте строки целиком или настраивайте отдельные слова"
+  },
+  "@yovoice.music.syncLyricsHint": {
+    "defaultMessage": "Отмечайте начало каждой строки во время прослушивания"
+  },
+  "@yovoice.music.editThisLine": {
+    "defaultMessage": "Нажатие во время воспроизведения: строка начинается здесь"
+  },
+  "@yovoice.music.wordEditor": {
+    "defaultMessage": "Тайминг текста"
+  },
+  "@yovoice.music.wordEditorHint": {
+    "defaultMessage": "Во время воспроизведения нажмите на строку, чтобы привязать её к позиции; ←/→ сдвигает строку, ↑/↓ меняет строку; перетаскивайте блоки или края для отдельных слов"
+  },
+  "@yovoice.music.wordTap": {
+    "defaultMessage": "Отстукивать"
+  },
+  "@yovoice.music.wordTapStop": {
+    "defaultMessage": "Остановить"
+  },
+  "@yovoice.music.wordTapHint": {
+    "defaultMessage": "Нажимайте ↓ или Enter в начале каждого слова — выбор перейдёт к следующему. Esc — остановить"
+  },
+  "@yovoice.music.wordLine": {
+    "defaultMessage": "Строка {n}/{total}"
+  },
+  "@yovoice.music.prevLine": {
+    "defaultMessage": "Предыдущая строка"
+  },
+  "@yovoice.music.nextLine": {
+    "defaultMessage": "Следующая строка"
+  },
+  "@yovoice.music.playLine": {
+    "defaultMessage": "Воспроизвести строку"
+  },
+  "@yovoice.music.wordUndo": {
+    "defaultMessage": "Отменить"
+  },
+  "@yovoice.music.wordCancel": {
+    "defaultMessage": "Отмена"
+  },
+  "@yovoice.music.wordSave": {
+    "defaultMessage": "Сохранить"
+  },
+  "@yovoice.music.wordStart": {
+    "defaultMessage": "Начало «{word}»"
+  },
+  "@yovoice.music.wordEnd": {
+    "defaultMessage": "Конец «{word}»"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Привязать к позиции"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Начать эту строку с текущей позиции (Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "На {n} с раньше"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "На {n} с позже"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Режим сдвига"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Сдвигать следующие"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Только эта строка"
+  },
+  "@yovoice.music.alignLyrics": {
+    "defaultMessage": "Автовыравнивание"
+  },
+  "@yovoice.music.aligningLyrics": {
+    "defaultMessage": "Выравнивание"
+  },
+  "@yovoice.music.alignLyricsHint": {
+    "defaultMessage": "Отделяет вокал и выравнивает каждое слово текста по пению; сохраняется с этой версией"
+  },
+  "@yovoice.music.alignLyricsDownload": {
+    "defaultMessage": "Сначала скачайте необязательную модель выравнивания текста (около 1,3 ГБ)"
+  },
+  "@yovoice.music.lyricsAligned": {
+    "defaultMessage": "Текст выровнен по вокалу пословно; синхронизируйте, чтобы уточнить"
+  },
+  "@yovoice.activity.separateVocals": {
+    "defaultMessage": "Отделение вокала"
+  },
+  "@yovoice.activity.alignLyrics": {
+    "defaultMessage": "Выравнивание текста ({done}/{total})"
+  },
+  "@yovoice.error.alignModelRequired": {
+    "defaultMessage": "Сначала скачайте модель выравнивания текста в разделе «Музыкальные модели» в настройках"
+  },
+  "@yovoice.error.alignLyrics": {
+    "defaultMessage": "В этой версии нет текста для выравнивания"
+  },
+  "@yovoice.error.alignEmpty": {
+    "defaultMessage": "Не удалось сопоставить текст с вокалом; синхронизируйте вручную"
+  },
+  "@yovoice.settings.modelDesc.lyricAlign": {
+    "defaultMessage": "Необязательно: отделяет вокал и выравнивает текст по пению пословно — для пословной анимации текста и экспорта пословного LRC. Поддерживает 11 языков, включая китайский, английский, японский и корейский."
+  },
+  "@yovoice.assets.more": {
+    "defaultMessage": "Другие действия: {name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "Открыть проект «{name}»"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "Показать в папке"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "Удалить"
+  },
+  "@yovoice.settings.features": {
+    "defaultMessage": "Функции"
+  },
+  "@yovoice.settings.featuresHint": {
+    "defaultMessage": "Отключённые функции скрываются из боковой панели и меню «Создать». Существующие работы и загруженные модели остаются без изменений."
+  },
+  "@yovoice.settings.featureStoryHint": {
+    "defaultMessage": "Импорт текста или субтитров и озвучка каждой реплики по персонажам."
+  },
+  "@yovoice.settings.featureMusicHint": {
+    "defaultMessage": "Песни, инструментальная музыка и партитуры, а также настройки их моделей и звуковых банков."
+  },
+  "@yovoice.settings.featureAssistantHint": {
+    "defaultMessage": "Плавающий помощник, его кнопка в заголовке окна и подсказки. Если отключена и генерация музыки, скрываются также настройки ИИ-сервиса и распределение ролей ИИ для книг."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "Возможно, с аудио есть проблемы: {issues}. Прослушайте и при необходимости сгенерируйте заново."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "клиппинг в {count} местах, впервые в {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "щелчки: {count}, первый в {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "конец обрезан"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "долгая тишина с {at} до {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "почти нет звука"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "тихо ({loudness} LUFS); выберите целевую громкость при экспорте"
+  },
+  "@yovoice.check.dc": {
+    "defaultMessage": "смещение постоянной составляющей"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Громкость"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Без изменений"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Аудиокнига (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Подкаст (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Видеоплатформы (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Меняется только общая громкость, без сжатия динамики; пики остаются ниже −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Подобрать"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Выбирает самые чистые 5–15 с речи без клиппинга и длинных пауз"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "Запись длится {total}, поэтому в качестве образца взят самый чистый фрагмент ({start}–{end}). Его можно изменить через «Обрезать»."
   }
 }

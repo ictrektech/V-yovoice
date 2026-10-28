@@ -103,8 +103,6 @@ try {
     $env:PATH = $audioPath
     & $audioPython scripts/build-ffmpeg.py "$destination/tools"
     if ($LASTEXITCODE -ne 0) { throw "音频转换器构建失败" }
-    & $audioPython scripts/package-kokoro-runtime.py "$destination/tools/kokoro"
-    if ($LASTEXITCODE -ne 0) { throw "Kokoro 发音库打包失败" }
     & $audioPython scripts/package-ocho.py "$destination/tools/ocho"
     if ($LASTEXITCODE -ne 0) { throw "ocho 运行时打包失败" }
 } finally { $env:PATH = $originalPath }

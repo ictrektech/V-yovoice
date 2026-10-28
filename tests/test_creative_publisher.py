@@ -15,7 +15,7 @@ spec.loader.exec_module(publisher)
 
 def test_upstream_model_files_remain_complete():
     files = publisher.file_specs()
-    assert len(files) == 44
+    assert len(files) == 46
     assert sum(file["import_only"] for file in files) == 2
     assert len({file["path"] for file in files}) == len(files)
     assert all(file["family"] for file in files)
@@ -46,4 +46,4 @@ def test_anonymous_audit_requires_every_downloadable_file(monkeypatch, tmp_path,
             publisher.main()
     else:
         publisher.main()
-        assert "Anonymous catalog audit passed: 42 files" in capsys.readouterr().out
+        assert "Anonymous catalog audit passed: 44 files" in capsys.readouterr().out

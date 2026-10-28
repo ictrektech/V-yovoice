@@ -210,7 +210,7 @@ type process struct {
 	root string
 	cfg  Config
 	cmd  *exec.Cmd
-	done chan error
+	done chan struct{}
 
 	writeMu  sync.Mutex
 	stdin    io.WriteCloser
@@ -322,11 +322,11 @@ func startProcess(ctx context.Context, root string, options Options, cfg Config)
 	}
 	_ = os.WriteFile(pidPath(root), []byte(strconv.Itoa(cmd.Process.Pid)), 0600)
 	p := &process{root: root, cfg: cfg, cmd: cmd, stdin: stdin, waiters: map[string]chan wireControlResponse{}, toolIDs: map[string]string{}}
-	p.done = make(chan error, 1)
+	// done 只关闭不发值：先发值再关闭时，读走值的一方和随后检查 done 的一方之间有空档，会把已退出的进程当成还活着。
+	p.done = make(chan struct{})
 	go func() {
-		err := cmd.Wait()
+		_ = cmd.Wait()
 		stderr.Close()
-		p.done <- err
 		close(p.done)
 	}()
 	// 命令行不含密钥，可安全记录；Env 不落日志。

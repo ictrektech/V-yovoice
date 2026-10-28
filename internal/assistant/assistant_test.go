@@ -69,6 +69,24 @@ func fakeManager(t *testing.T, plan any, extraEnv ...string) (*Manager, *Config)
 	return manager, &Config{Executable: executable, Model: "fake-model", Env: env}
 }
 
+// cancelWhenTurnStarts 等假 ocho 真正开始第一轮后再取消：Windows 上带 -race 启动子进程较慢，
+// 固定延时可能在进程还没收到消息时就取消，下一次 Ask 会落到本该被中断的那一轮上一直等下去。
+func cancelWhenTurnStarts(cfg *Config, cancel context.CancelFunc) {
+	defer cancel()
+	var state string
+	for _, entry := range cfg.Env {
+		if plan, ok := strings.CutPrefix(entry, fakeocho.PlanEnv+"="); ok {
+			state = plan + ".state"
+		}
+	}
+	for deadline := time.Now().Add(30 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
+		if b, err := os.ReadFile(state); err == nil && strings.TrimSpace(string(b)) != "" && strings.TrimSpace(string(b)) != "0" {
+			time.Sleep(50 * time.Millisecond)
+			return
+		}
+	}
+}
+
 func must(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
@@ -131,10 +149,7 @@ func TestAskInterrupt(t *testing.T) {
 		Result: "success",
 	}}}})
 	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.Sleep(200 * time.Millisecond)
-		cancel()
-	}()
+	go cancelWhenTurnStarts(cfg, cancel)
 	if _, err := manager.Ask(ctx, *cfg, "写一段", nil); !errors.Is(err, context.Canceled) {
 		t.Fatal("应返回取消错误", err)
 	}
@@ -153,10 +168,7 @@ func TestLateEventAfterInterrupt(t *testing.T) {
 		Result: "success",
 	}}}})
 	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.Sleep(200 * time.Millisecond)
-		cancel()
-	}()
+	go cancelWhenTurnStarts(cfg, cancel)
 	var mu sync.Mutex
 	var first, second []string
 	if _, err := manager.Ask(ctx, *cfg, "写一段", func(e Event) {
