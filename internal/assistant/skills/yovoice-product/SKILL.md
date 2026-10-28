@@ -75,6 +75,8 @@ Errors reach you as stable codes (in <ui_context>, get_generation_status, get_re
 - `error.characterInvalid` 角色或音色信息无效，请检查名称、台词长度及记录是否存在。
 - `error.omniReferenceRequired` OmniVoice 克隆需要填写参考音频原文。
 - `error.breezeReferenceRequired` Breeze TTS 2 克隆需要填写参考音频的完整原文。
+- `error.dramaReferenceRequired` Drama 3 克隆必须填写参考音频的完整原文。
+- `error.xttsReferenceDuration` XTTS v2 需要 6–30 秒的参考音频。
 - `error.voiceDescriptionRequired` 请填写声音描述。
 - `error.omniAttributes` OmniVoice 仅接受预定义音色属性，同一类别只能选择一个。
 - `error.speakerInvalid` 请选择有效的内置音色。

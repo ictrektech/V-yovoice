@@ -368,7 +368,7 @@ func (w *Workbench) applySpeakerSettings(d *schema.Draft, items []workSpeakerSet
 }
 
 // 这些错误只说明配置还没填全（缺参考音频、缺描述），编辑过程中允许存在，到生成时再提示。
-var incompleteSettings = []msg.Code{msg.ErrOmniReferenceRequired, msg.ErrBreezeReferenceRequired, msg.ErrVoxReferenceRequired, msg.ErrVoiceDescriptionRequired, msg.ErrTextRequired, msg.ErrTitleLength}
+var incompleteSettings = []msg.Code{msg.ErrOmniReferenceRequired, msg.ErrBreezeReferenceRequired, msg.ErrDramaReferenceRequired, msg.ErrVoxReferenceRequired, msg.ErrVoiceDescriptionRequired, msg.ErrTextRequired, msg.ErrTitleLength}
 
 // voiceSettingsError 在助手改声音设置时提前挡住越界或不合法的取值，免得到生成时才失败；
 // 配置没填全不算错误。作品里每一份设置（含故事配音各角色）都检查。

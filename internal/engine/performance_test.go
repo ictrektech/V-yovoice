@@ -45,7 +45,7 @@ func performanceSessionOptions(t *testing.T, engine *Engine) map[string]string {
 }
 
 func TestPerformanceFirstFamilies(t *testing.T) {
-	for _, modelID := range []string{"ace-step-1.5-turbo-q8", "qwen3-tts-base-q8", "yue2-3b-q8", "voxcpm2-q8"} {
+	for _, modelID := range []string{"ace-step-1.5-turbo-q8", "qwen3-tts-base-q8", "yue2-3b-q8", "voxcpm2-q8", "fish-drama3-small-iq3"} {
 		t.Run(modelID, func(t *testing.T) {
 			engine, executable, model, ctx := performanceTestEngine(t)
 			definition, err := catalog.Lookup(modelID)

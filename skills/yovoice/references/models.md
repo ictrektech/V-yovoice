@@ -13,6 +13,12 @@
 | Qwen3-TTS 1.7B CustomVoice | 9 种内置音色、文字风格/情绪、语言、主/子解码器采样、种子、长文分段 | 不使用外部参考音频 |
 | Qwen3-TTS 1.7B VoiceDesign | 自然语言声音设计、语言、主/子解码器采样、种子、长文分段 | 必须填写声音描述，不使用外部参考音频 |
 | Breeze TTS 2 | 自然语言声音设计、参考克隆、克隆时演绎指导、CFG、主/细节解码器采样、种子、长文分段、单段生成上限、正文 [笑]/(laugh) 等声音事件 | 中英；克隆必须提供逐字原文；需要 v0.9.1 内核，建议 GPU；权重仅限非商业 |
+| Ming 3.0 TTS | 自然语言声音设计、参考克隆、可选原文声学前缀、7 种语言、流匹配引导与温度、种子、长文分段、尾部静音裁剪 | 设计描述可选；克隆原文可选；需要 v0.9.3 内核 |
+| Voxtral 4B TTS | 20 个内置音色、9 种语言、声学引导与推理步数、种子、长文分段 | 只能使用内置音色，不能克隆；CC BY-NC 4.0；需要 v0.9.3 内核 |
+| Plapre 3 | 5 个丹麦语内置音色、参考克隆、可选原文、采样、种子、段间静音与长文分段 | 丹麦语；内置音色默认 tor；需要 v0.9.3 内核 |
+| XTTS v2 | 17 种语言、参考克隆、采样、重复惩罚、种子、长文分段 | 必须提供 6–30 秒参考音频并明确语言；Coqui Public Model License；需要 v0.9.3 内核 |
+| Gradium Phonon | 英文默认音色、流噪声温度、种子、按 Token 长文分段 | 仅英文和默认音色，不能克隆；需要 v0.9.3 内核 |
+| Drama 3 / Drama3-small | 默认音色、参考克隆、说话人及事件标签、采样、种子、长文分段、CUDA 性能优先 | 克隆必须提供完整原文；Fish Audio Community License；需要 v0.9.3 内核 |
 
 此处覆盖语音生成能力，并非 audio.cpp 的全部底层调优开关。图内存、运行时重量化、缓存槽位、调试用噪声文件等引擎参数继续使用默认值，不作为声音设置展示。训练、微调、ASR、对齐及批量训练数据处理不属于此 TTS 接入。
 
@@ -57,10 +63,18 @@ Windows/Linux 后端选择见 [引擎与模型下载](setup.md)。精度影响�
 | `breeze-tts-2-q4` | Breeze TTS 2 | Q4 | 3.79 GB |
 | `breeze-tts-2-q8` | Breeze TTS 2 | Q8 | 5.08 GB |
 | `breeze-tts-2-bf16` | Breeze TTS 2 | BF16 | 7.34 GB |
+| `ming3-tts-0.5b-q8` | Ming 3.0 TTS 0.5B | Q8 | 1.74 GB |
+| `ming3-tts-0.5b-bf16` | Ming 3.0 TTS 0.5B | BF16 | 3.00 GB |
+| `voxtral-tts-4b-q8` / `-bf16` | Voxtral 4B TTS | Q8 / BF16 | 4.72 / 8.03 GB |
+| `plapre-3-bf16` / `-f32` | Plapre 3 | BF16 / F32 | 1.15 / 2.28 GB |
+| `xtts-v2-q8` / `-q4` / `-orig` | XTTS v2 多文件包 | Q8 / Q4_K_M / Original | 0.57 / 0.37 / 1.75 GB |
+| `gradium-phonon-31m-en-q8` | Gradium Phonon 多文件包 | Q8 | 85.5 MB |
+| `fish-drama3-small-iq3` | Drama3-small | IQ3_XXS | 10.46 GB |
+| `fish-drama3-q2` / `-q4` | Drama 3 | Q2_K / Q4_K_S | 17.05 / 24.60 GB |
 
 ## 调用方式
 
-Qwen 的语言可选 `auto|zh|en|ja|ko|de|fr|ru|pt|es|it`，默认自动。
+Qwen 的语言可选 `auto|zh|en|ja|ko|de|fr|ru|pt|es|it`，默认自动。Ming 的语言可选 `auto|zh|en|ja|ko|de|fr|es`。
 
 ```sh
 # 内置音色，可用文字控制演绎
@@ -177,6 +191,38 @@ yovoice generate --model qwen3-tts-customvoice-q8 --speaker Ryan --text-file nar
 
 Breeze TTS 2 用 `--voice-mode design|clone` 选择方式（有参考音频时默认克隆），`--voice-description` 在设计时描述音色、克隆时作为演绎指导。拖音时先缩短 `text_chunk_size`，再降低 `temperature`；CPU 后端无法使用 bf16 参考路径，长文更容易拖音。
 
+### ming3_tts
+
+| 参数 | 含义 | 默认值 | 可用范围 |
+| --- | --- | --- | --- |
+| `text_chunk_size` | 长文分段码点数（0 为上游自动） | `0` | 0–12000 |
+| `text_chunk_mode` | 分段方式 | `"tag_aware"` | default, tag_aware, japanese, endline |
+| `guidance_scale` | 流匹配引导强度 | `2` | 0–10 |
+| `temperature` | 流采样温度 | `0` | 0–2 |
+| `trim_silence` | 裁剪每段尾部低能量音频并保留短尾音 | `true` | true / false |
+
+Ming 3.0 TTS 用 `--voice-mode design|clone` 选择方式（有参考音频时默认克隆），设计描述可选；克隆原文可选，省略时仅参考说话人音色。上游默认按中日韩 50 码点、其他语言 300 码点分段，无参考音色时后续段锁定首段音色，不要无目的强制分段大小。
+
+### voxtral_tts
+
+`num_inference_steps` 1–100（7）、`guidance_scale` 0–10（1.2）、`max_tokens` 1–16384（2048）、`text_chunk_size` 1–12000（300）。`--speaker` 选择 20 个内置音色，默认 `casual_male`，不使用参考音频。
+
+### plapre
+
+`temperature` 0–2（0.8）、`top_k` -1–500（50）、`top_p` 0–1（0.95）、`silence_duration_sec` 0–10（0.1）、`text_chunk_size` 1–12000（300）。`--voice-mode design|clone` 切换内置音色和克隆；设计用 `--speaker tor|ida|liv|ask|kaj`，克隆原文可选。
+
+### xtts_v2
+
+`temperature` 0–2（0.75）、`top_k` 0–500（50）、`top_p` 0–1（0.85）、`repetition_penalty` 1–20（10）、`text_chunk_size` 1–12000（256）。必须提供 6–30 秒参考音频；`--language` 支持 17 种语言，默认及 auto 均按 `zh-cn`。
+
+### gradium_phonon
+
+`temperature` 0.01–2（0.3）、`text_chunk_tokens` 1–4096（50）。只支持英文默认音色，不接受参考音频。
+
+### fish_drama3
+
+`top_p` 0–1（0.9）、`temperature` 0–2（1）、`max_tokens` 1–16384（1024）、`text_chunk_size` 1–12000（128）。默认音色用 design；克隆用 `--voice-mode clone --reference FILE --reference-text TEXT`，原文必填。正文说话人标签为 `<|speaker:0|>` 至 `<|speaker:15|>`，事件标签包括 `[laughs]`、`[sighs]`。CUDA 性能优先自动注入 `fish_drama3.perf_mode=cuda_perf`，不默认开启 disk/CPU experts。
+
 VoxCPM2 的 `stateless` 适合普通文本或参考克隆长文，跨段风格延续应保留默认 `continuation`。VoxCPM2 的 CFG 和步数继续用 `--guidance-scale`、`--inference-steps`，与 App 控件一致。
 
 ## 上游依据
@@ -186,4 +232,10 @@ VoxCPM2 的 `stateless` 适合普通文本或参考克隆长文，跨段风格�
 - [audio.cpp OmniVoice 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/omnivoice.md)
 - [audio.cpp Qwen3 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/qwen3.md)
 - [audio.cpp BreezeTTS 2 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/breeze_tts.md)
+- [audio.cpp Ming 3.0 TTS 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/ming3_tts.md)
+- [audio.cpp Voxtral TTS 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/voxtral_tts.md)
+- [audio.cpp Plapre 3 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/plapre.md)
+- [audio.cpp XTTS v2 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/community_models/xtts_v2.md)
+- [audio.cpp Gradium Phonon 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/gradium_phonon.md)
+- [audio.cpp Drama 3 文档（v0.9.3）](https://github.com/0xShug0/audio.cpp/blob/v0.9.3/docs/models/fish_drama3.md)
 - [Qwen 官方模型与说话人](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice)

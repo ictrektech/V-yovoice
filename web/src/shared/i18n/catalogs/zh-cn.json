@@ -1013,6 +1013,12 @@
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "中文、英语 · 声音设计与音色克隆 · 建议使用显卡。模型许可仅限研究与非商业用途。"
   },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 种语言 · 声音设计与音色克隆 · 44.1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "裁剪静音"
+  },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 种语言 · 参考音频克隆"
   },
@@ -4114,5 +4120,25 @@
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "生成音频"
-  }
+  },
+  "@yovoice.language.da": {"defaultMessage": "丹麦语"},
+  "@yovoice.language.nl": {"defaultMessage": "荷兰语"},
+  "@yovoice.language.pl": {"defaultMessage": "波兰语"},
+  "@yovoice.language.tr": {"defaultMessage": "土耳其语"},
+  "@yovoice.language.cs": {"defaultMessage": "捷克语"},
+  "@yovoice.language.hu": {"defaultMessage": "匈牙利语"},
+  "@yovoice.language.zh-cn": {"defaultMessage": "简体中文"},
+  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9 种语言 · 20 种内置音色 · 24 kHz"},
+  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "丹麦语 · 内置音色与音色克隆 · 24 kHz"},
+  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17 种语言 · 音色克隆 · 24 kHz"},
+  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "英语 · 默认音色 · 24 kHz"},
+  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "说话人与事件标签 · 默认音色与音色克隆 · 44.1 kHz"},
+  "@yovoice.options.silence_duration_sec": {"defaultMessage": "段间静音（秒）"},
+  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "每段文本 Token 数"},
+  "@yovoice.voxtral.generalVoices": {"defaultMessage": "通用音色"},
+  "@yovoice.reference.builtInVoice": {"defaultMessage": "内置音色"},
+  "@yovoice.reference.defaultVoice": {"defaultMessage": "默认音色"},
+  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "克隆时必须填写参考音频的逐字原文。"},
+  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2 需要 6–30 秒的参考音频。"},
+  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "Drama 3 克隆必须填写参考音频的完整原文。"}
 }

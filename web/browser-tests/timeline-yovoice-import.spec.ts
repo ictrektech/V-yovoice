@@ -87,10 +87,13 @@ test('故事配音从 yovoice 筛选并导入独立音效素材', async ({ page 
   }, current.id);
   expect(stored.assets).toHaveLength(1);
   const asset = stored.assets[0];
-  expect(asset).toMatchObject({ name: '城市环境 · 雨滴版本', duration: 1 });
+  // 浏览器解码时会重采样，时长只按近似比较。
+  expect(asset.name).toBe('城市环境 · 雨滴版本');
+  expect(asset.duration).toBeCloseTo(1, 3);
   expect(asset.fileName).toMatch(new RegExp(`^import-${asset.id}\\.wav$`));
   expect(asset.fileName).not.toBe('yovoice-source.wav');
-  expect(stored.tracks[0].clips[0]).toMatchObject({ assetId: asset.id, start: 0, offset: 0, duration: 1 });
+  expect(stored.tracks[0].clips[0]).toMatchObject({ assetId: asset.id, start: 0, offset: 0 });
+  expect(stored.tracks[0].clips[0].duration).toBeCloseTo(1, 3);
   expect(stored.tracks[0].clips[0].generationId).toBeUndefined();
 
   await page.evaluate(async () => {

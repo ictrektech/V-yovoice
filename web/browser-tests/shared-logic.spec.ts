@@ -37,6 +37,15 @@ test('参考音频需求随模型和模式变化', () => {
   expect(needs('omnivoice-q8', { voiceMode: 'clone' })).toBe(true);
   expect(needs('breeze-tts-2-q8')).toBe(false);
   expect(needs('breeze-tts-2-q8', { voiceMode: 'clone' })).toBe(true);
+  expect(needs('ming3-tts-0.5b-q8')).toBe(false);
+  expect(needs('ming3-tts-0.5b-q8', { voiceMode: 'clone' })).toBe(true);
+  expect(needs('voxtral-tts-4b-q8')).toBe(false);
+  expect(needs('plapre-3-bf16')).toBe(false);
+  expect(needs('plapre-3-bf16', { voiceMode: 'clone' })).toBe(true);
+  expect(needs('xtts-v2-q8')).toBe(true);
+  expect(needs('gradium-phonon-31m-en-q8')).toBe(false);
+  expect(needs('fish-drama3-small-iq3')).toBe(false);
+  expect(needs('fish-drama3-small-iq3', { voiceMode: 'clone' })).toBe(true);
   expect(needs('voxcpm2-q8')).toBe(false);
   expect(needs('voxcpm2-q8', { voxMode: 'clone' })).toBe(true);
   expect(needs('voxcpm2-q8', { voxMode: 'continuation' })).toBe(true);

@@ -78,6 +78,16 @@ func TestModelEngineMinimum(t *testing.T) {
 }
 
 // 自有仓库的模型在 ModelScope 有镜像时直接从镜像下载，否则 ModelScope 源改用 hf-mirror。
+func TestPackageLocalPath(t *testing.T) {
+	m := ModelPackage{StripPrefix: "q8_0"}
+	if got := m.LocalPath("q8_0/model.gguf"); got != "model.gguf" {
+		t.Fatal(got)
+	}
+	if got := m.LocalPath("q4_k_m/model.gguf"); got != "q4_k_m/model.gguf" {
+		t.Fatal(got)
+	}
+}
+
 func TestRepoFileURL(t *testing.T) {
 	m := ModelPackage{Repo: "owner/repo", Revision: "abc", RemotePath: "m.gguf"}
 	if url, _ := m.URL("modelscope"); url != "https://hf-mirror.com/owner/repo/resolve/abc/m.gguf" {

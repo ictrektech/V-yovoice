@@ -1013,6 +1013,12 @@
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "中国語、英語 · ボイスデザインとクローン · GPU 推奨。モデルのライセンスは研究および非商用利用に限られます。"
   },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 言語 · ボイスデザインとクローン · 44.1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "無音をトリム"
+  },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 言語 · 参照音声からのクローン"
   },
@@ -4114,5 +4120,25 @@
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "オーディオを生成"
-  }
+  },
+  "@yovoice.language.da": {"defaultMessage": "デンマーク語"},
+  "@yovoice.language.nl": {"defaultMessage": "オランダ語"},
+  "@yovoice.language.pl": {"defaultMessage": "ポーランド語"},
+  "@yovoice.language.tr": {"defaultMessage": "トルコ語"},
+  "@yovoice.language.cs": {"defaultMessage": "チェコ語"},
+  "@yovoice.language.hu": {"defaultMessage": "ハンガリー語"},
+  "@yovoice.language.zh-cn": {"defaultMessage": "簡体字中国語"},
+  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9言語 · 20の内蔵音声 · 24 kHz"},
+  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "デンマーク語 · 内蔵音声とクローン · 24 kHz"},
+  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17言語 · 音声クローン · 24 kHz"},
+  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "英語 · デフォルト音声 · 24 kHz"},
+  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "話者・イベントタグ · デフォルト音声とクローン · 44.1 kHz"},
+  "@yovoice.options.silence_duration_sec": {"defaultMessage": "チャンク間の無音（秒）"},
+  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "チャンクごとのテキストトークン数"},
+  "@yovoice.voxtral.generalVoices": {"defaultMessage": "汎用音声"},
+  "@yovoice.reference.builtInVoice": {"defaultMessage": "内蔵音声"},
+  "@yovoice.reference.defaultVoice": {"defaultMessage": "デフォルト音声"},
+  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "クローンには参照音声の正確な文字起こしが必要です。"},
+  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2 には 6～30 秒の参照音声が必要です。"},
+  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "Drama 3 のクローンには参照音声の完全な文字起こしが必要です。"}
 }

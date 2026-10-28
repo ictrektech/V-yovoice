@@ -75,7 +75,7 @@ func (w *Workbench) DownloadModel(id string) error {
 		}
 		target := func(f catalog.ModelFile) string {
 			if len(m.Files) > 0 {
-				return filepath.Join(root, filepath.FromSlash(f.Path))
+				return filepath.Join(root, filepath.FromSlash(m.LocalPath(f.Path)))
 			}
 			return dest
 		}
@@ -212,7 +212,7 @@ func packageRoot(m catalog.ModelPackage, main string) string {
 		root = filepath.Dir(root)
 	}
 	for _, f := range m.Files {
-		if download.FileSize(filepath.Join(root, filepath.FromSlash(f.Path))) != f.Size {
+		if download.FileSize(filepath.Join(root, filepath.FromSlash(m.LocalPath(f.Path)))) != f.Size {
 			return ""
 		}
 	}

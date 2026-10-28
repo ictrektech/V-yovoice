@@ -37,17 +37,18 @@ type ModelPackage struct {
 	SessionOptions map[string]string `json:"sessionOptions,omitempty"`
 	// Files 不为空时是多文件模型包：各文件按相对路径下载到 Directory，登记的模型路径是该目录。
 	// RemotePath 仍指向主模型文件，用于导入时识别。
-	Files      []ModelFile `json:"files,omitempty"`
-	Directory  string      `json:"directory,omitempty"`
-	Task       string      `json:"task,omitempty"`
-	ID         string      `json:"id"`
-	Name       string      `json:"name"`
-	Family     string      `json:"family"`
-	Version    string      `json:"version"`
-	Precision  string      `json:"precision"`
-	RemotePath string      `json:"remotePath"`
-	Size       int64       `json:"size"`
-	SHA256     string      `json:"sha256"`
+	Files       []ModelFile `json:"files,omitempty"`
+	Directory   string      `json:"directory,omitempty"`
+	StripPrefix string      `json:"stripPrefix,omitempty"`
+	Task        string      `json:"task,omitempty"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Family      string      `json:"family"`
+	Version     string      `json:"version"`
+	Precision   string      `json:"precision"`
+	RemotePath  string      `json:"remotePath"`
+	Size        int64       `json:"size"`
+	SHA256      string      `json:"sha256"`
 }
 
 // ModelFile 是多文件模型包中的一个文件。
@@ -256,6 +257,11 @@ func (m ModelPackage) PackageFiles() []ModelFile {
 		return m.Files
 	}
 	return []ModelFile{{Path: m.RemotePath, Size: m.Size, SHA256: m.SHA256}}
+}
+
+// LocalPath 返回包内文件在本地的相对路径；远程下载地址仍使用原始路径。
+func (m ModelPackage) LocalPath(path string) string {
+	return strings.TrimPrefix(path, strings.TrimSuffix(m.StripPrefix, "/")+"/")
 }
 
 // MainFile 返回用于识别模型文件版本的主文件。

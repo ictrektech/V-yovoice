@@ -13,6 +13,12 @@ Choose a model based on whether you have a reference recording or want a built-i
 | Qwen3-TTS CustomVoice · 1.7B | Built-in voices with style instructions | Speaker ID; optional style description |
 | Qwen3-TTS VoiceDesign · 1.7B | Voice design | A voice description |
 | Breeze TTS 2 | Chinese and English voice design, cloning, and voice direction | A description is optional for designed voices; cloning requires reference audio and its full transcript; a GPU is recommended |
+| Ming 3.0 TTS | Voice design and cloning in 7 languages | A description is optional for design; cloning requires audio, with an optional transcript; requires engine v0.9.3 |
+| Voxtral 4B TTS | 20 built-in voices in 9 languages | Speaker ID; no reference audio or cloning; CC BY-NC 4.0; requires engine v0.9.3 |
+| Plapre 3 | Danish built-in voices and cloning | Speaker ID, or reference audio with an optional transcript; requires engine v0.9.3 |
+| XTTS v2 | Voice cloning in 17 languages | 6–30 seconds of reference audio and an explicit language; Coqui Public Model License; requires engine v0.9.3 |
+| Gradium Phonon | Lightweight English speech | Default voice only; no reference audio or cloning; requires engine v0.9.3 |
+| Drama 3 / Drama3-small | Speaker/event tags, default voice and cloning | Cloning requires reference audio and its full transcript; Fish Audio Community License; requires engine v0.9.3 |
 | Kokoro | Lightweight built-in voices | Speaker ID; no reference audio |
 
 Use `yovoice models list --json` for model IDs, available precisions, file sizes, voices, and advanced parameter definitions. The app lists models in Settings. See the [CLI guide](cli.md) to download an engine and model.
@@ -30,6 +36,7 @@ Use `yovoice models list --json` for model IDs, available precisions, file sizes
 | Qwen3-TTS CustomVoice | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | 9 built-in voices, text-guided style and emotion |
 | Qwen3-TTS VoiceDesign | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | Voice design from natural-language descriptions, no reference audio required |
 | Breeze TTS 2 | ~3B | Q4 · 3.79 GB<br>Q8 · 5.08 GB<br>BF16 · 7.34 GB | Chinese and English voice design, cloning and voice direction; GPU recommended, requires the v0.9.1 engine |
+| Ming 3.0 TTS | 0.5B | Q8 · 1.74 GB<br>BF16 · 3.00 GB | Voice design and cloning in Chinese, English, Japanese, Korean, German, French and Spanish; 44.1 kHz output; requires engine v0.9.3 |
 | Kokoro-82M 1.0 Official | 82M | Q8 · 189.55 MB<br>BF16 · 211.95 MB | 49 built-in voices, multilingual speech excluding Japanese |
 | Kokoro-82M 1.1-zh | 82M | Q8 · 255.32 MB | 100 Chinese and 3 English voices; experimental |
 | ACE-Step 1.5 Turbo | — | Q8 · 6.19 GB<br>BF16 · 10.09 GB | Songs and instrumentals from a style prompt and lyrics, 50+ vocal languages; requires engine v0.9.1 |
@@ -55,9 +62,10 @@ yovoice generate --model voxcpm2-q8 --text-file narration.txt --reference voice.
 yovoice generate --model omnivoice-q8 --text-file narration.txt --reference voice.wav --reference-text "The exact words spoken in the recording." --output omni.wav
 yovoice generate --model qwen3-tts-base-0.6b-q8 --text-file narration.txt --reference voice.wav --output qwen.wav
 yovoice generate --model breeze-tts-2-q8 --text-file narration.txt --reference voice.wav --reference-text "The exact words spoken in the recording." --voice-description "Slightly faster, relaxed tone" --output breeze.wav
+yovoice generate --model ming3-tts-0.5b-q8 --text-file narration.txt --reference voice.wav --reference-text "The exact words spoken in the recording." --language en --output ming.wav
 ```
 
-For VoxCPM2, omit `--reference-text` for ordinary cloning. For Qwen3-TTS Base, adding an accurate transcript enables transcript-guided cloning. OmniVoice and Breeze TTS 2 cloning always require a matching transcript. For Breeze, `--voice-description` acts as voice direction when cloning: it keeps the voice and steers pace, emotion and tone.
+For VoxCPM2, omit `--reference-text` for ordinary cloning. For Qwen3-TTS Base, adding an accurate transcript enables transcript-guided cloning. OmniVoice and Breeze TTS 2 cloning always require a matching transcript. For Breeze, `--voice-description` acts as voice direction when cloning: it keeps the voice and steers pace, emotion and tone. Ming 3.0 TTS accepts an optional transcript: include it for an acoustic reference prefix, or omit it to condition only on the reference speaker.
 
 Use a clear recording with one speaker and little background noise. Reference audio must be 1 second to 10 minutes and no larger than 20 MB; recordings over 60 seconds are trimmed automatically to their clearest 5–15 seconds.
 
@@ -67,6 +75,7 @@ Use a clear recording with one speaker and little background noise. Reference au
 yovoice generate --model voxcpm2-q8 --voice-description "A warm, calm adult narrator" --text-file narration.txt --output vox-design.wav
 yovoice generate --model omnivoice-q8 --voice-description "female, young adult, moderate pitch" --text-file narration.txt --output omni-design.wav
 yovoice generate --model breeze-tts-2-q8 --voice-description "A warm female voice, steady pace, clear diction" --text-file narration.txt --output breeze-design.wav
+yovoice generate --model ming3-tts-0.5b-q8 --voice-description "A warm, calm adult narrator" --language en --text-file narration.txt --output ming-design.wav
 yovoice generate --model qwen3-tts-voicedesign-q8 --voice-description "A deep, resonant adult narrator" --text-file narration.txt --output qwen-design.wav
 yovoice generate --model qwen3-tts-customvoice-q8 --speaker Ryan --voice-description "Speak softly and slowly" --language en --text-file narration.txt --output custom.wav
 ```
@@ -92,6 +101,8 @@ VoxCPM2 generates autoregressively at 6.25 frames per second. When one chunk run
 
 OmniVoice supports `--speed`, `--language`, `--guidance-scale`, and `--inference-steps`. Sound tags such as `[laughter]` and `[sigh]` can be inserted into the text. Qwen3-TTS supports `--language auto|zh|en|ja|ko|de|fr|ru|pt|es|it`.
 
+Ming 3.0 TTS supports `--language auto|zh|en|ja|ko|de|fr|es`, with `guidance_scale`, `temperature`, `trim_silence` and long-text chunking under Advanced settings. By default, CJK text is chunked at 50 codepoints and other text at 300; later chunks without reference audio keep the first chunk's voice. YoVoice does not override the chunk size.
+
 ### Breeze TTS 2 and dragging speech
 
 Breeze TTS 2 sounds very natural, but its autoregressive decoder tends to drag, repeat, or trail off into long silence in the cases below. YoVoice adjusts its defaults accordingly:
@@ -107,6 +118,50 @@ The app shows supported options under Advanced settings. The CLI accepts repeate
 
 ```sh
 yovoice generate --model qwen3-tts-customvoice-q8 --speaker Ryan --text-file narration.txt --option 'temperature=0.7' --option 'text_chunk_size=512' --output advanced.wav
+```
+
+## Additional TTS families
+
+### Voxtral 4B TTS
+
+Q8 (4.72 GB, default) and BF16 (8.03 GB) packages provide 20 embedded voices across 9 languages. Select one with `--speaker`, defaulting to `casual_male`; reference-audio cloning is unavailable. Advanced options are `num_inference_steps`, `guidance_scale`, `max_tokens`, and `text_chunk_size`. Model weights and preset voices use CC BY-NC 4.0.
+
+```sh
+yovoice generate --model voxtral-tts-4b-q8 --speaker fr_female --text "Bonjour." --output voxtral.wav
+```
+
+### Plapre 3
+
+Plapre generates Danish speech at 24 kHz. BF16 (1.15 GB, default) and F32 (2.28 GB) are available. Use `--speaker tor|ida|liv|ask|kaj`, or clone with reference audio and an optional exact transcript. Advanced options cover sampling, inter-chunk silence and text chunking.
+
+```sh
+yovoice generate --model plapre-3-bf16 --speaker tor --text "Hej." --output plapre.wav
+yovoice generate --model plapre-3-bf16 --voice-mode clone --reference voice.wav --reference-text "Ordene i referenceoptagelsen." --text "I morgen kommer jeg igen." --output plapre-clone.wav
+```
+
+### XTTS v2
+
+XTTS supports 17 languages and requires 6–30 seconds of reference audio. Q8 (0.57 GB, default), Q4_K_M (0.37 GB), and Original (1.75 GB) are multi-file packages containing GPT, vocoder, and normalization data. Set `--language en|es|fr|de|it|pt|pl|tr|ru|nl|cs|ar|zh-cn|hu|ko|ja|hi`; the default is `zh-cn`. Advanced options include sampling, repetition penalty, and text chunking. Weights use the Coqui Public Model License.
+
+```sh
+yovoice generate --model xtts-v2-q8 --reference voice.wav --language en --text "Hello from XTTS." --output xtts.wav
+```
+
+### Gradium Phonon
+
+The English Q8 package (85.5 MB) contains the model and its default voice. It does not clone voices. Advanced settings expose only `temperature` and `text_chunk_tokens`, plus `seed`.
+
+```sh
+yovoice generate --model gradium-phonon-31m-en-q8 --language en --text "Hello from Phonon." --output phonon.wav
+```
+
+### Fish Audio Drama 3
+
+Drama3-small IQ3_XXS (10.46 GB, default), Drama 3 Q2_K (17.05 GB), and Q4_K_S (24.60 GB) share one family. The default voice needs no reference. Cloning requires audio and its full transcript. Text accepts `<|speaker:0|>` through `<|speaker:15|>` and event tags such as `[laughs]` and `[sighs]`. Advanced options are `top_p`, `temperature`, `max_tokens`, and `text_chunk_size`. CUDA performance-first mode enables `fish_drama3.perf_mode=cuda_perf`; disk-backed and CPU expert offload remain opt-in. Weights use the Fish Audio Community License.
+
+```sh
+yovoice generate --model fish-drama3-small-iq3 --text "<|speaker:0|>Hello. [laughs]" --output drama.wav
+yovoice generate --model fish-drama3-small-iq3 --voice-mode clone --reference voice.wav --reference-text "The exact reference transcript." --text "<|speaker:0|>A cloned take." --output drama-clone.wav
 ```
 
 ## Kokoro
