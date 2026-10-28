@@ -169,4 +169,27 @@ gh workflow run vos-release.yml --repo ictrektech/V-yovoice \
 
 重跑原 CI 使用 `gh run rerun "$RUN_ID" --repo ictrektech/V-yovoice`。不传 `retry_version` 的手动触发只运行依赖访问预检，不会打包发布。
 
+## 已发布版本只替换 GitHub 安装包
+
+仅在明确保留版本号、补发 GitHub 附件时使用。先完成镜像验证、推送和飞书回读，再备份旧附件并用原打包器生成同版本安装包：
+
+```bash
+VVOICE_RELEASE_BACKUP="$HOME/dev/build/v-yovoice/release-backups/0.0.30-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$VVOICE_RELEASE_BACKUP"
+gh release download v0.0.30 --repo ictrektech/V-yovoice \
+  --pattern v_voice_0.0.30_pull.tar --dir "$VVOICE_RELEASE_BACKUP"
+bash ictrek.app/scripts/package.sh --version 0.0.30
+```
+
+按第 4 节检查安装包结构，并确认只更新了预期平台的镜像引用。随后替换同名附件：
+
+```bash
+gh release upload v0.0.30 ictrek.app/dist/v_voice_0.0.30_pull.tar \
+  --repo ictrektech/V-yovoice --clobber
+```
+
+重新下载附件，比对 SHA256、包内版本和镜像引用，并在 Release 正文注明补发日期、镜像与源码提交。此操作不移动 Git 标签、不递增版本，也不更新 VOS App Store 或已安装实例。现有 CI 重跑会复用 GitHub 上的附件，不能代替上述替换步骤。
+
+`--clobber` 会先删除同名旧附件再上传；上传失败时，从备份目录用同一条上传命令恢复旧包。
+
 脚本依据：[镜像构建](../../docker/build_image.sh)、[版本发布](../../ictrek.app/scripts/update_version.sh)、[CI 流程](../../.github/workflows/vos-release.yml)、[VOS 打包说明](../../ictrek.app/README.md)。
