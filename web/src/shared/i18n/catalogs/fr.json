@@ -1013,6 +1013,12 @@
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "Chinois, anglais · conception et clonage de voix · GPU recommandé. La licence du modèle n’autorise que la recherche et l’usage non commercial."
   },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 langues · conception et clonage de voix · 44,1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "Rogner le silence"
+  },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 langues · clonage de voix de référence"
   },
@@ -4114,5 +4120,25 @@
   },
   "@yovoice.music.generateAudio": {
     "defaultMessage": "Générer l’audio"
-  }
+  },
+  "@yovoice.language.da": {"defaultMessage": "Danois"},
+  "@yovoice.language.nl": {"defaultMessage": "Néerlandais"},
+  "@yovoice.language.pl": {"defaultMessage": "Polonais"},
+  "@yovoice.language.tr": {"defaultMessage": "Turc"},
+  "@yovoice.language.cs": {"defaultMessage": "Tchèque"},
+  "@yovoice.language.hu": {"defaultMessage": "Hongrois"},
+  "@yovoice.language.zh-cn": {"defaultMessage": "Chinois simplifié"},
+  "@yovoice.settings.modelDesc.voxtral": {"defaultMessage": "9 langues · 20 voix intégrées · 24 kHz"},
+  "@yovoice.settings.modelDesc.plapre": {"defaultMessage": "Danois · Voix intégrées et clonage · 24 kHz"},
+  "@yovoice.settings.modelDesc.xtts": {"defaultMessage": "17 langues · Clonage vocal · 24 kHz"},
+  "@yovoice.settings.modelDesc.gradium": {"defaultMessage": "Anglais · Voix par défaut · 24 kHz"},
+  "@yovoice.settings.modelDesc.drama": {"defaultMessage": "Tags de locuteur et d’événement · Voix par défaut et clonage · 44.1 kHz"},
+  "@yovoice.options.silence_duration_sec": {"defaultMessage": "Silence entre les segments (secondes)"},
+  "@yovoice.options.text_chunk_tokens": {"defaultMessage": "Jetons de texte par segment"},
+  "@yovoice.voxtral.generalVoices": {"defaultMessage": "Voix générales"},
+  "@yovoice.reference.builtInVoice": {"defaultMessage": "Voix intégrée"},
+  "@yovoice.reference.defaultVoice": {"defaultMessage": "Voix par défaut"},
+  "@yovoice.drama.referenceTextHelp": {"defaultMessage": "Le clonage exige la transcription exacte de l’audio de référence."},
+  "@yovoice.error.xttsReferenceDuration": {"defaultMessage": "XTTS v2 exige 6 à 30 secondes d’audio de référence."},
+  "@yovoice.error.dramaReferenceRequired": {"defaultMessage": "Le clonage Drama 3 exige la transcription complète de la référence."}
 }

@@ -58,7 +58,7 @@ test('四种表达方式、草稿持久化与模型协议', async ({ page }) => 
   await expect(yue.locator('.model-size')).toHaveText('7.53 GB');
   await expect(page.getByLabel('下载来源', { exact: true })).toBeVisible();
   await page.getByRole('tab', { name: '语音模型', exact: true }).click();
-  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(11);
+  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(18);
   await expect(page.locator('[data-model-id^="ace-step-"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'IndexTTS 协议' }).click();
   await expect(page.getByRole('heading', { name: '模型使用协议' })).toBeVisible();
@@ -357,6 +357,28 @@ test('Breeze TTS 2 在设计与克隆间切换描述用途，并以短分段为�
   await expect(page.getByLabel('细节解码温度')).toHaveValue('0.9');
 });
 
+
+
+test('Ming 3.0 TTS 在设计与克隆间切换并提供七种语言', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('combobox', { name: '模型', exact: true }).click();
+  await page.getByRole('option', { name: /^Ming 3\.0 TTS/ }).click();
+  await expect(page.getByRole('radio', { name: '声音设计', exact: true })).toBeChecked();
+  await expect(page.getByRole('button', { name: '添加参考音频', exact: true })).toHaveCount(0);
+  await page.getByLabel('声音描述', { exact: true }).fill('温暖平静的女声');
+  const language = page.getByRole('combobox', { name: '语言', exact: true });
+  await language.click();
+  await expect(page.getByRole('option')).toHaveText(['自动', '中文', '英语', '日语', '韩语', '德语', '法语', '西班牙语']);
+  await page.getByRole('option', { name: '日语', exact: true }).click();
+  await page.getByRole('radio', { name: '音色克隆', exact: true }).click();
+  await expect(page.getByRole('button', { name: '添加参考音频', exact: true })).toBeVisible();
+  await expect(page.getByLabel('参考音频原文（可选）', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('声音描述', { exact: true })).toHaveCount(0);
+  await page.locator('summary').filter({ hasText: '高级设置' }).click();
+  await expect(page.getByLabel('长文分段字数（0 为模型默认）')).toHaveValue('0');
+  await expect(page.getByLabel('温度', { exact: true })).toHaveValue('0');
+  await expect(page.getByLabel('裁剪静音', { exact: true })).toBeChecked();
+});
 
 
 test('作品音频读不到时播放器直接显示不可用，不主动弹出提示', async ({ page }) => {

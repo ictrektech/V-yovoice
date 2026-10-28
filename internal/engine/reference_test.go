@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -59,6 +60,32 @@ func TestVoxReferenceEncoderCapacity(t *testing.T) {
 			t.Fatal("容量不变时应复用引擎")
 		}
 		previousPID = pid
+	}
+}
+
+func TestXTTSReferenceDuration(t *testing.T) {
+	root := t.TempDir()
+	_, err := store.New(root)
+	must(t, err)
+	engine := New(root)
+	defer engine.Stop()
+	executable, err := os.Executable()
+	must(t, err)
+	model := schema.InstalledModel{ID: "xtts-v2-q8", Path: filepath.Join(root, "model")}
+	must(t, os.WriteFile(model.Path, []byte("test"), 0600))
+	draft := schema.DefaultDraft()
+	draft.ModelID = model.ID
+	voice := filepath.Join(root, "reference.wav")
+	for _, seconds := range []int{5, 31} {
+		data := append(wav()[:44:44], make([]byte, seconds*16000*2)...)
+		binary.LittleEndian.PutUint32(data[4:], uint32(len(data)-8))
+		binary.LittleEndian.PutUint32(data[40:], uint32(len(data)-44))
+		must(t, os.WriteFile(voice, data, 0600))
+		_, err = engine.Generate(context.Background(), executable, model, "cpu", false, draft, voice, "", filepath.Join(root, "output.wav"), func(msg.Code, msg.Params) {})
+		var callErr *msg.CallError
+		if !errors.As(err, &callErr) || callErr.Code != msg.ErrXTTSReferenceDuration {
+			t.Fatalf("%d 秒参考音频应被拒绝：%v", seconds, err)
+		}
 	}
 }
 

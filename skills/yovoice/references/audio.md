@@ -63,3 +63,7 @@ OmniVoice 自动根据是否提供参考音频选择设计或克隆，也可用 
 OmniVoice 权重为 [CC-BY-NC](https://huggingface.co/k2-fsa/OmniVoice#license)，仅限非商业用途；Qwen3-TTS 权重为 Apache-2.0。
 
 完整模型列表、四类模型能力、内置音色、Omni 属性及高级参数见[模型能力参考](models.md)。
+
+### Ming 3.0 TTS
+
+Ming 用 `--voice-mode design|clone` 选择设计或克隆，有参考音频时默认克隆。设计描述可选，留空使用普通 TTS；克隆必须提供参考音频，`--reference-text` 可选，填写准确原文可增加声学前缀，留空仅参考说话人音色。语言使用 `--language auto|zh|en|ja|ko|de|fr|es`，不要传 IndexTTS 的情绪、语速或采样参数。长文默认由上游自动分段，无需强制设置 `text_chunk_size`。

@@ -67,7 +67,7 @@ export interface Voice { referenceText?: string; source?: string; sourceGenerati
 /** 导入的录音过长时自动截取的片段：start/end 为在原录音里的秒数，total 为原录音时长。 */
 export interface VoiceExcerpt { start: number; end: number; total: number }
 export interface ModelFile { path: string; size: number; sha256: string }
-export interface ModelPackage { voices?: string[]; variant?: string; maxDuration?: number; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
+export interface ModelPackage { voices?: string[]; variant?: string; maxDuration?: number; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; stripPrefix?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
 export interface InstalledModel { id: string; path: string; managed: boolean; sha256?: string }
 export const modelMainFile = (model: ModelPackage): ModelFile => model.files?.find(file => file.path === model.remotePath) ?? { path: model.remotePath, size: model.size, sha256: model.sha256 };
 export const modelUpdateAvailable = (state: Pick<State, 'models'>, model: ModelPackage) => {
@@ -289,6 +289,12 @@ export function preferredModel(state: Pick<State, 'models' | 'drafts'>, kind: 't
 export const isVoxModel = (id: string) => id.startsWith('voxcpm2-');
 export const isReferenceModel = (id: string) => id.startsWith('omnivoice-') || id.startsWith('qwen3-tts-');
 export const isBreezeModel = (id: string) => id.startsWith('breeze-tts-');
-export const requiresVoice = (draft: Draft) => isKokoroModel(draft.modelId) || !isVoiceModel(draft.modelId) ? false : draft.modelId.startsWith('qwen3-tts-') ? !/customvoice|voicedesign/.test(draft.modelId) : draft.modelId.startsWith('omnivoice-') || isBreezeModel(draft.modelId) ? draft.voiceMode === 'clone' : !isVoxModel(draft.modelId) || ['clone', 'continuation'].includes(draft.voxMode ?? 'design');
+export const isMingModel = (id: string) => id.startsWith('ming3-tts-');
+export const isVoxtralModel = (id: string) => id.startsWith('voxtral-tts-');
+export const isPlapreModel = (id: string) => id.startsWith('plapre-');
+export const isXTTSModel = (id: string) => id.startsWith('xtts-v2-');
+export const isGradiumModel = (id: string) => id.startsWith('gradium-phonon-');
+export const isDramaModel = (id: string) => id.startsWith('fish-drama3-');
+export const requiresVoice = (draft: Draft) => isKokoroModel(draft.modelId) || isVoxtralModel(draft.modelId) || isGradiumModel(draft.modelId) || !isVoiceModel(draft.modelId) ? false : draft.modelId.startsWith('qwen3-tts-') ? !/customvoice|voicedesign/.test(draft.modelId) : draft.modelId.startsWith('omnivoice-') || isBreezeModel(draft.modelId) || isMingModel(draft.modelId) || isPlapreModel(draft.modelId) || isDramaModel(draft.modelId) ? draft.voiceMode === 'clone' : !isVoxModel(draft.modelId) || ['clone', 'continuation'].includes(draft.voxMode ?? 'design');
 
 export const emptyScore = (): Score => ({ tempo: 100, timeSignature: [4, 4], key: '', sections: [], tracks: [] });

@@ -76,7 +76,7 @@ func TestStandalone(t *testing.T) {
 		s.RuntimeBackend = &b
 		v := catalog.EngineVersion
 		s.RuntimeVersion = &v
-		s.Models = []schema.InstalledModel{{ID: "index-2.5-q8", Path: model}, {ID: "voxcpm2-q8", Path: model}, {ID: "omnivoice-q8", Path: model}, {ID: "qwen3-tts-base-q8", Path: model}, {ID: "qwen3-tts-customvoice-q8", Path: model}, {ID: "qwen3-tts-voicedesign-q8", Path: model}}
+		s.Models = []schema.InstalledModel{{ID: "index-2.5-q8", Path: model}, {ID: "voxcpm2-q8", Path: model}, {ID: "omnivoice-q8", Path: model}, {ID: "qwen3-tts-base-q8", Path: model}, {ID: "qwen3-tts-customvoice-q8", Path: model}, {ID: "qwen3-tts-voicedesign-q8", Path: model}, {ID: "ming3-tts-0.5b-q8", Path: model}}
 	}, true)
 	if e != nil {
 		t.Fatal(e)
@@ -155,6 +155,8 @@ func TestStandalone(t *testing.T) {
 		{"qwen3-tts-base-q8", "qwen3_tts", []string{"--reference", ref, "--language", "ja", "--option", "temperature=0.7"}},
 		{"qwen3-tts-customvoice-q8", "qwen3_tts", []string{"--speaker", "Ryan", "--voice-description", "Warm"}},
 		{"qwen3-tts-voicedesign-q8", "qwen3_tts", []string{"--voice-description", "Warm narrator"}},
+		{"ming3-tts-0.5b-q8", "ming3_tts", []string{"--voice-description", "Warm narrator", "--language", "ja", "--option", "trim_silence=false"}},
+		{"ming3-tts-0.5b-q8", "ming3_tts", []string{"--voice-mode", "clone", "--reference", ref, "--reference-text", "原文"}},
 	} {
 		args := []string{"generate", "--model", test.model, "--text", "你好", "--output", filepath.Join(root, fmt.Sprintf("new-model-%d.wav", i)), "--data-dir", root}
 		if err := run(ctx, append(args, test.flags...), &out, &progress); err != nil {

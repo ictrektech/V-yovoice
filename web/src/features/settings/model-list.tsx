@@ -29,6 +29,12 @@ function modelDescription(t: (key: string) => string, model: ModelPackage) {
   if (model.family === 'qwen3_tts') return t(`@yovoice.settings.modelDesc.qwen.${model.variant || 'base'}`);
   if (model.family === 'voxcpm2') return t('@yovoice.settings.modelDesc.vox');
   if (model.family === 'breeze_tts') return t('@yovoice.settings.modelDesc.breeze');
+  if (model.family === 'ming3_tts') return t('@yovoice.settings.modelDesc.ming');
+  if (model.family === 'voxtral_tts') return t('@yovoice.settings.modelDesc.voxtral');
+  if (model.family === 'plapre') return t('@yovoice.settings.modelDesc.plapre');
+  if (model.family === 'xtts_v2') return t('@yovoice.settings.modelDesc.xtts');
+  if (model.family === 'gradium_phonon') return t('@yovoice.settings.modelDesc.gradium');
+  if (model.family === 'fish_drama3') return t('@yovoice.settings.modelDesc.drama');
   return model.version === '2.5' ? t('@yovoice.settings.modelDesc.25') : t('@yovoice.settings.modelDesc.basic');
 }
 

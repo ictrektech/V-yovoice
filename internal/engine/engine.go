@@ -114,7 +114,7 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 	family, task := definition.Family, definition.Task
 	if performanceFirst && (backend == "cuda" || backend == "cuda13") {
 		switch family {
-		case "ace_step", "qwen3_tts", "yue2", "voxcpm2":
+		case "ace_step", "qwen3_tts", "yue2", "voxcpm2", "fish_drama3":
 			sessionOptions := make(map[string]string, len(definition.SessionOptions)+1)
 			for key, value := range definition.SessionOptions {
 				sessionOptions[key] = value
@@ -286,6 +286,15 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 		return "", err
 	}
 	encoderSamples := 0
+	if definition.Family == "xtts_v2" {
+		duration, audioErr := audio.Duration(voice)
+		if audioErr != nil {
+			return "", audioErr
+		}
+		if duration < 6 || duration > 30 {
+			return "", msg.Err(msg.ErrXTTSReferenceDuration, nil)
+		}
+	}
 	if definition.Family == "voxcpm2" {
 		encoderSamples = 240000
 		if d.RequiresVoice() {

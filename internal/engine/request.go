@@ -55,6 +55,77 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 		}
 		return map[string]any{"model": "index", "request": map[string]any{"text": d.Text, "voice_id": d.KokoroSpeaker(m), "options": o}}, nil
 	}
+	if m.Family == "voxtral_tts" {
+		o, _ := d.GenerationOptions(m.Family)
+		if d.Seed != nil {
+			o["seed"] = *d.Seed
+		}
+		voiceID := d.Speaker
+		if voiceID == "" {
+			voiceID = "casual_male"
+		}
+		return map[string]any{"model": "index", "request": map[string]any{"text": strings.TrimSpace(d.Text), "voice_id": voiceID, "options": o}}, nil
+	}
+	if m.Family == "plapre" {
+		o, _ := d.GenerationOptions(m.Family)
+		if d.Seed != nil {
+			o["seed"] = *d.Seed
+		}
+		r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
+		if d.RequiresVoice() {
+			if voice == "" {
+				return nil, msg.Err(msg.ErrVoiceRequired, nil)
+			}
+			r["voice_ref"] = voice
+			if transcript := strings.TrimSpace(d.ReferenceText); transcript != "" {
+				o["reference_text"] = transcript
+			}
+		} else {
+			voiceID := d.Speaker
+			if voiceID == "" {
+				voiceID = "tor"
+			}
+			r["voice_id"] = voiceID
+		}
+		return map[string]any{"model": "index", "request": r}, nil
+	}
+	if m.Family == "xtts_v2" {
+		o, _ := d.GenerationOptions(m.Family)
+		if d.Seed != nil {
+			o["seed"] = *d.Seed
+		}
+		if voice == "" {
+			return nil, msg.Err(msg.ErrVoiceRequired, nil)
+		}
+		language := d.SynthesisLanguage
+		// XTTS 必须显式指定语言；未选择或使用“自动”时固定按简体中文处理。
+		if language == "" || language == "auto" {
+			language = "zh-cn"
+		}
+		return map[string]any{"model": "index", "request": map[string]any{"text": strings.TrimSpace(d.Text), "voice_ref": voice, "language": language, "options": o}}, nil
+	}
+	if m.Family == "gradium_phonon" {
+		o, _ := d.GenerationOptions(m.Family)
+		if d.Seed != nil {
+			o["seed"] = *d.Seed
+		}
+		return map[string]any{"model": "index", "request": map[string]any{"text": strings.TrimSpace(d.Text), "options": o}}, nil
+	}
+	if m.Family == "fish_drama3" {
+		o, _ := d.GenerationOptions(m.Family)
+		if d.Seed != nil {
+			o["seed"] = *d.Seed
+		}
+		r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
+		if d.RequiresVoice() {
+			if voice == "" {
+				return nil, msg.Err(msg.ErrVoiceRequired, nil)
+			}
+			r["voice_ref"] = voice
+			o["reference_text"] = strings.TrimSpace(d.ReferenceText)
+		}
+		return map[string]any{"model": "index", "request": r}, nil
+	}
 	if m.Family == "omnivoice" || m.Family == "qwen3_tts" {
 		o, _ := d.GenerationOptions(m.Family)
 		if d.Seed != nil {
@@ -94,6 +165,29 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 			o["instruct"] = description
 		}
 		// 使用各引擎原生默认值，不透传 IndexTTS 的采样、情绪或语速参数。
+		return map[string]any{"model": "index", "request": r}, nil
+	}
+	if m.Family == "ming3_tts" {
+		o, _ := d.GenerationOptions(m.Family)
+		if d.Seed != nil {
+			o["seed"] = *d.Seed
+		}
+		r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
+		if d.SynthesisLanguage != "" && d.SynthesisLanguage != "auto" {
+			r["language"] = d.SynthesisLanguage
+		}
+		if d.RequiresVoice() {
+			if voice == "" {
+				return nil, msg.Err(msg.ErrVoiceRequired, nil)
+			}
+			r["voice_ref"] = voice
+			if transcript := strings.TrimSpace(d.ReferenceText); transcript != "" {
+				o["reference_text"] = transcript
+			}
+		} else if description := strings.TrimSpace(d.VoiceDescription); description != "" {
+			o["template_name"] = "voice_design"
+			o["instruct"] = description
+		}
 		return map[string]any{"model": "index", "request": r}, nil
 	}
 	if m.Family == "breeze_tts" {
