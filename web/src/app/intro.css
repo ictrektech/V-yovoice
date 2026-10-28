@@ -1,0 +1,82 @@
+/* 首次启动的欢迎页。 */
+
+@layer app {
+  .ai-notice[data-status="done"] svg { color: var(--color-icon-green); }
+  /* 首次启动开场（约 8 秒）：深色舞台上粒子汇成声波条，文字随后依次出现。
+  这是品牌时刻，配色取自应用图标（深青、青色、米白），定义在 paper-theme.ts 的 localTokens（--intro-*），不随浅色主题变化。
+  白色高光用 --color-on-dark，半透明层用 color-mix 从这些颜色派生。 */
+  .intro-screen { --intro-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; --intro-font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", sans-serif;
+    position: fixed; inset: 0; z-index: 1000; overflow: hidden; color: var(--color-on-dark); text-align: center;
+    background: radial-gradient(90% 70% at 50% 42%, var(--intro-stage-center) 0%, var(--intro-stage-mid) 45%, var(--intro-stage-edge) 100%); }
+  .intro-screen[data-leaving] { animation: intro-leave 800ms cubic-bezier(.2, .8, .2, 1) forwards; pointer-events: none; }
+  .intro-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .intro-glow { --intro-glow-size: calc(var(--spacing-10) * 13); position: absolute; left: 50%; top: 38%; width: var(--intro-glow-size); height: var(--intro-glow-size); margin: calc(var(--intro-glow-size) / -2) 0 0 calc(var(--intro-glow-size) / -2); border-radius: var(--radius-full); pointer-events: none;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--intro-teal) 20%, transparent), color-mix(in srgb, var(--intro-teal) 0%, transparent)); filter: blur(calc(var(--spacing-2) + var(--spacing-0-5))); opacity: 0; animation: intro-fade 2400ms ease 3400ms forwards; }
+  .intro-copy { position: absolute; inset-inline: var(--spacing-8); top: calc(38% + var(--spacing-10) * 3.75); }
+  /* 名字：立体挤出。h1 本身是品牌青的侧面（矢量 text-shadow 逐层加深，转动时依然锐利），
+  ::after 是米白正面并叠一道掠过的高光。 */
+  .intro-word { position: relative; margin: 0 0 var(--spacing-3); font: var(--font-weight-bold) calc(var(--font-size-2xl) * 3)/1.05 var(--intro-font-display); letter-spacing: -.03em;
+    color: var(--intro-word-side); text-shadow: var(--intro-word-extrude);
+    animation: intro-word-in 1600ms cubic-bezier(.16, 1.1, .3, 1) 4700ms both, intro-word-turn 7s ease-in-out 6300ms infinite; }
+  .intro-word::after { content: attr(data-text); position: absolute; inset: 0; text-shadow: none; color: transparent;
+    background: linear-gradient(110deg, transparent 42%, color-mix(in srgb, var(--color-on-dark) 95%, transparent) 50%, transparent 58%) 160% 0 / 260% 100% no-repeat, linear-gradient(180deg, var(--color-on-dark) 0%, var(--intro-cream) 52%, var(--intro-sand) 100%);
+    -webkit-background-clip: text; background-clip: text; animation: intro-word-sheen 4.2s cubic-bezier(.45, 0, .2, 1) 6400ms infinite; }
+  /* 标语：提亮、减重，字距从很宽收拢到正常，同时由模糊变清晰。 */
+  .intro-tagline { margin: 0; font: var(--font-weight-normal) calc(var(--font-size-base) + var(--spacing-2))/1.4 var(--intro-font-text); letter-spacing: .08em; color: color-mix(in srgb, var(--intro-mist) 86%, transparent);
+    animation: intro-track 1400ms cubic-bezier(.2, .8, .2, 1) 5500ms both; }
+  /* 五种创作方式：玻璃质感胶囊，图标放进带青色光的小圆徽章，入场带一点 3D 翻转。 */
+  .intro-kinds { margin-top: var(--spacing-8); }
+  .intro-kind { padding: var(--spacing-1-5) var(--spacing-4) var(--spacing-1-5) var(--spacing-1-5); border-radius: var(--radius-full); font: var(--font-weight-medium) var(--font-size-base)/1 var(--intro-font-text); letter-spacing: .02em; color: var(--intro-mist);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-on-dark) 11%, transparent), color-mix(in srgb, var(--color-on-dark) 3%, transparent)); border: var(--border-width) solid color-mix(in srgb, var(--color-on-dark) 14%, transparent);
+    box-shadow: var(--intro-kind-shadow); backdrop-filter: blur(var(--spacing-4)) saturate(1.3);
+    animation: intro-kind-in 900ms cubic-bezier(.16, 1.1, .3, 1) both; }
+  .intro-kind-icon { display: grid; place-items: center; width: calc(var(--spacing-6) + var(--spacing-0-5)); height: calc(var(--spacing-6) + var(--spacing-0-5)); border-radius: var(--radius-full); color: var(--intro-teal-pale);
+    background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--intro-teal) 50%, transparent), color-mix(in srgb, var(--intro-teal) 12%, transparent) 70%); box-shadow: inset 0 0 0 var(--border-width) color-mix(in srgb, var(--intro-teal) 40%, transparent); }
+  .intro-kind:nth-child(1) { animation-delay: 6100ms; }
+  .intro-kind:nth-child(2) { animation-delay: 6250ms; }
+  .intro-kind:nth-child(3) { animation-delay: 6400ms; }
+  .intro-kind:nth-child(4) { animation-delay: 6550ms; }
+  .intro-kind:nth-child(5) { animation-delay: 6700ms; }
+  /* 「开始探索」：发光的立体胶囊（顶部高光、底部内阴影、青色光晕），箭头随悬停前移，定期有一道光扫过。 */
+  .intro-cta { position: relative; overflow: hidden; isolation: isolate; height: calc(var(--spacing-12) + var(--spacing-1-5)); margin-top: var(--spacing-8); padding: 0 calc(var(--spacing-6) + var(--spacing-0-5)) 0 var(--spacing-8); gap: calc(var(--spacing-2) + var(--spacing-0-5)); border: 0; border-radius: var(--radius-full);
+    font: var(--font-weight-semibold) calc(var(--font-size-base) + var(--spacing-0-5))/1 var(--intro-font-text); letter-spacing: .08em; color: var(--intro-cta-ink);
+    background: linear-gradient(180deg, var(--color-on-dark) 0%, var(--intro-cta-tint) 55%, var(--intro-cta-base) 100%);
+    box-shadow: var(--intro-cta-shadow);
+    transition: transform 300ms cubic-bezier(.2, .8, .2, 1), box-shadow 300ms;
+    animation: intro-rise 900ms cubic-bezier(.16, 1.12, .3, 1) 7300ms backwards, intro-cta-glow 3.2s ease-in-out 8400ms infinite; }
+  /* 动画会盖过普通样式：悬停时只保留入场动画（同名同参数，不会重播），让悬停光晕和上浮生效。 */
+  .intro-cta:hover { animation: intro-rise 900ms cubic-bezier(.16, 1.12, .3, 1) 7300ms backwards; background: linear-gradient(180deg, var(--color-on-dark) 0%, var(--intro-cta-tint-hover) 55%, var(--intro-cta-base-hover) 100%); transform: translateY(calc(-1 * var(--spacing-0-5)));
+    box-shadow: var(--intro-cta-shadow-hover); }
+  .intro-cta:active { transform: translateY(0) scale(.98); }
+  /* 按钮出现时会自动获得焦点，焦点框一直可见，所以用细而淡的青色，不抢画面。 */
+  .intro-cta:focus, .intro-cta:focus-visible { outline: calc(var(--border-width) * 1.5) solid color-mix(in srgb, var(--intro-teal-light) 55%, transparent); outline-offset: var(--spacing-1); }
+  /* Astryx 按钮内部包着文字的那层容器默认是块级并带溢出截断：改成横排，颜色直接写在文字与箭头上（容器自带颜色会盖过继承）。 */
+  .intro-cta span:has(> .intro-cta-label) { display: inline-flex; align-items: center; gap: var(--spacing-1-5); overflow: visible; }
+  .intro-cta-label, .intro-cta-arrow { position: relative; z-index: 1; color: var(--intro-cta-ink); }
+  .intro-cta-arrow { transition: transform 300ms cubic-bezier(.2, .8, .2, 1); }
+  .intro-cta:hover .intro-cta-arrow { transform: translateX(var(--spacing-1)); }
+  .intro-cta-sheen { position: absolute; inset: 0; z-index: 0; pointer-events: none; transform: translateX(-130%);
+    background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--color-on-dark) 95%, transparent) 46%, color-mix(in srgb, var(--intro-teal-pale) 55%, transparent) 54%, transparent 68%); animation: intro-cta-sheen 3.6s cubic-bezier(.45, 0, .2, 1) 8200ms infinite; }
+  /* 矮窗口（最低 600px）：文字上移、字号和间距收紧，按钮不出画面。媒体查询里不能用变量，断点保留字面值。 */
+  @media (max-height: 760px) {
+    .intro-copy { top: calc(38% + var(--spacing-8) * 3.5); }
+    .intro-word { font-size: calc(var(--font-size-2xl) * 2.25); }
+    .intro-kinds, .intro-cta { margin-top: var(--spacing-5); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .intro-glow, .intro-word, .intro-word::after, .intro-tagline, .intro-kind, .intro-cta, .intro-cta-sheen { animation: none; }
+    .intro-glow { opacity: 1; }
+    .intro-word { transform: rotateX(8deg) rotateY(-10deg); }
+  }
+  @keyframes intro-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes intro-rise { from { opacity: 0; transform: translateY(calc(var(--spacing-3) + var(--spacing-0-5))) scale(.97); filter: blur(calc(var(--spacing-2) + var(--spacing-0-5))); } to { opacity: 1; transform: none; filter: none; } }
+  @keyframes intro-word-sheen { 0% { background-position: 160% 0, 0 0; } 55%, 100% { background-position: -60% 0, 0 0; } }
+  @keyframes intro-track { from { opacity: 0; letter-spacing: .5em; filter: blur(var(--spacing-2)); } to { opacity: 1; letter-spacing: .08em; filter: none; } }
+  @keyframes intro-kind-in { from { opacity: 0; transform: translateY(var(--spacing-4)) rotateX(-50deg); filter: blur(var(--spacing-1-5)); } to { opacity: 1; transform: none; filter: none; } }
+  @keyframes intro-cta-glow { 0%, 100% { box-shadow: var(--intro-cta-shadow); }
+    50% { box-shadow: var(--intro-cta-shadow-pulse); } }
+  @keyframes intro-cta-sheen { 0% { transform: translateX(-130%); } 45%, 100% { transform: translateX(130%); } }
+  @keyframes intro-word-in { from { opacity: 0; transform: translateZ(calc(var(--spacing-10) * -10)) rotateX(40deg) rotateY(-25deg); } to { opacity: 1; transform: rotateX(8deg) rotateY(-10deg); } }
+  @keyframes intro-word-turn { 0%, 100% { transform: rotateX(8deg) rotateY(-10deg); } 50% { transform: rotateX(6deg) rotateY(10deg); } }
+  @keyframes intro-leave { to { opacity: 0; transform: scale(1.04); filter: blur(var(--spacing-1-5)); } }
+}

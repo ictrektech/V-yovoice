@@ -1,0 +1,211 @@
+/* Ocho 助手：侧栏面板、对话、入口按钮。 */
+
+/* 以下规则在 app 层之外，优先级高于层内规则。 */
+/* 助手浮窗：浮在工作区右下角，可拖动、缩放；放大只拉长到窗口高度，宽度不变。
+内容即界面：助手回复没有气泡与头像；内容区自己滚动，输入框圆角与外框同心。 */
+.assistant-panel {
+  --assistant-inset: var(--spacing-4);
+  --assistant-gap: var(--spacing-2);
+  position: fixed;
+  right: var(--assistant-right, var(--assistant-edge-right));
+  bottom: var(--assistant-bottom, var(--assistant-edge-bottom));
+  z-index: 450;
+  width: var(--assistant-width, calc(var(--spacing-8) * 12));
+  height: var(--assistant-height, calc(var(--spacing-10) * 14));
+  border: var(--border-width) solid var(--app-line);
+  border-radius: var(--radius-container);
+  background: var(--app-white);
+  box-shadow: var(--shadow-high);
+  overflow: hidden;
+  transform-origin: right bottom;
+  animation: assistant-pop var(--duration-medium, 410ms) var(--ease-standard);
+  transition: top var(--duration-medium, 410ms) var(--ease-standard), height var(--duration-medium, 410ms) var(--ease-standard);
+}
+.assistant-panel[data-moving] { user-select: none; transition: none; }
+.assistant-panel.expanded { top: calc(var(--app-titlebar) + var(--spacing-3)); bottom: var(--assistant-edge-bottom); height: auto; }
+.assistant-resize { position: absolute; z-index: 3; touch-action: none; }
+.assistant-resize[data-edge="left"] { top: var(--spacing-4); bottom: var(--spacing-4); left: 0; width: var(--spacing-1); cursor: ew-resize; }
+.assistant-resize[data-edge="top"] { left: var(--spacing-4); right: var(--spacing-4); top: 0; height: var(--spacing-1); cursor: ns-resize; }
+.assistant-resize[data-edge="top-left"] { top: 0; left: 0; width: var(--spacing-3); height: var(--spacing-3); cursor: nwse-resize; }
+.assistant-header { flex-shrink: 0; min-height: var(--spacing-12); padding: var(--spacing-2) var(--spacing-2) var(--spacing-2) var(--spacing-2); border-bottom: var(--border-width) solid var(--app-line); cursor: grab; touch-action: none; }
+.assistant-panel[data-moving] .assistant-header { cursor: grabbing; }
+.assistant-title { min-width: 0; padding-inline: var(--spacing-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--font-weight-medium); font-size: var(--app-ui-font); color: var(--app-ink); }
+.assistant-avatar { flex-shrink: 0; }
+.assistant-orb { flex-shrink: 0; }
+.assistant-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.assistant-body > .astryx-chat-message-list { flex: none; padding: var(--spacing-2) calc(var(--assistant-inset) - var(--spacing-3)) var(--spacing-3); }
+.assistant-dock-bottom { flex-shrink: 0; padding: var(--assistant-gap); }
+.assistant-composer { --_chat-composer-radius: calc(var(--radius-container) - var(--assistant-gap)); }
+/* 底栏压低：发送按钮与左下角的模型选择同为一行小控件，输入框与底栏之间不留多余空白。 */
+.assistant-send.astryx-button { border-radius: var(--radius-full); width: var(--spacing-6); height: var(--spacing-6); min-width: 0; padding: 0; }
+.assistant-send.astryx-button svg { width: var(--spacing-3); height: var(--spacing-3); }
+.assistant-composer :has(> * > .assistant-send) { min-height: var(--spacing-6); }
+.assistant-model.astryx-selector { min-height: var(--spacing-6); padding-block: 0; padding-inline: var(--spacing-2); }
+.assistant-title-button.astryx-button { padding: 0; }
+.assistant-empty { flex: 1; justify-content: center; padding: var(--spacing-6) var(--assistant-inset); text-align: center; }
+.assistant-empty p { margin: 0; }
+.assistant-empty-art { display: block; width: 100%; max-width: calc(var(--spacing-8) * 11); aspect-ratio: 3 / 1; object-fit: cover; border-radius: var(--radius-element); box-shadow: var(--shadow-high); animation: assistant-rise var(--duration-medium, 410ms) var(--ease-standard) both; }
+.assistant-empty-title { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--app-ink); animation: assistant-rise var(--duration-medium, 410ms) var(--ease-standard) 60ms both; }
+.assistant-empty-hint { max-width: calc(var(--spacing-8) * 10); font-size: var(--app-small-font); line-height: 1.7; color: var(--app-muted); animation: assistant-rise var(--duration-medium, 410ms) var(--ease-standard) 120ms both; }
+.assistant-suggestions { margin-top: var(--spacing-1); animation: assistant-rise var(--duration-medium, 410ms) var(--ease-standard) 160ms both; }
+.assistant-suggestion.astryx-button { max-width: 100%; border-radius: var(--radius-full); font-weight: var(--font-weight-normal); color: var(--app-muted); }
+.assistant-dock-bottom .assistant-composer { position: relative; }
+.assistant-scrim { position: absolute; inset: 0; z-index: 1; background: color-mix(in srgb, var(--app-ink) 14%, transparent); animation: assistant-fade var(--duration-fast) var(--ease-standard); }
+.assistant-history { position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; width: 86%; background: var(--app-white); border-inline-end: var(--border-width) solid var(--app-line); box-shadow: var(--shadow-high); animation: assistant-slide var(--duration-medium, 410ms) var(--ease-standard); }
+.assistant-history-header { flex-shrink: 0; min-height: var(--spacing-12); padding: var(--spacing-2); border-bottom: var(--border-width) solid var(--app-line); }
+.assistant-history-list { flex: 1; min-height: 0; overflow-y: auto; padding: var(--spacing-2); }
+.assistant-history-empty { padding: var(--spacing-6) var(--spacing-3); color: var(--app-muted); }
+.assistant-history-delete { opacity: 0; }
+.assistant-history-item:hover .assistant-history-delete, .assistant-history-item:focus-within .assistant-history-delete { opacity: 1; }
+.assistant-queued { flex-shrink: 0; color: var(--app-muted); padding-inline: var(--spacing-1); }
+.assistant-notice { flex-shrink: 0; margin: var(--spacing-2) var(--assistant-inset) var(--spacing-4); padding: var(--spacing-3); border-radius: var(--radius-element); background: var(--app-surface); color: var(--app-muted); font-size: var(--app-small-font); }
+.assistant-turn { width: 100%; min-width: 0; align-items: stretch; }
+.assistant-answer { min-width: 0; color: var(--app-ink); line-height: 1.65; overflow-wrap: anywhere; }
+.assistant-status { min-height: var(--spacing-6); color: var(--app-muted); font-size: var(--app-small-font); }
+.assistant-status[data-tone="danger"] { color: var(--color-text-red); }
+/* 运行中的文字带一道从左到右扫过的流光：底色是次要文字色，高光是正文色。 */
+.assistant-status[role="status"] .assistant-status-label {
+  color: transparent;
+  background: linear-gradient(90deg, var(--app-muted) 0%, var(--app-muted) 35%, var(--app-ink) 50%, var(--app-muted) 65%, var(--app-muted) 100%) 0 0 / 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: assistant-status-in .24s var(--ease-standard) both, assistant-shimmer var(--assistant-shimmer-speed, 2.2s) linear infinite;
+}
+/* 各阶段的流光节奏不同：思考慢、查找快；生成音频和改作品的高光用强调色。 */
+.assistant-status[data-phase="thinking"] { --assistant-shimmer-speed: 2.8s; }
+.assistant-status[data-phase="searching"], .assistant-status[data-phase="opening"] { --assistant-shimmer-speed: 1.4s; }
+.assistant-status[data-phase="generating"], .assistant-status[data-phase="editing"] { --assistant-shimmer-speed: 1.8s; }
+.assistant-status[data-phase="generating"] .assistant-status-label, .assistant-status[data-phase="editing"] .assistant-status-label { background-image: linear-gradient(90deg, var(--app-muted) 0%, var(--app-muted) 35%, var(--app-accent) 50%, var(--app-muted) 65%, var(--app-muted) 100%); }
+.assistant-status-detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--app-muted); opacity: .7; }
+.assistant-process .astryx-collapsible-trigger { justify-content: start; gap: var(--spacing-1); width: auto; padding: 0; color: var(--app-muted); }
+.assistant-process .astryx-collapsible-trigger:hover .assistant-status { color: var(--app-ink); }
+.assistant-steps { margin: var(--spacing-1) 0 var(--spacing-1) calc(var(--spacing-1) / 2); padding-inline-start: var(--spacing-3); border-inline-start: var(--border-width) solid var(--app-line); }
+.assistant-step { min-height: var(--spacing-6); color: var(--app-muted); font-size: var(--app-small-font); }
+.assistant-step .astryx-status-dot { flex-shrink: 0; }
+.assistant-thought { display: block; padding-block: var(--spacing-1); white-space: pre-wrap; line-height: 1.6; overflow-wrap: anywhere; }
+.assistant-thought[data-kind="thinking"] { font-style: italic; }
+.assistant-result { padding: var(--spacing-2); border: var(--border-width) solid var(--app-line); border-radius: var(--radius-element); }
+.assistant-result small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-note { color: var(--app-muted); }
+.assistant-note[data-tone="danger"] { color: var(--color-text-red); }
+.assistant-actions { margin-inline-start: calc(-1 * var(--spacing-2)); opacity: 0; transition: opacity var(--duration-fast) var(--ease-standard); }
+.assistant-turn:hover .assistant-actions, .assistant-actions:focus-within { opacity: 1; }
+.assistant-model { max-width: 100%; min-width: 0; color: var(--app-muted); }
+/* 附带的选中内容：输入框里的一枚引用标签，单行截断。 */
+.assistant-selection.astryx-token { min-width: 0; max-width: calc(var(--assistant-width, 100%) - var(--spacing-12)); color: var(--app-muted); }
+/* 提议卡片：要用户确认的操作；处理后只留一行结果。 */
+.assistant-proposal { padding: var(--spacing-3); border: var(--border-width) solid var(--app-line); border-radius: var(--radius-element); background: var(--app-white); animation: assistant-rise var(--duration-fast) var(--ease-standard); }
+.assistant-proposal[data-state="pending"] { border-color: color-mix(in srgb, var(--app-accent) 40%, var(--app-line)); box-shadow: var(--shadow-low); }
+.assistant-proposal:not([data-state="pending"]) { padding-block: var(--spacing-2); }
+.assistant-proposal-icon { display: inline-flex; flex-shrink: 0; color: var(--app-accent); }
+.assistant-proposal-icon[data-tone="danger"] { color: var(--color-text-red); }
+.assistant-proposal-title { min-width: 0; font-weight: var(--font-weight-medium); color: var(--app-ink); }
+.assistant-proposal:not([data-state="pending"]) .assistant-proposal-title { color: var(--app-muted); font-weight: var(--font-weight-normal); }
+.assistant-proposal-reason { color: var(--app-muted); line-height: 1.6; }
+/* 主动提示气泡：入口在时停在入口上方，入口移走时停在右下角。 */
+.assistant-nudge {
+  position: fixed;
+  right: var(--assistant-edge-right);
+  bottom: var(--assistant-edge-bottom);
+  z-index: 451;
+  width: min(calc(var(--spacing-8) * 9), calc(100vw - var(--spacing-8)));
+  padding: var(--spacing-3);
+  border: var(--border-width) solid var(--app-line);
+  border-radius: var(--radius-container);
+  background: var(--app-white);
+  box-shadow: var(--shadow-high);
+  animation: assistant-pop var(--duration-medium, 410ms) var(--ease-standard);
+  transform-origin: right bottom;
+}
+.assistant-nudge[data-launcher] { bottom: calc(var(--assistant-edge-bottom) + var(--spacing-12)); }
+.assistant-nudge[data-tone="danger"] { border-color: color-mix(in srgb, var(--color-text-red) 35%, var(--app-line)); }
+.assistant-nudge-text { color: var(--app-ink); line-height: 1.6; }
+/* 收起时的入口：工作区卡片内边右下角的小按钮（Ocho + 名称），右、下边距与播放条一致、圆角与播放条同角；
+空闲时边框有一圈缓慢的光，运行中显示此刻在做什么；悬停时右上角出现 × 可移走。 */
+:root { --assistant-edge-right: calc(var(--spacing-2) + var(--spacing-3)); --assistant-edge-bottom: var(--spacing-3); }
+.assistant-launcher-wrap {
+  position: fixed;
+  right: var(--assistant-edge-right);
+  bottom: var(--assistant-edge-bottom);
+  z-index: 450;
+  max-width: min(calc(var(--spacing-8) * 9), calc(100vw - var(--spacing-8)));
+  animation: assistant-pop var(--duration-medium, 410ms) var(--ease-standard);
+  transform-origin: right bottom;
+}
+.assistant-launcher-hide.astryx-button {
+  position: absolute;
+  top: calc(var(--spacing-2) * -1);
+  right: calc(var(--spacing-2) * -1);
+  z-index: 1;
+  width: var(--spacing-5);
+  height: var(--spacing-5);
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--radius-full);
+  background: var(--app-white);
+  box-shadow: var(--shadow-high);
+  color: var(--app-muted);
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+.assistant-launcher-wrap:hover .assistant-launcher-hide, .assistant-launcher-hide:focus-visible { opacity: 1; transform: none; }
+.assistant-launcher-hide.astryx-button:hover { color: var(--app-ink); }
+@property --assistant-beam { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.assistant-launcher.astryx-button {
+  position: relative;
+  isolation: isolate;
+  max-width: 100%;
+  gap: var(--spacing-2);
+  padding-inline: var(--spacing-2) var(--spacing-3);
+  border: 0;
+  border-radius: var(--radius-container);
+  background: var(--app-white);
+  color: var(--app-ink);
+  box-shadow: var(--shadow-high);
+  font-weight: var(--font-weight-medium);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.assistant-launcher.astryx-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: var(--border-width);
+  border-radius: inherit;
+  background: conic-gradient(from var(--assistant-beam), var(--app-line) 0 60%, var(--app-accent) 80%, var(--app-line) 100%);
+  -webkit-mask: linear-gradient(var(--app-ink) 0 0) content-box, linear-gradient(var(--app-ink) 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: assistant-beam 6s linear infinite;
+  pointer-events: none;
+}
+.assistant-launcher.astryx-button:hover { background: var(--app-white); }
+.assistant-launcher-wrap[data-running] .assistant-launcher.astryx-button::before { animation-duration: 1.6s; }
+.assistant-launcher .astryx-button-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-launcher-wrap[data-running] .assistant-launcher .astryx-button-label { color: var(--app-muted); font-weight: var(--font-weight-normal); }
+.assistant-launcher .astryx-kbd { flex-shrink: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .assistant-panel, .assistant-launcher-wrap, .assistant-nudge, .assistant-proposal, .assistant-launcher-hide, .assistant-launcher::before, .assistant-empty-art, .assistant-empty-title, .assistant-empty-hint, .assistant-suggestions, .assistant-history, .assistant-scrim, .assistant-status-label { animation: none; transition: none; }
+}
+@media (max-width: 600px) {
+  .assistant-launcher .astryx-kbd { display: none; }
+}
+/* 助手输入框：层次与聚焦反馈。 */
+.assistant-composer > div { box-shadow: var(--app-shadow-composer); transition: box-shadow 220ms var(--app-ease-swift); }
+.assistant-composer:hover > div { box-shadow: var(--app-shadow-composer-hover); }
+.assistant-composer:focus-within > div { box-shadow: var(--app-shadow-composer-focus); }
+/* 新消息入场：从下方轻轻浮起并由虚到实；只作用于最后一条，重绘与切换会话不会重播。 */
+.assistant-turn:last-child { animation: app-block-in var(--duration-medium) var(--app-ease-enter) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .assistant-turn:last-child { animation: none; }
+}
+@keyframes assistant-shimmer { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+@keyframes assistant-status-in { from { opacity: 0; transform: translateY(var(--spacing-1)); } }
+@keyframes assistant-pop { from { opacity: 0; transform: translateY(var(--spacing-2)) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes assistant-beam { to { --assistant-beam: 360deg; } }
+@keyframes assistant-rise { from { opacity: 0; transform: translateY(var(--spacing-1)); } }
+@keyframes assistant-fade { from { opacity: 0; } }
+@keyframes assistant-slide { from { transform: translateX(-100%); } }
+@keyframes app-block-in { from { opacity: 0; filter: blur(calc(var(--border-width) * 3)); transform: translateY(var(--spacing-1)); } }

@@ -1,0 +1,72 @@
+/* 工作台外壳：标题栏、侧栏导航、页面容器与设置页、作品库页的页面框架。 */
+
+@layer app {
+  /* 工作区与各业务区域的布局。 */
+  .workbench { height: 100%; width: 100%; }
+  .browser-titlebar { height: var(--app-titlebar); flex-shrink: 0; padding-inline: var(--spacing-4); background: var(--app-paper); font-size: var(--app-small-font); }
+  .browser-titlebar small { margin-left: auto; }
+  .workbench > .astryx-app-shell { flex: 1; height: 0; min-height: 0; }
+  /* 内容区像一张放在纸色桌面上的白纸。 */
+  .app-sheet { flex: 1; height: calc(100% - var(--spacing-2)); min-height: 0; min-width: 0; margin: 0 var(--spacing-2) var(--spacing-2) 0; border-radius: calc(var(--radius-container) * 1.25); background: var(--app-white); box-shadow: var(--shadow-low); overflow: hidden; }
+  .workbench .astryx-layout-content { background: transparent; }
+  .sidebar { position: relative; width: 100%; min-width: 0; padding: var(--spacing-5) var(--spacing-4) var(--spacing-3); height: 100%; box-sizing: border-box; }
+  .new-project.astryx-button { border-radius: var(--radius-element); background: var(--app-ink); color: var(--app-white); min-height: var(--spacing-10); border: 0; font-weight: var(--font-weight-medium); }
+  .nav-item { justify-content: start; width: 100%; min-height: var(--spacing-10); border-radius: var(--radius-element); gap: var(--spacing-3); font-size: var(--app-ui-font); padding-inline: var(--spacing-4); }
+  .nav-item.selected { background: var(--app-white); box-shadow: var(--shadow-low); font-weight: var(--font-weight-medium); }
+  .sidebar-destinations { flex-shrink: 0; }
+  .recent-projects { flex: 1; min-height: 0; overflow-y: auto; margin-top: var(--spacing-2); }
+  .recent-projects > summary { cursor: pointer; padding: var(--spacing-2); color: var(--app-muted); font-size: var(--app-small-font); }
+  .recent-projects > summary > svg { width: var(--spacing-3); height: var(--spacing-3); }
+  .project-list { min-height: 0; }
+  .project-row { position: relative; flex-shrink: 0; min-height: var(--spacing-8); border-radius: var(--radius-element); }
+  .project-row.current { background: var(--color-overlay-hover); }
+  .project-row.current .project-link { color: var(--app-ink); }
+  .project-link { min-width: 0; justify-content: start; color: var(--app-muted); padding-inline: var(--spacing-4); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .sidebar .astryx-resize-handle-pill { display: none; }
+  .sidebar-bottom { margin-top: auto; }
+  .content-frame { height: 100%; min-height: 0; }
+  .settings-page,.library-page { flex: 1; padding: var(--spacing-5) var(--spacing-10) var(--spacing-10); width: 100%; max-width: calc(var(--spacing-10) * 24); margin-inline: auto; overflow: hidden; min-height: 0; }
+  .library-page > .library-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .settings-page h1,.library-page h1 { font-size: var(--font-size-2xl); }
+  .workbench .lucide:not(.voice-mark) { stroke-width: 1.6; }
+  .settings-page > *,.library-page > * { flex-shrink: 0; }
+  /* 资源页：整页滚动，试听播放器贴在底部；名称过长时截断，状态与辅助文字用次要色。 */
+  /* 资源页在设置里占满剩余高度：工具栏固定，只有表格区域滚动，表头吸顶。 */
+  .settings-page > .assets-page, .settings-page > .log-panel { overflow: hidden; scrollbar-gutter: auto; padding-block-end: var(--spacing-5); }
+  .settings-page > [role="tabpanel"] { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-inline-end: calc(-1 * var(--spacing-4)); padding-inline-end: var(--spacing-4); scrollbar-gutter: stable; }
+  .settings-page > [role="tabpanel"] > * { flex-shrink: 0; }
+  .settings-page header { display: flex; align-items: center; height: var(--spacing-10); padding-block: 0; }
+  @media (max-width: 900px) {
+    .sidebar { padding-inline: var(--spacing-2); }
+    .settings-page,.library-page { padding: var(--spacing-5) var(--spacing-6) var(--spacing-6); }
+  }
+  @media (max-width: 600px) {
+    .nav-item { font-size: 0; justify-content: center; padding: var(--spacing-2); gap: 0; }
+    .new-project { font-size: 0; gap: 0; padding: var(--spacing-2); }
+    .recent-projects { display: none; }
+    .sidebar { padding-bottom: var(--spacing-2); }
+    .settings-page,.library-page { padding: var(--spacing-5); }
+  }
+  @media (max-width: 600px) {
+    .workbench .astryx-app-shell-sidenav { width: calc(var(--spacing-8) * 2); }
+    .sidebar > .astryx-resize-handle { display: none; }
+  }
+  .settings-page > .ai-panel > .ai-split { flex-shrink: 1; }
+}
+
+/* 以下规则在 app 层之外，优先级高于层内规则。 */
+/* 页面常驻以保留筛选与编辑位置，隐藏页面的播放器单独暂停。 */
+.page-panel { height: 100%; flex: 1; min-width: 0; min-height: 0; overflow: hidden; animation: page-in var(--duration-fast) var(--ease-standard) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .page-panel { animation: none; }
+}
+.project-row .project-quick-delete { position: absolute; right: var(--spacing-1); top: 50%; translate: 0 -50%; opacity: 0; pointer-events: none; color: var(--app-muted); }
+.project-quick-delete svg { width: var(--spacing-4); height: var(--spacing-4); }
+.project-row:hover .project-quick-delete,.project-row:focus-within .project-quick-delete { opacity: 1; pointer-events: auto; }
+.project-row:hover .project-link,.project-row:focus-within .project-link { padding-inline-end: var(--spacing-10); }
+@media (hover: none) {
+  .project-row .project-quick-delete { opacity: 1; pointer-events: auto; }
+  .project-row .project-link { padding-inline-end: var(--spacing-10); }
+}
+/* 切换页面时整页淡入。 */
+@keyframes page-in { from { opacity: 0; } }

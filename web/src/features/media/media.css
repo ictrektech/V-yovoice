@@ -1,0 +1,184 @@
+/* 音频播放与编辑：播放条、波形、多轨时间轴、录音与试听。 */
+
+@layer app {
+  .text-left { text-align: left; justify-content: start; }
+  .audio-panel {
+    --audio-label-width: calc(var(--spacing-8) * 4);
+    --audio-ruler-height: var(--spacing-5);
+    --audio-row-height: var(--spacing-12);
+    max-height: 60vh;
+    min-height: 0;
+    flex-shrink: 0;
+    margin: var(--spacing-2) var(--spacing-3) var(--spacing-3);
+    padding: 0;
+    border: var(--border-width) solid var(--app-line);
+    border-radius: var(--radius-container);
+    background: var(--app-white);
+    overflow: visible;
+  }
+  .audio-panel > .astryx-resize-handle { width: var(--spacing-12); align-self: center; top: calc(-1 * var(--spacing-1)); z-index: 2; }
+  .audio-panel .multitrack-scroll, .audio-panel > .timeline { border-radius: 0 0 var(--radius-container) var(--radius-container); }
+  .multitrack-scroll { flex: 1; min-height: 0; overflow: auto; }
+  .multitrack-content { min-width: max(100%, calc(var(--spacing-8) * 18)); flex-shrink: 0; }
+  .multitrack-label { width: var(--audio-label-width); flex-shrink: 0; padding: var(--spacing-0-5) var(--spacing-2); position: sticky; left: 0; background: var(--color-background-surface); z-index: 2; border-right: var(--border-width) solid var(--color-border); }
+  .multitrack-ruler-row { height: var(--audio-ruler-height); flex-shrink: 0; align-items: center; }
+  .multitrack-ruler-row .multitrack-label { padding-block: 0; text-align: center; }
+  .multitrack-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-wrap: nowrap; color: var(--app-ink); }
+  .multitrack-ruler { position: relative; flex: 1; min-width: 0; align-self: stretch; justify-content: center; }
+  .multitrack-ruler small { height: var(--spacing-4); border-left: var(--border-width) solid var(--app-line); padding-left: var(--spacing-1); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
+  .multitrack-scroll { background: var(--app-surface); }
+  .multitrack-ruler input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: crosshair; }
+  .multitrack-ruler:focus-within { outline: var(--border-width) solid var(--color-text-primary); outline-offset: calc(var(--border-width) * -1); }
+  .multitrack-row { flex-shrink: 0; }
+  .multitrack-lane { position: relative; flex: 1; min-width: 0; min-height: var(--audio-row-height); }
+  .multitrack-add-audio { position: absolute; top: var(--spacing-1); height: var(--spacing-10); align-items: center; }
+  .timeline-audio-button { border-style: dashed; border-radius: var(--radius-inner); }
+  .timeline-audio-menu { --_dropdown-menu-radius: var(--radius-element); padding: var(--spacing-1); border: var(--border-width) solid var(--app-line); box-shadow: var(--shadow-low); }
+  .timeline-audio-menu .astryx-dropdown-menu-item { min-height: var(--spacing-8); padding: var(--spacing-1) var(--spacing-2); gap: var(--spacing-2); font-size: var(--app-small-font); }
+  .timeline-audio-menu .astryx-dropdown-menu-item span { font-size: inherit; line-height: var(--spacing-5); }
+  .timeline-audio-menu svg, .timeline-audio-button svg { width: var(--spacing-4); height: var(--spacing-4); stroke-width: 1.5; }
+  .timeline-history-list { height: calc(var(--spacing-8) * 10); max-height: calc(var(--spacing-8) * 10); overflow-y: auto; scrollbar-gutter: stable; }
+  .timeline-history-empty { flex: 1; min-height: calc(var(--spacing-8) * 7); justify-content: center; align-items: center; }
+  .timeline-generation-label { min-width: 0; }
+  .timeline-generation-label b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .multitrack-region { position: absolute; top: var(--spacing-1); height: var(--spacing-10); min-width: 0; }
+  .multitrack-clip { width: 100%; height: 100%; min-width: 0; overflow: hidden; justify-content: start; cursor: grab; border-color: var(--color-border); border-radius: var(--radius-inner); padding-block: 0 var(--spacing-5); font-size: var(--font-size-xs); }
+  .multitrack-clip[aria-pressed="true"] { outline: var(--border-width) solid var(--app-wave); outline-offset: calc(var(--border-width) * -1); background: color-mix(in srgb, var(--app-wave) 8%, var(--color-background-surface)); }
+  .multitrack-clip .subtitle-avatar { width: var(--spacing-4); height: var(--spacing-4); flex-shrink: 0; }
+  .multitrack-clip .clip-waveform { position: absolute; inset: 50% 0 0; width: 100%; height: 50%; opacity: 0.4; stroke: var(--color-text-secondary); pointer-events: none; }
+  .multitrack-clip[data-unavailable] { background: var(--color-error-muted); }
+  .multitrack-trim.astryx-button { position: absolute; top: 0; bottom: 0; width: min(var(--spacing-3), 30%); min-width: 0; height: 100%; padding: 0; border-radius: var(--radius-inner); color: var(--color-text-primary); cursor: ew-resize; touch-action: none; opacity: 0; }
+  .multitrack-trim[data-edge="start"] { left: 0; }
+  .multitrack-trim[data-edge="end"] { right: 0; }
+  .multitrack-region:hover .multitrack-trim, .multitrack-region[data-selected="true"] .multitrack-trim, .multitrack-region:focus-within .multitrack-trim { opacity: 1; }
+  .multitrack-playhead { position: absolute; top: 0; bottom: 0; width: var(--border-width); background: var(--app-ink); pointer-events: none; z-index: 1; }
+  .player audio { display: none; }
+  .player.player-single { height: auto; }
+  .player.player-single .timeline { flex: none; min-height: calc(var(--audio-ruler-height) + var(--audio-row-height)); }
+  .multitrack > .transport { border-bottom: var(--border-width) solid var(--app-line); }
+  .transport { flex-shrink: 0; position: relative; min-height: var(--spacing-9); width: 100%; padding-inline: var(--spacing-3); }
+  .transport-time { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--app-ink); }
+  .transport-time em { font-style: normal; color: var(--app-muted); margin-left: var(--spacing-2); }
+  .transport-controls { margin-left: auto; flex-shrink: 0; }
+  .transport .play-main { min-width: var(--spacing-8); min-height: var(--spacing-8); border-radius: var(--radius-full); color: var(--app-white); }
+  .transport-controls .astryx-button svg { width: calc(var(--spacing-4) - var(--spacing-0-5)); height: calc(var(--spacing-4) - var(--spacing-0-5)); }
+  .transport-end { margin-left: auto; }
+  .track-zoom { border-left: var(--border-width) solid var(--app-line); padding-left: var(--spacing-2); font-variant-numeric: tabular-nums; }
+  .track-zoom button:nth-child(2) { min-width: var(--spacing-12); }
+  .transport .astryx-button svg { stroke-width: 1.5; }
+  .transport .astryx-button[data-variant="ghost"] { color: var(--app-muted); }
+  .volume-control input { appearance: none; width: calc(var(--spacing-10) * 2); height: var(--spacing-1); border-radius: var(--radius-full); background: var(--app-ink); cursor: pointer; }
+  .volume-control input::-webkit-slider-thumb { appearance: none; width: var(--spacing-3); height: var(--spacing-3); border: calc(var(--border-width) * 2) solid var(--app-ink); border-radius: var(--radius-full); background: var(--app-white); }
+  .volume-control input:focus-visible { outline: calc(var(--border-width) * 2) solid var(--app-wave); outline-offset: var(--spacing-1); }
+  .timeline { flex: 1; min-height: 0; overflow: auto; width: 100%; border-top: var(--border-width) solid var(--app-line); }
+  .timeline-lane { flex: 1; min-width: 0; overflow-x: auto; padding: 0; background: var(--app-surface); }
+  .timeline-content { flex-shrink: 0; min-width: 100%; }
+  /* 播放器按自身宽度收拢：先收起音量滑杆（保留静音按钮），仍放不下时工具组才自然换行，不再在窄窗口强制折成两行挤占波形。 */
+  .player { container-type: inline-size; }
+  @container (max-width: 44rem) {
+    .player .volume-control input { display: none; }
+  }
+  /* 再窄时“播放页”“历史”只留图标，悬停显示名称。 */
+  @container (max-width: 60rem) {
+    .player .player-tool.astryx-button { font-size: 0; gap: 0; }
+  }
+  .time-ruler { position: relative; height: var(--audio-ruler-height); flex-shrink: 0; }
+  .time-ruler small { position: absolute; top: 0; height: var(--spacing-4); border-left: var(--border-width) solid var(--app-line); padding-left: var(--spacing-1); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
+  .waveform {
+    width: 100%;
+    position: relative;
+    height: var(--spacing-10);
+    margin-block: var(--spacing-1);
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--app-wave) 12%, var(--app-white));
+    border: var(--border-width) solid color-mix(in srgb, var(--app-wave) 25%, var(--app-white));
+    border-radius: var(--radius-element);
+  }
+  .waveform svg { width: 100%; height: 100%; padding-block: var(--spacing-2); }
+  .waveform-unavailable { display: flex; align-items: center; justify-content: center; color: var(--app-muted); font-size: var(--font-size-xs); background: var(--color-background-surface); border-color: var(--app-line); }
+  .waveform line { stroke: color-mix(in srgb, var(--app-wave) 45%, var(--app-white)); stroke-width: 1; stroke-linecap: round; }
+  .waveform line.played { stroke: var(--app-wave); }
+  .playhead { position: absolute; top: calc(-1 * (var(--audio-ruler-height) + var(--spacing-1))); bottom: 0; width: var(--border-width); background: var(--app-ink); pointer-events: none; }
+  .playhead::before, .multitrack-ruler > .multitrack-playhead::before { content: ""; position: absolute; top: 0; left: calc(-1 * var(--spacing-1)); width: var(--spacing-2); height: var(--spacing-2); background: var(--app-ink); clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 100%, 0 50%); }
+  .waveform input { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .waveform:focus-within { outline: var(--border-width) solid var(--app-wave); outline-offset: var(--border-width); }
+  .avatar-player { flex-shrink: 0; }
+  .avatar-toggle.astryx-button { position: static; transform: none; padding: 0; width: var(--spacing-12); height: var(--spacing-12); border-radius: var(--radius-full); }
+  .avatar-art { width: var(--spacing-12); min-width: var(--spacing-12); height: var(--spacing-12); flex-shrink: 0; position: relative; border-radius: var(--radius-full); overflow: hidden; }
+  .avatar-symbol { position: absolute; inset: 0; margin: auto; color: var(--app-white); opacity: 0; z-index: 1; }
+  .avatar-art::after { content: ''; position: absolute; inset: 0; background: color-mix(in srgb, var(--app-ink) 40%, transparent); opacity: 0; }
+  .avatar-toggle:not(:disabled):hover .avatar-symbol,.avatar-toggle:focus-visible .avatar-symbol,.avatar-player[data-playing="true"] .avatar-symbol,
+  .avatar-toggle:not(:disabled):hover .avatar-art::after,.avatar-toggle:focus-visible .avatar-art::after,.avatar-player[data-playing="true"] .avatar-art::after { opacity: 1; }
+  .media-actions { flex-shrink: 0; }
+  .library-preview { width: 100%; min-width: 0; padding: var(--spacing-2) 0; margin-bottom: var(--spacing-4); border-radius: var(--radius-container); background: var(--app-surface); }
+  .library-preview .preview-play { border-radius: var(--radius-full); background: var(--app-white); color: var(--app-wave); flex-shrink: 0; }
+  .preview-time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .preview-progress { appearance: none; flex: 1; min-width: 0; height: var(--spacing-1); border-radius: var(--radius-full); cursor: pointer; }
+  .preview-progress::-webkit-slider-thumb { appearance: none; width: var(--spacing-3); height: var(--spacing-3); border: var(--border-width) solid var(--app-white); border-radius: var(--radius-full); background: var(--app-wave); }
+  .preview-progress::-moz-range-thumb { width: var(--spacing-3); height: var(--spacing-3); border: var(--border-width) solid var(--app-white); border-radius: var(--radius-full); background: var(--app-wave); }
+  .preview-progress:focus-visible { outline: var(--focus-outline-width) solid var(--focus-outline-color); outline-offset: var(--spacing-1); }
+  .voice-list { max-height: calc(var(--spacing-10) * 6.5); overflow: auto; }
+  .voice-list[data-editing="true"] { max-height: calc(var(--spacing-10) * 3); }
+  .voice-row { border-bottom: var(--border-width) solid var(--app-line); min-height: var(--spacing-12); padding-block: var(--spacing-1); }
+  .voice-row:last-child { border-bottom: 0; }
+  .voice-choice-mark { width: var(--spacing-5); flex-shrink: 0; }
+  .voice-row[data-selected="true"] { background: var(--app-surface); border-radius: var(--radius-element); }
+  .voice-row .text-left { min-width: 0; padding-inline: 0; }
+  .voice-row small { font-variant-numeric: tabular-nums; }
+  .recording-name > label { flex-shrink: 0; }
+  .recording-name > :last-child { flex: 1; min-width: 0; }
+  .recording-waveform { position: relative; }
+  .recording-waveform svg { width: 100%; height: calc(var(--spacing-8) * 2); stroke: var(--app-muted); stroke-width: 2; stroke-linecap: round; }
+  .recording-waveform .played,.recording-waveform .recording-playhead { stroke: var(--color-text-red); }
+  .recording-waveform input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .recording-waveform:focus-within { outline: var(--border-width) solid var(--app-wave); border-radius: var(--radius-inner); }
+  .recording-playback time { font-variant-numeric: tabular-nums; }
+  .recording-play-button { border-radius: var(--radius-full); }
+  .recording-meter { color: var(--color-text-red); }
+  .recording-meter svg { width: 100%; height: calc(var(--spacing-8) * 2); stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .recording-meter time { font-size: var(--font-size-2xl); font-variant-numeric: tabular-nums; }
+  @media (max-width: 600px) {
+    .audio-panel { margin: var(--spacing-2); }
+    .play-main { min-width: var(--spacing-10); min-height: var(--spacing-10); }
+    .volume-control input { display: none; }
+    .timeline .transport { min-height: var(--spacing-12); }
+    .transport-time { font-size: var(--font-size-xs); }
+    .transport { padding-inline: var(--spacing-2); }
+    .time-ruler small:nth-child(even) { visibility: hidden; }
+  }
+  @media (forced-colors: active) {
+    .waveform line { stroke: CanvasText; }
+  }
+}
+
+/* 以下规则在 app 层之外，优先级高于层内规则。 */
+/* 时间轴编辑反馈不占额外布局空间。 */
+.multitrack-ruler { position: relative; touch-action: none; }
+.timeline-tick { position: absolute; inset-block-start: 0; white-space: nowrap; border-inline-start: var(--border-width) solid var(--color-border); padding-inline-start: var(--spacing-1); }
+.timeline-range { position: absolute; inset-block: 0; background: var(--color-overlay-hover); opacity: .35; pointer-events: none; }
+.timeline-snap-guide { position: absolute; inset-block: 0; border-inline-start: var(--border-width) solid var(--color-text-primary); pointer-events: none; z-index: 5; }
+.multitrack-lane, .multitrack-clip { touch-action: none; }
+/* 音频体检提醒：橙色警告图标，故事台词里与状态点对齐。 */
+.audio-check.astryx-button { color: var(--color-text-orange); }
+/* 片段边界与裁剪柄必须重合，禁用普通按钮的按压缩放。 */
+.multitrack-clip.astryx-button, .multitrack-trim.astryx-button { transform: none; }
+.multitrack-trim.astryx-button { overflow: hidden; border: none; background: transparent; }
+.multitrack-trim::before { content: ''; position: absolute; inset-block: 0; width: var(--spacing-0-5); background: var(--app-wave); }
+.multitrack-trim[data-edge="start"]::before { left: 0; }
+.multitrack-trim[data-edge="end"]::before { right: 0; }
+.multitrack-clip { padding-inline: min(var(--spacing-2), 10%); }
+.timeline-gap { position: absolute; top: var(--spacing-3); width: var(--spacing-2); min-width: 0; padding: 0; height: var(--spacing-6); translate: -50% 0; opacity: 0; cursor: ew-resize; overflow: hidden; }
+.multitrack-lane:hover .timeline-gap, .timeline-gap:focus-visible { opacity: .5; }
+.timeline-gap svg { pointer-events: none; }
+.multitrack { container-type: inline-size; }
+@container (max-width: 45rem) {
+  .multitrack .transport { flex-wrap: nowrap; gap: var(--spacing-1); }
+  .multitrack .transport-end { flex-wrap: nowrap; gap: 0; }
+  .multitrack .timeline-extra, .multitrack .track-zoom { display: none; }
+  .multitrack .transport-time { font-size: var(--font-size-xs); white-space: nowrap; flex-shrink: 0; }
+}
+/* 裁剪只保留边缘反馈，键盘焦点以填色显示，避免出现黑色轮廓。 */
+.multitrack-trim.astryx-button { outline: none; box-shadow: none; }
+.multitrack-trim.astryx-button:focus-visible { background: color-mix(in srgb, var(--app-wave) 20%, transparent); }
+.multitrack-trim.astryx-button:active { background: transparent; }
+.timeline-snap-toggle.astryx-button[aria-pressed="true"] { background: color-mix(in srgb, var(--app-wave) 20%, var(--color-background-surface)); color: var(--app-wave); border-color: var(--app-wave); }
