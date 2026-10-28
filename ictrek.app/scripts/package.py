@@ -250,6 +250,8 @@ def main() -> None:
     version = args.version or (ROOT / "VERSION").read_text().strip()
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         raise SystemExit(f"invalid version: {version}")
+    print(f"[INFO] Package version: {version}")
+    print("[INFO] Image source: pull")
     feishu = Feishu()
     images = {}
     for variable, sheets in PROFILES.items():
@@ -257,9 +259,12 @@ def main() -> None:
         for sheet in sheets:
             try:
                 images[variable] = feishu.latest_image(sheet)
-                break
             except Exception as exc:
                 errors.append(str(exc))
+                continue
+            profile = variable.removeprefix("VVOICE_").removesuffix("_IMAGE").lower().replace("_", "-")
+            print(f"[INFO] {profile} ({sheet}) v-voice -> {images[variable]}")
+            break
         if variable not in images:
             raise RuntimeError("; ".join(errors))
     stage = DIST / "staging"
