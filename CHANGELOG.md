@@ -4,9 +4,12 @@
 
 ## [Unreleased]
 
+## [0.0.31] - 2026-10-28
+
 ### 简体中文
 
 - VOS 镜像标签改用平台和版本号，支持同一天发布多个版本并保留旧镜像引用。
+- 分步构建和发布镜像时，发布步骤需要显式指定与构建相同的版本号；增量构建需要指定已验证的基础镜像。
 - VOS 打包时显示安装包版本及各运行配置使用的完整镜像地址，方便核对。
 - 合入上游 v0.3.0：支持 12 种界面语言，模型按名称合并并切换精度，改进音乐与编曲操作；保留 VOS 平台语言跟随及现有模型、接口和历史记录。
 - 新增 YuE2 旋律规划、SheetSage2 歌曲扒谱及旋律谱编辑、试听；VOS 音乐计算经过 V-Scheduler，模型需下载并获批准后使用。
@@ -15,6 +18,7 @@
 ### English
 
 - Use platform and version numbers for VOS image tags, allowing multiple releases on the same day while retaining existing image references.
+- When building and publishing images separately, specify the same version explicitly for publishing; incremental builds require a verified base image.
 - Show the package version and full image references for each runtime profile during VOS packaging.
 - Integrate upstream v0.3.0 with 12 interface languages, grouped model precision choices, and improved music and score workflows. Preserve VOS language following, existing models, APIs and history.
 - Add YuE2 melody planning, SheetSage2 song transcription, and melody score editing and previews. VOS music computation runs through V-Scheduler and requires downloaded, approved models.
