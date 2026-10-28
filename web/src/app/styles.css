@@ -165,7 +165,7 @@
   .writing.writing-timeline { min-height: 0; overflow: hidden; }
   .writing-timeline .script-editor { min-height: 0; }
   .writing.writing-subtitles { min-height: 0; overflow: hidden; }
-  .audio-panel { --audio-label-width: calc(var(--spacing-8) * 3 + var(--spacing-4)); --audio-ruler-height: var(--spacing-5); --audio-row-height: var(--spacing-12); max-height: 60vh; min-height: 0; flex-shrink: 0; margin: var(--spacing-2) var(--spacing-3) var(--spacing-3); padding: 0; border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); overflow: visible; }
+  .audio-panel { --audio-label-width: calc(var(--spacing-8) * 4); --audio-ruler-height: var(--spacing-5); --audio-row-height: var(--spacing-12); max-height: 60vh; min-height: 0; flex-shrink: 0; margin: var(--spacing-2) var(--spacing-3) var(--spacing-3); padding: 0; border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); overflow: visible; }
   .audio-panel > .astryx-resize-handle { width: var(--spacing-12); align-self: center; top: calc(-1 * var(--spacing-1)); z-index: 2; }
   .audio-panel .multitrack-scroll, .audio-panel > .timeline { border-radius: 0 0 var(--radius-container) var(--radius-container); }
   .multitrack-scroll { flex: 1; min-height: 0; overflow: auto; }
@@ -173,7 +173,7 @@
   .multitrack-label { width: var(--audio-label-width); flex-shrink: 0; padding: var(--spacing-0-5) var(--spacing-2); position: sticky; left: 0; background: var(--color-background-surface); z-index: 2; border-right: var(--border-width) solid var(--color-border); }
   .multitrack-ruler-row { height: var(--audio-ruler-height); flex-shrink: 0; align-items: center; }
   .multitrack-ruler-row .multitrack-label { padding-block: 0; text-align: center; }
-  .multitrack-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--app-ink); }
+  .multitrack-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-wrap: nowrap; color: var(--app-ink); }
   .multitrack-ruler { position: relative; flex: 1; min-width: 0; align-self: stretch; justify-content: center; }
   .multitrack-ruler small { height: var(--spacing-4); border-left: var(--border-width) solid var(--app-line); padding-left: var(--spacing-1); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
   .multitrack-scroll { background: var(--app-surface); }
@@ -633,13 +633,13 @@
   .sidebar-update { padding: var(--spacing-3); border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); }
   .sidebar-update-title { justify-content: start; width: 100%; padding-inline: 0; font-weight: var(--font-weight-medium); }
   .sidebar-update-title svg { color: var(--color-accent); }
-  /* 模型更新提示：同侧栏导航项尺寸对齐，带有整体浮起阴影与微弱提示底色；整条卡片统一承载悬停背景，覆盖末尾的关闭按钮。 */
+  /* 模型更新提示：同侧栏导航项尺寸对齐，带有整体浮起阴影与微弱提示底色；无突兀边框，整条卡片统一承载悬停背景，关闭按钮平时隐入背景、悬浮卡片时浮现。 */
   .model-update-notice { position: relative; width: 100%; min-height: var(--spacing-10); border-radius: var(--radius-element);
-    background: color-mix(in srgb, var(--color-accent) 7%, var(--app-white));
-    border: var(--border-width) solid color-mix(in srgb, var(--color-accent) 24%, var(--app-line));
+    background: color-mix(in srgb, var(--color-accent) 6%, var(--app-white));
+    border: 0;
     box-shadow: var(--shadow-low); padding-inline: 0 var(--spacing-1-5); overflow: hidden;
-    transition: background-color var(--duration-fast) var(--app-ease-swift), box-shadow var(--duration-fast) var(--app-ease-swift), border-color var(--duration-fast) var(--app-ease-swift); }
-  .model-update-notice:hover { background: color-mix(in srgb, var(--color-accent) 14%, var(--app-white)); box-shadow: var(--shadow-med); border-color: color-mix(in srgb, var(--color-accent) 42%, var(--app-line)); }
+    transition: background-color var(--duration-fast) var(--app-ease-swift), box-shadow var(--duration-fast) var(--app-ease-swift); }
+  .model-update-notice:hover { background: color-mix(in srgb, var(--color-accent) 12%, var(--app-white)); box-shadow: var(--shadow-med); }
   .model-update-notice:focus-within { outline: calc(var(--border-width) * 2) solid var(--app-wave); outline-offset: var(--border-width); }
   .model-update-action.astryx-button,
   .model-update-action.astryx-button:hover,
@@ -653,9 +653,11 @@
   .model-update-dismiss.astryx-button,
   .model-update-dismiss.astryx-button:focus,
   .model-update-dismiss.astryx-button:focus-visible { flex-shrink: 0; width: var(--spacing-7); height: var(--spacing-7); min-width: 0; min-height: 0;
-    padding: 0; border: 0; border-radius: var(--radius-full); color: var(--app-muted);
+    padding: 0; border: 0; border-radius: var(--radius-full); color: var(--app-muted); opacity: 0;
     background: transparent !important; background-color: transparent !important; background-image: none !important;
-    transition: background-color var(--duration-fast) var(--app-ease-swift), color var(--duration-fast) var(--app-ease-swift); }
+    transition: opacity var(--duration-fast) var(--app-ease-swift), background-color var(--duration-fast) var(--app-ease-swift), color var(--duration-fast) var(--app-ease-swift); }
+  .model-update-notice:hover .model-update-dismiss.astryx-button,
+  .model-update-notice:focus-within .model-update-dismiss.astryx-button { opacity: 1; }
   .model-update-dismiss.astryx-button:hover { color: var(--app-ink); background-color: color-mix(in srgb, var(--color-accent) 22%, transparent) !important; }
   .update-progress { width: 100%; }
   .update-progress-row .settings-row-control { flex: 1 1 calc(var(--spacing-10) * 6); }
@@ -1199,7 +1201,7 @@
   /* 换行：标题均衡，正文避免孤字成行。 */
   h1, h2, h3, .assistant-empty-title { text-wrap: balance; }
   p, small, .subtitle, .helper, .assistant-answer, .assistant-notice, .assistant-nudge-text, .assistant-empty-hint { text-wrap: pretty; }
-  .melody-score .score-summary { text-wrap: nowrap; }
+  .melody-score .score-summary, .multitrack-name { text-wrap: nowrap; }
   /* 助手输入框：层次与聚焦反馈。 */
   .assistant-composer > div { box-shadow: var(--app-shadow-composer); transition: box-shadow 220ms var(--app-ease-swift); }
   .assistant-composer:hover > div { box-shadow: var(--app-shadow-composer-hover); }
