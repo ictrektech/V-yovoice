@@ -17,7 +17,8 @@ class BuildImageDryRunTests(unittest.TestCase):
         self.root = Path(directory.name)
         commands = self.root / "commands"
         commands.mkdir()
-        (commands / "dirname").symlink_to(shutil.which("dirname"))
+        for name in ("dirname", "tr"):
+            (commands / name).symlink_to(shutil.which(name))
         for name, value in (("uname", '"$VVOICE_TEST_ARCH"'), ("date", "20261026")):
             tool = commands / name
             tool.write_text(f'#!/bin/bash\nprintf "%s\\n" {value}\n')
@@ -33,7 +34,9 @@ class BuildImageDryRunTests(unittest.TestCase):
                     "VVOICE_TEST_LOG": str(self.log), "VVOICE_BUILD_ROOT": str(self.build_root),
                     "REGISTRY": "registry.example.test/team", "VVOICE_STUDIO_BASE_IMAGE": ""}
 
-    def preview(self, *args, arch="aarch64", **overrides):
+    def preview(self, *args, arch="aarch64", default_version=False, **overrides):
+        if not default_version and "--version" not in args:
+            args = (*args, "--version", "1.2.3")
         result = subprocess.run(
             ["/bin/bash", str(SCRIPT), *args], cwd=self.root,
             env={**self.env, "VVOICE_TEST_ARCH": arch, **overrides},
@@ -56,7 +59,7 @@ class BuildImageDryRunTests(unittest.TestCase):
             with self.subTest(sheet=sheet):
                 result = self.preview("--sheet", sheet, "--dry-run", arch=arch)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                image = f"registry.example.test/team/v-voice:{prefix}_20261026"
+                image = f"registry.example.test/team/v-voice:{prefix}_1.2.3"
                 self.assertIn(f"IMAGE={image}", result.stdout)
                 self.assertIn(f"CUDA={cuda}", result.stdout)
                 self.assertIn(f"docker push {image}", result.stdout)
@@ -68,7 +71,7 @@ class BuildImageDryRunTests(unittest.TestCase):
         for mode, prepare, build, publish in [
             ([], True, True, True),
             (["--build-only"], True, True, False),
-            (["--publish-only"], False, False, True),
+            (["--publish-only", "--version", "1.2.3"], False, False, True),
             (["--prepare-only"], True, False, False),
             (["--assets-only"], False, False, False),
             (["--application-only"], False, False, False),
@@ -94,6 +97,16 @@ class BuildImageDryRunTests(unittest.TestCase):
                               VVOICE_STUDIO_BASE_IMAGE=image)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(f"基于 {image} 更新应用代码", result.stdout)
+
+    def test_default_version_and_publish_requires_explicit_version(self):
+        version = (SCRIPT.parents[1] / "ictrek.app/VERSION").read_text().strip().split(".")
+        version[-1] = str(int(version[-1]) + 1)
+        result = self.preview("--sheet", "l4t", "--dry-run", default_version=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"IMAGE=registry.example.test/team/v-voice:l4t_{'.'.join(version)}", result.stdout)
+        result = self.preview("--sheet", "l4t", "--publish-only", "--dry-run", default_version=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires the same explicit --version", result.stderr)
 
     def test_invalid_arguments(self):
         for args, arch in [

@@ -35,13 +35,16 @@ def test_all_downloadable_yovoice_speech_precisions_are_projected():
     root = Path(__file__).resolve().parents[1]
     upstream = json.loads((root / "internal/catalog/catalog.json").read_text())
     expected = {"audiocpp-" + row["id"] for row in upstream
-                if row.get("task") not in {"gen", "instrument"}}
+                if row.get("task") not in {"gen", "instrument", "midi", "align"}}
     assert expected <= {row["key"] for row in catalog()}
 
 
 def test_creator_management_also_includes_music_and_soundfonts():
     from vvoice.creative import models
     rows = models(include_non_speech=True)
-    assert len(rows) == 38
+    source = Path(__file__).resolve().parents[1] / "internal/catalog/catalog.json"
+    assert {row["key"] for row in rows} == {
+        "audiocpp-" + row["id"] for row in json.loads(source.read_text())
+    }
     assert {"tts", "music", "soundfont"} <= {row["kind"] for row in rows}
     assert sum(row["import_required"] for row in rows) == 2
