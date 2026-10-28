@@ -1,0 +1,98 @@
+/* 设置页：模型列表、AI 服务、本地接口、日志。 */
+
+@layer app {
+  .license-text { white-space: pre-wrap; overflow: auto; max-height: 60vh; font: inherit; line-height: 1.8; }
+  /* 设置页的分组：纸色底卡片，规格与大小用等宽小字。 */
+  .model-row .precision { padding: 0 var(--spacing-1); border: var(--border-width) solid var(--color-border-emphasized); border-radius: var(--radius-inner); font-family: var(--app-mono); font-size: var(--font-size-xs); letter-spacing: .04em; }
+  .model-row .model-size { font-family: var(--app-mono); font-size: var(--font-size-xs); }
+  .log-event { font-family: var(--font-family-code); }
+  .model-size { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .model-row > .model-summary > .astryx-button { min-width: calc(var(--spacing-10) * 2.5); }
+  .compute-device { max-width: calc(var(--spacing-10) * 6); }
+  @media (max-width: 600px) {
+    .model-row > .model-summary > .grow { flex-basis: 100%; }
+    .model-row .model-size { margin-left: auto; }
+  }
+  /* 设置页：每组一张白卡片，行高、内边距和字号统一；标题与说明左对齐，控件右对齐。 */
+  .settings-panel { width: 100%; padding-block: 0 var(--spacing-8); }
+  .settings-intro { color: var(--app-muted); }
+  .local-api-example .settings-row-control { flex-basis: 100%; }
+  .settings-directory .model-path { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--app-mono); font-size: var(--font-size-xs); }
+  .settings-directory .settings-row-label { flex-basis: 0; min-width: 0; }
+  .settings-footnote { color: var(--app-muted); }
+  .model-row .ready { color: var(--app-muted); white-space: nowrap; }
+  .model-row > .model-summary > .astryx-button { min-width: calc(var(--spacing-10) * 2.5); }
+  .model-list.available .settings-row-title { font-weight: var(--font-weight-normal); }
+  .model-precisions > .astryx-segmented-control { width: auto; flex: none; }
+  .model-precisions .astryx-segmented-control-item svg { width: var(--spacing-3); height: var(--spacing-3); color: var(--color-success); }
+  /* AI 服务：左侧服务列表，右侧详情；两栏分别滚动。 */
+  .ai-panel { flex: 1; min-height: 0; }
+  .ai-split { flex: 1; min-height: calc(var(--spacing-10) * 12); border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); overflow: hidden; align-items: stretch; }
+  .ai-nav { flex-shrink: 0; width: calc(var(--spacing-10) * 6); padding: var(--spacing-3) var(--spacing-2); border-inline-end: var(--border-width) solid var(--app-line); overflow-y: auto; }
+  .ai-nav-head { padding-inline: var(--spacing-2); color: var(--app-muted); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+  .ai-nav .astryx-list-item { border-radius: var(--radius-element); }
+  .ai-nav .astryx-list-item[aria-selected="true"] { background: var(--color-background-muted); }
+  .ai-icon { flex-shrink: 0; width: var(--spacing-7); height: var(--spacing-7); border: var(--border-width) solid var(--app-line); border-radius: var(--radius-element); background: var(--app-white); color: var(--app-ink); font-size: var(--font-size-xs); }
+  .ai-icon[data-size="md"] { width: var(--spacing-10); height: var(--spacing-10); font-size: var(--font-size-sm); }
+  .ai-icon[data-active="true"] { border-color: color-mix(in srgb, var(--color-success) 42%, var(--app-line)); }
+  .ai-icon[data-custom="true"] { border-style: dashed; color: var(--app-muted); }
+  .ai-icon-glyph { width: 62%; height: 62%; background: var(--app-ink); mask: var(--ai-icon, none) center / contain no-repeat; -webkit-mask: var(--ai-icon, none) center / contain no-repeat; }
+  .ai-detail { flex: 1 1 0; min-width: 0; padding: var(--spacing-6) var(--spacing-8); overflow-y: auto; }
+  .ai-detail-head h2 { min-width: 0; font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ai-field-title { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--app-muted); }
+  .ai-detail .astryx-text-input-label, .ai-detail label { font-size: var(--font-size-sm); }
+  .ai-field small { color: var(--app-muted); }
+  .ai-value {
+    min-width: 0;
+    min-height: var(--spacing-8);
+    padding: var(--spacing-1) var(--spacing-3);
+    border: var(--border-width) solid var(--app-line);
+    border-radius: var(--radius-element);
+    background: var(--app-paper);
+    font-family: var(--app-mono);
+    font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
+    display: flex;
+    align-items: center;
+  }
+  .ai-link { padding-inline: 0; color: var(--app-ink); text-decoration: underline; text-underline-offset: var(--spacing-1); }
+  .ai-models { max-height: calc(var(--spacing-10) * 7); overflow-y: auto; border: var(--border-width) solid var(--app-line); border-radius: var(--radius-element); font-family: var(--app-mono); font-size: var(--font-size-sm); }
+  .ai-models .astryx-list-item { min-height: var(--spacing-8); }
+  .ai-models .astryx-list-item[aria-selected="true"] { background: var(--color-background-muted); }
+  .ai-detail-foot { padding-top: var(--spacing-4); border-top: var(--border-width) solid var(--app-line); }
+  @media (max-width: 900px) {
+    .ai-split { flex-direction: column; }
+    .ai-nav { width: 100%; max-height: calc(var(--spacing-10) * 6); border-inline-end: 0; border-bottom: var(--border-width) solid var(--app-line); }
+    .ai-detail { padding: var(--spacing-5); }
+  }
+  .ai-test { padding: var(--spacing-2) var(--spacing-3); border-radius: var(--radius-element); color: var(--color-text-primary); }
+  .ai-test.ok { background: var(--color-success-muted); }
+  .ai-test.failed { background: var(--color-error-muted); }
+  .model-search-empty { color: var(--app-muted); }
+  /* 模型更新提示：同侧栏导航项尺寸对齐，带有整体浮起阴影与微弱提示底色；无突兀边框，整条卡片统一承载悬停背景，关闭按钮平时隐入背景、悬浮卡片时浮现。 */
+  .model-update-notice { position: relative; width: 100%; min-height: var(--spacing-10); border-radius: var(--radius-element);
+    background: color-mix(in srgb, var(--color-accent) 6%, var(--app-white));
+    border: 0;
+    box-shadow: var(--shadow-low); padding-inline: 0 var(--spacing-1-5); overflow: hidden;
+    transition: background-color var(--duration-fast) var(--app-ease-swift), box-shadow var(--duration-fast) var(--app-ease-swift); }
+  .model-update-notice:hover { background: color-mix(in srgb, var(--color-accent) 12%, var(--app-white)); box-shadow: var(--shadow-med); }
+  .model-update-notice:focus-within { outline: calc(var(--border-width) * 2) solid var(--app-wave); outline-offset: var(--border-width); }
+  .model-update-action.astryx-button,
+  .model-update-action.astryx-button:hover,
+  .model-update-action.astryx-button:focus,
+  .model-update-action.astryx-button:focus-visible,
+  .model-update-action.astryx-button:active { justify-content: start; width: 100%; min-height: var(--spacing-10); height: 100%;
+    border: 0; border-radius: 0; background: transparent !important; background-color: transparent !important; background-image: none !important;
+    box-shadow: none !important; outline: none !important; gap: var(--spacing-3);
+    font-size: var(--app-ui-font); font-weight: var(--font-weight-medium); padding-inline: var(--spacing-4) var(--spacing-2); color: var(--app-ink); }
+  .model-update-action.astryx-button svg { color: var(--color-accent); flex-shrink: 0; }
+  .model-update-dismiss.astryx-button,
+  .model-update-dismiss.astryx-button:focus,
+  .model-update-dismiss.astryx-button:focus-visible { flex-shrink: 0; width: var(--spacing-7); height: var(--spacing-7); min-width: 0; min-height: 0;
+    padding: 0; border: 0; border-radius: var(--radius-full); color: var(--app-muted); opacity: 0;
+    background: transparent !important; background-color: transparent !important; background-image: none !important;
+    transition: opacity var(--duration-fast) var(--app-ease-swift), background-color var(--duration-fast) var(--app-ease-swift), color var(--duration-fast) var(--app-ease-swift); }
+  .model-update-notice:hover .model-update-dismiss.astryx-button,
+  .model-update-notice:focus-within .model-update-dismiss.astryx-button { opacity: 1; }
+  .model-update-dismiss.astryx-button:hover { color: var(--app-ink); background-color: color-mix(in srgb, var(--color-accent) 22%, transparent) !important; }
+}

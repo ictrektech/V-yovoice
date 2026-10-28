@@ -1,0 +1,42 @@
+/* 质感层：缓动、按压反馈、滚动边缘渐隐、输入框层次、数字与换行。写在 app 层之外且最后加载，覆盖前面各功能的同类规则。 */
+
+/* ===== 质感层：缓动、按压反馈、滚动边缘渐隐、输入框层次、数字与换行 ===== */
+:root {
+  /* 一组出场快、收尾稳的缓动：悬停与按压用 swift，入场用 enter，弹出的小件用 pop。 */
+  --app-ease-swift: cubic-bezier(.16, 1, .3, 1);
+  --app-ease-enter: cubic-bezier(.22, 1, .36, 1);
+  --app-ease-pop: cubic-bezier(.34, 1.56, .64, 1);
+  --app-fade-size: var(--spacing-6);
+  /* 输入框：发丝边加很淡的投影，悬停与聚焦时逐级加深，像是被轻轻托起。 */
+  --app-shadow-composer: 0 0 0 var(--border-width) var(--app-line), 0 var(--spacing-1) var(--spacing-5) color-mix(in srgb, var(--color-shadow) 35%, transparent);
+  --app-shadow-composer-hover: 0 0 0 var(--border-width) var(--color-border-emphasized), 0 var(--spacing-1) var(--spacing-6) color-mix(in srgb, var(--color-shadow) 60%, transparent);
+  --app-shadow-composer-focus: 0 0 0 var(--border-width) var(--color-border-emphasized), 0 0 0 calc(var(--border-width) * 3) color-mix(in srgb, var(--app-accent) 14%, transparent), 0 var(--spacing-1-5) var(--spacing-7) color-mix(in srgb, var(--color-shadow) 80%, transparent);
+}
+/* 悬停与按压：背景用 swift 缓动渐变，按下时轻微缩小，松开回弹；整张卡片里的按钮不缩放，避免按下时点击位置落到别处。 */
+.astryx-button, .nav-item, .project-row, .astryx-segmented-control-item {
+  transition: background-color var(--duration-fast) var(--app-ease-swift), color var(--duration-fast) var(--app-ease-swift), border-color var(--duration-fast) var(--app-ease-swift), box-shadow var(--duration-fast) var(--app-ease-swift), transform var(--duration-medium) var(--app-ease-pop);
+}
+.astryx-button:not(:disabled, :where(.library-entry, .ticket, .project-library-row) *):active, .nav-item:active, .project-row:active, .astryx-segmented-control-item:active { transform: scale(.975); transition-duration: 70ms, 70ms, 70ms, 70ms, 70ms; transition-timing-function: ease-out; }
+/* 数字等宽：时间、大小、计数在变化时不左右抖动。 */
+.transport, .preview-time, .now-playing, .asset-table, .eyebrow, .saved, time, [data-tabular] { font-variant-numeric: tabular-nums; }
+/* 换行：标题均衡，正文避免孤字成行。 */
+h1, h2, h3, .assistant-empty-title { text-wrap: balance; }
+p, small, .subtitle, .helper, .assistant-answer, .assistant-notice, .assistant-nudge-text, .assistant-empty-hint { text-wrap: pretty; }
+.melody-score .score-summary, .multitrack-name { text-wrap: nowrap; }
+/* 滚动边缘渐隐：内容滚出可视区时在上下沿平滑淡出，替代生硬的截断。
+用 7 档非线性透明度避免高分屏上的色阶断层；渐隐尺寸随滚动位置从 0 渐变到满，所以在顶部和底部不会盖住内容。
+浏览器不支持滚动驱动动画时保持原样（无渐隐）。
+Windows 上 WebView2/Chrome 合成这层蒙版时会把整块可视区画成黑色，只剩渐隐处透出内容，因此在 Windows 上不加渐隐。 */
+@supports (animation-timeline: scroll()) {
+  :root:not([data-os="windows"]) :is(.inspector-scroll, .recent-projects, .assistant-body, .assistant-history-list, .library-page > .library-content, .settings-page > [role="tabpanel"], .music-editor, .score-editor, .subtitle-editor, .ai-detail) {
+    animation: app-fade-top linear both, app-fade-bottom linear both;
+    animation-timeline: scroll(self block), scroll(self block);
+    animation-range: 0 var(--app-fade-size), calc(100% - var(--app-fade-size)) 100%;
+    mask-image: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--app-ink) 5%, transparent) calc(var(--app-fade-top) * .15), color-mix(in srgb, var(--app-ink) 15%, transparent) calc(var(--app-fade-top) * .3), color-mix(in srgb, var(--app-ink) 30%, transparent) calc(var(--app-fade-top) * .45), color-mix(in srgb, var(--app-ink) 50%, transparent) calc(var(--app-fade-top) * .6), color-mix(in srgb, var(--app-ink) 70%, transparent) calc(var(--app-fade-top) * .75), color-mix(in srgb, var(--app-ink) 85%, transparent) calc(var(--app-fade-top) * .87), var(--app-ink) var(--app-fade-top), var(--app-ink) calc(100% - var(--app-fade-bottom)), color-mix(in srgb, var(--app-ink) 85%, transparent) calc(100% - var(--app-fade-bottom) * .87), color-mix(in srgb, var(--app-ink) 70%, transparent) calc(100% - var(--app-fade-bottom) * .75), color-mix(in srgb, var(--app-ink) 50%, transparent) calc(100% - var(--app-fade-bottom) * .6), color-mix(in srgb, var(--app-ink) 30%, transparent) calc(100% - var(--app-fade-bottom) * .45), color-mix(in srgb, var(--app-ink) 15%, transparent) calc(100% - var(--app-fade-bottom) * .3), color-mix(in srgb, var(--app-ink) 5%, transparent) calc(100% - var(--app-fade-bottom) * .15), transparent);
+  }
+  @keyframes app-fade-top { from { --app-fade-top: var(--spacing-0); } to { --app-fade-top: var(--app-fade-size); } }
+  @keyframes app-fade-bottom { from { --app-fade-bottom: var(--app-fade-size); } to { --app-fade-bottom: var(--spacing-0); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .astryx-button:active, .nav-item:active, .project-row:active, .astryx-segmented-control-item:active { transform: none; }
+}

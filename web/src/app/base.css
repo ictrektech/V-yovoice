@@ -1,0 +1,178 @@
+/* 全局基础：令牌、元素默认样式、Astryx 组件的统一覆盖、弹窗、通知等跨页面共用的部分。 */
+
+@layer app {
+  /* 控件尺寸由 size 属性和统一令牌决定，页面只负责布局。 */
+  :root {
+    --size-element-sm: var(--spacing-8);
+    --size-element-md: var(--spacing-10);
+    --size-element-lg: var(--spacing-12);
+    --focus-outline-width: var(--border-width);
+    --focus-outline-color: var(--app-wave);
+    --focus-outline-offset: var(--spacing-0-5);
+    --app-nav: calc(var(--spacing-8) * 7);
+    --app-inspector: calc(var(--spacing-8) * 11);
+    --app-player: calc(var(--spacing-10) * 2);
+    --app-titlebar: var(--spacing-9);
+    --app-editor-font: calc(var(--font-size-base) + var(--spacing-1));
+    --app-title-font: var(--spacing-8);
+    --app-ui-font: var(--font-size-base);
+    --app-small-font: var(--font-size-sm);
+    --app-ink: var(--color-text-primary);
+    --app-muted: var(--color-text-secondary);
+    --app-surface: color-mix(in srgb, var(--color-background-surface) 45%, var(--color-background-muted));
+    --app-line: color-mix(in srgb, var(--color-border) 72%, transparent);
+    --app-wave: var(--color-icon-orange);
+    --app-accent: var(--color-icon-orange);
+    --app-paper: var(--color-background-body);
+    --app-mono: var(--font-family-code);
+    /* 胶片色块：深底浅字，用于封面、音块总览等需要“质感”的区域。 */
+    --app-film: var(--color-background-inverted);
+    --app-on-film: var(--color-background-surface);
+    --app-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --app-white: var(--color-background-surface);
+    --app-serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+    --app-font: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+  }
+  html, body, #root { height: 100%; margin: 0; overflow: hidden; }
+  /* 隐藏滚动条外观，保留滚轮、触控板和键盘滚动。 */
+  * { scrollbar-width: none; }
+  *::-webkit-scrollbar { display: none; }
+  /* 主要的纵向滚动区保留一条细的浅色滚动条，提示内容还能往下滚、也方便拖动；标准属性生效时 Chromium 不再采用上面的 ::-webkit-scrollbar。 */
+  :is(.inspector-scroll, .recent-projects, .assistant-body, .assistant-history-list, .library-page > .library-content, .settings-page > [role="tabpanel"], .music-editor, .score-editor, .subtitle-editor, .ai-detail) { scrollbar-width: thin; scrollbar-color: var(--color-border-emphasized) transparent; }
+  body, input, textarea, button { font-family: var(--app-font); }
+  body { -webkit-font-smoothing: antialiased; color: var(--app-ink); background: var(--app-paper); font-size: var(--app-ui-font); }
+  h1,h2,h3,h4,p { margin: 0; }
+  h2[data-autofocus]:focus { outline: none; }
+  h1 { font-size: var(--app-title-font); font-weight: var(--font-weight-bold); letter-spacing: -.02em; line-height: 1.35; }
+  /* 等宽小字：日期、数量、规格等细节信息。 */
+  .eyebrow { font-family: var(--app-mono); font-size: var(--font-size-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--app-muted); }
+  h2 { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+  h3 { font-size: var(--app-ui-font); font-weight: var(--font-weight-medium); }
+  h4,strong,b { font-weight: var(--font-weight-medium); }
+  small,.muted { color: var(--app-muted); }
+  small { font-size: var(--app-small-font); line-height: 1.6; }
+  .subtitle { color: var(--app-muted); font-size: var(--app-ui-font); margin-top: var(--spacing-2); line-height: 1.6; }
+  .helper { font-size: var(--app-small-font); line-height: 1.8; }
+  .grow { flex: 1; min-width: 0; }
+  /* 基础控件与弹窗：全应用共用，业务区域不再重写尺寸。 */
+  .native-selector {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--size-element-md);
+    padding: var(--spacing-1) var(--spacing-2);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-element);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-background-surface);
+  }
+  .native-selector[data-size="sm"] { min-height: var(--size-element-sm); font-size: var(--font-size-sm); }
+  .native-selector[data-size="lg"] { min-height: var(--size-element-lg); }
+  .native-selector[data-variant="ghost"] { border-color: transparent; background: transparent; }
+  .native-selector:focus-visible { outline: calc(var(--border-width) * 2) solid var(--color-accent); outline-offset: var(--spacing-1); }
+  .native-selector:disabled { color: var(--color-text-disabled); }
+  .astryx-button { border-radius: var(--radius-element); font-size: var(--app-ui-font); font-weight: var(--font-weight-normal); }
+  .astryx-button[data-variant="primary"] { background: var(--app-ink); color: var(--app-white); font-weight: var(--font-weight-medium); }
+  .astryx-button[data-variant="ghost"], .astryx-button[data-variant="secondary"] { color: var(--app-ink); }
+  .astryx-button[data-variant="secondary"] { background: var(--app-surface); border: var(--border-width) solid var(--app-line); }
+  .astryx-button[data-size="sm"], .astryx-selector[data-size="sm"] { font-size: var(--app-small-font); }
+  .astryx-button[data-size="sm"] svg { width: calc(var(--spacing-3) + var(--spacing-0-5)); height: calc(var(--spacing-3) + var(--spacing-0-5)); flex-shrink: 0; }
+  .astryx-button[data-size="md"] svg, .astryx-button:not([data-size]) svg { width: var(--spacing-4); height: var(--spacing-4); flex-shrink: 0; }
+  .astryx-dropdown-menu-item svg, .astryx-menu-item svg, [role="menuitem"] svg, [role="menu"] svg { width: var(--spacing-4); height: var(--spacing-4); flex-shrink: 0; stroke-width: 1.5; }
+  .astryx-text-area-control { border: 0; background: var(--app-surface); border-radius: var(--radius-container); padding: var(--spacing-3); resize: none; box-shadow: none; }
+  .astryx-text-area textarea { line-height: 1.8; font-family: var(--app-font); font-size: var(--app-ui-font); }
+  .astryx-segmented-control { width: 100%; padding: calc(var(--spacing-1) / 2); border-radius: var(--radius-element); background: var(--app-surface); border: var(--border-width) solid var(--app-line); }
+  .astryx-segmented-control-item { min-width: 0; min-height: var(--spacing-8); border-radius: var(--radius-inner); padding-inline: var(--spacing-2); font-size: var(--app-small-font); font-weight: var(--font-weight-normal); }
+  .astryx-tab { min-height: var(--spacing-10); }
+  .astryx-tab-indicator { inset-inline: 0; }
+  .astryx-segmented-control-item[aria-checked="true"] { background: var(--app-white); color: var(--app-ink); box-shadow: none; outline: var(--border-width) solid var(--app-line); outline-offset: calc(-1 * var(--border-width)); font-weight: var(--font-weight-normal); }
+  .astryx-segmented-control-item:focus-visible { outline: calc(var(--border-width) * 2) solid var(--app-wave); outline-offset: var(--border-width); }
+  .astryx-slider-thumb { background: var(--app-white); border: var(--border-width) solid var(--color-border-emphasized); box-shadow: 0 var(--border-width) calc(var(--border-width) * 3) var(--app-line); }
+  .astryx-slider-track.horizontal,.astryx-slider-track.horizontal + [aria-hidden="true"] { height: calc(var(--spacing-1) / 2); }
+  .astryx-slider-track.horizontal { background: var(--app-line); }
+  .astryx-slider-track.horizontal + [aria-hidden="true"] { background: var(--app-muted); }
+  .astryx-slider [role="slider"]:focus-visible { outline: calc(var(--border-width) * 2) solid var(--app-wave); outline-offset: var(--spacing-1); }
+  .astryx-button:not(:disabled):hover { filter: brightness(.98); }
+  .astryx-button:not(:disabled):active { filter: brightness(.95); }
+  .app-dialog-layout, .app-dialog-layout > * { max-height: 75vh; max-height: 75dvh; }
+  /* 弹窗遮罩：半透明加虚化，底层界面仍隐约可见。 */
+  /* 不用 backdrop-filter：WebKit（macOS 窗口）合成弹窗阴影时会在模糊背景上留下一圈矩形边线。 */
+  .app-dialog::backdrop { background-color: color-mix(in srgb, var(--color-text-primary) 16%, transparent); }
+  .app-dialog-header > div > div { align-items: center; }
+  .app-dialog-header > div > div > div { margin-block: 0; }
+  .dialog-error { padding: var(--spacing-3); border-radius: var(--radius-element); background: var(--color-error-muted); color: var(--color-text-primary); font-size: var(--app-ui-font); }
+  .astryx-selector { border-radius: var(--radius-element); }
+  [popover]:has(> .astryx-selector-popup) { width: anchor-size(width); min-width: calc(var(--spacing-10) * 5.75); }
+  .astryx-selector-popup { box-sizing: border-box; width: 100%; min-width: 0; }
+  .astryx-selector[data-variant="input"] { border-color: var(--app-line); }
+  .dialog-actions > .astryx-button { min-width: calc(var(--spacing-8) * 3); }
+  .astryx-app-shell-sidenav { width: var(--app-nav); min-width: 0; padding: 0; overflow: hidden; background: var(--app-paper); }
+  .astryx-app-shell-content,.astryx-layout-content { min-width: 0; min-height: 0; }
+  summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: start; gap: var(--spacing-2); padding-block: var(--spacing-2); }
+  summary > svg { flex-shrink: 0; transition: transform var(--duration-fast, 150ms); }
+  details[open] > summary > svg { transform: rotate(90deg); }
+  summary::-webkit-details-marker { display: none; }
+  .library-avatar { width: var(--spacing-12); height: var(--spacing-12); border-radius: var(--radius-full); flex-shrink: 0; }
+  /* 全局反馈脱离布局流，空白区域仍可操作下方工作区。 */
+  .notifications { position: fixed; top: calc(var(--app-titlebar) + var(--spacing-3)); left: 50%; transform: translateX(-50%); z-index: 500; width: max-content; max-width: min(calc(var(--spacing-8) * 16), calc(100vw - var(--spacing-6))); pointer-events: none; }
+  .notifications > * {
+    pointer-events: auto;
+    min-width: 0;
+    max-height: 50dvh;
+    overflow: auto;
+    padding: var(--spacing-2) var(--spacing-3);
+    border: var(--border-width) solid var(--app-line);
+    border-radius: var(--radius-container);
+    background: var(--app-white);
+    box-shadow: var(--shadow-med);
+    font-size: var(--app-small-font);
+    overflow-wrap: anywhere;
+  }
+  .notifications .astryx-button { flex-shrink: 0; }
+  .notice-icon { width: var(--spacing-4); height: var(--spacing-4); flex-shrink: 0; color: var(--color-text-red); }
+  .activity { width: calc(var(--spacing-8) * 12); max-width: 100%; }
+  progress { width: 100%; height: var(--spacing-1); accent-color: var(--app-ink); }
+  .loading { padding: var(--spacing-10); color: var(--app-muted); }
+  /* 页面渲染出错时占满原区域，保留导航可用。 */
+  .page-error { flex: 1; min-height: 0; padding: var(--spacing-10); text-align: center; color: var(--app-muted); }
+  .page-error strong { color: var(--app-ink); }
+  .page-error p { max-width: calc(var(--spacing-8) * 12); }
+  .recording { color: var(--color-text-red); }
+  @media (hover: hover) {
+    /* 仅加深组件自带的悬停层，避免与按钮背景叠加。 */
+    .astryx-tab[aria-selected="true"]:hover > [aria-hidden="true"]:first-child { background: color-mix(in srgb, var(--app-ink) 10%, transparent); }
+    .astryx-segmented-control-item[aria-checked="true"]:hover,
+    .nav-item.selected:hover {
+      background: color-mix(in srgb, var(--app-white) 90%, var(--app-ink));
+    }
+  }
+  .time { font-variant-numeric: tabular-nums; }
+  @media (max-width: 1190px) {
+    :root { --app-nav: calc(var(--spacing-10) * 4.5); --app-inspector: calc(var(--spacing-8) * 11); --app-editor-font: var(--font-size-lg); --app-title-font: var(--font-size-3xl); }
+  }
+  @media (max-width: 900px) {
+    :root { --app-nav: calc(var(--spacing-10) * 4); --app-inspector: calc(var(--spacing-8) * 11); }
+  }
+  @media (max-width: 600px) {
+    :root { --app-nav: calc(var(--spacing-8) * 2); --app-player: calc(var(--spacing-9) * 2); --app-title-font: var(--font-size-3xl); --app-editor-font: var(--font-size-lg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+  @media (forced-colors: active) {
+    .astryx-button { border: var(--border-width) solid ButtonText; }
+  }
+  .settings-group-head h3 { display: flex; align-items: baseline; gap: var(--spacing-2); font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--app-muted); }
+  .settings-group-head small { color: var(--app-muted); }
+  .settings-rows { border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); overflow: hidden; }
+  .settings-row { min-height: calc(var(--spacing-8) * 2); padding: var(--spacing-3) var(--spacing-5); }
+  .settings-row + .settings-row { border-top: var(--border-width) solid var(--app-line); }
+  .settings-row-label { min-width: calc(var(--spacing-10) * 4); }
+  .settings-row-title { font-size: var(--font-size-base); font-weight: var(--font-weight-medium); color: var(--app-ink); line-height: 1.4; }
+  .settings-row-label small,.model-row small { color: var(--app-muted); font-size: var(--font-size-sm); line-height: 1.5; }
+  .settings-row-control { flex-shrink: 0; }
+  .settings-row-control .astryx-button { flex-shrink: 0; }
+  @media (max-width: 600px) {
+    .sidebar-update, .model-update-notice { display: none; }
+  }
+}
