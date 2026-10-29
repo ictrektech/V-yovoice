@@ -17,7 +17,7 @@ OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非�
 与作者署名，不统一改标为应用许可。
 
 - Astryx 0.6.1：https://astryx.atmeta.com/ ，保留 npm 包中的许可。
-- audio.cpp v0.9.2：https://github.com/0xShug0/audio.cpp ，Apache-2.0，Copyright 2026 ShugoAI LLC。macOS 包内置 Metal 服务，Windows 包内置 CPU 服务及 DLL；原始 LICENSE 随 engine 目录分发；其他运行包从官方发行页下载并保留许可。
+- audio.cpp v0.9.3：https://github.com/0xShug0/audio.cpp ，Apache-2.0，Copyright 2026 ShugoAI LLC。macOS 包内置 Metal 服务，Windows 包内置 CPU 服务及 DLL；原始 LICENSE 随 engine 目录分发；其他运行包从官方发行页下载并保留许可。
 - IndexTTS：https://github.com/index-tts/index-tts ，模型不随应用分发。中文模型协议原文保存在 web/public/model-license.txt，下载和使用模型须遵守该协议。
 - React、Vite、TypeScript、Lucide、StyleX、WebView2 的许可与版权声明以对应依赖包为准。
 
@@ -36,6 +36,10 @@ OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非�
 ## ACE-Step
 
 - [ACE-Step 1.5](https://huggingface.co/ACE-Step/Ace-Step1.5)：MIT，音乐生成模型。权重从 audio.cpp GGUF 仓库单独下载，不随应用安装包分发。
+
+## Stable Audio 3
+
+- [Stable Audio 3 Small Music](https://huggingface.co/stabilityai/stable-audio-3-small-music)、[Small SFX](https://huggingface.co/stabilityai/stable-audio-3-small-sfx)、[Medium](https://huggingface.co/stabilityai/stable-audio-3-medium)：[Stability AI Community License](https://huggingface.co/stabilityai/stable-audio-3-small-sfx/blob/main/LICENSE.md)，使用者及其关联方年收入低于 100 万美元时可免费使用（含商用），超过需向 Stability AI 申请企业许可；商用须向 Stability AI 登记并标注“Powered by Stability AI”。文本编码器 T5Gemma 另受 Gemma 使用条款约束。权重从 audio.cpp GGUF 仓库单独下载，不随应用安装包分发。Powered by Stability AI.
 
 ## 编曲
 

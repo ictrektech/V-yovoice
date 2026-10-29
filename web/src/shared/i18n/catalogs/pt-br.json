@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "Configurações avançadas"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "Misturar vozes"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "Cancelar geração"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "Penalidade de repetição"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "Segunda voz"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "Peso da segunda voz"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "Semente aleatória"
@@ -836,6 +845,12 @@
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "Conclua as operações relacionadas antes de remover este modelo."
   },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "Priorizar desempenho"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "Gera mais rápido e usa mais VRAM."
+  },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "Remover modelo"
   },
@@ -994,6 +1009,12 @@
   },
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "Chinês, inglês · design e clonagem de voz · GPU recomendada. A licença do modelo permite apenas pesquisa e uso não comercial."
+  },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 idiomas · design e clonagem de voz · 44,1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "Remover silêncio"
   },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 idiomas · Clonagem de voz de referência"
@@ -1313,8 +1334,8 @@
   "@yovoice.error.omniReferenceRequired": {
     "defaultMessage": "A clonagem do OmniVoice exige a transcrição de referência."
   },
-  "@yovoice.error.breezeReferenceRequired": {
-    "defaultMessage": "A clonagem do Breeze TTS 2 exige a transcrição completa da referência."
+  "@yovoice.error.referenceTextRequired": {
+    "defaultMessage": "A clonagem do {model} exige a transcrição completa da referência."
   },
   "@yovoice.reference.omniTranscriptHelp": {
     "defaultMessage": "A transcrição deve corresponder ao áudio de referência."
@@ -1570,6 +1591,12 @@
   },
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "Adicionar das versões"
+  },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "Adicionar do yovoice"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "Adicionar"
   },
   "@yovoice.nav.library": {
     "defaultMessage": "Biblioteca de sons"
@@ -1896,7 +1923,7 @@
     "defaultMessage": "A letra pode ter até 4000 caracteres."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "A duração deve ser de 10 a 300 segundos e o andamento de 30 a 300 BPM."
+    "defaultMessage": "As configurações de música estão fora do intervalo deste modelo: verifique a duração, o andamento ou o trecho a repintar."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Geração de música"
@@ -4630,5 +4657,137 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "A gravação tem {total}, então o trecho mais claro ({start}–{end}) foi usado como referência. Use Cortar para ajustar."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Escolha uma versão já gerada desta obra para retrabalhar ou repintar, ou volte para a geração por texto."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Gera música instrumental a partir de uma descrição em inglês e pode retrabalhar ou repintar uma versão existente; até 2 minutos. Licença comunitária da Stability AI: gratuita com receita anual abaixo de US$ 1 milhão."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Gera efeitos sonoros a partir de uma descrição em inglês e pode retrabalhar ou repintar uma versão existente; até 2 minutos. Licença comunitária da Stability AI: gratuita com receita anual abaixo de US$ 1 milhão."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "O modelo Stable Audio 3 maior: música instrumental de mais qualidade e peças mais longas (até cerca de 6 minutos); pode retrabalhar ou repintar uma versão existente. Licença comunitária da Stability AI: gratuita com receita anual abaixo de US$ 1 milhão."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "Por texto"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Retrabalhar"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Repintar"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Versão de partida"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Gere uma versão primeiro para depois retrabalhá-la ou repintá-la."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Intensidade da mudança"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: quanto menor, mais perto da versão original."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Repintar de (s)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Repintar até (s)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "O Stable Audio só entende descrições em inglês e não canta letras."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Descreva o som em inglês, por ex. footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "{count} modelos para atualizar"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "Nova versão"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "Atualizar"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "Geração de efeitos sonoros"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "Novo efeito sonoro"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "Descrição do som"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "Criar um efeito sonoro"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "Crie um projeto de efeito sonoro e gere um som curto"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "O efeito está pronto. Quer ajustar a descrição ou melhorá-lo?"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "Ajuste a descrição em inglês do efeito atual e gere uma versão melhorada"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Gerar áudio"
+  },
+  "@yovoice.language.nl": {
+    "defaultMessage": "Holandês"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "Polonês"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "Turco"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "Tcheco"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "Húngaro"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "Chinês simplificado"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9 idiomas · 20 vozes integradas · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "Dinamarquês · Vozes integradas e clonagem · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17 idiomas · Clonagem de voz · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "Inglês · Voz padrão · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "Tags de locutor e evento · Voz padrão e clonagem · 44.1 kHz"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "Silêncio entre trechos (segundos)"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "Tokens de texto por trecho"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "Vozes gerais"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "Voz integrada"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "Voz padrão"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "A clonagem exige a transcrição exata do áudio de referência."
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "O XTTS v2 exige 6–30 segundos de áudio de referência."
   }
 }

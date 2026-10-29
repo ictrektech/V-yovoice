@@ -222,7 +222,7 @@ func (w *Workbench) saveCharacterTool(ctx context.Context, req *mcp.CallToolRequ
 		} else {
 			// 没有起点时用已安装的语音模型，避免角色指向没装的模型。
 			for _, m := range state.Models {
-				if !strings.HasPrefix(m.ID, "ace-step-") && !strings.HasPrefix(m.ID, "yue2-") && !strings.HasSuffix(m.ID, "-sf2") {
+				if modelKind(m.ID) == "text" {
 					base.ModelID = m.ID
 					break
 				}
@@ -230,7 +230,7 @@ func (w *Workbench) saveCharacterTool(ctx context.Context, req *mcp.CallToolRequ
 		}
 		c.Settings = base.SynthesisSettings
 		// 角色是声音的配置，不带作品里的歌词、旋律谱这类内容。
-		c.Settings.Lyrics, c.Settings.Abc, c.Settings.Instrumental = "", "", false
+		c.Settings.Lyrics, c.Settings.Abc, c.Settings.Instrumental, c.Settings.SourceGenerationID = "", "", false, ""
 	} else {
 		index := slices.IndexFunc(state.Characters, func(v schema.Character) bool { return v.ID == in.ID })
 		if index < 0 {
@@ -368,7 +368,7 @@ func (w *Workbench) applySpeakerSettings(d *schema.Draft, items []workSpeakerSet
 }
 
 // 这些错误只说明配置还没填全（缺参考音频、缺描述），编辑过程中允许存在，到生成时再提示。
-var incompleteSettings = []msg.Code{msg.ErrOmniReferenceRequired, msg.ErrBreezeReferenceRequired, msg.ErrVoxReferenceRequired, msg.ErrVoiceDescriptionRequired, msg.ErrTextRequired, msg.ErrTitleLength}
+var incompleteSettings = []msg.Code{msg.ErrOmniReferenceRequired, msg.ErrReferenceTextRequired, msg.ErrVoxReferenceRequired, msg.ErrVoiceDescriptionRequired, msg.ErrTextRequired, msg.ErrTitleLength}
 
 // voiceSettingsError 在助手改声音设置时提前挡住越界或不合法的取值，免得到生成时才失败；
 // 配置没填全不算错误。作品里每一份设置（含故事配音各角色）都检查。

@@ -3,21 +3,18 @@
 请从 VOS 应用抽屉打开 V-Voice，使用平台模型及推理功能。
 实验性的 `make dev-browser` 本地服务开发流程已移除。
 
-VOS 侧栏新增「配乐生成」，与原有歌曲生成、编曲并列，保留 V-Music 的
-ACE-Step 1.5 Turbo、Stable Audio 3 Small-Music、Stable Audio 3 Medium 和
-MusicGen Small。安装入口为「模型管理 → 创作模型与音色库 → 原生配乐模型」。
-模型管理统一接入 V-Scheduler，复用已有 ModelScope 仓库和共享目录，不重复下载。
-保留描述、排除词、时长、种子、BPM、调性、拍号、纯音乐以及 WAV/FLAC 试听下载；
-MusicGen 最长 30 秒，仅使用描述、种子和时长。
+VOS 使用 ONNX / audio.cpp / 音色库渲染，不安装 PyTorch、Transformers 或 Diffusers。
+原 PyTorch 配乐页面及 `/v1/audio/music/generations`、`/api/v1/music-models` 已移除，
+原权重和用户作品仍保留，回滚旧版本可继续复用。
 
-语音生成、故事配音、音乐生成与编曲页的模型选择器直接显示所选模型是否就绪，
-可就地下载、暂停和继续下载，缺少模型时不必先打开模型管理。
-公共扩展 API 为 `POST /v1/audio/music/generations`，直接返回二进制音频；
-`GET /api/v1/music-models` 查询全部配乐模型，管理员经
-`POST /api/v1/music-models/{model}/{pull|stop|unload}` 管理共享模型。
-PyTorch 使用独立 Python 环境，不替换 ONNX/audio.cpp 运行时；每次生成结束后
-退出音乐进程，确认停止后释放许可。新模型需要 V-Voice 自己的实测校准和准入，
-不能继承旧 V-Music 凭据；[V-Scheduler 所需配合及验收条件](docs/native-music-scheduler-handoff.md)。
+本次合入上游 v0.5.0，audio.cpp 升级为 v0.9.3，保留全部 59 个创作模型变体，
+新增六种 TTS 家族及 Stable Audio 3 GGUF 音乐、音效与改编，不恢复 PyTorch 路线。
+每个功能页的“准备模型”只展示相关模型，复用 V-Scheduler / ModelScope 共享下载。
+旧版共享权重继续按固定的旧清单校验，管理员可更新；两个 Kokoro 仅导入条目仍保留。
+故事配音可导入已生成音频；VOS 的导入和改编只接受当前用户经 Scheduler 确认成功的版本。
+新增权重和新运行时仍需目标设备审批，不向 VOS 用户开放未经校准的桌面 CUDA 性能选项。
+数据库由 v2 升至 v3 前自动备份；回滚旧应用须恢复升级前数据库快照。
+本次运行时升级须完整重建镜像，单独更新应用或前端资产不会升级内置 audio.cpp。
 
 `VVOICE_CPU_MODELS` 同时作用于 ASR、TTS 与声纹模型。显式卸载与 LRU 替换后回收
 无引用对象，并尽力归还空闲 CPU 堆页；这不代表 GPU 或原生执行已经停止。
@@ -68,6 +65,11 @@ VOS 工作台支持 12 种界面语言，独立 API 文档保留英文、简体�
   <img src="https://img.shields.io/badge/Linux-x64-FCC624?style=flat-square" alt="Linux (x64)" />
 </p>
 <p align="center">
+  <a href="https://www.producthunt.com/products/yovoice?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-yovoice" target="_blank" rel="noopener noreferrer">
+    <img alt="yovoice - Local-first voice, music, and score creation studio | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1293995&amp;theme=light&amp;t=1793070018670" />
+  </a>
+</p>
+<p align="center">
   <a href="https://www.star-history.com/leemysw/yovoice">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=leemysw/yovoice&type=rank&theme=dark" />
@@ -97,7 +99,7 @@ yovoice 是一款适用于 macOS、Windows 和 Linux 的开源、本地优先（
 
 - 🔒 **100% 本地离线与数据隐私**：所有模型均在本地显卡/CPU 推理，文本稿件和声音样本永远不会上传到第三方云端。
 - 💸 **零按字/按秒扣费**：无需订阅昂贵的云端 API（告别 ElevenLabs、Suno、商用配音会员计费）。
-- ⚡ **原生 C++ 极速引擎，免配 Python**：基于 [audio.cpp](https://github.com/0xShug0/audio.cpp) v0.9.2 原生构建，支持 macOS Metal 与 Windows NVIDIA CUDA 12.4/13.3 开箱即用，告别 Conda 与 PyTorch 依赖地狱。
+- ⚡ **原生 C++ 极速引擎，免配 Python**：基于 [audio.cpp](https://github.com/0xShug0/audio.cpp) v0.9.3 原生构建，支持 macOS Metal 与 Windows NVIDIA CUDA 12.4/13.3 开箱即用，告别 Conda 与 PyTorch 依赖地狱。
 - 🎛️ **全流程专业创作流**：多版本试听对比（Takes）、多轨时间轴吸附裁剪、General MIDI 音色库本地渲染与分轨导出（Stems）。
 - 🤖 **原生 MCP 与 AI Agent 协创**：接入 DeepSeek、通义千问、Claude、OpenAI 或本地 Ollama，用对话完成写歌写谱到生成的全流程，并提供 Model Context Protocol (MCP) 服务，支持在 Cursor 或 Claude Code 中直接调用。
 
@@ -105,47 +107,26 @@ yovoice 是一款适用于 macOS、Windows 和 Linux 的开源、本地优先（
 
 ## 功能
 
-- **音色与表达** — 跟随参考音色、模仿参考演绎、调整情绪，或用文字描述想要的表达方式。
-- **完整音频流程** — 导入或录制参考音频、裁剪片段、试听语音、导出作品。
-- **声音设计与克隆** — VoxCPM2 支持文字设计音色、带风格指导的克隆及参考原文辅助的精细克隆，自动多语言、48 kHz 输出。
-- **音乐生成** — 描述风格、写下带段落标记的歌词，用 ACE-Step 1.5 生成整首歌曲或纯音乐，每次生成都保留为可对比的版本。
-- **编曲** — 按小节和拍写下每个声部，或导入 MIDI、交给 Agent 写谱，用 General MIDI 音色库渲染并按角色对齐电平混音；结果可精确复现，可导出 MIDI 和分轨。详见[编曲](docs/score_zh.md)。
-- **可选 AI 服务** — 接入 DeepSeek、通义千问、Kimi、OpenAI、Anthropic、Ollama 或任意兼容接口，让 AI 写谱、写歌词；密钥只保存在本机。详见[AI 服务](docs/ai_zh.md)。
-- **本地模型** — 通过 audio.cpp 运行 IndexTTS 2.0 / 2.5、VoxCPM2、OmniVoice、Qwen3-TTS、Breeze TTS 2 和 Kokoro，支持模型下载续传与 GGUF 导入。
-- **硬件加速** — Apple Silicon 支持 Metal；Windows 支持 CPU、NVIDIA CUDA 和实验性 Vulkan。
-- **Agent Skill & MCP** — 让 AI Agent 准备本地语音生成环境，根据文稿和参考音频完成配音。
-
----
-
-## 硬件配置速查指引
-
-| 创作场景 | 推荐配置 | 适用模型推荐 |
-| --- | --- | --- |
-| 🟢 **轻量极速朗读与旁白** | 任何 CPU / 4GB+ 内存 | **Kokoro-82M** (Q8 仅 189 MB，毫秒级合成，纯 CPU 也能飞快运行) |
-| 🟡 **高音质克隆与声音设计** | 4GB ~ 6GB 显存 / Apple Silicon 8GB+ | **VoxCPM2** (2B, 48kHz)、**IndexTTS 2.0/2.5**、**Qwen3-TTS** |
-| 🔴 **整首歌生成与伴奏演奏** | 12GB+ 显存 / Apple Silicon 16GB+ | **ACE-Step 1.5 Turbo** (BF16, 10GB)、**YuE2 3B** |
+- **语音、声音设计与克隆** — 克隆参考音色、用文字设计声音、调整情绪与演绎，并在音轨上剪辑各个版本。
+- **故事配音** — 导入文本或字幕文件，为每句台词分配角色并逐句生成。
+- **音乐生成** — 写下风格和带段落标记的歌词，用 ACE-Step 1.5 生成歌曲或纯音乐，或用 YuE2 生成歌曲和按谱演奏的纯音乐，或用 Stable Audio 3 根据英文描述生成纯音乐与音效；播放页按人声同步歌词。
+- **编曲** — 按小节和拍写声部，或导入 MIDI、交给 Agent 写谱，用 General MIDI 音色库渲染，导出 MIDI 和分轨。详见[编曲](docs/score_zh.md)。
+- **可选 AI 服务** — 内置助手面板通过 DeepSeek、通义千问、Kimi、OpenAI、Anthropic、Ollama 或任意兼容接口对话创作：写谱写词、改台词、配音色、发起生成；密钥只保存在本机。详见[AI 服务](docs/ai_zh.md)。
+- **12 种界面语言** — 简体中文、繁體中文、English、日本語、한국어、Español、Français、Deutsch、Português (Brasil)、Русский、Italiano 和 Tiếng Việt，可在设置中随时切换，无需重启。
 
 ---
 
 ## 支持模型
 
-| 模型 | 参数量 | 模型文件大小（按精度） | 核心能力 |
-| --- | --- | --- | --- |
-| IndexTTS 2.0 | — | Q8 · 3.63 GB<br>F16 · 4.65 GB<br>ORIG · 8.08 GB | 中英音色克隆、情绪控制、参考演绎 |
-| IndexTTS 2.5 | — | Q8 · 3.50 GB<br>F16 · 4.55 GB<br>ORIG · 7.89 GB | 多语言音色克隆、情绪控制、发音调整 |
-| VoxCPM2 | 2B | Q8 · 2.96 GB<br>BF16 · 4.77 GB<br>ORIG · 4.96 GB | 文字设计音色、音色克隆、参考原文辅助的精细克隆 |
-| OmniVoice | 0.6B | Q8 · 1.35 GB<br>BF16 · 1.64 GB<br>F16 · 1.64 GB | 属性设计音色、音色克隆、非语言声音标签 |
-| Qwen3-TTS Base | 0.6B | Q8 · 1.99 GB<br>BF16 · 2.52 GB | 参考音色克隆、可选原文辅助、多语言生成 |
-| Qwen3-TTS Base | 1.7B | Q8 · 2.70 GB<br>BF16 · 4.20 GB<br>ORIG · 4.54 GB | 参考音色克隆、可选原文辅助、多语言生成 |
-| Qwen3-TTS CustomVoice | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | 9 种内置音色、文字控制风格与情绪 |
-| Qwen3-TTS VoiceDesign | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | 自然语言描述设计音色，无需参考音频 |
-| Breeze TTS 2 | 约 3B | Q4 · 3.79 GB<br>Q8 · 5.08 GB<br>BF16 · 7.34 GB | 中英自然语言设计音色、音色克隆与演绎指导；建议使用显卡，需要 v0.9.1 内核 |
-| Kokoro-82M 1.0 Official | 82M | Q8 · 189.55 MB<br>BF16 · 211.95 MB | 49 种内置音色、多语言生成，不含日语 |
-| Kokoro-82M 1.0 | 82M | Q8 · 932.66 MB | 54 种内置音色、包含日语的完整多语言资源；仅支持导入 |
-| Kokoro-82M 1.1-zh | 82M | Q8 · 255.32 MB | 100 种中文音色及 3 种英文音色；实验性，仅支持导入 |
-| ACE-Step 1.5 Turbo | — | BF16 · 10.09 GB | 根据风格描述和歌词生成歌曲或纯音乐，支持 50 多种演唱语言；需要 v0.9.1 内核 |
+| 用途 | 模型 |
+| --- | --- |
+| 音色克隆与情绪控制 | IndexTTS 2.0 / 2.5、Qwen3-TTS Base |
+| 声音设计与克隆 | VoxCPM2、OmniVoice、Qwen3-TTS VoiceDesign、Breeze TTS 2 |
+| 内置音色 | Kokoro-82M、Qwen3-TTS CustomVoice |
+| 歌曲与纯音乐 | ACE-Step 1.5 Turbo / XL Turbo、YuE2 3B |
+| 纯音乐与音效 | Stable Audio 3 Small Music / Small SFX / Medium |
 
-可下载模型可在 App 内或通过 CLI 获取；仅支持导入的变体仍需兼容的本地 GGUF 文件。文件大小、硬件要求、输入要求与示例见[模型选择](docs/models_zh.md)。OmniVoice、YuE2 和 Breeze TTS 2 的权重仅限非商业用途。
+所有模型都在 App 内或通过 CLI 下载。文件大小、硬件要求、输入要求与示例见[模型选择](docs/models_zh.md)。OmniVoice、YuE2 和 Breeze TTS 2 的权重仅限非商业用途；Stable Audio 3 采用 Stability AI 社区许可，年收入低于 100 万美元可免费使用。
 
 ---
 
@@ -231,6 +212,7 @@ make app-run
 - [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) — 支持音色克隆、内置音色与文字设计声音。
 - [ACE-Step](https://github.com/ace-step/ACE-Step-1.5) — 根据风格描述与歌词生成音乐。
 - [YuE](https://github.com/multimodal-art-projection/YuE) — 根据歌词生成整首带人声歌曲。
+- [Stable Audio 3](https://huggingface.co/stabilityai/stable-audio-3-medium)（Stability AI）— 根据文字生成纯音乐与音效。Powered by Stability AI。
 - [Breeze TTS 2](https://huggingface.co/BreezeBlue/Breeze-TTS-2) — 中英文声音设计与音色克隆。
 - [go-meltysynth](https://github.com/sinshu/go-meltysynth)、[MuseScore General](https://musescore.org/en/handbook/3/soundfonts-and-sfz-files#gm_soundfonts)、[GeneralUser GS](https://www.schristiancollins.com/generaluser) 与 David Shan 的 SGM-V2.01 — 编曲渲染使用的 SoundFont 合成器与音色库。
 - Kokoro — 使用内置音色的轻量语音合成模型：[Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) 与 [Kokoro-82M-v1.1-zh](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh)。
@@ -266,3 +248,5 @@ make app-run
 不会自动重放。强制尝试须携带当前管理员的 Bearer 身份，由 V-Scheduler 核验，
 不突破批准预算、停止屏障或至少 1 GiB 内存余量；凭证不写入任务。
 完整流程见 [V-Scheduler 统一接入指南](https://github.com/ictrektech/V-Scheduler/blob/main/docs/application-integration.md)。
+
+VOS 保留 Kokoro 1.0 多语言包与 1.1-zh 为管理员提供的仅导入模型，保留既有模型 ID、历史记录和语音 API。

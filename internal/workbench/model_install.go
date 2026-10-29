@@ -15,14 +15,14 @@ import (
 	"yovoice/internal/store"
 )
 
-func (w *Workbench) register(id, path string, managed bool) error {
+func (w *Workbench) register(id, path string, managed bool, sha256 string) error {
 	path, e := filepath.Abs(path)
 	if e != nil {
 		return e
 	}
 	return w.Store.Update(func(s *schema.State) {
 		s.Models = slices.DeleteFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == id })
-		s.Models = append(s.Models, schema.InstalledModel{ID: id, Path: path, Managed: managed})
+		s.Models = append(s.Models, schema.InstalledModel{ID: id, Path: path, Managed: managed, SHA256: sha256})
 	}, true)
 }
 func (w *Workbench) DownloadModel(id string) error {
@@ -32,7 +32,8 @@ func (w *Workbench) DownloadModel(id string) error {
 	}
 	s := w.Store.Read()
 	// 重新下载已安装的模型会替换正在使用的文件，需等生成结束；未安装的模型可与生成同时下载。
-	if slices.ContainsFunc(s.Models, func(installed schema.InstalledModel) bool { return installed.ID == id }) {
+	installed := slices.ContainsFunc(s.Models, func(installed schema.InstalledModel) bool { return installed.ID == id })
+	if installed {
 		w.mu.Lock()
 		busy := w.cancel != nil
 		w.mu.Unlock()
@@ -74,9 +75,24 @@ func (w *Workbench) DownloadModel(id string) error {
 		}
 		target := func(f catalog.ModelFile) string {
 			if len(m.Files) > 0 {
-				return filepath.Join(root, filepath.FromSlash(f.Path))
+				return filepath.Join(root, filepath.FromSlash(m.LocalPath(f.Path)))
 			}
 			return dest
+		}
+		// 更新已安装的模型时新文件先下载到旁边，替换前旧文件仍可正常使用；内容未变的文件不再下载。
+		staging := func(f catalog.ModelFile) string {
+			if installed {
+				return target(f) + ".new"
+			}
+			return target(f)
+		}
+		var replace []string
+		if installed {
+			for _, f := range files {
+				if h, e := download.Hash(ctx, target(f)); e != nil || h != f.SHA256 {
+					replace = append(replace, target(f))
+				}
+			}
 		}
 		available, e := platform.FreeSpace(dir)
 		if e != nil {
@@ -84,7 +100,7 @@ func (w *Workbench) DownloadModel(id string) error {
 		}
 		need := int64(100<<20) + total - m.Size
 		for _, f := range files {
-			need += max(int64(0), f.Size-download.FileSize(target(f)+".part")-download.FileSize(target(f)))
+			need += max(int64(0), f.Size-download.FileSize(staging(f)+".part")-download.FileSize(staging(f)))
 		}
 		if available < uint64(need) {
 			return msg.Err(msg.ErrModelDirSpace, nil)
@@ -92,7 +108,11 @@ func (w *Workbench) DownloadModel(id string) error {
 		// 进度按整个模型包累计，多个文件依次下载。
 		var done int64
 		for i, f := range files {
-			if e = download.File(ctx, w.client, urls[i], target(f), f.SHA256, f.Size, func(r, _ int64) {
+			if installed && !slices.Contains(replace, target(f)) {
+				done += f.Size
+				continue
+			}
+			if e = download.File(ctx, w.client, urls[i], staging(f), f.SHA256, f.Size, func(r, _ int64) {
 				code, params := msg.ActivityDownloading, msg.Params{"name": m.Name}
 				if done+r == total {
 					code, params = msg.ActivityVerifying, nil
@@ -110,7 +130,10 @@ func (w *Workbench) DownloadModel(id string) error {
 				return e
 			}
 		}
-		return w.register(id, dest, true)
+		if e = w.swapModelFiles(replace); e != nil {
+			return e
+		}
+		return w.register(id, dest, true, m.MainFile().SHA256)
 	})
 }
 func (w *Workbench) ImportModel(path string) error {
@@ -133,7 +156,7 @@ func (w *Workbench) ImportModel(path string) error {
 			}
 			size := download.FileSize(p)
 			if !slices.ContainsFunc(catalog.Models, func(m catalog.ModelPackage) bool {
-				return slices.ContainsFunc(m.PackageFiles(), func(f catalog.ModelFile) bool { return f.SHA256 == m.SHA256 && f.Size == size })
+				return slices.ContainsFunc(m.PackageFiles(), func(f catalog.ModelFile) bool { return f.Path == m.RemotePath && f.Size == size })
 			}) {
 				continue
 			}
@@ -142,7 +165,7 @@ func (w *Workbench) ImportModel(path string) error {
 				return e
 			}
 			for _, m := range catalog.Models {
-				if m.SHA256 == hash {
+				if m.MainFile().SHA256 == hash {
 					path := p
 					if len(m.Files) > 0 {
 						// 多文件模型只认完整的模型目录：主模型旁需有其余文件。
@@ -150,7 +173,7 @@ func (w *Workbench) ImportModel(path string) error {
 							continue
 						}
 					}
-					if e = w.register(m.ID, path, false); e != nil {
+					if e = w.register(m.ID, path, false, hash); e != nil {
 						return e
 					}
 					count++
@@ -162,6 +185,26 @@ func (w *Workbench) ImportModel(path string) error {
 		}
 		return nil
 	})
+}
+
+// swapModelFiles 用下载校验过的 .new 文件替换旧模型文件。内核可能仍打开着旧文件（Windows 上无法覆盖），
+// 替换前先停内核；生成进行中时返回忙碌，已下载的新文件保留，稍后重试会直接完成替换。
+func (w *Workbench) swapModelFiles(paths []string) error {
+	if len(paths) == 0 {
+		return nil
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.cancel != nil {
+		return msg.Err(msg.ErrBusy, nil)
+	}
+	w.engine.Stop()
+	for _, path := range paths {
+		if e := os.Rename(path+".new", path); e != nil {
+			return e
+		}
+	}
+	return nil
 }
 
 // ForgetModel 移除模型登记。应用自己下载的模型同时删除文件释放空间；用户导入的模型只解除登记，保留本地文件。
@@ -215,11 +258,11 @@ func managedModelPath(s schema.State, root, id string) string {
 // packageRoot 根据主模型文件位置推出多文件模型包的目录，文件不全时返回空串。
 func packageRoot(m catalog.ModelPackage, main string) string {
 	root := filepath.Dir(main)
-	for i := 0; i < strings.Count(m.RemotePath, "/"); i++ {
+	for i := 0; i < strings.Count(m.LocalPath(m.RemotePath), "/"); i++ {
 		root = filepath.Dir(root)
 	}
 	for _, f := range m.Files {
-		if download.FileSize(filepath.Join(root, filepath.FromSlash(f.Path))) != f.Size {
+		if download.FileSize(filepath.Join(root, filepath.FromSlash(m.LocalPath(f.Path)))) != f.Size {
 			return ""
 		}
 	}

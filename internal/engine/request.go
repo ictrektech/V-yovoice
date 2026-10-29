@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"cmp"
 	"errors"
 	"math"
 	"strconv"
@@ -45,15 +46,19 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 	if m.Family == "yue2" {
 		return yue2Request(d)
 	}
+	if m.Family == "stable_audio" {
+		return stableAudioRequest(d, voice), nil
+	}
 	if m.Family == "kokoro_tts" {
 		o, _ := d.GenerationOptions(m.Family)
-		if _, ok := o["text_chunk_size"]; !ok {
-			o["text_chunk_size"] = 64
-		}
 		if d.Seed != nil {
 			o["seed"] = *d.Seed
 		}
 		return map[string]any{"model": "index", "request": map[string]any{"text": d.Text, "voice_id": d.KokoroSpeaker(m), "options": o}}, nil
+	}
+	switch m.Family {
+	case "ming3_tts", "voxtral_tts", "plapre", "xtts_v2", "gradium_phonon", "fish_drama3":
+		return nativeTTSRequest(d, m, voice)
 	}
 	if m.Family == "omnivoice" || m.Family == "qwen3_tts" {
 		o, _ := d.GenerationOptions(m.Family)
@@ -115,11 +120,9 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 		}
 		r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
 		if d.RequiresVoice() {
-			if voice == "" {
-				return nil, msg.Err(msg.ErrVoiceRequired, nil)
+			if err := attachReference(r, o, d, voice, true); err != nil {
+				return nil, err
 			}
-			r["voice_ref"] = voice
-			o["reference_text"] = strings.TrimSpace(d.ReferenceText)
 		}
 		return map[string]any{"model": "index", "request": r}, nil
 	}
@@ -206,6 +209,60 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 	return map[string]any{"model": "index", "request": r}, nil
 }
 
+// nativeTTSRequest 构建 audio.cpp v0.9.3 新增 TTS 家族的请求：正文与音色（内置音色或参考音频）放顶层，
+// 高级参数、随机种子和参考原文放 options，均使用上游参数名。
+func nativeTTSRequest(d schema.Draft, m catalog.ModelPackage, voice string) (map[string]any, error) {
+	o, _ := d.GenerationOptions(m.Family)
+	if d.Seed != nil {
+		o["seed"] = *d.Seed
+	}
+	r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
+	auto := d.SynthesisLanguage == "" || d.SynthesisLanguage == "auto"
+	switch m.Family {
+	case "ming3_tts":
+		if !auto {
+			r["language"] = d.SynthesisLanguage
+		}
+	case "xtts_v2":
+		// XTTS 必须显式指定语言；未选择或“自动”时按简体中文处理。
+		r["language"] = d.SynthesisLanguage
+		if auto {
+			r["language"] = "zh-cn"
+		}
+	}
+	if d.RequiresVoice() {
+		// XTTS 只用参考音频，不接受原文。
+		if err := attachReference(r, o, d, voice, m.Family != "xtts_v2"); err != nil {
+			return nil, err
+		}
+		return map[string]any{"model": "index", "request": r}, nil
+	}
+	switch m.Family {
+	case "voxtral_tts":
+		r["voice_id"] = cmp.Or(d.Speaker, "casual_male")
+	case "plapre":
+		r["voice_id"] = cmp.Or(d.Speaker, m.Voices[0])
+	case "ming3_tts":
+		if description := strings.TrimSpace(d.VoiceDescription); description != "" {
+			o["template_name"] = "voice_design"
+			o["instruct"] = description
+		}
+	}
+	return map[string]any{"model": "index", "request": r}, nil
+}
+
+// attachReference 把克隆用的参考音频写入请求；withTranscript 时把非空原文写入 options。
+func attachReference(r, o map[string]any, d schema.Draft, voice string, withTranscript bool) error {
+	if voice == "" {
+		return msg.Err(msg.ErrVoiceRequired, nil)
+	}
+	r["voice_ref"] = voice
+	if transcript := strings.TrimSpace(d.ReferenceText); withTranscript && transcript != "" {
+		o["reference_text"] = transcript
+	}
+	return nil
+}
+
 // planningLyrics 是纯音乐出谱时没有歌词用的段落骨架，只给规划器安排结构，不会被唱出来。
 const planningLyrics = "[Intro]\n\n[Verse]\n\n[Chorus]\n\n[Verse]\n\n[Chorus]\n\n[Outro]\n"
 
@@ -281,6 +338,54 @@ func yue2Request(d schema.Draft) (map[string]any, error) {
 		o["seed"] = *d.Seed
 	}
 	return map[string]any{"model": "index", "request": map[string]any{"text": lyrics, "options": o}}, nil
+}
+
+// stableAudioRequest 构建 Stable Audio 请求：正文是英文描述，没有歌词与演唱语言。
+// 改编时 source 是起点版本的音频：init_audio 按 init_noise_level 保留原曲的程度整体重写，
+// inpaint_audio 只重绘 [inpaint_start, inpaint_end] 区间，其余部分保持原样。
+// 参数名用 v0.9.1 与 v0.9.2 都接受的 duration_sec、inpaint_mask_*_sec。
+func stableAudioRequest(d schema.Draft, source string) map[string]any {
+	options, _ := d.GenerationOptions("stable_audio")
+	edit, _ := options["edit"].(string)
+	start, end := options["inpaint_start"], options["inpaint_end"]
+	strength := options["init_noise_level"]
+	for _, key := range []string{"edit", "inpaint_start", "inpaint_end", "init_noise_level"} {
+		delete(options, key)
+	}
+	o := map[string]any{}
+	for key, value := range options {
+		o[key] = value
+	}
+	duration, ok := o["duration_seconds"].(float64)
+	if !ok {
+		duration = 30
+	}
+	delete(o, "duration_seconds")
+	o["duration_sec"] = duration
+	if d.Seed != nil {
+		o["seed"] = *d.Seed
+	}
+	r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
+	switch edit {
+	case "init_audio":
+		r["audio"] = source
+		o["audio_input_kind"] = "init_audio"
+		if strength == nil {
+			strength = 0.7
+		}
+		o["init_noise_level"] = strength
+	case "inpaint_audio":
+		r["audio"] = source
+		o["audio_input_kind"] = "inpaint_audio"
+		o["inpaint_mask_start_sec"] = strconv.FormatFloat(number(start), 'f', -1, 64)
+		o["inpaint_mask_end_sec"] = strconv.FormatFloat(number(end), 'f', -1, 64)
+	}
+	return map[string]any{"model": "index", "request": r}
+}
+
+func number(v any) float64 {
+	f, _ := v.(float64)
+	return f
 }
 
 // instrumentalScore 返回纯音乐实际演奏的谱：人声旋律已移到器乐声部。

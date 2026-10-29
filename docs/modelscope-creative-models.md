@@ -15,11 +15,13 @@ Weights are mirrored without changing their bytes. Original authors, conversion
 sources, fixed revisions, file sizes and SHA256 values are recorded in
 `source-index.json`; original license texts and provenance are under `licenses/`.
 
-The application retains the full 40-variant creation catalog. Two upstream Kokoro
+The application retains the full 59-variant creation catalog. Two upstream Kokoro
 variants are import-only and are not represented as public downloads here.
-The complete downloadable catalog consists of 41 unique files. Staged uploads
+The complete downloadable catalog consists of 70 unique files. Staged uploads
 are not complete until the anonymous catalog audit passes; use the source index
 and application catalog rather than assuming every repository file is one model.
+The catalog describes the required files; new or updated weights are available only
+after publication and a successful anonymous audit.
 Existing V-Voice ONNX models remain in their original ModelScope repositories.
 
 Install selected model files through Model Hub and share its read-only export
@@ -43,8 +45,8 @@ original terms, model cards and `licenses/source-index.json`:
 
 本仓库为 VOS 版 V-Voice 保存上游 GGUF 模型和音色库，文件内容不作修改。
 来源、固定版本、大小及 SHA256 见 `source-index.json`，原始许可与署名见
-`licenses/`。应用保留全部 40 个创作模型变体，其中两项 Kokoro 依照上游要求
-仅支持合法文件导入，不虚构公开下载地址。其余可下载目录共 41 个独立文件，
+`licenses/`。应用保留全部 59 个创作模型变体，其中两项 Kokoro 依照上游要求
+仅支持合法文件导入，不虚构公开下载地址。其余可下载目录共 70 个独立文件，
 分批上传后须通过匿名完整性审计才算完成；原有 ONNX 模型仍使用原来的
 ModelScope 仓库。
 

@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+### English
+
+- Integrate upstream v0.5.0 with Ming 3.0 TTS, Voxtral TTS, Plapre 3, XTTS v2, Gradium Phonon and Fish Audio Drama 3; add Stable Audio 3 GGUF music, sound effects, remixing and inpainting. VOS models still require shared weights and device approval.
+- Add generated speech, music and sound effects directly to story tracks, and blend two Kokoro voices. VOS imports and remixing only use the current user's confirmed results.
+- Upgrade audio.cpp to v0.9.3 and add the upstream desktop CUDA performance option. Preserve installed shared weights during model catalog updates, verify their original checksums and offer administrator updates.
+- Improve editor layout, model notices and asset dialogs. Back up existing databases before upgrading while preserving projects, history and lyric timing; VOS retains its speech APIs, model administration and platform language settings.
+
+### 简体中文
+
+- 合入上游 v0.5.0，新增 Ming 3.0 TTS、Voxtral TTS、Plapre 3、XTTS v2、Gradium Phonon 和 Fish Audio Drama 3；支持 Stable Audio 3 GGUF 音乐、音效、整体改编与局部重绘。VOS 模型仍需共享权重及设备审批。
+- 故事配音可直接添加已生成的语音、音乐与音效，Kokoro 可混合两种音色；VOS 导入与改编只使用当前用户已确认成功的结果。
+- 推理内核升级至 audio.cpp v0.9.3，纳入桌面 CUDA 性能选项；模型目录更新后保留既有共享权重的使用能力，继续校验原始摘要，并提供管理员更新入口。
+- 改善编辑区布局、模型更新提示及素材弹窗；数据库升级前自动备份，保留作品、历史和歌词时间，VOS 继续保留既有语音 API、模型管理与平台语言设置。
+
 ## [0.0.32] - 2026-10-28
 
 ### 简体中文

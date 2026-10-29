@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -195,6 +196,21 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 		case "model.forget":
 			w.UnloadRuntime()
 			result = true
+		case "timeline.fromGeneration":
+			var input struct {
+				ID string `json:"id"`
+			}
+			if err = json.Unmarshal(call.Data, &input); err == nil {
+				state := w.Store.Read()
+				if s.Jobs != nil {
+					state = s.Jobs.VisibleState(id, state)
+				}
+				if !slices.ContainsFunc(state.History, func(g schema.Generation) bool { return g.ID == input.ID }) {
+					err = msg.Err(msg.ErrAudioMissing, nil)
+				} else {
+					result, err = w.ImportTimelineGeneration(r.Context(), input.ID)
+				}
+			}
 		case "generation.start", "generation.cue", "character.preview":
 			if s.Jobs == nil {
 				http.Error(out, "V-Scheduler configuration required", 503)
@@ -242,7 +258,7 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 			if s.Jobs != nil {
 				state = s.Jobs.VisibleState(id, state)
 			}
-			result = map[string]any{"state": state, "catalog": workbench.SharedCatalog(), "engine": map[string]string{"version": catalog.EngineVersion, "minimum": catalog.EngineMinimum}, "desktop": false, "assistant": map[string]bool{"available": false}}
+			result = map[string]any{"state": state, "catalog": workbench.SharedCatalog(), "catalogRevision": catalog.Revision, "engine": map[string]string{"version": catalog.EngineVersion, "minimum": catalog.EngineMinimum}, "desktop": false, "assistant": map[string]bool{"available": false}}
 		case "preferences.save":
 			// 浏览器只能保存语言等个人偏好，不能修改共享目录、代理及推理后端。
 			var p struct {

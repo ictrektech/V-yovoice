@@ -26,21 +26,25 @@ func SharedModelsMode() bool { return os.Getenv("VVOICE_SHARED_MODELS") == "true
 func SharedCatalog() []catalog.ModelPackage {
 	models := []catalog.ModelPackage{}
 	for _, m := range catalog.Models {
-		if m.RemotePath == "" {
-			m.ImportRequired = true
-			m.RemotePath = "imports/" + m.ID + ".gguf"
-		}
-		if m.Repo != "" {
-			prefix := filepath.ToSlash(filepath.Join("mirrors", m.Repo))
-			m.RemotePath = prefix + "/" + m.RemotePath
-			m.Files = append([]catalog.ModelFile(nil), m.Files...)
-			for i := range m.Files {
-				m.Files[i].Path = prefix + "/" + m.Files[i].Path
-			}
-		}
-		models = append(models, m)
+		models = append(models, sharedModel(m))
 	}
 	return models
+}
+
+func sharedModel(m catalog.ModelPackage) catalog.ModelPackage {
+	if m.RemotePath == "" {
+		m.ImportRequired = true
+		m.RemotePath = "imports/" + m.ID + ".gguf"
+	}
+	if m.Repo != "" {
+		prefix := filepath.ToSlash(filepath.Join("mirrors", m.Repo))
+		m.RemotePath = prefix + "/" + m.RemotePath
+		m.Files = append([]catalog.ModelFile(nil), m.Files...)
+		for i := range m.Files {
+			m.Files[i].Path = prefix + "/" + m.Files[i].Path
+		}
+	}
+	return m
 }
 
 // SyncSharedModels 只检查共享导出的文件元数据；实际使用前由引擎/编曲入口校验摘要。
@@ -51,12 +55,20 @@ func (w *Workbench) SyncSharedModels() error {
 	}
 	base := filepath.Join(root, "export", "ms", SharedRepository, "current")
 	models := []schema.InstalledModel{}
-	for _, m := range SharedCatalog() {
-		ready := true
-		for _, f := range m.PackageFiles() {
-			info, err := os.Stat(filepath.Join(base, filepath.FromSlash(f.Path)))
-			if err != nil || !info.Mode().IsRegular() || info.Size() != f.Size {
-				ready = false
+	for _, current := range catalog.Models {
+		var m catalog.ModelPackage
+		ready := false
+		for _, version := range []catalog.ModelPackage{current, current.PreviousVersion()} {
+			m = sharedModel(version)
+			ready = true
+			for _, f := range m.PackageFiles() {
+				info, err := os.Stat(filepath.Join(base, filepath.FromSlash(f.Path)))
+				if err != nil || !info.Mode().IsRegular() || info.Size() != f.Size {
+					ready = false
+					break
+				}
+			}
+			if ready {
 				break
 			}
 		}
@@ -69,8 +81,11 @@ func (w *Workbench) SyncSharedModels() error {
 			if m.Repo != "" {
 				path = filepath.Join(base, "mirrors", m.Repo)
 			}
+			if m.StripPrefix != "" {
+				path = filepath.Join(path, filepath.FromSlash(m.StripPrefix))
+			}
 		}
-		models = append(models, schema.InstalledModel{ID: m.ID, Path: path, Managed: false})
+		models = append(models, schema.InstalledModel{ID: m.ID, Path: path, Managed: false, SHA256: m.MainFile().SHA256})
 	}
 	if slices.Equal(w.Store.Read().Models, models) {
 		return nil

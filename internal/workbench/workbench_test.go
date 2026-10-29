@@ -445,17 +445,53 @@ func TestSetModelDirectoryAdoptsModels(t *testing.T) {
 	sparse(filepath.Join(dir, filepath.Base(single.RemotePath)), single.Size)
 	// 多文件模型缺一个文件，不应登记。
 	for _, f := range multi.Files[1:] {
-		sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(f.Path)), f.Size)
+		sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(multi.LocalPath(f.Path))), f.Size)
 	}
 	must(t, w.SetModelDirectory(dir))
 	models := w.Store.Read().Models
-	if len(models) != 1 || models[0].ID != single.ID || !models[0].Managed {
-		t.Fatalf("应只登记完整的单文件模型: %+v", models)
+	if len(models) != 1 || models[0].ID != single.ID || !models[0].Managed || models[0].SHA256 != single.MainFile().SHA256 {
+		t.Fatalf("应只登记完整的单文件模型并记录主文件摘要: %+v", models)
 	}
-	sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(multi.Files[0].Path)), multi.Files[0].Size)
+	sparse(filepath.Join(dir, multi.Directory, filepath.FromSlash(multi.LocalPath(multi.Files[0].Path))), multi.Files[0].Size)
 	must(t, w.SetModelDirectory(dir))
 	if len(w.Store.Read().Models) != 2 {
 		t.Fatalf("文件齐全的多文件模型应登记: %+v", w.Store.Read().Models)
+	}
+}
+
+// 单文件模型匹配更新前的大小时按旧版本登记；文件缺失时的大小 0 不能触发收养。
+func TestSetModelDirectoryAdoptsLegacyModel(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	dir := t.TempDir()
+	var model *catalog.ModelPackage
+	var legacy catalog.ModelFile
+	for i := range catalog.Models {
+		candidate := &catalog.Models[i]
+		file, ok := catalog.LegacyModelFiles[candidate.ID]
+		if len(candidate.Files) == 0 && ok && file.Size > 0 && file.Size != candidate.Size {
+			model, legacy = candidate, file
+			break
+		}
+	}
+	if model == nil {
+		t.Skip("目录清单缺少大小已变化的单文件模型")
+	}
+	must(t, w.SetModelDirectory(dir))
+	if models := w.Store.Read().Models; len(models) != 0 {
+		t.Fatalf("文件不存在时不应登记模型: %+v", models)
+	}
+	path := filepath.Join(dir, filepath.Base(model.RemotePath))
+	must(t, os.MkdirAll(filepath.Dir(path), 0700))
+	file, err := os.Create(path)
+	must(t, err)
+	must(t, file.Truncate(legacy.Size))
+	must(t, file.Close())
+	must(t, w.SetModelDirectory(dir))
+	models := w.Store.Read().Models
+	if len(models) != 1 || models[0].ID != model.ID || models[0].SHA256 != legacy.SHA256 {
+		t.Fatalf("旧版单文件模型应登记旧主文件摘要: %+v", models)
 	}
 }
 
@@ -482,4 +518,47 @@ func TestCancelOperationOnlyCancelsOwnRun(t *testing.T) {
 	w.mu.Lock()
 	w.cancel, w.done = nil, nil
 	w.mu.Unlock()
+}
+
+// 更新模型时新文件先落在 .new，生成进行中不替换并保留新文件，空闲后再替换旧文件。
+func TestSwapModelFilesWaitsForGeneration(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	path := filepath.Join(w.Store.Root, "model.gguf")
+	must(t, os.WriteFile(path, []byte("old"), 0600))
+	must(t, os.WriteFile(path+".new", []byte("new"), 0600))
+	must(t, w.begin("generate", msg.ActivityGenerate, nil, nil, func(ctx context.Context) error { <-ctx.Done(); return ctx.Err() }))
+	if err = w.swapModelFiles([]string{path}); err == nil {
+		t.Fatal("生成期间不能替换模型文件")
+	}
+	if data, _ := os.ReadFile(path + ".new"); string(data) != "new" {
+		t.Fatal("忙碌时应保留已下载的新文件")
+	}
+	w.Cancel()
+	<-w.Done()
+	must(t, w.swapModelFiles([]string{path}))
+	if data, _ := os.ReadFile(path); string(data) != "new" {
+		t.Fatal("空闲时应替换为新文件")
+	}
+	if _, err = os.Stat(path + ".new"); !os.IsNotExist(err) {
+		t.Fatal("替换后不应残留 .new 文件")
+	}
+}
+
+// 性能优先只在开关打开且内核不低于 v0.9.3 时生效，旧内核不认识 cuda_perf。
+func TestPerformanceFirstNeedsEngine093(t *testing.T) {
+	old, current := "v0.9.2", "v0.9.3"
+	cases := []struct {
+		on      bool
+		version *string
+		want    bool
+	}{{false, &current, false}, {true, nil, false}, {true, &old, false}, {true, &current, true}}
+	for _, c := range cases {
+		s := schema.State{RuntimeVersion: c.version}
+		s.Preferences.PerformanceFirst = c.on
+		if performanceFirst(s) != c.want {
+			t.Fatalf("开关 %v 内核 %v：应为 %v", c.on, c.version, c.want)
+		}
+	}
 }

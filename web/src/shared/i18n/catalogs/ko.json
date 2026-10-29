@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "고급 설정"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "음색 혼합"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "생성 취소"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "반복 페널티"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "두 번째 음색"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "두 번째 음색 비율"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "랜덤 시드"
@@ -836,6 +845,12 @@
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "이 모델을 제거하기 전에 관련 작업을 완료하세요."
   },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "성능 우선"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "생성 속도가 빨라지지만 VRAM 사용량이 늘어납니다"
+  },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "모델 제거"
   },
@@ -994,6 +1009,12 @@
   },
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "중국어, 영어 · 음성 디자인 및 클론 · GPU 권장. 모델 라이선스상 연구 및 비상업적 용도로만 사용할 수 있습니다."
+  },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7개 언어 · 음성 디자인 및 복제 · 44.1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "무음 제거"
   },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10개 언어 · 참조 음성 클론"
@@ -1313,8 +1334,8 @@
   "@yovoice.error.omniReferenceRequired": {
     "defaultMessage": "OmniVoice 클론에는 참조 대본이 필요합니다."
   },
-  "@yovoice.error.breezeReferenceRequired": {
-    "defaultMessage": "Breeze TTS 2 클론에는 전체 참조 대본이 필요합니다."
+  "@yovoice.error.referenceTextRequired": {
+    "defaultMessage": "{model} 클론에는 전체 참조 대본이 필요합니다."
   },
   "@yovoice.reference.omniTranscriptHelp": {
     "defaultMessage": "대본은 참조 오디오와 일치해야 합니다."
@@ -1570,6 +1591,12 @@
   },
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "버전에서 추가"
+  },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "yovoice에서 추가"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "추가"
   },
   "@yovoice.nav.library": {
     "defaultMessage": "사운드 라이브러리"
@@ -1896,7 +1923,7 @@
     "defaultMessage": "가사는 최대 4000자까지 입력할 수 있습니다."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "길이는 10~300초, 템포는 30~300 BPM이어야 합니다."
+    "defaultMessage": "음악 설정이 이 모델의 범위를 벗어났습니다. 길이, 템포 또는 재생성 구간을 확인하세요."
   },
   "@yovoice.project.music": {
     "defaultMessage": "음악 생성"
@@ -4630,5 +4657,137 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "녹음이 {total}이라 가장 깨끗한 {start}–{end} 구간을 참조로 사용했습니다. '자르기'로 조정할 수 있습니다."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "편곡하거나 부분 재생성할 이 작품의 생성된 테이크를 선택하거나 텍스트 생성으로 돌아가세요."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "영어 설명으로 연주곡을 생성하고, 생성된 테이크를 편곡하거나 부분 재생성할 수 있습니다(최대 2분). Stability AI 커뮤니티 라이선스: 연 매출 100만 달러 미만은 무료."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "영어 설명으로 효과음을 생성하고, 생성된 테이크를 편곡하거나 부분 재생성할 수 있습니다(최대 2분). Stability AI 커뮤니티 라이선스: 연 매출 100만 달러 미만은 무료."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "더 큰 Stable Audio 3 모델로, 더 높은 품질의 연주곡과 긴 곡(약 6분 이내)을 생성하며 생성된 테이크를 편곡하거나 부분 재생성할 수 있습니다. Stability AI 커뮤니티 라이선스: 연 매출 100만 달러 미만은 무료."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "텍스트로"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "편곡"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "부분 재생성"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "시작 테이크"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "먼저 테이크를 생성해야 이를 바탕으로 편곡하거나 재생성할 수 있습니다."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "변화 정도"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: 작을수록 원래 테이크에 가깝습니다."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "재생성 시작(초)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "재생성 끝(초)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio는 영어 설명만 이해하며 가사를 부르지 않습니다."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "원하는 효과음을 영어로 설명하세요. 예: footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "모델 업데이트 {count}개"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "새 버전"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "업데이트"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "효과음 생성"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "새 효과음"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "효과음 설명"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "효과음 만들기"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "효과음 프로젝트를 만들고 짧은 효과음을 생성해 줘"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "효과음이 완성되었습니다. 설명을 다듬어 개선할까요?"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "현재 효과음의 영어 설명을 다듬고 개선된 버전을 생성해 줘"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "오디오 생성"
+  },
+  "@yovoice.language.nl": {
+    "defaultMessage": "네덜란드어"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "폴리시어"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "튀르키예어"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "체코어"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "헝가리어"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "중국어 간체"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9개 언어 · 내장 음성 20개 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "Danish · 내장 음성 및 복제 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17개 언어 · 음성 복제 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "영어 · 기본 음성 · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "화자 및 이벤트 태그 · 기본 음성 및 복제 · 44.1 kHz"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "청크 사이 무음(초)"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "청크당 텍스트 토큰 수"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "일반 음성"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "내장 음성"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "기본 음성"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "복제하려면 참조 오디오의 정확한 전사를 입력해야 합니다."
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "XTTS v2에는 6–30초의 참조 오디오가 필요합니다."
   }
 }

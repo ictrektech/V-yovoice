@@ -164,6 +164,9 @@
   "@yovoice.create.advanced": {
     "defaultMessage": "Cài đặt nâng cao"
   },
+  "@yovoice.create.blendVoices": {
+    "defaultMessage": "Trộn giọng nói"
+  },
   "@yovoice.create.cancelGenerate": {
     "defaultMessage": "Hủy tạo"
   },
@@ -250,6 +253,12 @@
   },
   "@yovoice.create.repetitionPenalty": {
     "defaultMessage": "Phạt lặp lại"
+  },
+  "@yovoice.create.secondVoice": {
+    "defaultMessage": "Giọng thứ hai"
+  },
+  "@yovoice.create.secondVoiceWeight": {
+    "defaultMessage": "Tỷ trọng giọng thứ hai"
   },
   "@yovoice.create.seed": {
     "defaultMessage": "Hạt giống ngẫu nhiên"
@@ -836,6 +845,12 @@
   "@yovoice.settings.removeBlocked": {
     "defaultMessage": "Hãy hoàn tất các thao tác liên quan trước khi gỡ mô hình này."
   },
+  "@yovoice.settings.performanceFirst": {
+    "defaultMessage": "Ưu tiên hiệu năng"
+  },
+  "@yovoice.settings.performanceFirstHint": {
+    "defaultMessage": "Tạo nhanh hơn nhưng dùng nhiều VRAM hơn"
+  },
   "@yovoice.settings.removeModel": {
     "defaultMessage": "Gỡ mô hình"
   },
@@ -994,6 +1009,12 @@
   },
   "@yovoice.settings.modelDesc.breeze": {
     "defaultMessage": "Tiếng Trung, Anh · thiết kế và nhân bản giọng · khuyến nghị GPU. Giấy phép mô hình chỉ cho phép dùng cho nghiên cứu và phi thương mại."
+  },
+  "@yovoice.settings.modelDesc.ming": {
+    "defaultMessage": "7 ngôn ngữ · thiết kế và nhân bản giọng · 44,1 kHz"
+  },
+  "@yovoice.options.trim_silence": {
+    "defaultMessage": "Cắt khoảng lặng"
   },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 ngôn ngữ · Nhân bản giọng tham chiếu"
@@ -1313,8 +1334,8 @@
   "@yovoice.error.omniReferenceRequired": {
     "defaultMessage": "Nhân bản OmniVoice cần có lời thoại tham chiếu."
   },
-  "@yovoice.error.breezeReferenceRequired": {
-    "defaultMessage": "Nhân bản Breeze TTS 2 cần có đầy đủ lời thoại tham chiếu."
+  "@yovoice.error.referenceTextRequired": {
+    "defaultMessage": "Nhân bản {model} cần có đầy đủ lời thoại tham chiếu."
   },
   "@yovoice.reference.omniTranscriptHelp": {
     "defaultMessage": "Lời thoại phải khớp với âm thanh tham chiếu."
@@ -1570,6 +1591,12 @@
   },
   "@yovoice.timeline.fromHistory": {
     "defaultMessage": "Thêm từ các phiên bản"
+  },
+  "@yovoice.timeline.fromYovoice": {
+    "defaultMessage": "Thêm từ yovoice"
+  },
+  "@yovoice.timeline.addGeneration": {
+    "defaultMessage": "Thêm"
   },
   "@yovoice.nav.library": {
     "defaultMessage": "Thư viện âm thanh"
@@ -1896,7 +1923,7 @@
     "defaultMessage": "Lời bài hát tối đa 4000 ký tự."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "Thời lượng phải từ 10–300 giây và nhịp độ từ 30–300 BPM."
+    "defaultMessage": "Thiết lập âm nhạc vượt quá giới hạn của mô hình này: hãy kiểm tra thời lượng, nhịp độ hoặc đoạn cần vẽ lại."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Tạo nhạc"
@@ -4630,5 +4657,137 @@
   },
   "@yovoice.voice.excerpt": {
     "defaultMessage": "Bản ghi dài {total} nên đoạn rõ nhất ({start}–{end}) được dùng làm mẫu. Dùng Cắt để điều chỉnh."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Hãy chọn một bản đã tạo của tác phẩm này để phối lại hoặc vẽ lại một đoạn, hoặc chuyển về tạo từ văn bản."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Tạo nhạc không lời từ mô tả tiếng Anh, có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo; tối đa 2 phút. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Tạo hiệu ứng âm thanh từ mô tả tiếng Anh, có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo; tối đa 2 phút. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "Mô hình Stable Audio 3 lớn hơn: nhạc không lời chất lượng cao hơn và bản nhạc dài hơn (khoảng 6 phút); có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "Từ văn bản"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Phối lại"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Vẽ lại đoạn"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Bản gốc"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Hãy tạo một bản trước, sau đó mới có thể phối lại hoặc vẽ lại."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Mức thay đổi"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: càng nhỏ càng gần bản gốc."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Vẽ lại từ (giây)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Vẽ lại đến (giây)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio chỉ hiểu mô tả tiếng Anh và không hát lời."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Mô tả âm thanh bằng tiếng Anh, ví dụ footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "{count} mô hình có bản mới"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "Có phiên bản mới"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "Cập nhật"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "Tạo hiệu ứng âm thanh"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "Hiệu ứng âm thanh mới"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "Mô tả âm thanh"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "Tạo hiệu ứng âm thanh"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "Tạo dự án hiệu ứng âm thanh và tạo một âm thanh ngắn"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "Hiệu ứng âm thanh đã sẵn sàng. Bạn có muốn điều chỉnh mô tả hoặc cải thiện không?"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "Điều chỉnh mô tả tiếng Anh của hiệu ứng hiện tại và tạo phiên bản cải tiến"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Tạo âm thanh"
+  },
+  "@yovoice.language.nl": {
+    "defaultMessage": "Tiếng Hà Lan"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "Tiếng Ba Lan"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "Tiếng Thổ Nhĩ Kỳ"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "Tiếng Séc"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "Tiếng Hungary"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "Tiếng Trung giản thể"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9 ngôn ngữ · 20 giọng tích hợp · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "Tiếng Đan Mạch · Giọng tích hợp và nhân bản · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17 ngôn ngữ · Nhân bản giọng nói · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "Tiếng Anh · Giọng mặc định · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "Speaker and event tags · Default voice and cloning · 44.1 kHz"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "Khoảng lặng giữa các đoạn (giây)"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "Số token văn bản mỗi đoạn"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "Giọng phổ thông"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "Giọng tích hợp"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "Giọng mặc định"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "Nhân bản giọng cần bản chép chính xác của âm thanh tham chiếu."
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "XTTS v2 cần 6–30 giây âm thanh tham chiếu."
   }
 }

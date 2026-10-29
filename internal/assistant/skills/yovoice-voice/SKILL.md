@@ -16,6 +16,12 @@ Fields, ranges, voice-source modes and `modelOptions` differ per model. Read onl
 | `qwen3-tts-` | `qwen3-tts` |
 | `voxcpm2-` | `voxcpm2` |
 | `breeze-tts-` | `breeze` |
+| `ming3-tts-` | `ming3_tts` |
+| `voxtral-tts-` | `voxtral_tts` |
+| `plapre-` | `plapre` |
+| `xtts-v2-` | `xtts_v2` |
+| `gradium-phonon-` | `gradium_phonon` |
+| `fish-drama3-` | `fish_drama3` |
 | `kokoro-` | `kokoro` |
 
 When switching the work to another model, read that model's reference before setting its fields; fields the new model does not use are ignored.

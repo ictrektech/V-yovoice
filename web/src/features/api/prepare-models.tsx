@@ -16,7 +16,7 @@ export function PrepareModels({ page, state, catalog, draft, run, close }: {
   const speech = page === 'hotwords' || page === 'asr' ? 'asr' : page === 'tts' ? 'tts' : page === 'speaker' ? 'speaker' : undefined;
   const kind = page === 'create' || page === 'history' ? projectKind(draft) : page;
   const all = page === 'settings' || page === 'api-docs';
-  const models = catalog.filter(model => all || (kind === 'music' ? isMusicModel(model.id) || isAligner(model.id) || isTranscriber(model.id) || isSoundFont(model.id) : kind === 'score' ? model.family === 'soundfont' : isVoiceModel(model.id)));
+  const models = catalog.filter(model => all || (kind === 'music' ? isMusicModel(model.id) || isAligner(model.id) || isTranscriber(model.id) || isSoundFont(model.id) : kind === 'sfx' ? model.family === 'stable_audio' && (model.variant === 'sfx' || model.variant === 'medium') : kind === 'score' ? model.family === 'soundfont' : isVoiceModel(model.id)));
   const { models: shared, failed } = useSharedModelInventory(!speech);
   return <AppDialog title={t('@vvoice.models.prepare')} width="calc(var(--spacing-10) * 22)" closeLabel={t('@yovoice.action.close')} onClose={close}
     actions={<Button label={t('@yovoice.action.close')} onClick={close} />}>

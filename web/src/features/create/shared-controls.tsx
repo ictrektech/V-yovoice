@@ -26,7 +26,7 @@ export function AdvancedSettings({ open, onOpenChange, children }: { open: boole
   </details>;
 }
 
-export function SeedInput({ value, change }: { value: Draft['seed']; change: (patch: Partial<Draft>) => void }) {
+export function SeedInput({ value, change, max = 2147483647 }: { value: Draft['seed']; change: (patch: Partial<Draft>) => void; max?: number }) {
   const t = useTranslator();
-  return <label className="number-field">{t('@yovoice.create.seed')}<input type="number" min={0} max={2147483647} value={value ?? ''} placeholder={t('@yovoice.create.seedAuto')} onChange={event => change({ seed: event.target.value ? Number(event.target.value) : null })} /></label>;
+  return <label className="number-field">{t('@yovoice.create.seed')}<input type="number" min={0} max={max} value={value ?? ''} placeholder={t('@yovoice.create.seedAuto')} onChange={event => change({ seed: event.target.value ? Number(event.target.value) : null })} /></label>;
 }

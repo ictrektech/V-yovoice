@@ -12,6 +12,61 @@ import (
 	"yovoice/internal/catalog"
 )
 
+func TestSharedModelsRetainPreviousWeightsAndUseStrippedPackageRoot(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("MODEL_HUB_SHARED_MODELS_PATH", root)
+	w, err := New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+	old, err := catalog.Lookup("kokoro-82m-q8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	old = old.PreviousVersion()
+	base := filepath.Join(root, "export", "ms", SharedRepository, "current")
+	path := filepath.Join(base, filepath.FromSlash(old.RemotePath))
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Truncate(old.Size); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.SyncSharedModels(); err != nil {
+		t.Fatal(err)
+	}
+	models := w.Store.Read().Models
+	if len(models) != 1 || models[0].ID != old.ID || models[0].SHA256 != old.MainFile().SHA256 {
+		t.Fatal("升级目录不应把已安装的旧共享模型移除", models)
+	}
+
+	original := catalog.Models
+	catalog.Models = []catalog.ModelPackage{{ID: "stripped", Repo: "owner/repo", Directory: "package", StripPrefix: "q8", RemotePath: "q8/main.gguf", Files: []catalog.ModelFile{{Path: "q8/main.gguf", Size: 4, SHA256: "known"}}}}
+	defer func() { catalog.Models = original }()
+	packageRoot := filepath.Join(base, "mirrors", "owner", "repo", "q8")
+	if err := os.MkdirAll(packageRoot, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(packageRoot, "main.gguf"), []byte("data"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.SyncSharedModels(); err != nil {
+		t.Fatal(err)
+	}
+	models = w.Store.Read().Models
+	if len(models) != 1 || models[0].Path != packageRoot || models[0].SHA256 != "known" {
+		t.Fatal("多文件共享模型应加载配套文件实际所在目录", models)
+	}
+}
+
 func TestSharedModelCancellationOnlyTargetsMatchingActiveFiles(t *testing.T) {
 	original := catalog.Models
 	catalog.Models = []catalog.ModelPackage{{ID: "selected", RemotePath: "selected.gguf", Size: 4}}

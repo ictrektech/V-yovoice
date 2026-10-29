@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"yovoice/internal/catalog"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
 )
@@ -84,6 +85,7 @@ func TestLegacyStateImported(t *testing.T) {
 	legacy := schema.DefaultState()
 	legacy.Drafts[0].Title = "旧作品"
 	legacy.Voices = []schema.Voice{{ID: "v1", Name: "旁白"}}
+	legacy.Models = []schema.InstalledModel{{ID: "kokoro-82m-q8", Path: "/models/kokoro.gguf"}}
 	legacy.Preferences.UiLocale = ""
 	must(t, writeState(filepath.Join(root, legacyState), legacy))
 	must(t, writeState(filepath.Join(root, legacyBackup), schema.DefaultState()))
@@ -95,6 +97,9 @@ func TestLegacyStateImported(t *testing.T) {
 	}
 	if state.Preferences.UiLocale != schema.UiLocaleZhCN {
 		t.Fatal("旧版没有界面语言时应视为中文", state.Preferences.UiLocale)
+	}
+	if len(state.Models) != 1 || state.Models[0].SHA256 != catalog.LegacyModelFiles["kokoro-82m-q8"].SHA256 {
+		t.Fatal("旧 JSON 状态导入时也应补记模型主文件摘要", state.Models)
 	}
 	for name, want := range map[string]bool{legacyState: false, legacyBackup: false, legacyMigrated: true, DatabaseFile: true, backupFile: true} {
 		if _, err := os.Stat(filepath.Join(root, name)); (err == nil) != want {

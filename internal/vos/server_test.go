@@ -9,9 +9,57 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 	"yovoice/internal/audio"
 	"yovoice/internal/schema"
 )
+
+func TestTimelineAndRemixOnlyUseConfirmedOwnedGenerations(t *testing.T) {
+	s := testServer(t)
+	r := httptest.NewRequest("POST", "/studio-api/call", nil)
+	r.Header.Set("Authorization", "Bearer alice")
+	identity, err := s.identity(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := s.user(identity.Key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := schema.NewID()
+	if err := audio.WriteMono(filepath.Join(w.Store.Root, "outputs", id+".wav"), make([]float32, 16000), 16000); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Store.Update(func(state *schema.State) {
+		state.History = []schema.Generation{{ID: id, FileName: id + ".wav", Duration: 1, Settings: schema.DefaultDraft()}}
+	}, true); err != nil {
+		t.Fatal(err)
+	}
+	j := &Jobs{Server: s, Config: SchedulerConfig{URL: "http://scheduler.invalid", Token: strings.Repeat("s", 32), ExecutorToken: strings.Repeat("e", 32), Models: map[string]string{"stable-audio-3-small-sfx-q8": "approved"}}}
+	s.Jobs = j
+	job := Job{ID: schema.NewID(), User: identity.Key, Created: time.Now(), Stopped: true, ExecutionStatus: "succeeded", OutputFiles: []string{id + ".wav"}}
+	data, _ := json.Marshal(map[string]any{"modelId": "stable-audio-3-small-sfx-q8", "sourceGenerationId": id, "modelOptions": map[string]any{"stable_audio": map[string]string{"edit": "init_audio"}}})
+	for _, status := range []string{"running", "failed", "cancelled", "succeeded"} {
+		job.Status = status
+		if err := atomicJSON(j.path(job.ID), job); err != nil {
+			t.Fatal(err)
+		}
+		response := rpc(s, "alice", "timeline.fromGeneration", `{"id":"`+id+`"}`)
+		allowed := status == "succeeded"
+		if strings.Contains(response.Body.String(), `"error"`) == allowed || response.Code != 200 {
+			t.Fatalf("时间轴导入确认边界错误 %s: %s", status, response.Body.String())
+		}
+		if _, err := j.Enqueue(identity.Key, schema.NewID(), "generation.start", data); (err == nil) != allowed {
+			t.Fatalf("改编来源确认边界错误 %s: %v", status, err)
+		}
+	}
+	if response := rpc(s, "bob", "timeline.fromGeneration", `{"id":"`+id+`"}`); !strings.Contains(response.Body.String(), `"error"`) {
+		t.Fatal("允许复制其他用户的生成音频", response.Body.String())
+	}
+	if _, err := j.Enqueue("bob", schema.NewID(), "generation.start", data); err == nil {
+		t.Fatal("允许引用其他用户的改编来源")
+	}
+}
 
 func testServer(t *testing.T) *Server {
 	t.Helper()

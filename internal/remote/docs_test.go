@@ -65,7 +65,7 @@ func TestDocsTryItOutSameOrigin(t *testing.T) {
 func TestOpenAPIGenerationFields(t *testing.T) {
 	var doc openAPIDoc
 	must(t, json.Unmarshal(openAPI, &doc))
-	want := []string{"text"}
+	want := []string{"text", "kind"}
 	settings := reflect.TypeOf(schema.SynthesisSettings{})
 	for i := range settings.NumField() {
 		want = append(want, strings.Split(settings.Field(i).Tag.Get("json"), ",")[0])

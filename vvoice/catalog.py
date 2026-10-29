@@ -130,11 +130,22 @@ def resolve_files(item: dict[str, Any]) -> dict[str, str]:
     return resolved
 
 
+def shared_files_for(item: dict[str, Any], root: Path | None = None) -> list[dict]:
+    """仅接受当前或固定的上一版清单；真正使用前仍验证完整摘要。"""
+    current = item.get("shared_files", [])
+    previous = item.get("previous_shared_files", [])
+    root = root if root is not None else model_root(item)
+    for files in [current, previous]:
+        if files and all((root / f["path"]).is_file() and (root / f["path"]).stat().st_size == f["size"] for f in files):
+            return files
+    return current
+
+
 def model_files_ready(item: dict[str, Any]) -> tuple[bool, str]:
     """Check the merged catalog/installed descriptor without loading a model."""
     try:
         resolve_files(descriptor_for(item))
-        for file in item.get("shared_files", []):
+        for file in shared_files_for(item):
             path = (model_root(item) / file["path"]).resolve()
             stat = path.stat()
             if stat.st_size != file["size"] or _shared_hash(str(path), stat.st_size, stat.st_mtime_ns) != file["sha256"]:

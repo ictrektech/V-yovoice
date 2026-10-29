@@ -15,7 +15,7 @@ import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-REVISION = "6d5436fc85f7a20c2e9f4e472b7f3a532f686444"
+REVISION = "874fcb41ececda20bcbc0782d6b4ea7f7d069ea8"
 
 
 def file_specs():

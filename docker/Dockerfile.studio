@@ -5,10 +5,10 @@ ARG AUDIOCPP_CUDA=OFF
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends cmake build-essential pkg-config \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=audiocpp_source /audio.cpp-v0.9.2.tar.gz /tmp/audio.tar.gz
+COPY --from=audiocpp_source /audio.cpp-v0.9.3.tar.gz /tmp/audio.tar.gz
 RUN mkdir /src && tar xzf /tmp/audio.tar.gz -C /src --strip-components=1 \
     && cmake -S /src -B /build -DCMAKE_BUILD_TYPE=Release \
-       -DAUDIOCPP_VERSION=v0.9.2 -DAUDIOCPP_DEPLOYMENT_BUILD=ON \
+       -DAUDIOCPP_VERSION=v0.9.3 -DAUDIOCPP_DEPLOYMENT_BUILD=ON \
        -DENGINE_ENABLE_NATIVE_CPU=OFF -DENGINE_ENABLE_CUDA=${AUDIOCPP_CUDA} \
        -DCMAKE_DISABLE_FIND_PACKAGE_Git=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
        '-DCMAKE_INSTALL_RPATH=$ORIGIN' \
@@ -39,6 +39,7 @@ COPY vvoice/ /app/vvoice/
 COPY catalog/ /app/catalog/
 COPY internal/catalog/catalog.json /app/catalog/audio-cpp.json
 COPY internal/catalog/vos.json /app/catalog/audio-cpp-vos.json
+COPY internal/catalog/previous-model-files.json /app/catalog/previous-model-files.json
 COPY LICENSE THIRD_PARTY_NOTICES.md /opt/vvoice/notices/
 COPY scripts/licenses/espeak-ng-COPYING.txt /opt/vvoice/tools/kokoro/
 RUN python3 -c "import importlib.util; from pathlib import Path; assert all(importlib.util.find_spec(name) is None for name in ('torch', 'torchaudio', 'transformers', 'diffusers')) and not Path('/opt/vvoice/music-python').exists()"

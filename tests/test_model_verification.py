@@ -133,3 +133,20 @@ def test_large_model_verification_is_nonblocking_coalesced_and_fail_closed(monke
         assert len(calls) == 2
     finally:
         release.set()
+
+
+def test_previous_shared_weights_are_verified_against_frozen_digest(monkeypatch, tmp_path):
+    monkeypatch.setattr(catalog_module, "settings", SimpleNamespace(modelhub_root=tmp_path))
+    root = tmp_path / "export/ms/vivibit/test/current"
+    root.mkdir(parents=True)
+    path = root / "model.gguf"
+    path.write_bytes(b"old")
+    item = {"modelscope_repo": "vivibit/test", "runtime": {"files": {"model": "model.gguf"}},
+            "shared_files": [{"path": "model.gguf", "size": 4, "sha256": hashlib.sha256(b"new!").hexdigest()}],
+            "previous_shared_files": [{"path": "model.gguf", "size": 3, "sha256": hashlib.sha256(b"old").hexdigest()}]}
+    assert catalog_module.model_files_ready(item)[0]
+    path.write_bytes(b"bad")
+    os.utime(path, ns=(path.stat().st_atime_ns, path.stat().st_mtime_ns + 1_000_000_000))
+    assert not catalog_module.model_files_ready(item)[0]
+    path.write_bytes(b"new!")
+    assert catalog_module.model_files_ready(item)[0]

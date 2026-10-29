@@ -27,8 +27,8 @@ func TestKokoroVoiceRequests(t *testing.T) {
 				t.Fatal(r)
 			}
 			o := r["options"].(map[string]any)
-			if len(o) != 1 || o["text_chunk_size"] != 64 {
-				t.Fatal("不能透传其他模型的参数", o)
+			if len(o) != 0 {
+				t.Fatal("分段默认值交给内核按语言决定，不能透传其他模型的参数", o)
 			}
 		}
 		d.SynthesisLanguage = "ja"
@@ -51,18 +51,18 @@ func TestKokoroOfficialDownload(t *testing.T) {
 		id, precision, file, hash string
 		size                      int64
 	}{
-		{"kokoro-82m-q8", "Q8", "kokoro-82m-q8_0.gguf", "5d800fd204029302c10313daeafdb31c875c7c29ae31974d0d156cc7f512d1d0", 189549408},
-		{"kokoro-82m-bf16", "BF16", "kokoro-82m-bf16.gguf", "51d10c63557d21f70ef5d607e91c11023cf408dbc3af24c283b18106778e1e67", 211954816},
+		{"kokoro-82m-q8", "Q8", "kokoro-82m-q8_0.gguf", "9a4ca6176460cdc8c7845b804c0bbe85a4791ee3ffff568a3fdadbb708c63f47", 189550976},
+		{"kokoro-82m-bf16", "BF16", "kokoro-82m-bf16.gguf", "0d2c2afac39b0ff01fb20b5633a6a5543735e612942b3af571424502b9c2dfaa", 211956384},
 	} {
 		t.Run(test.id, func(t *testing.T) {
 			m, err := catalog.Lookup(test.id)
 			must(t, err)
-			if m.Precision != test.precision || m.Size != test.size || m.SHA256 != test.hash || m.Revision != "0a104324546d2622985e3c676a4b5550cc772127" {
+			if m.Precision != test.precision || m.Size != test.size || m.SHA256 != test.hash || m.Revision != "" {
 				t.Fatal("官方模型下载元数据不匹配", m)
 			}
 			for source, prefix := range map[string]string{
-				"huggingface": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/" + m.Revision,
-				"mirror":      "https://hf-mirror.com/audio-cpp/audio.cpp-gguf/resolve/" + m.Revision,
+				"huggingface": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/" + catalog.Revision,
+				"mirror":      "https://hf-mirror.com/audio-cpp/audio.cpp-gguf/resolve/" + catalog.Revision,
 				"modelscope":  "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/" + catalog.ModelScopeRevision,
 			} {
 				url, err := m.URL(source)
@@ -82,5 +82,77 @@ func TestKokoroOfficialDownload(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestKokoroVoiceBlend(t *testing.T) {
+	m, err := catalog.Lookup("kokoro-82m-q8")
+	must(t, err)
+	d := schema.DefaultDraft()
+	d.ModelID = m.ID
+	d.SynthesisLanguage = "en-us"
+	for _, speaker := range []string{
+		"af_alloy(0.5)+af_heart(0.5)",
+		"af_alloy(1)+af_heart(1)",
+		"am_adam(2.5)+af_alloy(0.25)",
+	} {
+		d.Speaker = speaker
+		payload, err := BuildRequest(d, "", "")
+		must(t, err)
+		r := payload["request"].(map[string]any)
+		if r["voice_id"] != speaker {
+			t.Fatalf("混合音色应原样透传 voice_id：%v", r)
+		}
+	}
+
+	for _, speaker := range []string{
+		"af_alloy(0)+af_heart(1)",
+		"af_alloy(-0.5)+af_heart(1.5)",
+		"af_alloy(NaN)+af_heart(1)",
+		"af_alloy(Inf)+af_heart(1)",
+		"unknown(0.5)+af_heart(0.5)",
+		"af_alloy(0.5)+bf_alice(0.5)",
+		"af_alloy()+af_heart(0.5)",
+		"af_alloy(0.5)af_heart(0.5)",
+		"af_alloy(0.5)+af_heart(0.5)+am_adam(0.5)",
+	} {
+		d.Speaker = speaker
+		if schema.Validate(d) == nil {
+			t.Errorf("应拒绝非法混合音色 %q", speaker)
+		}
+	}
+	d.Speaker = "af_alloy(0.5)+af_heart(0.5)"
+	d.SynthesisLanguage = "en-gb"
+	if schema.Validate(d) == nil {
+		t.Fatal("显式语言仍应匹配混合音色的第一音色")
+	}
+}
+
+func TestKokoroStorySpeakersUseExistingSpeakerSettings(t *testing.T) {
+	m, err := catalog.Lookup("kokoro-82m-q8")
+	must(t, err)
+	story := schema.DefaultDraft()
+	story.ModelID = m.ID
+	story.Kind = "story"
+	story.Text = "夜色很深。\n我来了。"
+	narrator := story.SynthesisSettings
+	narrator.Speaker = "af_alloy(0.5)+af_heart(0.5)"
+	narrator.SynthesisLanguage = "auto"
+	hero := story.SynthesisSettings
+	hero.Speaker = "zf_xiaobei"
+	hero.SynthesisLanguage = "auto"
+	story.Subtitles = &schema.SubtitleDocument{
+		Speakers: []schema.SubtitleSpeaker{{ID: "narrator", SourceName: "旁白", Settings: &narrator}, {ID: "hero", SourceName: "主角", Settings: &hero}},
+		Cues:     []schema.SubtitleCue{{Start: 0, End: 1000, Text: "夜色很深。", SpeakerID: "narrator"}, {Start: 1000, End: 2000, Text: "我来了。", SpeakerID: "hero"}},
+	}
+	drafts, err := story.SubtitleDrafts()
+	must(t, err)
+	for i, want := range []string{narrator.Speaker, hero.Speaker} {
+		payload, err := BuildRequest(drafts[i], "", "")
+		must(t, err)
+		r := payload["request"].(map[string]any)
+		if drafts[i].Speaker != want || r["voice_id"] != want {
+			t.Fatalf("角色 %d 未复用现有 speaker 链路：%+v", i, r)
+		}
 	}
 }

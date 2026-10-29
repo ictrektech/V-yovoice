@@ -548,6 +548,7 @@ var pageLabels = map[string]string{
 	"text":       "voice generation（语音生成）",
 	"story":      "story dubbing（故事配音）",
 	"music":      "music generation（音乐生成）",
+	"sfx":        "sound effects generation（音效生成）",
 	"score":      "arrangement（编曲）",
 	"characters": "voice library（声音库）",
 	"voices":     "reference audio library（参考音色库）",

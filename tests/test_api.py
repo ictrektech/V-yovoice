@@ -32,7 +32,11 @@ def test_scheduler_contract_includes_legacy_and_all_creator_models_without_crede
     assert contract["binding_endpoint"] == "/api/v1/scheduler/binding"
     sync = {row["id"]: row for row in contract["sync_models"]}
     assert {"sensevoice-int8", "seaco-paraformer-zh", "speaker-campplus-zh-en", "audiocpp-kokoro-82m-q8"} <= sync.keys()
-    assert len(contract["async_models"]) == 40
+    assert len(contract["async_models"]) == 59
+    from vvoice.creative import models
+    assert {row["id"] for row in contract["async_models"]} == {
+        row["runtime"]["model_id"] for row in models(include_non_speech=True)
+    }
     assert all(row["task_type"] == "voice.generate" for row in contract["async_models"])
     assert "token" not in str(contract)
 

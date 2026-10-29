@@ -20,11 +20,11 @@ import (
 
 // registerAgentTools 把状态、偏好与提议工具注册到内置助手的 MCP server。
 func (w *Workbench) registerAgentTools(server *mcp.Server) {
-	mcp.AddTool(server, &mcp.Tool{Name: "get_app_status", Description: "查看应用整体状态：已安装模型、推理引擎（版本、计算设备、是否可用）、正在进行的生成与下载、磁盘占用。回答“装了哪些模型”“为什么用不了”之类的问题前调用。"}, w.appStatusTool)
+	mcp.AddTool(server, &mcp.Tool{Name: "get_app_status", Description: "查看应用整体状态：已安装模型、推理引擎（版本、计算设备、是否可用）、性能优先设置、正在进行的生成与下载、磁盘占用。回答“装了哪些模型”“为什么用不了”之类的问题前调用。"}, w.appStatusTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "get_recent_errors", Description: "读取最近的警告与错误日志（事件名、错误码与少量字段，已脱敏）。排查生成失败、下载失败、引擎问题时调用；错误码含义见 yovoice-product skill。"}, w.recentErrorsTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "remember_preference", Description: "记住一条用户明确表达的长期偏好（常用音色、风格、语言、语速、称呼等），以后每次对话都会带上。只记用户亲口说的偏好，一条一件事，不记一次性的要求。"}, w.rememberTool)
 	mcp.AddTool(server, &mcp.Tool{Name: "forget_preference", Description: "删除一条已记住的偏好（id 见 <ui_context> 里的 preferences）。用户说不再需要或偏好变了时调用。"}, w.forgetTool)
-	mcp.AddTool(server, &mcp.Tool{Name: "propose_action", Description: "提议一个需要用户确认的操作，界面显示确认卡片，用户点确认后才执行。action：delete_work（target=作品 ID）、delete_generation（target=生成记录 ID）、delete_character（target=声音库角色 ID）、install_model（target=模型 ID）、install_engine（安装或更新推理引擎）、cleanup_storage（清理无用的临时文件与孤立生成）、set_backend（value=计算设备，如 metal、cpu、cuda、vulkan）、set_download_source（value=huggingface、mirror 或 modelscope）。调用后告诉用户去卡片上确认，不要声称已经完成。"}, w.proposeTool)
+	mcp.AddTool(server, &mcp.Tool{Name: "propose_action", Description: "提议一个需要用户确认的操作，界面显示确认卡片，用户点确认后才执行。action：delete_work（target=作品 ID）、delete_generation（target=生成记录 ID）、delete_character（target=声音库角色 ID）、install_model（target=模型 ID；已安装且有更新时提议更新）、install_engine（安装或更新推理引擎）、cleanup_storage（清理无用的临时文件与孤立生成）、set_backend（value=计算设备，如 metal、cpu、cuda、vulkan）、set_download_source（value=huggingface、mirror 或 modelscope）、set_performance_first（value=on/off，仅 CUDA 且推理内核 v0.9.3+）。调用后告诉用户去卡片上确认，不要声称已经完成。"}, w.proposeTool)
 }
 
 func (w *Workbench) appStatusTool(ctx context.Context, req *mcp.CallToolRequest, in struct{}) (*mcp.CallToolResult, any, error) {
@@ -34,6 +34,7 @@ func (w *Workbench) appStatusTool(ctx context.Context, req *mcp.CallToolRequest,
 		item := map[string]any{"id": installed.ID}
 		if definition, e := catalog.Lookup(installed.ID); e == nil {
 			item["name"], item["family"] = definition.Name, definition.Family
+			item["updateAvailable"] = installed.SHA256 != "" && installed.SHA256 != definition.MainFile().SHA256
 		}
 		models = append(models, item)
 	}
@@ -41,7 +42,7 @@ func (w *Workbench) appStatusTool(ctx context.Context, req *mcp.CallToolRequest,
 	if s.RuntimeVersion != nil {
 		engine["installed"] = *s.RuntimeVersion
 	}
-	out := map[string]any{"models": models, "engine": engine, "downloadSource": s.Preferences.DownloadSource, "works": len(s.Drafts), "generations": len(s.History), "characters": len(s.Characters)}
+	out := map[string]any{"models": models, "engine": engine, "downloadSource": s.Preferences.DownloadSource, "performanceFirst": s.Preferences.PerformanceFirst, "works": len(s.Drafts), "generations": len(s.History), "characters": len(s.Characters)}
 	if a := s.Activity; a != nil && a.Status == "running" {
 		out["activity"] = activitySummary(*a)
 	}
@@ -180,14 +181,16 @@ func (w *Workbench) ForgetAssistant(id string) error {
 var proposalLabels = map[string][2]string{
 	"delete_work": {"删除作品《%s》", "Delete work %q"}, "delete_generation": {"删除生成记录《%s》", "Delete take %q"},
 	"delete_character": {"从声音库删除《%s》", "Delete voice %q"}, "install_model": {"下载模型 %s", "Download model %s"},
-	"install_engine": {"安装推理引擎 %s", "Install inference engine %s"}, "cleanup_storage": {"清理无用文件%s", "Clean up unused files%s"},
+	"install_model_update": {"更新模型 %s", "Update model %s"},
+	"install_engine":       {"安装推理引擎 %s", "Install inference engine %s"}, "cleanup_storage": {"清理无用文件%s", "Clean up unused files%s"},
 	"set_backend": {"计算设备改为 %s", "Switch compute device to %s"}, "set_download_source": {"下载源改为 %s", "Switch download source to %s"},
+	"set_performance_first": {"性能优先设为 %s", "Set performance-first to %s"},
 }
 
 type proposeInput struct {
-	Action string `json:"action" jsonschema:"操作：delete_work、delete_generation、delete_character、install_model、install_engine、cleanup_storage、set_backend 或 set_download_source"`
+	Action string `json:"action" jsonschema:"操作：delete_work、delete_generation、delete_character、install_model、install_engine、cleanup_storage、set_backend、set_download_source 或 set_performance_first"`
 	Target string `json:"target,omitempty" jsonschema:"操作对象的 ID：作品、生成记录、角色或模型"`
-	Value  string `json:"value,omitempty" jsonschema:"设置的新值：计算设备或下载源"`
+	Value  string `json:"value,omitempty" jsonschema:"设置的新值：计算设备、下载源，或性能优先的 on/off"`
 	Reason string `json:"reason,omitempty" jsonschema:"一句话说明为什么建议这样做，显示在卡片上"`
 }
 
@@ -201,6 +204,9 @@ func (w *Workbench) proposeTool(ctx context.Context, req *mcp.CallToolRequest, i
 		proposal.Reason = string(runes[:200]) + "…"
 	}
 	names := proposalLabels[in.Action]
+	if in.Action == "install_model" && slices.ContainsFunc(w.Store.Read().Models, func(m schema.InstalledModel) bool { return m.ID == in.Target }) {
+		names = proposalLabels["install_model_update"]
+	}
 	w.chatProposal("propose_action", fmt.Sprintf(names[0], label), fmt.Sprintf(names[1], label), proposal)
 	return nil, map[string]any{"proposed": true, "id": proposal.ID, "hint": "确认卡片已显示，等用户点确认后才会执行；不要声称已经完成"}, nil
 }
@@ -233,8 +239,10 @@ func (w *Workbench) proposalLabel(action, target, value string) (string, error) 
 		if e != nil {
 			return "", fmt.Errorf("未知模型 %s，请用 list_models 查询模型 ID", target)
 		}
-		if slices.ContainsFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == target }) {
-			return "", fmt.Errorf("模型 %s 已经安装", target)
+		for _, installed := range s.Models {
+			if installed.ID == target && (installed.SHA256 == "" || installed.SHA256 == definition.MainFile().SHA256) {
+				return "", fmt.Errorf("模型 %s 已经安装且没有可用更新", target)
+			}
 		}
 		return fmt.Sprintf("%s（%s，%.1f GB）", definition.Name, target, float64(definition.Size)/1e9), nil
 	case "install_engine":
@@ -249,6 +257,17 @@ func (w *Workbench) proposalLabel(action, target, value string) (string, error) 
 	case "set_download_source":
 		if _, e := catalog.Models[0].URL(value); e != nil {
 			return "", fmt.Errorf("下载源必须是 huggingface、mirror 或 modelscope")
+		}
+		return value, nil
+	case "set_performance_first":
+		if value != "on" && value != "off" {
+			return "", fmt.Errorf("性能优先的 value 必须是 on 或 off")
+		}
+		if s.Preferences.Backend != "cuda" && s.Preferences.Backend != "cuda13" {
+			return "", fmt.Errorf("性能优先只支持 CUDA 计算设备，请先将计算设备设为 cuda 或 cuda13")
+		}
+		if s.RuntimeVersion == nil || !catalog.VersionAtLeast(*s.RuntimeVersion, performanceFirstEngine) {
+			return "", fmt.Errorf("性能优先需要推理内核 %s 或更新版本，请先安装或更新推理引擎", performanceFirstEngine)
 		}
 		return value, nil
 	}
@@ -308,6 +327,12 @@ func (w *Workbench) runProposal(p schema.AssistantProposal) error {
 			prefs.DownloadSource = p.Value
 		}
 		return w.SavePreferences(prefs)
+	case "set_performance_first":
+		w.edit.Lock()
+		defer w.edit.Unlock()
+		return w.Store.Update(func(s *schema.State) {
+			s.Preferences.PerformanceFirst = p.Value == "on"
+		}, true)
 	}
 	return msg.Err(msg.ErrRequestInvalid, nil)
 }

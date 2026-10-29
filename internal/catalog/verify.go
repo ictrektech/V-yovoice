@@ -18,7 +18,7 @@ func VerifyPackage(ctx context.Context, model ModelPackage, root string) error {
 	for _, file := range model.PackageFiles() {
 		path := root
 		if len(model.Files) > 0 {
-			path = filepath.Join(root, filepath.FromSlash(file.Path))
+			path = filepath.Join(root, filepath.FromSlash(model.LocalPath(file.Path)))
 		}
 		if err := verifyFile(ctx, path, file); err != nil {
 			return err

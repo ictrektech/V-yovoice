@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"yovoice/internal/catalog"
 	"yovoice/internal/schema"
 )
 
@@ -31,6 +32,8 @@ func TestMigrateLegacyData(t *testing.T) {
 		{"INSERT INTO settings (key, pos, data) VALUES ('assistantSessions', 0, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data", []any{`{"currentId":"s","sessions":[{"id":"s","title":"t","messages":[{"id":"m","role":"assistant","text":"好了","tools":[{"tool":"create_work","state":"done"}],"createdAt":"2026-10-01T00:00:00Z"}],"updatedAt":"2026-10-01T00:00:00Z"}]}`}},
 		{"INSERT INTO settings (key, pos, data) VALUES ('runtimePath', 0, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data", []any{string(runtimePath)}},
 		{"DELETE FROM settings WHERE key = 'runtimeVersion'", nil},
+		{"INSERT INTO models (key, pos, data) VALUES ('kokoro', 0, ?)", []any{`{"id":"kokoro-82m-q8","path":"/models/kokoro.gguf","managed":false}`}},
+		{"INSERT INTO models (key, pos, data) VALUES ('custom', 1, ?)", []any{`{"id":"custom","path":"/models/custom.gguf","managed":true}`}},
 		{"PRAGMA user_version = 1", nil},
 	} {
 		_, err = s.db.Exec(step.query, step.args...)
@@ -74,6 +77,9 @@ func TestMigrateLegacyData(t *testing.T) {
 	if state.RuntimeVersion == nil || *state.RuntimeVersion != "v1.2.3" {
 		t.Fatal("应从安装目录名补记旧内核版本")
 	}
+	if state.Models[0].SHA256 != catalog.LegacyModelFiles["kokoro-82m-q8"].SHA256 || state.Models[0].Managed || state.Models[1].SHA256 != "" {
+		t.Fatal("旧模型应按冻结目录补记主文件摘要，未知模型保持未知", state.Models)
+	}
 	var version int
 	must(t, s.db.QueryRow("PRAGMA user_version").Scan(&version))
 	if version != schemaVersion {
@@ -97,6 +103,39 @@ func TestNewDatabaseIsCurrent(t *testing.T) {
 	}
 	if files, _ := filepath.Glob(filepath.Join(root, upgradeSnapshot+"-*.db")); len(files) != 0 {
 		t.Fatal("新建的状态库不应留升级副本", files)
+	}
+}
+
+func TestVersionTwoMigrationPreservesHistoryAndSharedPaths(t *testing.T) {
+	root := t.TempDir()
+	s, err := New(root)
+	must(t, err)
+	before := s.Read()
+	before.History = []schema.Generation{{ID: schema.NewID(), FileName: "kept.wav", LyricTimes: []float64{0, 1}, Settings: schema.DefaultDraft()}}
+	before.Models = []schema.InstalledModel{{ID: "kokoro-82m-q8", Path: "/modelhub/shared/kokoro.gguf"}, {ID: "kokoro-1.0-q8", Path: "/modelhub/shared/imports/kokoro-1.0-q8.gguf"}}
+	must(t, s.Update(func(state *schema.State) { *state = before }, true))
+	_, err = s.db.Exec("PRAGMA user_version = 2")
+	must(t, err)
+	must(t, s.Close())
+	s, err = New(root)
+	must(t, err)
+	defer s.Close()
+	after := s.Read()
+	if !reflect.DeepEqual(after.History, before.History) || len(after.Models) != 2 {
+		t.Fatal("版本 3 升级丢失了历史或模型")
+	}
+	for i, model := range after.Models {
+		if model.Path != before.Models[i].Path || model.ID != before.Models[i].ID || model.Managed != before.Models[i].Managed {
+			t.Fatal("版本 3 升级改变共享模型路径", after.Models)
+		}
+	}
+	if after.Models[0].SHA256 != catalog.LegacyModelFiles["kokoro-82m-q8"].SHA256 {
+		t.Fatal("应登记升级前的权重摘要，而不是新版目录摘要")
+	}
+	snapshots, err := filepath.Glob(filepath.Join(root, upgradeSnapshot+"-v2-*.db"))
+	must(t, err)
+	if len(snapshots) != 1 {
+		t.Fatal("缺少 v2 数据库回滚副本")
 	}
 }
 

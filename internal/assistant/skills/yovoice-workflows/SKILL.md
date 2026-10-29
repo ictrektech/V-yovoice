@@ -5,7 +5,7 @@ description: Step-by-step tool sequences for common yovoice tasks — narration,
 
 # yovoice workflows
 
-Work types: `text` 语音 (narration / voice-over), `story` 故事配音 (multi-speaker subtitles), `music` 音乐 (AI song generation), `score` 编曲 (arrangement rendering). Every workflow starts from the <ui_context> of the user message and uses the same pattern: read, change, then act.
+Work types: `text` 语音 (narration / voice-over), `story` 故事配音 (multi-speaker subtitles), `music` 音乐 (AI song generation), `score` 编曲 (arrangement rendering), `sfx` 音效 (sound effects). Every workflow starts from the <ui_context> of the user message and uses the same pattern: read, change, then act.
 
 ## Narration (配一段旁白)
 
@@ -33,9 +33,22 @@ Everything in the right-hand inspector is editable with `update_work` {"id","set
 
 1. `create_work` {"kind":"music","title":...}.
 2. Follow the yovoice-lyrics skill, then apply with `update_work` {"id","text":<style>,"lyrics":...,"instrumental":false,"language":"zh"}.
-3. `list_models`: an installed `ace-step-*` or `yue2-*` model is required. If missing, propose installing it with `propose_action` {"action":"install_model","target":<model id>}.
+3. `list_models`: an installed `ace-step-*`, `yue2-*` or `stable-audio-*` model is required (Stable Audio: English description only, instrumental music or sound effects, no lyrics). If missing, propose installing it with `propose_action` {"action":"install_model","target":<model id>}.
 4. `update_work` {"id","modelId":...} then `generate_work` (for YuE2 in score mode, after step 5). Music takes longer than voice; say so and let the user check later.
 5. With a `yue2-*` model in score mode, write the score first and let the user review and listen to it before generating; melody scores, covers, instrumentals and musical edits follow the yovoice-music skill.
+
+## Sound effects (生成音效)
+
+1. `create_work` {"kind":"sfx","title":...}; new works default to `stable-audio-3-small-sfx-q8` and 5 seconds.
+2. `update_work` {"id","text":<short English sound description>}; leave lyrics empty. Stable Audio Medium also fits; Small Music does not.
+3. Confirm an SFX or Medium model is installed with `list_models`, then `generate_work`. Rework and inpaint use the same Stable Audio settings as music.
+
+## Add sound effects to a story (给故事配音加音效)
+
+1. `create_work` {"kind":"sfx","title":...,"open":false}, then `update_work` {"id","text":<specific English sound description>}.
+2. Confirm an SFX or Medium model is installed with `list_models`, then `generate_work` {"id"}.
+3. Poll `get_generation_status` {"id"} until the completed `latest` appears; keep its `id` as the generation ID.
+4. `get_work` on the target story and choose a track from `tracks`, or leave `track` empty to create an 音效 track. Call `add_timeline_audio` {"id":<story id>,"generationId":<latest.id>,"track":<name or 1-based index>,"start":<optional seconds>}. Without `start`, it appends at that track's end.
 
 ## Underscore / arrangement (给作品配乐)
 

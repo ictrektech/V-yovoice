@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"yovoice/internal/catalog"
 	"yovoice/internal/schema"
 )
 
@@ -43,6 +44,33 @@ var migrations = []migration{
 		}
 		return runtimeVersion(tx, root)
 	}},
+	// 3：按本次模型目录更新前的清单，为已安装模型补记主文件 SHA256。
+	{data: func(tx *sql.Tx, root string) error {
+		return rewriteRows(tx, "models", func(_ string, data []byte) ([]byte, error) {
+			return backfillModelSHA256(data)
+		})
+	}},
+}
+
+func backfillModelSHA256(data []byte) ([]byte, error) {
+	var model schema.InstalledModel
+	if err := json.Unmarshal(data, &model); err != nil {
+		return nil, err
+	}
+	legacy := catalog.LegacyModelFiles[model.ID]
+	if model.SHA256 != "" || legacy.SHA256 == "" {
+		return nil, nil
+	}
+	model.SHA256 = legacy.SHA256
+	return json.Marshal(model)
+}
+
+func backfillModelSHA256State(state *schema.State) {
+	for i := range state.Models {
+		if state.Models[i].SHA256 == "" {
+			state.Models[i].SHA256 = catalog.LegacyModelFiles[state.Models[i].ID].SHA256
+		}
+	}
 }
 
 // schemaVersion 是当前应用对应的状态库版本。

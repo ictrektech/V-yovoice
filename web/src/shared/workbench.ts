@@ -7,6 +7,7 @@ export interface SynthesisSettings {
   lyrics?: string; instrumental?: boolean;
   // YuE2 的 ABC 旋律谱：带和弦按谱编曲，只有旋律时按旋律填配器。
   abc?: string;
+  sourceGenerationId?: string;
   voiceMode?: 'design' | 'clone';
   voxMode?: 'design' | 'clone' | 'continuation'; voiceDescription?: string; referenceText?: string; guidanceScale?: number; inferenceSteps?: number;
   modelId: string; voiceId: string | null;
@@ -32,11 +33,11 @@ export type ScoreRole = 'melody' | 'piano' | 'strings' | 'bass' | 'drums' | 'pad
 export interface ScoreTrack { id: string; name: string; role?: ScoreRole; program: number; drums?: boolean; level?: number; pan?: number; reverb?: number; mute?: boolean; humanize?: Humanize; dynamics?: ScoreRamp[]; notes: ScoreNote[] }
 export interface ScoreSection { name: string; start: number; end: number; tempo?: number }
 export interface Score { tempo: number; timeSignature: number[]; key?: string; sections?: ScoreSection[]; tracks: ScoreTrack[] }
-export type ProjectKind = 'text' | 'story' | 'subtitle' | 'music' | 'score';
+export type ProjectKind = 'text' | 'story' | 'subtitle' | 'music' | 'score' | 'sfx';
 export interface Draft extends SynthesisSettings { performance?: CharacterPerformance; id: string; title: string; text: string; kind?: ProjectKind; characterId?: string; createdAt?: string; updatedAt?: string; subtitles?: SubtitleDocument; timeline?: AudioTimeline; score?: Score }
-export type ProjectPage = 'text' | 'story' | 'music' | 'score';
+export type ProjectPage = 'text' | 'story' | 'music' | 'score' | 'sfx';
 // 旧字幕作品沿用原始数据，统一归入故事。
-export const projectKind = (draft: Draft): ProjectPage => draft.kind === 'music' || draft.kind === 'score' ? draft.kind : draft.subtitles || draft.kind === 'story' || draft.kind === 'subtitle' ? 'story' : 'text';
+export const projectKind = (draft: Draft): ProjectPage => draft.kind === 'music' || draft.kind === 'score' || draft.kind === 'sfx' ? draft.kind : draft.subtitles || draft.kind === 'story' || draft.kind === 'subtitle' ? 'story' : 'text';
 export interface CharacterPreview { id: string; fileName: string; duration: number; settings: SynthesisSettings; text: string }
 export interface Character { performances?: CharacterPerformance[]; id: string; name: string; settings: SynthesisSettings; demoText: string; preview?: CharacterPreview; createdAt?: string; updatedAt?: string }
 export const synthesisSettings = ({ performance: _performance, id: _id, title: _title, text: _text, kind: _kind, characterId: _characterId, createdAt: _createdAt, updatedAt: _updatedAt, subtitles: _subtitles, timeline: _timeline, score: _score, ...settings }: Draft): SynthesisSettings => structuredClone(settings);
@@ -66,8 +67,13 @@ export interface Voice { referenceText?: string; source?: string; sourceGenerati
 /** 导入的录音过长时自动截取的片段：start/end 为在原录音里的秒数，total 为原录音时长。 */
 export interface VoiceExcerpt { start: number; end: number; total: number }
 export interface ModelFile { path: string; size: number; sha256: string }
-export interface ModelPackage { importRequired?: boolean; voices?: string[]; variant?: string; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
-export interface InstalledModel { id: string; path: string; managed: boolean }
+export interface ModelPackage { importRequired?: boolean; voices?: string[]; variant?: string; maxDuration?: number; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; stripPrefix?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
+export interface InstalledModel { id: string; path: string; managed: boolean; sha256?: string }
+export const modelMainFile = (model: ModelPackage): ModelFile => model.files?.find(file => file.path === model.remotePath) ?? { path: model.remotePath, size: model.size, sha256: model.sha256 };
+export const modelUpdateAvailable = (state: Pick<State, 'models'>, model: ModelPackage) => {
+  const installed = state.models.find(item => item.id === model.id);
+  return installed?.sha256 && installed.sha256 !== modelMainFile(model).sha256 ? installed : undefined;
+};
 export interface GenerationSegment { cueId: string; speakerId: string; speakerName: string; batchId: string; index: number; targetClipId?: string; placement?: 'ripple' | 'preserve' }
 // 本机 Codex CLI 的检测结果：path 为空表示未安装，login 为 chatgpt、apikey 或空（未登录）。
 export interface CodexInfo { path?: string; version?: string; login?: 'chatgpt' | 'apikey' }
@@ -123,8 +129,8 @@ export interface CleanupReport {
   cleanedCount: number;
   freedBytes: number;
 }
-export interface Preferences { downloadSource: string; backend: string; modelDirectory: string | null; uiLocale: UiLocale; proxyURL?: string; proxyEnabled?: boolean; aiTimeout?: number; introSeen?: boolean; tourSeen?: boolean; assistantQuiet?: boolean; hiddenFeatures?: Feature[] }
-// 可在设置中隐藏的功能入口：故事配音、音乐生成（含编曲）与 Ocho 助手，默认全部显示。
+export interface Preferences { downloadSource: string; backend: string; performanceFirst?: boolean; modelDirectory: string | null; uiLocale: UiLocale; proxyURL?: string; proxyEnabled?: boolean; aiTimeout?: number; introSeen?: boolean; tourSeen?: boolean; assistantQuiet?: boolean; hiddenFeatures?: Feature[] }
+// 可在设置中隐藏的功能入口：故事配音、音乐生成（含编曲与音效）与 Ocho 助手，默认全部显示。
 export const optionalFeatures = ['story', 'music', 'assistant'] as const;
 export type Feature = typeof optionalFeatures[number];
 export const featureHidden = (preferences: Preferences, feature: Feature) => !!preferences.hiddenFeatures?.includes(feature);
@@ -248,12 +254,14 @@ export interface Asset { kind: AssetKind; id: string; name: string; media: 'outp
 export interface AssetResult { kind: AssetKind; id: string; error?: MessageCode; params?: MessageParams }
 
 export const isKokoroModel = (id: string) => id.startsWith('kokoro-');
+/** Stable Audio 3 用英文描述生成纯音乐或音效，不唱歌词；可在作品已有的版本上改编或局部重绘。 */
+export const isStableAudio = (id: string) => id.startsWith('stable-audio-');
 // 音乐模型只用于音乐作品，不出现在配音和角色的模型列表里。
-export const isMusicModel = (id: string) => id.startsWith('ace-step-') || id.startsWith('yue2-');
+export const isMusicModel = (id: string) => id.startsWith('ace-step-') || id.startsWith('yue2-') || isStableAudio(id);
 /** YuE2 由歌词或旋律谱决定长度，没有时长设置。 */
 export const isYuE = (id: string) => id.startsWith('yue2-');
 // 设置里模型按用途分页：语音模型、音乐模型（歌曲生成、扒谱与歌词对齐）和编曲音色库。
-const musicFamilies = new Set(['ace_step', 'yue2', 'sheetsage2', 'lyric_align']);
+const musicFamilies = new Set(['ace_step', 'yue2', 'stable_audio', 'sheetsage2', 'lyric_align']);
 export const modelTab = (family: string) => family === 'soundfont' ? 'soundfonts' : musicFamilies.has(family) ? 'music-models' : 'models';
 export const modelTabs = ['models', 'music-models', 'soundfonts'];
 // 音色库只供编曲作品渲染使用。
@@ -269,16 +277,25 @@ export function groupModels(models: ModelPackage[]) {
   for (const model of models) groups.set(model.name, [...(groups.get(model.name) ?? []), model]);
   return [...groups.values()];
 }
+// 音效可用专门的 SFX 模型或 Stable Audio Medium；Small Music 只用于歌曲。
+export const isSfxModel = (id: string) => isStableAudio(id) && (id.includes('-sfx-') || id.includes('-medium-'));
 // 新作品的默认模型：沿用最近一次同类作品用过且已安装的模型，否则取第一个已安装的同类模型，都没有时用 fallback。
-export function preferredModel(state: Pick<State, 'models' | 'drafts'>, kind: 'text' | 'story' | 'music' | 'score', fallback: string) {
-  const fits = kind === 'music' ? isMusicModel : kind === 'score' ? isSoundFont : isVoiceModel;
+export function preferredModel(state: Pick<State, 'models' | 'drafts'>, kind: 'text' | 'story' | 'music' | 'score' | 'sfx', fallback: string) {
+  const fits = kind === 'music' ? (id: string) => isMusicModel(id) && !id.includes('-sfx-') : kind === 'sfx' ? isSfxModel : kind === 'score' ? isSoundFont : isVoiceModel;
   const installed = new Set(state.models.map(model => model.id));
   const recent = state.drafts.filter(d => installed.has(d.modelId) && fits(d.modelId)).sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0];
   return recent?.modelId ?? state.models.find(model => fits(model.id))?.id ?? fallback;
 }
+export const isIndexModel = (id: string) => id.startsWith('index-');
 export const isVoxModel = (id: string) => id.startsWith('voxcpm2-');
 export const isReferenceModel = (id: string) => id.startsWith('omnivoice-') || id.startsWith('qwen3-tts-');
 export const isBreezeModel = (id: string) => id.startsWith('breeze-tts-');
-export const requiresVoice = (draft: Draft) => isKokoroModel(draft.modelId) || !isVoiceModel(draft.modelId) ? false : draft.modelId.startsWith('qwen3-tts-') ? !/customvoice|voicedesign/.test(draft.modelId) : draft.modelId.startsWith('omnivoice-') || isBreezeModel(draft.modelId) ? draft.voiceMode === 'clone' : !isVoxModel(draft.modelId) || ['clone', 'continuation'].includes(draft.voxMode ?? 'design');
+export const isMingModel = (id: string) => id.startsWith('ming3-tts-');
+export const isVoxtralModel = (id: string) => id.startsWith('voxtral-tts-');
+export const isPlapreModel = (id: string) => id.startsWith('plapre-');
+export const isXTTSModel = (id: string) => id.startsWith('xtts-v2-');
+export const isGradiumModel = (id: string) => id.startsWith('gradium-phonon-');
+export const isDramaModel = (id: string) => id.startsWith('fish-drama3-');
+export const requiresVoice = (draft: Draft) => isKokoroModel(draft.modelId) || isVoxtralModel(draft.modelId) || isGradiumModel(draft.modelId) || !isVoiceModel(draft.modelId) ? false : draft.modelId.startsWith('qwen3-tts-') ? !/customvoice|voicedesign/.test(draft.modelId) : draft.modelId.startsWith('omnivoice-') || isBreezeModel(draft.modelId) || isMingModel(draft.modelId) || isPlapreModel(draft.modelId) || isDramaModel(draft.modelId) ? draft.voiceMode === 'clone' : !isVoxModel(draft.modelId) || ['clone', 'continuation'].includes(draft.voxMode ?? 'design');
 
 export const emptyScore = (): Score => ({ tempo: 100, timeSignature: [4, 4], key: '', sections: [], tracks: [] });

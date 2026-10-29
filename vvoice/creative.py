@@ -13,9 +13,13 @@ def speech_capabilities(row: dict) -> list[str]:
     family, variant = row["family"], row.get("variant", "")
     if family == "qwen3_tts":
         return ["voice_cloning"] if variant == "base" else ["voice_design"] if variant == "voicedesign" else ["builtin_voices", "voice_instruction"]
-    if family in {"omnivoice", "voxcpm2", "breeze_tts"}:
+    if family in {"omnivoice", "voxcpm2", "breeze_tts", "ming3_tts"}:
         return ["voice_cloning", "voice_design"]
-    if family == "kokoro_tts":
+    if family == "plapre":
+        return ["builtin_voices", "voice_cloning"]
+    if family in {"xtts_v2", "fish_drama3"}:
+        return ["voice_cloning"]
+    if family in {"kokoro_tts", "voxtral_tts", "gradium_phonon"}:
         return ["builtin_voices"]
     return ["voice_cloning", "emotion_control"]
 
@@ -57,6 +61,8 @@ def models(include_non_speech: bool = False) -> list[dict]:
     if not selection_path.is_file():
         selection_path = root / "catalog" / "audio-cpp-vos.json"
     selection = json.loads(selection_path.read_text())
+    previous_path = source.with_name("previous-model-files.json")
+    previous = {row["id"]: row for row in json.loads(previous_path.read_text())} if previous_path.is_file() else {}
     result = []
     for row in json.loads(source.read_text()):
         non_speech = row.get("task") in {"gen", "instrument", "midi", "align"}
@@ -66,6 +72,12 @@ def models(include_non_speech: bool = False) -> list[dict]:
         files = row.get("files") or [{"path": row["remotePath"] or f"imports/{row['id']}.gguf", "size": row["size"], "sha256": row["sha256"]}]
         if row.get("repo"):
             files = [{**f, "path": f"mirrors/{row['repo']}/{f['path']}"} for f in files]
+        old = previous.get(row["id"])
+        old_files = []
+        if old:
+            old_files = old.get("files") or [{"path": row["remotePath"], "size": old["size"], "sha256": old["sha256"]}]
+            if row.get("repo"):
+                old_files = [{**f, "path": f"mirrors/{row['repo']}/{f['path']}"} for f in old_files]
         voices = row.get("voices") or (["Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric", "Ryan", "Aiden", "Ono_Anna", "Sohee"] if row.get("variant") == "customvoice" else [])
         result.append({
             "key": f"audiocpp-{row['id']}", "name": f"{row['name']} {row['precision']}",
@@ -76,6 +88,6 @@ def models(include_non_speech: bool = False) -> list[dict]:
             "languages": [], "modelscope_repo": selection["modelscope_repo"],
             "runtime": {"family": "audio_cpp", "model_id": row["id"],
                         "files": {f"file_{i}": f["path"] for i, f in enumerate(files)}},
-            "shared_files": files, "voices": {v: {"language": "", "sid": i} for i, v in enumerate(voices or ["default"])},
+            "shared_files": files, "previous_shared_files": old_files, "voices": {v: {"language": "", "sid": i} for i, v in enumerate(voices or ["default"])},
         })
     return result

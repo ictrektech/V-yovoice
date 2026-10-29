@@ -11,7 +11,7 @@ from threading import Lock, Thread
 
 import httpx
 
-from .catalog import catalog, model_files_ready, model_root
+from .catalog import catalog, model_files_ready, model_root, shared_files_for
 from .config import settings
 
 
@@ -42,7 +42,7 @@ def _shared_status(item):
     root = model_root(item)
     fingerprint = []
     try:
-        for file in item["shared_files"]:
+        for file in shared_files_for(item, root):
             path = (root / file["path"]).resolve()
             stat = path.stat()
             if not path.is_file() or stat.st_size != file["size"]:

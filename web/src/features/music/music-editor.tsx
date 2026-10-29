@@ -8,7 +8,7 @@ import { Token } from '@astryxdesign/core/Token';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Lightbulb, Maximize2 } from 'lucide-react';
 import { AppDialog } from '../../shared/ui/app-dialog';
-import { isUntitled, isYuE, type Draft, type State, type UiLocale } from '../../shared/workbench';
+import { isStableAudio, isUntitled, isYuE, type Draft, type State, type UiLocale } from '../../shared/workbench';
 import { createMusicDraft, instrumentalSections, lyricSections, splitTags } from './music-draft';
 import { MelodyScore } from './melody-score';
 
@@ -20,6 +20,9 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
   const t = useTranslator();
   // YuE2 的纯音乐先出谱，再把人声旋律交给乐器演奏；歌词可留空，或只写段落标记安排结构。
   const yue = isYuE(draft.modelId);
+  // Stable Audio 只读英文描述生成纯音乐或音效，没有歌词。
+  const stable = isStableAudio(draft.modelId);
+  const sfx = stable && draft.modelId.includes('-sfx-');
   const lyrics = useRef<HTMLTextAreaElement>(null);
   const expandedLyrics = useRef<HTMLTextAreaElement>(null);
   // 歌词框在 YuE2 下收矮，让下方旋律谱露出来；需要细看或长段编辑时放大到对话框里。
@@ -76,7 +79,7 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
     <VStack className="music-block" gap={3}>
       <HStack className="music-style-header" hAlign="between" vAlign="center" gap={2}>
         <h2>{t('@yovoice.music.style')}</h2>
-        {empty ? <Button size="sm" variant="secondary" icon={<Lightbulb />} label={t('@yovoice.music.example')} onClick={() => { const example = createMusicDraft(locale); change({ text: example.text, lyrics: example.lyrics, synthesisLanguage: example.synthesisLanguage, ...(isUntitled(draft.title) ? { title: example.title } : {}) }); }} /> : null}
+        {empty && !stable ? <Button size="sm" variant="secondary" icon={<Lightbulb />} label={t('@yovoice.music.example')} onClick={() => { const example = createMusicDraft(locale); change({ text: example.text, lyrics: example.lyrics, synthesisLanguage: example.synthesisLanguage, ...(isUntitled(draft.title) ? { title: example.title } : {}) }); }} /> : null}
       </HStack>
 
       {/* 风格标签输入区：展示已选Token胶囊，并在行内支持直接打字、回车/逗号追加、退格删除 */}
@@ -101,7 +104,7 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
           ref={inputRef}
           className="music-inline-input grow"
           aria-label={t('@yovoice.music.addTag')}
-          placeholder={tags.length === 0 ? t('@yovoice.music.stylePlaceholder') : t('@yovoice.music.addTagPlaceholder')}
+          placeholder={tags.length === 0 ? t(sfx ? '@yovoice.music.soundPlaceholder' : '@yovoice.music.stylePlaceholder') : t('@yovoice.music.addTagPlaceholder')}
           value={inputVal}
           onChange={e => setInputVal(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -109,8 +112,9 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
           onPaste={handlePaste}
         />
       </HStack>
+      {stable ? <small>{t('@yovoice.music.englishPrompt')}</small> : null}
     </VStack>
-    <VStack className="music-block" gap={3}>
+    {stable ? null : <VStack className="music-block" gap={3}>
       <HStack vAlign="center" gap={2} wrap="wrap">
         <h2 className="grow">{t('@yovoice.music.lyrics')}</h2>
         {!draft.instrumental || yue ? sectionMenu : null}
@@ -122,7 +126,7 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
       </HStack>
       {draft.instrumental && !yue ? null
         : <TextArea ref={lyrics} className="music-lyrics" label={t('@yovoice.music.lyrics')} isLabelHidden value={draft.lyrics ?? ''} maxLength={4000} rows={draft.instrumental ? 6 : yue ? 10 : 14} hasSpellCheck={false} placeholder={t(draft.instrumental ? '@yovoice.music.structurePlaceholder' : '@yovoice.music.lyricsPlaceholder')} onChange={value => change({ lyrics: value.slice(0, 4000) })} />}
-    </VStack>
+    </VStack>}
     {expanded ? <AppDialog title={t('@yovoice.music.lyrics')} width={760} closeLabel={t('@yovoice.action.close')} onClose={() => setExpanded(false)}
       actions={sectionMenu}>
       <TextArea ref={expandedLyrics} className="music-lyrics music-lyrics-expanded" label={t('@yovoice.music.lyrics')} isLabelHidden value={draft.lyrics ?? ''} maxLength={4000} rows={20} hasSpellCheck={false}

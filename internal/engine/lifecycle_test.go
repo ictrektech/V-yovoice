@@ -32,14 +32,14 @@ func TestEngineLifecycle(t *testing.T) {
 	out := filepath.Join(root, "outputs", "test.wav")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	_, e = engine.Generate(ctx, executable, schema.InstalledModel{ID: d.ModelID, Path: model}, "cpu", d, "voice.wav", "", out, func(msg.Code, msg.Params) {})
+	_, e = engine.Generate(ctx, executable, schema.InstalledModel{ID: d.ModelID, Path: model}, "cpu", false, d, "voice.wav", "", out, func(msg.Code, msg.Params) {})
 	must(t, e)
 	pid := engine.process.Process.Pid
 	if seconds, e := audio.Duration(out); e != nil || seconds != 1 {
 		t.Fatal(seconds, e)
 	}
 	must(t, os.Remove(out))
-	_, e = engine.Generate(ctx, executable, schema.InstalledModel{ID: d.ModelID, Path: model}, "cpu", d, "voice.wav", "", out, func(msg.Code, msg.Params) {})
+	_, e = engine.Generate(ctx, executable, schema.InstalledModel{ID: d.ModelID, Path: model}, "cpu", false, d, "voice.wav", "", out, func(msg.Code, msg.Params) {})
 	must(t, e)
 	if engine.process.Process.Pid != pid {
 		t.Fatal("引擎未复用")
@@ -47,7 +47,7 @@ func TestEngineLifecycle(t *testing.T) {
 
 	// 旧草稿中的流式标记应被忽略，始终使用完整生成。
 	must(t, json.Unmarshal([]byte(`{"modelId":"voxcpm2-q8","streaming":true}`), &d))
-	_, e = engine.Generate(ctx, executable, schema.InstalledModel{ID: d.ModelID, Path: model}, "cpu", d, "", "", out, func(msg.Code, msg.Params) {})
+	_, e = engine.Generate(ctx, executable, schema.InstalledModel{ID: d.ModelID, Path: model}, "cpu", false, d, "", "", out, func(msg.Code, msg.Params) {})
 	must(t, e)
 	if engine.process.Process.Pid == pid {
 		t.Fatal("切换模型类型后必须重新启动引擎")
@@ -60,7 +60,7 @@ func TestEngineLifecycle(t *testing.T) {
 	// ACE-Step XL 与 Turbo 共用内核，但需要随模型传入 DiT 变体。
 	music := schema.DefaultDraft()
 	must(t, json.Unmarshal([]byte(`{"kind":"music","modelId":"ace-step-1.5-xl-turbo-q8","text":"city pop","lyrics":"[verse]\n夏夜"}`), &music))
-	_, e = engine.Generate(ctx, executable, schema.InstalledModel{ID: music.ModelID, Path: model}, "cpu", music, "", "", out, func(msg.Code, msg.Params) {})
+	_, e = engine.Generate(ctx, executable, schema.InstalledModel{ID: music.ModelID, Path: model}, "cpu", false, music, "", "", out, func(msg.Code, msg.Params) {})
 	must(t, e)
 	config, err = os.ReadFile(filepath.Join(root, "runtime", "server.json"))
 	must(t, err)
@@ -71,16 +71,16 @@ func TestEngineLifecycle(t *testing.T) {
 	song := schema.DefaultDraft()
 	must(t, json.Unmarshal([]byte(`{"kind":"music","modelId":"yue2-3b-q8","text":"city pop","lyrics":"[verse]\n夏夜"}`), &song))
 	yue := schema.InstalledModel{ID: song.ModelID, Path: model}
-	generated, e := engine.Generate(ctx, executable, yue, "cpu", song, "", "", out, func(msg.Code, msg.Params) {})
+	generated, e := engine.Generate(ctx, executable, yue, "cpu", false, song, "", "", out, func(msg.Code, msg.Params) {})
 	if e != nil || generated != testkit.ABC {
 		t.Fatal(generated, e)
 	}
-	planned, truncated, e := engine.PlanMelody(ctx, executable, yue, "cpu", song, func(msg.Code, msg.Params) {})
+	planned, truncated, e := engine.PlanMelody(ctx, executable, yue, "cpu", false, song, func(msg.Code, msg.Params) {})
 	if e != nil || planned != testkit.ABC || truncated {
 		t.Fatal(planned, e)
 	}
 	song.Abc = testkit.ABC
-	if generated, e = engine.Generate(ctx, executable, yue, "cpu", song, "", "", out, func(msg.Code, msg.Params) {}); e != nil || generated != "" {
+	if generated, e = engine.Generate(ctx, executable, yue, "cpu", false, song, "", "", out, func(msg.Code, msg.Params) {}); e != nil || generated != "" {
 		t.Fatal(generated, e)
 	}
 	transcribed, e := engine.Transcribe(ctx, executable, schema.InstalledModel{ID: "sheetsage2-orig", Path: model}, "cpu", out, func(msg.Code, msg.Params) {})
@@ -96,7 +96,7 @@ func TestEngineLifecycle(t *testing.T) {
 	cancelled, stop := context.WithCancel(ctx)
 	timer := time.AfterFunc(200*time.Millisecond, stop)
 	defer timer.Stop()
-	if _, e = engine.Generate(cancelled, executable, schema.InstalledModel{ID: d.ModelID, Path: model}, "cpu", d, "voice.wav", "", out, func(msg.Code, msg.Params) {}); e == nil {
+	if _, e = engine.Generate(cancelled, executable, schema.InstalledModel{ID: d.ModelID, Path: model}, "cpu", false, d, "voice.wav", "", out, func(msg.Code, msg.Params) {}); e == nil {
 		t.Fatal("未取消")
 	}
 	if engine.process != nil {

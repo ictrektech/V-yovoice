@@ -76,20 +76,36 @@ func (w *Workbench) SetModelDirectory(path string) error {
 }
 
 // adoptModels 登记新模型目录中已有的模型：按应用下载时的布局查找（单文件模型在目录根部，
-// 多文件模型在各自子目录），所有文件大小与目录清单一致才视为完整。已登记且文件仍在的模型保持不变。
+// 多文件模型在各自子目录），单文件大小匹配当前或更新前清单，多文件大小全部匹配当前清单才视为完整。
+// 已登记且文件仍在的模型保持不变。
 func (w *Workbench) adoptModels(dir string) error {
-	found := map[string]string{}
+	type adoptedModel struct {
+		path   string
+		sha256 string
+	}
+	found := map[string]adoptedModel{}
 	for _, m := range catalog.Models {
 		path := filepath.Join(dir, filepath.Base(m.RemotePath))
+		sha256 := m.MainFile().SHA256
 		if len(m.Files) > 0 {
 			path = filepath.Join(dir, m.Directory)
 			if packageRoot(m, filepath.Join(path, filepath.FromSlash(m.RemotePath))) == "" {
 				continue
 			}
-		} else if download.FileSize(path) != m.Size {
-			continue
+		} else {
+			size := download.FileSize(path)
+			if size == 0 {
+				continue
+			}
+			if size != m.Size {
+				legacy := catalog.LegacyModelFiles[m.ID]
+				if size != legacy.Size {
+					continue
+				}
+				sha256 = legacy.SHA256
+			}
 		}
-		found[m.ID] = path
+		found[m.ID] = adoptedModel{path: path, sha256: sha256}
 	}
 	if len(found) == 0 {
 		return nil
@@ -100,10 +116,18 @@ func (w *Workbench) adoptModels(dir string) error {
 				delete(found, m.ID)
 			}
 		}
-		for id, path := range found {
+		for id, adopted := range found {
 			s.Models = slices.DeleteFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == id })
-			s.Models = append(s.Models, schema.InstalledModel{ID: id, Path: path, Managed: true})
+			s.Models = append(s.Models, schema.InstalledModel{ID: id, Path: adopted.path, Managed: true, SHA256: adopted.sha256})
 		}
 		diag.Log(w.Store.Root, "model.directory_adopted", "count", len(found))
 	}, true)
+}
+
+// performanceFirstEngine 是性能优先模式所需的最低内核：各模型的 perf_mode=cuda_perf 从 v0.9.3 起才有。
+const performanceFirstEngine = "v0.9.3"
+
+// performanceFirst 判断本次生成是否启用性能优先：旧内核不认识 cuda_perf，传入会导致模型加载失败。
+func performanceFirst(s schema.State) bool {
+	return s.Preferences.PerformanceFirst && s.RuntimeVersion != nil && catalog.VersionAtLeast(*s.RuntimeVersion, performanceFirstEngine)
 }

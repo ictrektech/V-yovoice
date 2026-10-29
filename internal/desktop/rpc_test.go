@@ -11,6 +11,7 @@ import (
 	"yovoice/internal/diag"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
+	"yovoice/internal/testkit"
 	"yovoice/internal/workbench"
 )
 
@@ -50,6 +51,26 @@ func TestCallDecodesAndLogsFailures(t *testing.T) {
 	asset, err := Call(context.Background(), w, "timeline.import", json.RawMessage(`{"name":"不是音频","base64":"bm90IGF1ZGlv"}`))
 	if err == nil {
 		t.Fatal("应拒绝无法解析的音频", asset)
+	}
+}
+
+func TestCallImportsTimelineGeneration(t *testing.T) {
+	w, err := workbench.New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	d := schema.DefaultDraft()
+	d.Title = "来源作品"
+	g := schema.Generation{ID: schema.NewID(), Title: "街道", FileName: "source.wav", Settings: d}
+	must(t, os.WriteFile(filepath.Join(w.Store.Root, "outputs", g.FileName), testkit.WAV(), 0600))
+	must(t, w.Store.Update(func(s *schema.State) { s.History = []schema.Generation{g} }, true))
+	result, err := Call(context.Background(), w, "timeline.fromGeneration", json.RawMessage(`{"id":"`+g.ID+`"}`))
+	must(t, err)
+	asset := result.(schema.AudioAsset)
+	if asset.Name != "来源作品 · 街道" || asset.FileName == g.FileName {
+		t.Fatalf("RPC 应返回复制后的素材：%+v", asset)
+	}
+	if _, err = os.Stat(filepath.Join(w.Store.Root, "outputs", asset.FileName)); err != nil {
+		t.Fatal("RPC 未复制素材", err)
 	}
 }
 

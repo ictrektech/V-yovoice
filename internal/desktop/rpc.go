@@ -19,7 +19,7 @@ import (
 var audited = map[string]bool{
 	"draft.delete": true, "project.export": true, "project.import": true, "score.import": true, "score.export": true,
 	"character.save": true, "character.delete": true, "voice.fromGeneration": true, "voice.update": true, "voice.import": true,
-	"voice.record": true, "timeline.import": true, "media.rename": true, "media.delete": true, "generation.lyricTimes": true, "generation.lyricWords": true, "generation.alignLyrics": true,
+	"voice.record": true, "timeline.import": true, "timeline.fromGeneration": true, "media.rename": true, "media.delete": true, "generation.lyricTimes": true, "generation.lyricWords": true, "generation.alignLyrics": true,
 	"preferences.save": true, "storage.relocate": true, "storage.cleanup": true, "model.directory": true, "model.download": true,
 	"model.forget": true, "runtime.install": true, "ai.provider.save": true, "ai.provider.delete": true, "ai.provider.use": true,
 	"ai.test": true, "ai.connect": true, "ai.codex.login": true, "melody.plan": true, "melody.cover": true, "melody.dismiss": true, "ai.dismiss": true,
@@ -74,7 +74,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "state.get":
 		// assistant 报告随包的 AI 助手运行时是否存在：缺失时界面禁用 AI 写作并说明原因。
 		_, ochoErr := platform.OchoExecutable()
-		return map[string]any{"state": w.Store.Read(), "catalog": catalog.Models, "engine": map[string]string{"version": catalog.EngineVersion, "minimum": catalog.EngineMinimum}, "desktop": true, "assistant": map[string]bool{"available": ochoErr == nil}}, nil
+		return map[string]any{"state": w.Store.Read(), "catalog": catalog.Models, "catalogRevision": catalog.Revision, "engine": map[string]string{"version": catalog.EngineVersion, "minimum": catalog.EngineMinimum}, "desktop": true, "assistant": map[string]bool{"available": ochoErr == nil}}, nil
 	case "draft.save", "generation.start":
 		d := schema.DefaultDraft()
 		if e := json.Unmarshal(data, &d); e != nil {
@@ -126,6 +126,8 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return true, w.DiscardPreview(p.ID)
 	case "voice.fromGeneration":
 		return w.VoiceFromGeneration(p.ID, p.Name, p.ReferenceText)
+	case "timeline.fromGeneration":
+		return w.ImportTimelineGeneration(ctx, p.ID)
 	case "voice.update":
 		return true, w.UpdateVoice(p.ID, p.Name, p.ReferenceText)
 	case "voice.import":

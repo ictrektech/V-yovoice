@@ -19,6 +19,18 @@ and YuE2 remain in **Music generation**; score arranging and every existing spee
 API remain available. No installed weights, shared directories, projects or audio
 are deleted. Rollback can reuse those files with the preceding release.
 
+The upstream v0.5.0 integration uses audio.cpp v0.9.3 and retains 59 creation
+variants, including six new TTS families and Stable Audio 3 GGUF music/sound effects.
+Installed previous weights remain usable against a fixed, verified file manifest;
+administrators can update them through the shared model repository. Story tracks
+can import generated audio, and Stable Audio can remix a confirmed version.
+VOS only accepts the current user's Scheduler-confirmed source audio. New weights
+and the new runtime still need target-device approval; desktop CUDA performance
+settings are not exposed as uncalibrated VOS user preferences. Database v3 upgrades
+keep an automatic v2 backup; rollback must restore that database snapshot.
+Runtime changes require a complete image rebuild, including audio.cpp v0.9.3;
+application/assets overlays alone do not upgrade the bundled engine.
+
 Each feature page has a **Prepare models** button. It opens only the relevant
 speech, creator or soundfont models in a dialog on the current page, with download,
 pause, resume and verification states using V-Scheduler / ModelScope. Closing it
@@ -123,6 +135,11 @@ publish or install an application. See [the VOS release guide](ictrek.app/README
   <img src="https://img.shields.io/badge/Linux-x64-FCC624?style=flat-square" alt="Linux (x64)" />
 </p>
 <p align="center">
+  <a href="https://www.producthunt.com/products/yovoice?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-yovoice" target="_blank" rel="noopener noreferrer">
+    <img alt="yovoice - Local-first voice, music, and score creation studio | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1293995&amp;theme=light&amp;t=1793070018670" />
+  </a>
+</p>
+<p align="center">
   <a href="https://www.star-history.com/leemysw/yovoice">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=leemysw/yovoice&type=rank&theme=dark" />
@@ -152,7 +169,7 @@ Turn text into expressive speech, natural cloned voices, complete vocal songs, a
 
 - 🔒 **100% Local Privacy**: Runs entirely on your local GPU/CPU. Your manuscripts, reference voices, and creations never leave your computer.
 - 💸 **Zero Recurring Fees**: Say goodbye to per-character/per-minute meters and expensive cloud voice/music subscriptions.
-- ⚡ **Native C++ Performance (No Python Hell)**: Powered by [audio.cpp](https://github.com/0xShug0/audio.cpp) v0.9.2. Ships with bundled Windows CUDA 12.4/13.3 runtimes and native macOS Metal support. Double-click and create—no Conda or PyTorch conflicts.
+- ⚡ **Native C++ Performance (No Python Hell)**: Powered by [audio.cpp](https://github.com/0xShug0/audio.cpp) v0.9.3. Ships with bundled Windows CUDA 12.4/13.3 runtimes and native macOS Metal support. Double-click and create—no Conda or PyTorch conflicts.
 - 🎛️ **Creator Workstation**: Multi-take versioning for side-by-side comparison, waveform trimming, timeline scrolling, and clean stems/MIDI export.
 - 🤖 **MCP & AI Agent Ecosystem**: Chat with DeepSeek, Qwen, Claude, OpenAI, or local Ollama to create and edit works end to end. Includes a native Model Context Protocol (MCP) server for Cursor and Claude Code.
 
@@ -160,47 +177,26 @@ Turn text into expressive speech, natural cloned voices, complete vocal songs, a
 
 ## Features
 
-- **Voice and expression** — use a reference voice, match a reference performance, adjust emotions, or describe the delivery in words.
-- **A complete audio workflow** — import or record reference audio, trim clips, preview speech, and export your work.
-- **Voice design and cloning** — VoxCPM2 offers text-guided voice design, controllable cloning, and transcript-assisted cloning with automatic multilingual handling, and 48 kHz output.
-- **Music generation** — describe a style, write lyrics with section markers, and generate full songs or instrumentals with ACE-Step 1.5; every take is kept as a version to compare.
-- **Score** — write each part by bar and beat, import MIDI or let an Agent write the score, then render it with a General MIDI sound font and a role-based mix; results are exactly repeatable and export to MIDI and stems. See [Score](docs/score.md).
-- **Optional AI service** — connect DeepSeek, Qwen, Kimi, OpenAI, Anthropic, Ollama or any compatible API to let AI write arrangements and lyrics; keys stay on this computer. See [AI service](docs/ai.md).
-- **Local models** — run IndexTTS 2.0 / 2.5, VoxCPM2, OmniVoice, Qwen3-TTS, Breeze TTS 2 and Kokoro through audio.cpp, with resumable model downloads and GGUF import.
-- **Hardware acceleration** — Metal on Apple Silicon; CPU, NVIDIA CUDA, and experimental Vulkan on Windows.
-- **Agent Skill & MCP** — ask your AI agent to set up local speech generation and create voiceovers from text and reference audio.
-
----
-
-## Hardware & VRAM Quick Guide
-
-| Use Case | Recommended Hardware | Recommended Models |
-| --- | --- | --- |
-| 🟢 **Lightweight & Blazing Fast** | Any CPU / 4 GB+ RAM | **Kokoro-82M** (only 189 MB Q8, millisecond latency, runs great on CPU) |
-| 🟡 **High-Fidelity Voice Cloning** | 4 GB – 6 GB VRAM / 8 GB+ Apple Silicon | **VoxCPM2** (2B, 48 kHz), **IndexTTS 2.0/2.5**, **Qwen3-TTS** |
-| 🔴 **Full Song & Music Generation** | 12 GB+ VRAM / 16 GB+ Apple Silicon | **ACE-Step 1.5 Turbo** (BF16, 10 GB), **YuE2 3B** |
+- **Speech, voice design and cloning** — clone a reference voice, design a voice from a description, adjust emotion and delivery, and edit takes on a timeline.
+- **Story dubbing** — import text or subtitle files, assign a character to each line, and generate line by line.
+- **Music** — write a style and lyrics with section markers, then generate songs or instrumentals with ACE-Step 1.5, or songs and score-based instrumentals with YuE2, or instrumental music and sound effects from an English description with Stable Audio 3; the playback page syncs lyrics to the vocals.
+- **Score** — write parts by bar and beat, import MIDI or let an Agent compose, render with a General MIDI sound font, and export MIDI and stems. See [Score](docs/score.md).
+- **Optional AI service** — the built-in assistant panel chats with DeepSeek, Qwen, Kimi, OpenAI, Anthropic, Ollama or any compatible API and acts on your works: it writes arrangements and lyrics, edits text, assigns voices and starts generation; keys stay on this computer. See [AI service](docs/ai.md).
+- **12 interface languages** — English, 简体中文, 繁體中文, 日本語, 한국어, Español, Français, Deutsch, Português (Brasil), Русский, Italiano and Tiếng Việt; switch anytime in Settings, no restart needed.
 
 ---
 
 ## Supported Models
 
-| Model | Parameters | Model file size by precision | Core capabilities |
-| --- | --- | --- | --- |
-| IndexTTS 2.0 | — | Q8 · 3.63 GB<br>F16 · 4.65 GB<br>ORIG · 8.08 GB | Chinese/English voice cloning, emotion control, reference performance |
-| IndexTTS 2.5 | — | Q8 · 3.50 GB<br>F16 · 4.55 GB<br>ORIG · 7.89 GB | Multilingual voice cloning, emotion control, pronunciation editing |
-| VoxCPM2 | 2B | Q8 · 2.96 GB<br>BF16 · 4.77 GB<br>ORIG · 4.96 GB | Text-guided voice design, voice cloning, transcript-assisted cloning |
-| OmniVoice | 0.6B | Q8 · 1.35 GB<br>BF16 · 1.64 GB<br>F16 · 1.64 GB | Attribute-based voice design, voice cloning, non-verbal sound tags |
-| Qwen3-TTS Base | 0.6B | Q8 · 1.99 GB<br>BF16 · 2.52 GB | Reference voice cloning, optional transcript guidance, multilingual speech |
-| Qwen3-TTS Base | 1.7B | Q8 · 2.70 GB<br>BF16 · 4.20 GB<br>ORIG · 4.54 GB | Reference voice cloning, optional transcript guidance, multilingual speech |
-| Qwen3-TTS CustomVoice | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | 9 built-in voices, text-guided style and emotion |
-| Qwen3-TTS VoiceDesign | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | Voice design from natural-language descriptions, no reference audio required |
-| Breeze TTS 2 | ~3B | Q4 · 3.79 GB<br>Q8 · 5.08 GB<br>BF16 · 7.34 GB | Chinese and English voice design, cloning and voice direction; GPU recommended, requires the v0.9.1 engine |
-| Kokoro-82M 1.0 Official | 82M | Q8 · 189.55 MB<br>BF16 · 211.95 MB | 49 built-in voices, multilingual speech excluding Japanese |
-| Kokoro-82M 1.0 | 82M | Q8 · 932.66 MB | 54 built-in voices, full multilingual resources including Japanese; import only |
-| Kokoro-82M 1.1-zh | 82M | Q8 · 255.32 MB | 100 Chinese and 3 English voices; experimental, import only |
-| ACE-Step 1.5 Turbo | — | BF16 · 10.09 GB | Songs and instrumentals from a style prompt and lyrics, 50+ vocal languages; requires engine v0.9.1 |
+| Use | Models |
+| --- | --- |
+| Voice cloning and emotion | IndexTTS 2.0 / 2.5, Qwen3-TTS Base |
+| Voice design and cloning | VoxCPM2, OmniVoice, Qwen3-TTS VoiceDesign, Breeze TTS 2 |
+| Built-in voices | Kokoro-82M, Qwen3-TTS CustomVoice |
+| Songs and instrumentals | ACE-Step 1.5 Turbo / XL Turbo, YuE2 3B |
+| Instrumentals and sound effects | Stable Audio 3 Small Music / Small SFX / Medium |
 
-Downloadable models are available inside the App or with the CLI; import-only variants require compatible local GGUF files. See [model selection](docs/models.md) for file sizes, hardware requirements, inputs and examples. OmniVoice, YuE2 and Breeze TTS 2 weights are restricted to non-commercial use.
+All models are downloaded inside the App or with the CLI. See [model selection](docs/models.md) for file sizes, hardware requirements, inputs and examples. OmniVoice, YuE2 and Breeze TTS 2 weights are restricted to non-commercial use; Stable Audio 3 is free below USD 1M annual revenue under the Stability AI Community License.
 
 ---
 
@@ -286,6 +282,7 @@ Bug reports, feature suggestions, and pull requests are welcome. Include your pl
 - [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) — voice cloning, built-in voices, and text-guided voice design.
 - [ACE-Step](https://github.com/ace-step/ACE-Step-1.5) — music generation from style prompts and lyrics.
 - [YuE](https://github.com/multimodal-art-projection/YuE) — full vocal song generation from lyrics.
+- [Stable Audio 3](https://huggingface.co/stabilityai/stable-audio-3-medium) by Stability AI — instrumental music and sound effects from text. Powered by Stability AI.
 - [Breeze TTS 2](https://huggingface.co/BreezeBlue/Breeze-TTS-2) — Chinese and English voice design and cloning.
 - [go-meltysynth](https://github.com/sinshu/go-meltysynth), [MuseScore General](https://musescore.org/en/handbook/3/soundfonts-and-sfz-files#gm_soundfonts), [GeneralUser GS](https://www.schristiancollins.com/generaluser) and SGM-V2.01 by David Shan — the SoundFont synthesizer and sound fonts behind score rendering.
 - Kokoro — lightweight speech synthesis with built-in voices: [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) and [Kokoro-82M-v1.1-zh](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh).
@@ -352,3 +349,5 @@ VOS 界面默认跟随平台语言，兼容旧版平台语言存储和新版语�
 原生执行端通过 POST /scheduler/api/v1/permits/wait 申请准入，JSON 为 {"request":原 permits 请求,"wait_seconds":30}；默认等待 30 秒，X-VScheduler-Queue-Wait-Seconds 可设为 0..300，0 表示立即尝试。等待只保存身份与顺序，不预约模型权重，不启动或重放推理；超时返回 429 QUEUE_TIMEOUT。V-Voice、Desensitize、V-Sub 在本地执行锁之前进入统一队列，同一已批准原生进程只保留一条执行通道；不同进程的实际副本分别预算。授权强制请求先行，其后按本次任务优先级、等待老化和到达顺序执行。其他应用申请资源不会无条件卸载空闲 Ollama，只有内存不足才请求卸载，确认停止后才释放预算。
 
 Native executors acquire admission with POST /scheduler/api/v1/permits/wait and {"request":the existing permits request,"wait_seconds":30}. X-VScheduler-Queue-Wait-Seconds accepts 0..300; the default is 30 and 0 attempts immediate admission. Waiters retain identity and ordering only, reserve no model weights, and never start or replay inference. A deadline returns 429 QUEUE_TIMEOUT. V-Voice, Desensitize and V-Sub enter the central queue before their local execution locks. One approved native process uses one execution lane; actual copies in different processes are budgeted separately. Authorized forced requests run first, followed by request priority, aging and arrival order. Other applications no longer unconditionally unload idle Ollama models: unloading requires memory pressure and confirmed native stop before releasing the budget.
+
+VOS retains Kokoro 1.0 multilingual and 1.1-zh as administrator-provided import-only models; existing IDs, history and speech APIs remain supported.

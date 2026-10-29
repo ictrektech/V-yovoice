@@ -27,10 +27,11 @@ test('各功能页可原地准备相关模型，关闭不离开原页面，未�
   await page.route('**/api/v1/creative-models', route => route.fulfill({ json: downloading ? [{ key: `audiocpp-${downloading}`, status: 'downloading', downloaded_bytes: 100, total_bytes: 1000 }] : [] }));
   await page.goto('/');
   await expect(page.getByTestId('nav-background-music')).toHaveCount(0);
-  for (const destination of ['asr', 'tts', 'speaker', 'hotwords', 'text', 'story', 'music', 'score', 'characters', 'settings', 'api-docs']) {
-    const navigation = destination === 'score' ? 'music' : destination;
+  for (const destination of ['asr', 'tts', 'speaker', 'hotwords', 'text', 'story', 'music', 'score', 'sfx', 'characters', 'settings', 'api-docs']) {
+    const navigation = destination === 'score' || destination === 'sfx' ? 'music' : destination;
     await page.getByTestId(`nav-${navigation}`).click();
     if (destination === 'score') await page.getByRole('tab', { name: /编曲/ }).click();
+    if (destination === 'sfx') await page.getByRole('tab', { name: /音效/ }).click();
     await page.getByTestId('prepare-models').click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
@@ -42,12 +43,13 @@ test('各功能页可原地准备相关模型，关闭不离开原页面，未�
       await expect(rows.first()).toBeVisible();
       const ids = await rows.evaluateAll(items => items.map(item => item.getAttribute('data-model-id')));
       if (destination === 'music') {
-        expect(ids.every(id => id?.startsWith('ace-step-') || id?.startsWith('yue2-') || id?.startsWith('sheetsage2-') || id?.startsWith('lyric-align-') || id?.endsWith('-sf2'))).toBeTruthy();
+        expect(ids.every(id => id?.startsWith('ace-step-') || id?.startsWith('yue2-') || id?.startsWith('stable-audio-') || id?.startsWith('sheetsage2-') || id?.startsWith('lyric-align-') || id?.endsWith('-sf2'))).toBeTruthy();
         expect(ids).toContain('sheetsage2-orig');
         expect(ids).toContain('lyric-align-q8');
         expect(ids.some(id => id?.endsWith('-sf2'))).toBeTruthy();
       }
       if (destination === 'score') expect(ids.every(id => id?.endsWith('-sf2'))).toBeTruthy();
+      if (destination === 'sfx') expect(ids.every(id => id?.startsWith('stable-audio-3-small-sfx-') || id?.startsWith('stable-audio-3-medium-'))).toBeTruthy();
       if (destination === 'music') {
         await dialog.getByRole('button', { name: '下载模型', exact: true }).first().click();
         await expect.poll(() => calls.find(call => call.method === 'model.download')?.data.id).toBe(ids[0]);

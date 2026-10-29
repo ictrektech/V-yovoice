@@ -8,9 +8,9 @@ import (
 )
 
 // checkAudio 体检刚生成的音频。测量失败不影响生成结果，只记日志并返回 nil。
-// 人声（语音、故事配音）还检查截断、长静音和咔哒声；音乐只查削波、无声、过小和直流偏移。
+// 人声（语音、故事配音）还检查截断、长静音和咔哒声；音乐与音效只查削波、无声、过小和直流偏移。
 func (w *Workbench) checkAudio(path, kind, id string) *schema.AudioCheck {
-	check, e := audio.Inspect(path, kind != "music")
+	check, e := audio.Inspect(path, kind != "music" && kind != "sfx")
 	if e != nil {
 		diag.Log(w.Store.Root, "audio.check_failed", "generation_id", id, "error", diag.Error(e))
 		return nil

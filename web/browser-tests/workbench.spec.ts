@@ -49,7 +49,7 @@ test('四种表达方式、草稿持久化与模型协议', async ({ page }) => 
   // 语音模型与音乐模型分页显示，各自带下载设置。
   await page.getByRole('tab', { name: '音乐模型', exact: true }).click();
   // 同一模型的多种量化合并为一行，用精度切换；含可选的歌词对齐模型。
-  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(5);
+  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(8);
   const yue = page.locator('[data-model-id^="yue2-"]');
   await expect(yue).toHaveCount(1);
   await expect(yue).toHaveAttribute('data-model-id', 'yue2-3b-q8');
@@ -59,7 +59,7 @@ test('四种表达方式、草稿持久化与模型协议', async ({ page }) => 
   await expect(page.getByLabel('下载来源', { exact: true })).toBeVisible();
   await page.getByRole('tab', { name: '语音模型', exact: true }).click();
   // 保留两个仅导入的 Kokoro，不把它们计入可下载模型组。
-  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(10);
+  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(17);
   for (const id of ['kokoro-1.0-q8', 'kokoro-1.1-zh-q8']) {
     const row = page.locator(`[data-model-id="${id}"]`);
     await expect(row).toBeVisible();
@@ -365,6 +365,28 @@ test('Breeze TTS 2 在设计与克隆间切换描述用途，并以短分段为�
 
 
 
+test('Ming 3.0 TTS 在设计与克隆间切换并提供七种语言', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('combobox', { name: '模型', exact: true }).click();
+  await page.getByRole('option', { name: /^Ming 3\.0 TTS/ }).click();
+  await expect(page.getByRole('radio', { name: '声音设计', exact: true })).toBeChecked();
+  await expect(page.getByRole('button', { name: '添加参考音频', exact: true })).toHaveCount(0);
+  await page.getByLabel('声音描述', { exact: true }).fill('温暖平静的女声');
+  const language = page.getByRole('combobox', { name: '语言', exact: true });
+  await language.click();
+  await expect(page.getByRole('option')).toHaveText(['自动', '中文', '英语', '日语', '韩语', '德语', '法语', '西班牙语']);
+  await page.getByRole('option', { name: '日语', exact: true }).click();
+  await page.getByRole('radio', { name: '音色克隆', exact: true }).click();
+  await expect(page.getByRole('button', { name: '添加参考音频', exact: true })).toBeVisible();
+  await expect(page.getByLabel('参考音频原文（可选）', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('声音描述', { exact: true })).toHaveCount(0);
+  await page.locator('summary').filter({ hasText: '高级设置' }).click();
+  await expect(page.getByLabel('长文分段字数（0 为模型默认）')).toHaveValue('0');
+  await expect(page.getByLabel('温度', { exact: true })).toHaveValue('0');
+  await expect(page.getByLabel('裁剪静音', { exact: true })).toBeChecked();
+});
+
+
 test('作品音频读不到时播放器直接显示不可用，不主动弹出提示', async ({ page }) => {
   const state = emptyState();
   const draft = state.drafts[0];
@@ -439,4 +461,25 @@ test('生成结果体检有问题时，播放栏显示提醒和问题位置', as
   expect(label).toContain('爆音（削波）3 处');
   expect(label).toContain('结尾被截断');
   expect(label).not.toContain('偏离中线');
+});
+
+test('已下载模型有新版本时显示轻提示，可关闭并重新下载更新', async ({ page }) => {
+  const state = emptyState();
+  state.models = [{ id: 'kokoro-82m-q8', path: 'kokoro-82m-q8_0.gguf', managed: true, sha256: '0'.repeat(64) }];
+  await seedState(page, state);
+  await page.goto('/');
+  const notice = page.getByTestId('model-update-notice');
+  await expect(notice).toContainText('1 个模型可更新');
+  await notice.getByRole('button', { name: '关闭提示' }).click();
+  await expect(notice).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId('model-update-notice')).toHaveCount(0);
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
+  const model = page.locator('[data-model-id="kokoro-82m-q8"]');
+  await expect(model.getByText('有新版本', { exact: true })).toBeVisible();
+  await model.getByRole('button', { name: '更新', exact: true }).click();
+  await expect(model.getByText('有新版本', { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('model-update-notice')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1') ?? '{}').models?.[0]?.sha256)).not.toBe('0'.repeat(64));
 });

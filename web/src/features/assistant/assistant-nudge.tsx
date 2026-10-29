@@ -25,7 +25,7 @@ export function nudgeFor(t: TranslatorFn, activity: Activity, drafts: Draft[]): 
     if (activity.status === 'failed') return { id, tone: 'danger', text: t('@yovoice.assistant.nudge.failed'), action: t('@yovoice.assistant.nudge.diagnose'), prompt: t('@yovoice.assistant.nudge.failedPrompt') };
     if (activity.status !== 'completed') return null;
     const draft = drafts.find(item => item.id === activity.projectId);
-    const kind = draft?.kind === 'music' || draft?.kind === 'score' ? draft.kind : draft?.subtitles ? 'story' : 'text';
+    const kind = draft?.kind === 'music' || draft?.kind === 'score' || draft?.kind === 'sfx' ? draft.kind : draft?.subtitles ? 'story' : 'text';
     return { id, tone: 'success', text: t(`@yovoice.assistant.nudge.done.${kind}`), action: t('@yovoice.assistant.nudge.improve'), prompt: t(`@yovoice.assistant.nudge.donePrompt.${kind}`) };
   }
   if (activity.kind === 'download' || activity.kind === 'runtime') {

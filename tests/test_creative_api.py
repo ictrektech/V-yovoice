@@ -14,6 +14,12 @@ def test_creative_capabilities_match_native_variants():
     assert "emotion_control" in rows["audiocpp-index-2.5-q8"]["capabilities"]
     assert "Vivian" in rows["audiocpp-qwen3-tts-customvoice-q8"]["voices"]
     assert all(row["modelscope_repo"].startswith("vivibit/") for row in rows.values())
+    assert rows["audiocpp-ming3-tts-0.5b-q8"]["capabilities"] == ["voice_cloning", "voice_design"]
+    assert rows["audiocpp-plapre-3-bf16"]["capabilities"] == ["builtin_voices", "voice_cloning"]
+    assert rows["audiocpp-voxtral-tts-4b-q8"]["capabilities"] == ["builtin_voices"]
+    assert rows["audiocpp-gradium-phonon-31m-en-q8"]["capabilities"] == ["builtin_voices"]
+    assert rows["audiocpp-xtts-v2-q8"]["capabilities"] == ["voice_cloning"]
+    assert rows["audiocpp-fish-drama3-q2"]["capabilities"] == ["voice_cloning"]
 
 
 def test_creative_discovery_is_dynamic_and_public(monkeypatch):

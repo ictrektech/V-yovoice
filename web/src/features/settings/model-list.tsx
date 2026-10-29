@@ -4,12 +4,13 @@ import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { TextInput } from '@astryxdesign/core/TextInput';
+import { Token } from '@astryxdesign/core/Token';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { CircleCheck, Download, FilePlus, Pause, Search, Trash2 } from 'lucide-react';
-import { isVos } from '../../shared/lib/vos';
+import { CircleCheck, Download, FilePlus, Pause, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { isVos, vosFetch } from '../../shared/lib/vos';
 import type { SharedModelStatus } from '../../shared/lib/model-inventory';
 import { call } from '../../shared/lib/client';
-import { formatSize, groupModels, type Draft, type ModelPackage, type State } from '../../shared/workbench';
+import { formatSize, groupModels, modelUpdateAvailable, type Draft, type ModelPackage, type State } from '../../shared/workbench';
 import { SettingsGroup } from '../../shared/ui/settings-group';
 
 function downloadStatusLabel(t: (key: string) => string, downloading: boolean, received: number, size: number, status: string) {
@@ -23,6 +24,7 @@ function modelDescription(t: (key: string) => string, model: ModelPackage) {
   if (model.family === 'soundfont') return t(({ 'generaluser-gs-sf2': '@yovoice.settings.modelDesc.soundfontGeneralUser', 'sgm-v2-sf2': '@yovoice.settings.modelDesc.soundfontSgm' } as Record<string, string>)[model.id] ?? '@yovoice.settings.modelDesc.soundfont');
   if (model.family === 'ace_step') return t('@yovoice.settings.modelDesc.music');
   if (model.family === 'yue2') return t('@yovoice.settings.modelDesc.yue2');
+  if (model.family === 'stable_audio') return t(`@yovoice.settings.modelDesc.stableAudio.${model.variant || 'music'}`);
   if (model.family === 'sheetsage2') return t('@yovoice.settings.modelDesc.sheetsage2');
   if (model.family === 'lyric_align') return t('@yovoice.settings.modelDesc.lyricAlign');
   if (model.family === 'kokoro_tts') return t(model.id === 'kokoro-82m-q8' ? '@yovoice.settings.modelDesc.kokoroOfficial' : '@yovoice.settings.modelDesc.kokoro');
@@ -30,6 +32,12 @@ function modelDescription(t: (key: string) => string, model: ModelPackage) {
   if (model.family === 'qwen3_tts') return t(`@yovoice.settings.modelDesc.qwen.${model.variant || 'base'}`);
   if (model.family === 'voxcpm2') return t('@yovoice.settings.modelDesc.vox');
   if (model.family === 'breeze_tts') return t('@yovoice.settings.modelDesc.breeze');
+  if (model.family === 'ming3_tts') return t('@yovoice.settings.modelDesc.ming');
+  if (model.family === 'voxtral_tts') return t('@yovoice.settings.modelDesc.voxtral');
+  if (model.family === 'plapre') return t('@yovoice.settings.modelDesc.plapre');
+  if (model.family === 'xtts_v2') return t('@yovoice.settings.modelDesc.xtts');
+  if (model.family === 'gradium_phonon') return t('@yovoice.settings.modelDesc.gradium');
+  if (model.family === 'fish_drama3') return t('@yovoice.settings.modelDesc.drama');
   return model.version === '2.5' ? t('@yovoice.settings.modelDesc.25') : t('@yovoice.settings.modelDesc.basic');
 }
 
@@ -67,6 +75,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
     const removeBlocked = busy || (modelBusy && !(activity?.kind === 'download' && activity.modelId && activity.modelId !== model.id));
     const inUse = draft.modelId === model.id;
     const owned = group.filter(isInstalled);
+    const update = modelUpdateAvailable(state, model);
     // 应用下载的模型移除时连同文件删除；导入的模型只解除登记。
     const managed = state.models.find(m => m.id === model.id)?.managed ?? false;
     return <VStack className="model-row settings-row" data-model-id={model.id} data-model-ids={group.map(item => item.id).join(' ')} data-installed={ready} key={group[0].name} gap={3}>
@@ -77,12 +86,20 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
             <p className="settings-row-title">{model.name}</p>
             {group.length === 1 ? <small className="precision">{model.precision}</small> : null}
             <small className="model-size">{formatSize(model.size)}</small>
-            {ready ? <small className="ready">{inUse ? t('@yovoice.settings.inUse') : t('@yovoice.settings.verified')}</small> : null}
+            {update ? <Token size="sm" color="gray" label={t('@yovoice.settings.modelUpdateAvailable')} /> : null}
+            {ready && !update ? <small className="ready">{inUse ? t('@yovoice.settings.inUse') : t('@yovoice.settings.verified')}</small> : null}
           </HStack>
           <small>{modelDescription(t, model)}</small>
         </VStack>
         {downloading ? <Button size="sm" label={t('@yovoice.action.pause')} icon={<Pause size={16} />} onClick={() => run(() => call('model.cancel', { id: model.id }))} />
-          : ready ? <Button size="sm" variant="ghost" label={isVos ? t('@vvoice.runtime.unload') : t('@yovoice.settings.removeModel')} icon={<Trash2 size={16} />} isDisabled={removeBlocked} tooltip={removeBlocked ? t('@yovoice.settings.removeBlocked') : isVos ? t('@vvoice.runtime.unloadHint') : t(managed ? '@yovoice.settings.removeManagedTooltip' : '@yovoice.settings.removeTooltip')} onClick={() => run(() => call('model.forget', { id: model.id }))} />
+          : ready ? <HStack gap={1} vAlign="center">
+            {update && !model.importRequired ? <Button size="sm" variant="secondary" label={t('@yovoice.settings.updateModel')} icon={<RefreshCw size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(async () => {
+              if (!isVos) return call('model.download', { id: model.id });
+              const response = await vosFetch(`/api/v1/models/audiocpp-${encodeURIComponent(model.id)}/pull?force=true`, { method: 'POST' });
+              if (!response.ok) throw new Error((await response.text()).slice(0, 300));
+            })} /> : null}
+            <Button size="sm" variant="ghost" label={isVos ? t('@vvoice.runtime.unload') : t('@yovoice.settings.removeModel')} icon={<Trash2 size={16} />} isDisabled={removeBlocked} tooltip={removeBlocked ? t('@yovoice.settings.removeBlocked') : isVos ? t('@vvoice.runtime.unloadHint') : t(managed ? '@yovoice.settings.removeManagedTooltip' : '@yovoice.settings.removeTooltip')} onClick={() => run(() => call('model.forget', { id: model.id }))} />
+          </HStack>
           : isVos && model.importRequired ? <small>{t('@vvoice.models.importRequired')}</small>
           : !model.remotePath ? <Button size="sm" label={t('@yovoice.settings.importGguf')} icon={<FilePlus size={16} />} isDisabled={modelBusy} onClick={() => run(() => call('model.import'))} />
           : <Button size="sm" label={download ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(() => call('model.download', { id: model.id }))} />}

@@ -91,10 +91,10 @@ func (s *Server) synthesize(r *http.Request, input speechInput) ([]byte, error) 
 	if m.Family == "index_tts2" && input.Language != "" && input.Language != "auto" {
 		d.Language = input.Language
 	}
-	if input.VoiceDescription != "" && (m.Family == "index_tts2" || m.Family == "kokoro_tts" || (m.Family == "qwen3_tts" && m.Variant == "base")) {
+	if input.VoiceDescription != "" && (m.Family == "index_tts2" || m.Family == "kokoro_tts" || m.Family == "voxtral_tts" || m.Family == "plapre" || m.Family == "gradium_phonon" || m.Family == "xtts_v2" || m.Family == "fish_drama3" || (m.Family == "qwen3_tts" && m.Variant == "base")) {
 		return nil, fmt.Errorf("voice design unsupported by selected model")
 	}
-	if input.ReferenceAudio != "" && (m.Family == "kokoro_tts" || (m.Family == "qwen3_tts" && m.Variant != "base")) {
+	if input.ReferenceAudio != "" && (m.Family == "kokoro_tts" || m.Family == "voxtral_tts" || m.Family == "gradium_phonon" || (m.Family == "qwen3_tts" && m.Variant != "base")) {
 		return nil, fmt.Errorf("voice cloning unsupported by selected model")
 	}
 	if input.EmotionText != "" {

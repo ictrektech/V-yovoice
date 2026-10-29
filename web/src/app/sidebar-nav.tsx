@@ -4,9 +4,10 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { AudioLines, BookOpen, ChevronRight, Fingerprint, Library, ListFilter, Mic, Music, Pencil, ScanText, Settings2, Speech, Trash2 } from 'lucide-react';
-import { featureHidden, projectKind, type Draft, type State } from '../shared/workbench';
+import { featureHidden, projectKind, type Draft, type ModelPackage, type State } from '../shared/workbench';
 import { overflowTitle } from '../shared/ui/overflow-title';
 import { UpdateSidebarCard } from '../features/update/update-notice';
+import { ModelUpdateSidebarCard } from '../features/settings/model-update-card';
 import { isVos } from '../shared/lib/vos';
 import { readLocal, writeLocal } from '../shared/lib/local-store';
 
@@ -16,13 +17,16 @@ export function SidebarNav(props: {
   setPage: (id: string) => void;
   newDraft: ReactNode;
   state: State;
+  catalog: ModelPackage[];
+  catalogRevision: string;
+  openSettings: (modelId: string) => void;
   draft: Draft;
   selectDraft: (item: Draft) => void;
   removeDraft: (item: Draft) => void;
   resizable: ResizableProps;
 }) {
   const t = useTranslator();
-  const { page, setPage, newDraft, state, draft, selectDraft, removeDraft, resizable } = props;
+  const { page, setPage, newDraft, state, catalog, catalogRevision, openSettings, draft, selectDraft, removeDraft, resizable } = props;
   const [recentOpen, setRecentOpen] = useState(() => readLocal('yovoice-recent-open') !== 'false');
   const [modelsOpen, setModelsOpen] = useState(true);
   const modelsActive = page === 'models' || page === 'models-creative';
@@ -38,8 +42,8 @@ export function SidebarNav(props: {
       </VStack> : null}
       {isVos ? ([['asr', ScanText], ['tts', Speech], ['speaker', Fingerprint], ['hotwords', ListFilter]] as const).map(([destination, Icon]) => <Button key={destination} data-testid={`nav-${destination}`} label={t(`@vvoice.nav.${destination}`)} variant="ghost" icon={<Icon />} className={`nav-item ${page === destination ? 'selected' : ''}`} aria-current={page === destination ? 'page' : undefined} onClick={() => setPage(destination)} />) : null}
       {(['text', 'story', 'music'] as const).filter(kind => kind === 'text' || !featureHidden(state.preferences, kind)).map(kind => {
-        // 编曲生成并入音乐生成：两类作品都高亮「音乐生成」。
-        const group = (k: string) => k === 'score' ? 'music' : k;
+        // 编曲与音效并入音乐生成：三类作品都高亮「音乐生成」。
+        const group = (k: string) => k === 'score' || k === 'sfx' ? 'music' : k;
         const selected = group(page) === kind || (projectActive && group(projectKind(draft)) === kind);
         return <Button key={kind} data-testid={`nav-${kind}`} label={t(`@yovoice.project.${kind}`)} variant="ghost" icon={kind === 'text' ? <Mic /> : kind === 'story' ? <Pencil /> : <Music />} className={`nav-item ${selected ? 'selected' : ''}`} aria-current={selected ? 'page' : undefined} onClick={() => setPage(kind)} />;
       })}
@@ -53,7 +57,7 @@ export function SidebarNav(props: {
         <Button className="project-quick-delete" label={t('@yovoice.nav.deleteProject', { title: item.id === draft.id ? draft.title : item.title })} icon={<Trash2 />} isIconOnly size="sm" variant="ghost" onClick={() => removeDraft(item.id === draft.id ? draft : item)} />
       </HStack>)}</VStack>
     </details>
-    <VStack className="sidebar-bottom" gap={3}><UpdateSidebarCard />
+    <VStack className="sidebar-bottom" gap={3}><ModelUpdateSidebarCard state={state} catalog={catalog} revision={catalogRevision} openSettings={openSettings} /><UpdateSidebarCard />
       <Button data-testid="nav-settings" label={t('@yovoice.nav.settings')} icon={<Settings2 size={18} />} variant="ghost" className={`nav-item ${page === 'settings' ? 'selected' : ''}`} onClick={() => setPage('settings')} /></VStack>
     <ResizeHandle label={t('@yovoice.nav.resize')} direction="horizontal" position="overlay" pillPlacement="center" resizable={resizable} isAlwaysVisible={false} />
   </VStack>;

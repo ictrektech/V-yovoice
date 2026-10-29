@@ -39,7 +39,7 @@ func TestMelodyTasksRejectCorruptedSharedWeightsBeforeStartingEngine(t *testing.
 			if model.Family == "yue2" {
 				d := schema.DefaultDraft()
 				d.ModelID, d.Kind, d.Text, d.Lyrics = id, "music", "gentle pop", "Hello world"
-				_, _, err = e.PlanMelody(context.Background(), "missing-engine", installed, "cpu", d, progress)
+				_, _, err = e.PlanMelody(context.Background(), "missing-engine", installed, "cpu", false, d, progress)
 			} else if model.Family == "lyric_align" {
 				err = e.SeparateVocals(context.Background(), "missing-engine", installed, "cpu", "song.wav", "vocals.wav", progress)
 				if err == nil || !strings.Contains(err.Error(), "model file size mismatch") {

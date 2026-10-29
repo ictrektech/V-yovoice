@@ -14,8 +14,11 @@ import { useTranslator } from '@astryxdesign/core/i18n';
 import { ChevronUp, ChevronRight, LoaderCircle } from 'lucide-react';
 import { ReferenceControls } from './reference-controls';
 import { VoxControls } from './vox-controls';
-import { BreezeControls } from './breeze-controls';
-import { isVoiceModel, isReferenceModel, isVoxModel, isBreezeModel, formatTime, type Draft, type Mode, type State, type ModelPackage } from '../../shared/workbench';
+import { DesignCloneControls } from './design-clone-controls';
+import { isVoiceModel, isReferenceModel, isVoxModel, isBreezeModel, isMingModel, isVoxtralModel, isPlapreModel, isXTTSModel, isGradiumModel, isDramaModel, formatTime, type Draft, type Mode, type State, type ModelPackage } from '../../shared/workbench';
+import { VoxtralControls } from './voxtral-controls';
+import { XTTSControls } from './xtts-controls';
+import { GradiumControls } from './gradium-controls';
 import type { Track } from '../../shared/workbench';
 import { formatActivity } from '../../shared/i18n/format';
 import { useElapsed } from '../../shared/lib/use-elapsed';
@@ -85,7 +88,7 @@ export function Inspector({ draft, state, catalog, change, chooseVoice, chooseEm
 
     </VStack>
     <h2 className="inspector-section-title">{t('@yovoice.create.voiceSettings')}</h2>
-      {catalog.find(model => model.id === draft.modelId)?.family === 'kokoro_tts' ? <KokoroControls advanced={advanced} setAdvanced={setAdvanced} draft={draft} model={catalog.find(model => model.id === draft.modelId)!} change={change} /> : isReferenceModel(draft.modelId) ? <ReferenceControls advanced={advanced} setAdvanced={setAdvanced} draft={draft} state={state} change={change} chooseVoice={chooseVoice} play={play} /> : isBreezeModel(draft.modelId) ? <BreezeControls draft={draft} state={state} change={change} chooseVoice={chooseVoice} play={play} advanced={advanced} setAdvanced={setAdvanced} /> : isVoxModel(draft.modelId) ? <VoxControls draft={draft} state={state} change={change} chooseVoice={chooseVoice} play={play} advanced={advanced} setAdvanced={setAdvanced} /> : <>
+      {catalog.find(model => model.id === draft.modelId)?.family === 'kokoro_tts' ? <KokoroControls advanced={advanced} setAdvanced={setAdvanced} draft={draft} model={catalog.find(model => model.id === draft.modelId)!} change={change} /> : isVoxtralModel(draft.modelId) ? <VoxtralControls advanced={advanced} setAdvanced={setAdvanced} draft={draft} model={catalog.find(model => model.id === draft.modelId)!} change={change} /> : isXTTSModel(draft.modelId) ? <XTTSControls draft={draft} state={state} change={change} chooseVoice={chooseVoice} play={play} advanced={advanced} setAdvanced={setAdvanced} /> : isGradiumModel(draft.modelId) ? <GradiumControls draft={draft} change={change} advanced={advanced} setAdvanced={setAdvanced} /> : isReferenceModel(draft.modelId) ? <ReferenceControls advanced={advanced} setAdvanced={setAdvanced} draft={draft} state={state} change={change} chooseVoice={chooseVoice} play={play} /> : isBreezeModel(draft.modelId) || isMingModel(draft.modelId) || isPlapreModel(draft.modelId) || isDramaModel(draft.modelId) ? <DesignCloneControls draft={draft} model={catalog.find(model => model.id === draft.modelId)} state={state} change={change} chooseVoice={chooseVoice} play={play} advanced={advanced} setAdvanced={setAdvanced} /> : isVoxModel(draft.modelId) ? <VoxControls draft={draft} state={state} change={change} chooseVoice={chooseVoice} play={play} advanced={advanced} setAdvanced={setAdvanced} /> : <>
       <ReferenceVoice voice={voice} choose={chooseVoice} play={play} />
       <VStack gap={3}>
         <h3>{t('@yovoice.create.expression')}</h3>

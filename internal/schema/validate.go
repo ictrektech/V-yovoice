@@ -3,6 +3,7 @@ package schema
 import (
 	"math"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf16"
 	"yovoice/internal/catalog"
@@ -13,6 +14,15 @@ func TextLen(s string) int { return len(utf16.Encode([]rune(s))) }
 func Validate(d Draft) error {
 	if d.Kind == "score" {
 		return validateScoreDraft(d)
+	}
+	if d.Kind == "sfx" {
+		m, e := catalog.Lookup(d.ModelID)
+		if e != nil {
+			return e
+		}
+		if m.Family != "stable_audio" || m.Variant != "sfx" && m.Variant != "medium" {
+			return msg.Err(msg.ErrModelUnsupported, nil)
+		}
 	}
 	if m, e := catalog.Lookup(d.ModelID); e == nil && catalog.IsMusic(m.Family) {
 		return validateMusic(d, m.Family)
@@ -35,11 +45,69 @@ func Validate(d Draft) error {
 		return e
 	}
 	if m.Family == "kokoro_tts" {
-		if !slices.Contains(m.Voices, d.KokoroSpeaker(m)) {
+		primary, ok := kokoroPrimaryVoice(d.KokoroSpeaker(m), m.Voices)
+		if !ok {
 			return msg.Err(msg.ErrSpeakerInvalid, nil)
 		}
-		if d.SynthesisLanguage != "" && d.SynthesisLanguage != "auto" && d.SynthesisLanguage != KokoroLanguage(d.KokoroSpeaker(m)) {
+		if d.SynthesisLanguage != "" && d.SynthesisLanguage != "auto" && d.SynthesisLanguage != KokoroLanguage(primary) {
 			return msg.Err(msg.ErrLanguageUnsupported, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "voxtral_tts" {
+		if d.Speaker != "" && !slices.Contains(m.Voices, d.Speaker) {
+			return msg.Err(msg.ErrSpeakerInvalid, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "plapre" {
+		if d.VoiceMode != "" && d.VoiceMode != "design" && d.VoiceMode != "clone" {
+			return msg.Err(msg.ErrModeInvalid, nil)
+		}
+		if d.VoiceMode != "clone" && d.Speaker != "" && !slices.Contains(m.Voices, d.Speaker) {
+			return msg.Err(msg.ErrSpeakerInvalid, nil)
+		}
+		if TextLen(d.ReferenceText) > 2000 {
+			return msg.Err(msg.ErrDraftLimits, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "xtts_v2" {
+		if !slices.Contains([]string{"", "auto", "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "hu", "ko", "ja", "hi"}, d.SynthesisLanguage) {
+			return msg.Err(msg.ErrLanguageUnsupported, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || int64(*d.Seed) > 4294967295) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "gradium_phonon" {
+		if !slices.Contains([]string{"", "auto", "en"}, d.SynthesisLanguage) {
+			return msg.Err(msg.ErrLanguageUnsupported, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || int64(*d.Seed) > 4294967295) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
+	if m.Family == "fish_drama3" {
+		if d.VoiceMode != "" && d.VoiceMode != "design" && d.VoiceMode != "clone" {
+			return msg.Err(msg.ErrModeInvalid, nil)
+		}
+		if TextLen(d.ReferenceText) > 2000 {
+			return msg.Err(msg.ErrDraftLimits, nil)
+		}
+		if d.VoiceMode == "clone" && strings.TrimSpace(d.ReferenceText) == "" {
+			return msg.Err(msg.ErrReferenceTextRequired, msg.Params{"model": m.Name})
 		}
 		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
 			return msg.Err(msg.ErrParamsOutOfRange, nil)
@@ -84,6 +152,21 @@ func Validate(d Draft) error {
 		}
 		return nil
 	}
+	if m.Family == "ming3_tts" {
+		if d.VoiceMode != "" && d.VoiceMode != "design" && d.VoiceMode != "clone" {
+			return msg.Err(msg.ErrModeInvalid, nil)
+		}
+		if TextLen(d.VoiceDescription) > 500 || TextLen(d.ReferenceText) > 2000 {
+			return msg.Err(msg.ErrDraftLimits, nil)
+		}
+		if !slices.Contains([]string{"", "auto", "zh", "en", "ja", "ko", "de", "fr", "es"}, d.SynthesisLanguage) {
+			return msg.Err(msg.ErrLanguageUnsupported, nil)
+		}
+		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+			return msg.Err(msg.ErrParamsOutOfRange, nil)
+		}
+		return nil
+	}
 	if m.Family == "breeze_tts" {
 		if d.VoiceMode != "" && d.VoiceMode != "design" && d.VoiceMode != "clone" {
 			return msg.Err(msg.ErrModeInvalid, nil)
@@ -93,7 +176,7 @@ func Validate(d Draft) error {
 		}
 		// 官方克隆模板要求参考音频的完整原文；原文缺失或不符时容易把参考内容续进正文、拖音或串词。
 		if d.VoiceMode == "clone" && strings.TrimSpace(d.ReferenceText) == "" {
-			return msg.Err(msg.ErrBreezeReferenceRequired, nil)
+			return msg.Err(msg.ErrReferenceTextRequired, msg.Params{"model": m.Name})
 		}
 		if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
 			return msg.Err(msg.ErrParamsOutOfRange, nil)
@@ -183,6 +266,9 @@ func validateMusic(d Draft, family string) error {
 		}
 		return nil
 	}
+	if family == "stable_audio" {
+		return validateStableAudio(d)
+	}
 	o, err := d.GenerationOptions("ace_step")
 	if err != nil {
 		return err
@@ -200,16 +286,49 @@ func validateMusic(d Draft, family string) error {
 	return nil
 }
 
+// validateStableAudio 校验 Stable Audio：只用英文描述生成音乐或音效，不演唱歌词；
+// 改编需要选定起点版本；局部重绘的区间须落在模型最长时长内。
+func validateStableAudio(d Draft) error {
+	m, _ := catalog.Lookup(d.ModelID)
+	o, err := d.GenerationOptions("stable_audio")
+	if err != nil {
+		return err
+	}
+	limit := float64(m.MaxDuration)
+	if v, ok := o["duration_seconds"].(float64); ok && limit > 0 && v > limit {
+		return msg.Err(msg.ErrMusicParams, nil)
+	}
+	switch o["edit"] {
+	case "init_audio":
+		if d.SourceGenerationID == "" {
+			return msg.Err(msg.ErrMusicSourceRequired, nil)
+		}
+	case "inpaint_audio":
+		if d.SourceGenerationID == "" {
+			return msg.Err(msg.ErrMusicSourceRequired, nil)
+		}
+		start, _ := o["inpaint_start"].(float64)
+		end, _ := o["inpaint_end"].(float64)
+		if end <= start || (limit > 0 && end > limit) {
+			return msg.Err(msg.ErrMusicParams, nil)
+		}
+	}
+	if d.Seed != nil && (*d.Seed < 0 || *d.Seed > 2147483647) {
+		return msg.Err(msg.ErrParamsOutOfRange, nil)
+	}
+	return nil
+}
+
 func InRange(v, min, max float64) bool {
 	return !math.IsNaN(v) && !math.IsInf(v, 0) && v >= min && v <= max
 }
 
 func (d Draft) RequiresVoice() bool {
 	m, err := catalog.Lookup(d.ModelID)
-	if err == nil && (m.Family == "kokoro_tts" || catalog.IsMusic(m.Family)) {
+	if err == nil && (m.Family == "kokoro_tts" || m.Family == "voxtral_tts" || m.Family == "gradium_phonon" || catalog.IsMusic(m.Family)) {
 		return false
 	}
-	if err == nil && (m.Family == "omnivoice" || m.Family == "breeze_tts") {
+	if err == nil && (m.Family == "omnivoice" || m.Family == "breeze_tts" || m.Family == "ming3_tts" || m.Family == "plapre" || m.Family == "fish_drama3") {
 		return d.VoiceMode == "clone"
 	}
 	if err == nil && m.Family == "qwen3_tts" {
@@ -228,6 +347,32 @@ func (d Draft) KokoroSpeaker(m catalog.ModelPackage) string {
 		}
 	}
 	return ""
+}
+
+func kokoroPrimaryVoice(speaker string, voices []string) (string, bool) {
+	if !strings.Contains(speaker, "(") {
+		return speaker, slices.Contains(voices, speaker)
+	}
+	parts := strings.Split(speaker, "+")
+	if len(parts) != 2 {
+		return "", false
+	}
+	ids := [2]string{}
+	for i, part := range parts {
+		open := strings.IndexByte(part, '(')
+		if open <= 0 || !strings.HasSuffix(part, ")") {
+			return "", false
+		}
+		ids[i] = part[:open]
+		weight, err := strconv.ParseFloat(part[open+1:len(part)-1], 64)
+		if err != nil || math.IsNaN(weight) || math.IsInf(weight, 0) || weight <= 0 || !slices.Contains(voices, ids[i]) {
+			return "", false
+		}
+	}
+	if KokoroLanguage(ids[0]) != KokoroLanguage(ids[1]) {
+		return "", false
+	}
+	return ids[0], true
 }
 
 func KokoroLanguage(voice string) string {

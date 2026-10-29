@@ -231,10 +231,20 @@ func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage) (string, 
 	}
 	// 固定模板必须显式覆盖作品中所有模型，不接受客户端自报资源预算。
 	models := map[string]bool{}
+	sources := map[string]bool{}
 	var collect func(any)
 	collect = func(v any) {
 		switch row := v.(type) {
 		case map[string]any:
+			if options, ok := row["modelOptions"].(map[string]any); ok {
+				if stable, ok := options["stable_audio"].(map[string]any); ok {
+					if edit, _ := stable["edit"].(string); edit != "" && edit != "off" {
+						if id, _ := row["sourceGenerationId"].(string); id != "" {
+							sources[id] = true
+						}
+					}
+				}
+			}
 			for k, v := range row {
 				if k == "modelId" {
 					if id, ok := v.(string); ok && id != "" {
@@ -250,6 +260,19 @@ func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage) (string, 
 		}
 	}
 	collect(value)
+	if len(sources) > 0 {
+		w, err := j.Server.user(user)
+		if err != nil {
+			return "", err
+		}
+		state := w.Store.Read()
+		hidden, _ := j.hiddenFiles(user, state)
+		for id := range sources {
+			if !slices.ContainsFunc(state.History, func(g schema.Generation) bool { return g.ID == id && !hidden[g.FileName] }) {
+				return "", msg.Err(msg.ErrAudioMissing, nil)
+			}
+		}
+	}
 	executor := ""
 	for model := range models {
 		approved := j.config().Models[model]
