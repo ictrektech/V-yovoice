@@ -201,7 +201,7 @@ func TestUsersHaveSeparatePersistentProjects(t *testing.T) {
 
 func TestBrowserCannotUseDesktopPathsOrDownloadAsMember(t *testing.T) {
 	s := testServer(t)
-	for _, method := range []string{"project.import", "model.import", "storage.relocate", "runtime.install", "model.download", "assistant.send", "assistant.run", "ai.codex.login", "logs.export", "assets.delete"} {
+	for _, method := range []string{"project.import", "model.import", "storage.relocate", "runtime.install", "model.download", "assistant.send", "assistant.run", "ai.codex.login", "logs.export", "assets.delete", "voice.recognize", "speech.transcribe", "generation.alignText", "transcript.dismiss"} {
 		if got := rpc(s, "alice", method, `{"path":"/etc/passwd","id":"index-2.5-q8"}`).Code; got != 403 {
 			t.Fatalf("%s status=%d", method, got)
 		}

@@ -76,7 +76,7 @@ const hub = path.join(run, 'modelhub');
 mkdirSync(path.join(hub, 'export/ms', repo), { recursive: true });
 const weights = path.join(run, 'weights');
 mkdirSync(weights);
-for (const model of JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).filter(model => (cloning ? models : models.slice(0, 1)).includes('audiocpp-' + model.id))) {
+for (const model of JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).models.filter(model => (cloning ? models : models.slice(0, 1)).includes('audiocpp-' + model.id))) {
   for (const entry of model.files ?? [{ path: model.remotePath }]) {
     const target = path.join(weights, entry.path);
     mkdirSync(path.dirname(target), { recursive: true });

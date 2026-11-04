@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { emptyState } from '../src/shared/workbench';
 import { readFileSync } from 'node:fs';
-const catalog = JSON.parse(readFileSync(new URL('../../internal/catalog/catalog.json', import.meta.url), 'utf8'));
+const catalog = JSON.parse(readFileSync(new URL('../../internal/catalog/catalog.json', import.meta.url), 'utf8')).models;
 
 test('各功能页可原地准备相关模型，关闭不离开原页面，未暴露 PyTorch 配乐', async ({ page }) => {
   test.setTimeout(60000);
@@ -27,6 +27,8 @@ test('各功能页可原地准备相关模型，关闭不离开原页面，未�
   await page.route('**/api/v1/creative-models', route => route.fulfill({ json: downloading ? [{ key: `audiocpp-${downloading}`, status: 'downloading', downloaded_bytes: 100, total_bytes: 1000 }] : [] }));
   await page.goto('/');
   await expect(page.getByTestId('nav-background-music')).toHaveCount(0);
+  await expect(page.getByTestId('nav-transcribe')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '识别文字', exact: true })).toHaveCount(0);
   for (const destination of ['asr', 'tts', 'speaker', 'hotwords', 'text', 'story', 'music', 'score', 'sfx', 'characters', 'settings', 'api-docs']) {
     const navigation = destination === 'score' || destination === 'sfx' ? 'music' : destination;
     await page.getByTestId(`nav-${navigation}`).click();

@@ -21,6 +21,7 @@ export function MediaActions({ item, beforeDelete, onError, onEdit }: { onEdit?:
     if (busy) return;
     setBusy(true); setError('');
     try {
+      // 删除前先停掉它的试听：Windows 上正在播放的文件可能被占用而删不掉。
       if (action === 'delete') beforeDelete();
       await call(action === 'rename' ? 'media.rename' : 'media.delete', { kind: item.kind, id: item.id, name: name.trim() });
       setAction(null);

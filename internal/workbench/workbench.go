@@ -108,6 +108,12 @@ func (w *Workbench) start(kind string, code msg.Code, params msg.Params, modelID
 	if w.closed || *slotCancel != nil {
 		return nil, msg.Err(msg.ErrBusy, nil)
 	}
+	// 数据目录迁移期间模型目录也在复制，此时开始下载会把文件写进即将废弃的旧目录。
+	if installKind(kind) && w.cancel != nil {
+		if a := w.Store.Read().Activity; a != nil && a.Kind == "relocate" {
+			return nil, msg.Err(msg.ErrBusy, nil)
+		}
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	if e := w.Store.Update(func(s *schema.State) {
 		requestID := ""
@@ -129,7 +135,7 @@ func (w *Workbench) start(kind string, code msg.Code, params msg.Params, modelID
 	}
 	operationID := schema.NewID()
 	started := time.Now()
-	fields := []any{"operation_id", operationID, "kind", kind, "model_id", value(modelID), "related_ids", requestIDs}
+	fields := []any{"operation_id", operationID, "kind", kind, "model_id", schema.Deref(modelID), "related_ids", requestIDs}
 	diag.Log(w.Store.Root, "operation.started", fields...)
 	*slotCancel = cancel
 	done := make(chan struct{})
@@ -137,7 +143,7 @@ func (w *Workbench) start(kind string, code msg.Code, params msg.Params, modelID
 	go func() {
 		defer close(done)
 		defer cancel()
-		err := action(ctx)
+		err := diag.Catch(w.Store.Root, "operation", func() error { return action(ctx) })
 		status := "completed"
 		if errors.Is(err, context.Canceled) {
 			status = "cancelled"
@@ -145,6 +151,9 @@ func (w *Workbench) start(kind string, code msg.Code, params msg.Params, modelID
 			status = "failed"
 		}
 		diag.Log(w.Store.Root, "operation.finished", append(fields, "status", status, "elapsed_ms", time.Since(started).Milliseconds(), "error", diag.Error(err))...)
+		if err != nil && !errors.Is(err, context.Canceled) {
+			_ = os.WriteFile(filepath.Join(w.Store.Root, "logs", "last-error.txt"), []byte(err.Error()), 0600)
+		}
 		w.mu.Lock()
 		defer w.mu.Unlock()
 		update := func(s *schema.State) {
@@ -181,9 +190,6 @@ func (w *Workbench) start(kind string, code msg.Code, params msg.Params, modelID
 				}
 			}
 		}
-		if err != nil && !errors.Is(err, context.Canceled) {
-			_ = os.WriteFile(filepath.Join(w.Store.Root, "logs", "last-error.txt"), []byte(err.Error()), 0600)
-		}
 		if e := w.Store.Update(update, true); e != nil {
 			_ = w.Store.Update(func(s *schema.State) {
 				update(s)
@@ -213,18 +219,6 @@ func (w *Workbench) Done() <-chan struct{} {
 		return closed
 	}
 	return w.done
-}
-
-// ModelDone 返回当前模型下载或导入的完成信号；没有进行中的安装时返回已关闭的通道。
-func (w *Workbench) ModelDone() <-chan struct{} {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.installDone == nil {
-		closed := make(chan struct{})
-		close(closed)
-		return closed
-	}
-	return w.installDone
 }
 
 func (w *Workbench) Cancel() {

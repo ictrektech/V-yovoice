@@ -5,7 +5,7 @@ import { HStack, StackItem, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Check, ChevronLeft, ChevronRight, GripVertical, Play, Undo2 } from 'lucide-react';
 import { readLocal, writeLocal } from '../../shared/lib/local-store';
-import type { AlignedWord } from '../../shared/workbench';
+import { formatTime, type AlignedWord } from '../../shared/workbench';
 import { estimateWords, type LyricLine } from './lyric-timing';
 
 // 每个字最短的时长与键盘微调的步长（秒）；按住 Shift 时用细步长。整句微调的步长单独一组。
@@ -177,14 +177,19 @@ export function LyricWordEditor({ lines, setLines: setRaw, line, setLine, audio,
     setSelected(index); setView({ start: windowStart, end: windowEnd });
     const origin = event.clientX, perSecond = box.getBoundingClientRect().width / span, before = lines;
     const target = event.currentTarget; target.setPointerCapture(event.pointerId);
+    // 只有真的拖动过才记一步撤销，点一下字块不产生空记录。
+    let moved = false;
     const move = (moveEvent: globalThis.PointerEvent) => {
+      if (moveEvent.clientX === origin && !moved) return;
+      moved = true;
       const delta = (moveEvent.clientX - origin) / perSecond;
       const start = mode === 'end' ? word.start : word.start + delta, end = mode === 'start' ? word.end : word.end + delta;
       setLines(settle(before, line, index, start, end, duration));
     };
     const up = () => {
       target.removeEventListener('pointermove', move); target.removeEventListener('pointerup', up); target.removeEventListener('pointercancel', up);
-      setHistory(entries => [...entries.slice(-49), before]); setView(null);
+      if (moved) setHistory(entries => [...entries.slice(-49), before]);
+      setView(null);
     };
     target.addEventListener('pointermove', move); target.addEventListener('pointerup', up); target.addEventListener('pointercancel', up);
   };
@@ -218,7 +223,7 @@ export function LyricWordEditor({ lines, setLines: setRaw, line, setLine, audio,
     </HStack>
     <VStack ref={track} className="lyric-word-track" gap={0} data-tapping={tapping || undefined}
       onPointerDown={event => { if (event.target === event.currentTarget || (event.target as HTMLElement).classList.contains('lyric-word-tick')) { const box = event.currentTarget.getBoundingClientRect(); seek(windowStart + (event.clientX - box.left) / box.width * span); } }}>
-      {ticks.map(time => <small key={time} className="lyric-word-tick" style={{ left: percent(time) }}>{Number.isInteger(time) ? `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, '0')}` : ''}</small>)}
+      {ticks.map(time => <small key={time} className="lyric-word-tick" style={{ left: percent(time) }}>{Number.isInteger(time) ? formatTime(time) : ''}</small>)}
       {words.map((word, index) => <StackItem as="span" key={index} className="lyric-word-block" data-selected={index === selected || undefined} style={{ left: percent(word.start), width: `${(word.end - word.start) / span * 100}%` } as CSSProperties}>
         <Button className="lyric-word-edge" size="sm" variant="ghost" isIconOnly icon={<GripVertical />} label={t('@yovoice.music.wordStart', { word: label(word.text) })} data-edge="start" onPointerDown={event => drag(event, index, 'start')} onKeyDown={event => nudgeKey(event, index, 'start')} onFocus={() => setSelected(index)} />
         <Button className="lyric-word-body" size="sm" variant="ghost" label={label(word.text)} tooltip={`${word.start.toFixed(2)}s – ${word.end.toFixed(2)}s`} aria-pressed={index === selected}

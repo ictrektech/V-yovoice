@@ -64,8 +64,8 @@ def models(include_non_speech: bool = False) -> list[dict]:
     previous_path = source.with_name("previous-model-files.json")
     previous = {row["id"]: row for row in json.loads(previous_path.read_text())} if previous_path.is_file() else {}
     result = []
-    for row in json.loads(source.read_text()):
-        non_speech = row.get("task") in {"gen", "instrument", "midi", "align"}
+    for row in json.loads(source.read_text())["models"]:
+        non_speech = row.get("task") in {"gen", "instrument", "midi", "align", "asr"}
         if non_speech and not include_non_speech:
             continue
         # 仅导入模型由管理员校验原文件后发布到同一 ModelScope 仓库，不能伪造下载来源。

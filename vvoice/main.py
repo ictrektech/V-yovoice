@@ -244,7 +244,7 @@ def scheduler_contract() -> dict:
     creative = root / "internal" / "catalog" / "catalog.json"
     if not creative.is_file():
         creative = root / "catalog" / "audio-cpp.json"
-    asynchronous = json.loads(creative.read_text()) if creative.is_file() else []
+    asynchronous = json.loads(creative.read_text())["models"] if creative.is_file() else []
     return {
         "protocol_version": 1,
         "input_limits_version": 1,

@@ -3,6 +3,7 @@ package desktop
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"time"
@@ -16,15 +17,22 @@ import (
 )
 
 // audited 是需要在日志里留痕的关键操作；生成、保存与 AI 任务在各自流程里记录更详细的事件。
-var audited = map[string]bool{
-	"draft.delete": true, "project.export": true, "project.import": true, "score.import": true, "score.export": true,
-	"character.save": true, "character.delete": true, "voice.fromGeneration": true, "voice.update": true, "voice.import": true,
-	"voice.record": true, "timeline.import": true, "timeline.fromGeneration": true, "media.rename": true, "media.delete": true, "generation.lyricTimes": true, "generation.lyricWords": true, "generation.alignLyrics": true,
-	"preferences.save": true, "storage.relocate": true, "storage.cleanup": true, "model.directory": true, "model.download": true,
-	"model.forget": true, "runtime.install": true, "ai.provider.save": true, "ai.provider.delete": true, "ai.provider.use": true,
-	"ai.test": true, "ai.connect": true, "ai.codex.login": true, "melody.plan": true, "melody.cover": true, "melody.dismiss": true, "ai.dismiss": true,
-	"operation.cancel": true, "model.cancel": true, "ai.cancel": true, "logs.export": true, "assets.delete": true,
-	"assistant.proposal": true, "assistant.forget": true,
+// 清单保存在 audited.json，web 的 shared/lib/preview-logs.ts 引用同一份文件，浏览器预览据此模拟留痕。
+//
+//go:embed audited.json
+var auditedJSON []byte
+
+var audited map[string]bool
+
+func init() {
+	var methods []string
+	if err := json.Unmarshal(auditedJSON, &methods); err != nil {
+		panic("解析 audited.json 失败：" + err.Error())
+	}
+	audited = make(map[string]bool, len(methods))
+	for _, method := range methods {
+		audited[method] = true
+	}
 }
 
 // Call 解码桌面界面的 RPC 请求并调用应用服务；耗时操作由 Workbench 调度，结果通过状态事件广播。
@@ -68,7 +76,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return nil, msg.Err(msg.ErrRequestInvalid, nil)
 	}
 	if e := json.Unmarshal(data, &p); e != nil {
-		return nil, e
+		return nil, msg.Err(msg.ErrRequestInvalid, nil)
 	}
 	switch method {
 	case "state.get":
@@ -78,7 +86,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "draft.save", "generation.start":
 		d := schema.DefaultDraft()
 		if e := json.Unmarshal(data, &d); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		if method == "draft.save" {
 			return true, w.SaveDraft(d)
@@ -91,7 +99,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			ClipID string       `json:"clipId"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return true, w.GenerateCue(input.Draft, input.CueID, input.ClipID)
 	case "draft.delete":
@@ -108,13 +116,13 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			Score schema.Score `json:"score"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return true, score.Write(input.Path, input.Score)
 	case "character.save", "character.preview":
 		var c schema.Character
 		if e := json.Unmarshal(data, &c); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		if method == "character.preview" {
 			return w.PreviewCharacter(c)
@@ -130,12 +138,10 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return w.ImportTimelineGeneration(ctx, p.ID)
 	case "voice.update":
 		return true, w.UpdateVoice(p.ID, p.Name, p.ReferenceText)
-	case "voice.import":
-		return w.ImportVoice(ctx, p.Path, "")
 	case "voice.record", "timeline.import":
 		b, e := base64.StdEncoding.DecodeString(p.Base64)
 		if e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		if method == "timeline.import" {
 			return w.ImportTimelineFrom(ctx, bytes.NewReader(b), p.Name)
@@ -143,8 +149,10 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return w.ImportVoiceFrom(ctx, bytes.NewReader(b), p.Name)
 	case "voice.suggest":
 		return w.SuggestVoiceRange(p.ID)
-	case "generation.check":
-		return w.CheckGeneration(p.ID)
+	case "voice.recognize":
+		return true, w.RecognizeVoice(p.ID)
+	case "transcript.dismiss":
+		return true, w.DismissTranscript(p.ID)
 	case "media.path":
 		return w.MediaFile(p.Kind, p.ID)
 	case "export.path":
@@ -176,6 +184,8 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return true, w.SetLyricWords(in.ID, in.Words)
+	case "generation.alignText":
+		return true, w.AlignText(p.ID)
 	case "generation.alignLyrics":
 		var in struct {
 			ID    string                `json:"id"`
@@ -188,13 +198,13 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "preferences.save":
 		preferences := schema.Preferences{DownloadSource: "modelscope", Backend: "cpu", UiLocale: schema.UiLocaleZhCN}
 		if e := json.Unmarshal(data, &preferences); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return true, w.SavePreferences(preferences)
 	case "storage.info":
 		return w.StorageInfo()
 	case "storage.relocate":
-		return true, w.RelocateStorage(p.Path)
+		return true, w.RelocateStorage(ctx, p.Path)
 	case "storage.cleanup":
 		return w.CleanupResiduals()
 	case "model.directory":
@@ -210,7 +220,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "ai.provider.save":
 		var input workbench.AIProviderInput
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return w.SaveAIProvider(input)
 	case "ai.provider.delete":
@@ -234,7 +244,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			Context workbench.AssistantContext `json:"context"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return true, w.SendAssistant(input.Text, input.Context)
 	case "assistant.cancel":
@@ -243,19 +253,19 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "ai.cast":
 		var input workbench.CastBrief
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return w.StartCast(input)
 	case "ai.image":
 		var input workbench.ImageBrief
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return w.StartImage(input)
 	case "melody.plan":
 		d := schema.DefaultDraft()
 		if e := json.Unmarshal(data, &d); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return true, w.PlanMelody(d)
 	case "melody.cover":
@@ -264,19 +274,32 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			Base64    string `json:"base64"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		b, e := base64.StdEncoding.DecodeString(input.Base64)
 		if e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return true, w.CoverMelody(input.ProjectID, bytes.NewReader(b))
+	case "speech.transcribe":
+		var input struct {
+			Name   string `json:"name"`
+			Base64 string `json:"base64"`
+		}
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
+		}
+		b, e := base64.StdEncoding.DecodeString(input.Base64)
+		if e != nil {
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
+		}
+		return true, w.TranscribeSpeech(input.Name, bytes.NewReader(b))
 	case "melody.listen":
 		var input struct {
 			Abc string `json:"abc"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		file, e := w.ListenMelody(ctx, input.Abc)
 		return map[string]string{"fileName": file}, e
@@ -289,7 +312,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			Tempo int    `json:"tempo"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		if method == "melody.inspect" {
 			return workbench.InspectMelody(input.Abc), nil
@@ -298,8 +321,6 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "ai.cancel":
 		w.CancelAI()
 		return true, nil
-	case "assistant.sessions":
-		return w.SessionsAssistant(), nil
 	case "assistant.open":
 		return true, w.OpenAssistantSession(p.ID)
 	case "assistant.new":
@@ -312,7 +333,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			Confirm bool   `json:"confirm"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return true, w.ResolveAssistantProposal(input.ID, input.Confirm)
 	case "assistant.forget":
@@ -326,21 +347,21 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			Detail string `json:"detail"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
-		diag.Log(w.Store.Root, "client."+clip(input.Event, 40), "method", clip(input.Method, 80), "detail", clip(input.Detail, 2000))
+		diag.Log(w.Store.Root, "client."+schema.Clip(input.Event, 40), "method", schema.Clip(input.Method, 80), "detail", schema.Clip(input.Detail, 2000))
 		return true, nil
 	case "logs.query":
 		var filter diag.Filter
 		if e := json.Unmarshal(data, &filter); e != nil {
-			return nil, e
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
 		return diag.Query(w.Store.Root, filter)
 	case "logs.export":
 		if p.Path == "" {
 			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
-		return true, diag.Bundle(w.Store.Root, p.Path, clip(p.Version, 40))
+		return true, diag.Bundle(w.Store.Root, p.Path, schema.Clip(p.Version, 40))
 	case "ai.dismiss":
 		return true, w.DismissAI(p.ID)
 	case "operation.cancel":
@@ -351,12 +372,4 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return true, nil
 	}
 	return nil, msg.Err(msg.ErrMethodUnsupported, nil)
-}
-
-// clip 截断界面上报的文本，避免异常信息撑大日志。
-func clip(s string, n int) string {
-	if r := []rune(s); len(r) > n {
-		return string(r[:n]) + "…"
-	}
-	return s
 }

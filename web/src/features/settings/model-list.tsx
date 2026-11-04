@@ -10,7 +10,7 @@ import { CircleCheck, Download, FilePlus, Pause, RefreshCw, Search, Trash2 } fro
 import { isVos, vosFetch } from '../../shared/lib/vos';
 import type { SharedModelStatus } from '../../shared/lib/model-inventory';
 import { call } from '../../shared/lib/client';
-import { formatSize, groupModels, modelUpdateAvailable, type Draft, type ModelPackage, type State } from '../../shared/workbench';
+import { formatBytes, groupModels, modelUpdateAvailable, type Draft, type ModelPackage, type State } from '../../shared/workbench';
 import { SettingsGroup } from '../../shared/ui/settings-group';
 
 function downloadStatusLabel(t: (key: string) => string, downloading: boolean, received: number, size: number, status: string) {
@@ -27,6 +27,7 @@ function modelDescription(t: (key: string) => string, model: ModelPackage) {
   if (model.family === 'stable_audio') return t(`@yovoice.settings.modelDesc.stableAudio.${model.variant || 'music'}`);
   if (model.family === 'sheetsage2') return t('@yovoice.settings.modelDesc.sheetsage2');
   if (model.family === 'lyric_align') return t('@yovoice.settings.modelDesc.lyricAlign');
+  if (model.family === 'qwen3_asr') return t('@yovoice.settings.modelDesc.recognize');
   if (model.family === 'kokoro_tts') return t(model.id === 'kokoro-82m-q8' ? '@yovoice.settings.modelDesc.kokoroOfficial' : '@yovoice.settings.modelDesc.kokoro');
   if (model.family === 'omnivoice') return t('@yovoice.settings.modelDesc.omni');
   if (model.family === 'qwen3_tts') return t(`@yovoice.settings.modelDesc.qwen.${model.variant || 'base'}`);
@@ -85,7 +86,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
             {owned.length ? <StatusDot variant={group.some(item => item.id === draft.modelId) ? 'accent' : 'success'} label={group.some(item => item.id === draft.modelId) ? t('@yovoice.settings.inUse') : t('@yovoice.settings.verified')} /> : null}
             <p className="settings-row-title">{model.name}</p>
             {group.length === 1 ? <small className="precision">{model.precision}</small> : null}
-            <small className="model-size">{formatSize(model.size)}</small>
+            <small className="model-size">{formatBytes(model.size)}</small>
             {update ? <Token size="sm" color="gray" label={t('@yovoice.settings.modelUpdateAvailable')} /> : null}
             {ready && !update ? <small className="ready">{inUse ? t('@yovoice.settings.inUse') : t('@yovoice.settings.verified')}</small> : null}
           </HStack>
@@ -111,7 +112,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
         {owned.length ? <small>{t('@yovoice.settings.precisionsInstalled', { list: owned.map(item => item.precision).join(' · ') })}</small> : <small>{t('@yovoice.settings.precisionHint')}</small>}
       </HStack> : null}
       {download ? <VStack className="model-download" gap={2} role="status" aria-label={t('@yovoice.settings.downloadProgress', { name: model.name, precision: model.precision })}>
-        <HStack hAlign="between" gap={3}><small>{downloadStatusLabel(t, !!downloading, download.received, download.total, download.status)}</small><small className="model-size">{formatSize(download.received)} / {formatSize(download.total)}</small></HStack>
+        <HStack hAlign="between" gap={3}><small>{downloadStatusLabel(t, !!downloading, download.received, download.total, download.status)}</small><small className="model-size">{formatBytes(download.received)} / {formatBytes(download.total)}</small></HStack>
         <progress aria-label={t('@yovoice.settings.downloadProgress', { name: model.name, precision: model.precision })} value={download.received} max={download.total} />
       </VStack> : null}
       {hub?.error && hub.status === 'failed' ? <p role="alert">{hub.error}</p> : null}

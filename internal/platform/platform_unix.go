@@ -27,7 +27,9 @@ func ConfigureProcess(c *exec.Cmd) {
 }
 func KillProcess(c *exec.Cmd) {
 	if c.Process != nil {
-		_ = syscall.Kill(-c.Process.Pid, syscall.SIGKILL)
+		if e := syscall.Kill(-c.Process.Pid, syscall.SIGKILL); e != nil {
+			_ = c.Process.Kill()
+		}
 	}
 }
 func FreeSpace(path string) (uint64, error) {

@@ -33,10 +33,12 @@ def test_legacy_public_routes_remain_available():
 
 def test_all_downloadable_yovoice_speech_precisions_are_projected():
     root = Path(__file__).resolve().parents[1]
-    upstream = json.loads((root / "internal/catalog/catalog.json").read_text())
+    upstream = json.loads((root / "internal/catalog/catalog.json").read_text())["models"]
     expected = {"audiocpp-" + row["id"] for row in upstream
-                if row.get("task") not in {"gen", "instrument", "midi", "align"}}
-    assert expected <= {row["key"] for row in catalog()}
+                if row.get("task") not in {"gen", "instrument", "midi", "align", "asr"}}
+    actual = {row["key"] for row in catalog()}
+    assert expected <= actual
+    assert "audiocpp-qwen3-asr-0.6b-q8" not in actual
 
 
 def test_creator_management_also_includes_music_and_soundfonts():
@@ -44,7 +46,7 @@ def test_creator_management_also_includes_music_and_soundfonts():
     rows = models(include_non_speech=True)
     source = Path(__file__).resolve().parents[1] / "internal/catalog/catalog.json"
     assert {row["key"] for row in rows} == {
-        "audiocpp-" + row["id"] for row in json.loads(source.read_text())
+        "audiocpp-" + row["id"] for row in json.loads(source.read_text())["models"]
     }
     assert {"tts", "music", "soundfont"} <= {row["kind"] for row in rows}
     assert sum(row["import_required"] for row in rows) == 2

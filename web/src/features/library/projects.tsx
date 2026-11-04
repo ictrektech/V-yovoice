@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode, type ComponentProps } from 'react';
-import { formatNotice } from '../../shared/i18n/format';
+import { formatDateTime, formatNotice } from '../../shared/i18n/format';
 import { Button } from '@astryxdesign/core/Button';
 import { VStack } from '@astryxdesign/core/Layout';
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
@@ -49,7 +49,7 @@ export function NewProject({ locale, modelId, modelFor, create, onError, button,
     const next: Draft = modelFor ? { ...base, modelId: modelFor(kind) } : base;
     if (kind === 'story') next.subtitles = { speakers: [{ id: crypto.randomUUID(), sourceName: t('@yovoice.library.narrator') }], cues: [] };
     try { await create(next); }
-    catch (error) { onError((error as Error).message); }
+    catch (error) { onError(noticeMessage(error)); }
     finally { setBusy(false); }
   }
   if (kind) return <Button label={t(`@yovoice.project.new.${kind}`)} icon={<Plus />} size="sm" {...button} isLoading={busy} onClick={() => void start(kind)} />;
@@ -99,7 +99,7 @@ export function Projects({ drafts, kind, title, controls, open, create, copy, sa
   async function update(next: Draft) {
     setBusy(true); setError('');
     try { await save(next); setRenaming(null); }
-    catch (error) { setError((error as Error).message); }
+    catch (error) { setError(noticeMessage(error)); }
     finally { setBusy(false); }
   }
   return <>
@@ -122,7 +122,7 @@ export function Projects({ drafts, kind, title, controls, open, create, copy, sa
           <Ticket className={`project-library-row ticket-${kind}`} coverClassName="project-avatars" index={index} cover={cover}
             eyebrow={projectMeta(draft)} excerpt={excerpt(draft)}
             title={<Button variant="ghost" className="project-title" label={draft.title} onPointerEnter={overflowTitle} onClick={() => open(draft)} />}
-            stub={stamp ? <time className="project-created" dateTime={stamp} title={t('@yovoice.project.created', { date: new Date(draft.createdAt ?? date).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) })}>
+            stub={stamp ? <time className="project-created" dateTime={stamp} title={t('@yovoice.project.created', { date: formatDateTime(draft.createdAt ?? date, undefined) })}>
               <b className="ticket-day">{date.getDate()}</b>
               <small className="eyebrow">{date.getFullYear()}.{String(date.getMonth() + 1).padStart(2, '0')}</small>
             </time> : null}

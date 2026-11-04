@@ -281,18 +281,6 @@
   "@yovoice.draft.copySuffix": {
     "defaultMessage": " · Bản sao"
   },
-  "@yovoice.draft.defaultEmotionText": {
-    "defaultMessage": "Nhẹ nhàng và điềm tĩnh, như đang trò chuyện với người thân quen."
-  },
-  "@yovoice.draft.exampleText": {
-    "defaultMessage": "Nắng sớm len qua khe rèm,\ncăn phòng dần sáng lên.\n\nRót cho mình một tách trà ấm,\nđể dòng suy nghĩ chậm lại đôi chút.\n\nHôm nay, ta bắt đầu bằng một giọng nói hay."
-  },
-  "@yovoice.draft.exampleTitle": {
-    "defaultMessage": "Lời dẫn buổi sáng"
-  },
-  "@yovoice.draft.untitled": {
-    "defaultMessage": "Chưa đặt tên"
-  },
   "@yovoice.emotion.afraid": {
     "defaultMessage": "Sợ hãi"
   },
@@ -491,6 +479,9 @@
   "@yovoice.error.engineNoAudio": {
     "defaultMessage": "Công cụ không trả về âm thanh."
   },
+  "@yovoice.error.engineCrashed": {
+    "defaultMessage": "Công cụ suy luận đã thoát bất ngờ khi đang tạo. Bạn có thể thử lại; nếu lặp lại, hãy đóng ứng dụng đang dùng bộ nhớ hoặc GPU, hoặc chọn mô hình nhỏ hơn. ({detail})"
+  },
   "@yovoice.error.engineStartFailed": {
     "defaultMessage": "Không khởi động được công cụ. Kiểm tra môi trường chạy hoặc đổi thiết bị tính toán."
   },
@@ -499,6 +490,12 @@
   },
   "@yovoice.error.generateFailed": {
     "defaultMessage": "Tạo thất bại. Kiểm tra mô hình, VRAM và âm thanh tham chiếu. Mở nhật ký trong Cài đặt."
+  },
+  "@yovoice.error.jobConflict": {
+    "defaultMessage": "ID yêu cầu đã được dùng với tham số khác, hoặc dịch vụ đang bận."
+  },
+  "@yovoice.error.jobMissing": {
+    "defaultMessage": "Tác vụ không tồn tại hoặc đã hết hạn."
   },
   "@yovoice.error.languageUnsupported": {
     "defaultMessage": "Mô hình này không hỗ trợ ngôn ngữ đó."
@@ -1001,9 +998,6 @@
   "@yovoice.reference.transcriptHelp": {
     "defaultMessage": "Lời thoại chính xác giúp nhân bản tốt hơn; để trống để chỉ dùng giọng."
   },
-  "@yovoice.reference.designPlaceholder": {
-    "defaultMessage": "Ví dụ: female, young adult, moderate pitch. Để trống để dùng giọng tự động."
-  },
   "@yovoice.settings.modelDesc.omni": {
     "defaultMessage": "Đa ngôn ngữ · Thiết kế và nhân bản giọng"
   },
@@ -1018,9 +1012,6 @@
   },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 ngôn ngữ · Nhân bản giọng tham chiếu"
-  },
-  "@yovoice.reference.designHelp": {
-    "defaultMessage": "Dùng các thuộc tính phân cách bằng dấu phẩy, như male/female, young adult/middle-aged, low pitch/moderate pitch, whisper; không hỗ trợ mô tả tự do."
   },
   "@yovoice.options.text_chunk_size": {
     "defaultMessage": "Kích thước đoạn văn bản (0 dùng mặc định của mô hình)"
@@ -1337,9 +1328,6 @@
   "@yovoice.error.referenceTextRequired": {
     "defaultMessage": "Nhân bản {model} cần có đầy đủ lời thoại tham chiếu."
   },
-  "@yovoice.reference.omniTranscriptHelp": {
-    "defaultMessage": "Lời thoại phải khớp với âm thanh tham chiếu."
-  },
   "@yovoice.settings.modelDesc.kokoro": {
     "defaultMessage": "Giọng có sẵn · Đa ngôn ngữ"
   },
@@ -1381,9 +1369,6 @@
   },
   "@yovoice.character.example": {
     "defaultMessage": "Xin chào, rất vui được gặp bạn. Hãy cùng kể câu chuyện của chúng ta cho thế giới nghe nhé."
-  },
-  "@yovoice.character.save": {
-    "defaultMessage": "Lưu nhân vật"
   },
   "@yovoice.character.copy": {
     "defaultMessage": "Lưu nhân vật thành bản mới"
@@ -1436,6 +1421,18 @@
   "@yovoice.voice.transcript": {
     "defaultMessage": "Lời thoại tham chiếu"
   },
+  "@yovoice.recognize.action": {
+    "defaultMessage": "Nhận dạng văn bản"
+  },
+  "@yovoice.recognize.working": {
+    "defaultMessage": "Đang nhận dạng…"
+  },
+  "@yovoice.recognize.hint": {
+    "defaultMessage": "Chuyển mẫu giọng thành văn bản bằng mô hình nhận dạng. Mẫu chưa có văn bản tham chiếu sẽ lưu luôn kết quả"
+  },
+  "@yovoice.recognize.needVoice": {
+    "defaultMessage": "Hãy chọn giọng tham chiếu trước"
+  },
   "@yovoice.voice.sourceGeneration": {
     "defaultMessage": "Âm thanh đã tạo"
   },
@@ -1483,6 +1480,9 @@
   },
   "@yovoice.library.noSearchResults": {
     "defaultMessage": "Không có kết quả phù hợp"
+  },
+  "@yovoice.library.showEarlier": {
+    "defaultMessage": "Hiện thêm {n} mục cũ hơn"
   },
   "@yovoice.settings.modelDesc.kokoroOfficial": {
     "defaultMessage": "8 ngôn ngữ · 49 giọng · Không có tiếng Nhật"
@@ -1565,14 +1565,8 @@
   "@yovoice.timeline.removeClip": {
     "defaultMessage": "Xóa đoạn"
   },
-  "@yovoice.timeline.hint": {
-    "defaultMessage": "Chọn một đoạn để tách tại đầu phát. Kéo đoạn để di chuyển theo thời gian hoặc giữa các rãnh."
-  },
   "@yovoice.timeline.tracks": {
     "defaultMessage": "Rãnh"
-  },
-  "@yovoice.timeline.name": {
-    "defaultMessage": "Tên {name}"
   },
   "@yovoice.timeline.mute": {
     "defaultMessage": "Tắt tiếng {name}"
@@ -1610,17 +1604,11 @@
   "@yovoice.project.story": {
     "defaultMessage": "Kể chuyện"
   },
-  "@yovoice.project.subtitle": {
-    "defaultMessage": "Lồng tiếng phụ đề"
-  },
   "@yovoice.project.search": {
     "defaultMessage": "Tìm dự án"
   },
   "@yovoice.project.empty": {
     "defaultMessage": "Chưa có dự án nào"
-  },
-  "@yovoice.project.copy": {
-    "defaultMessage": "Nhân bản dự án"
   },
   "@yovoice.project.rename": {
     "defaultMessage": "Đổi tên dự án"
@@ -1699,9 +1687,6 @@
   },
   "@yovoice.timeline.redo": {
     "defaultMessage": "Làm lại"
-  },
-  "@yovoice.timeline.trim": {
-    "defaultMessage": "Phạm vi cắt"
   },
   "@yovoice.timeline.trimStart": {
     "defaultMessage": "Điểm vào (giây)"
@@ -2045,6 +2030,9 @@
   "@yovoice.music.timesignature": {
     "defaultMessage": "Nhịp"
   },
+  "@yovoice.music.steps": {
+    "defaultMessage": "Sampling steps"
+  },
   "@yovoice.error.engineUpgradeRequired": {
     "defaultMessage": "Mô hình này cần công cụ suy luận {version} trở lên. Hãy cập nhật công cụ trong Cài đặt."
   },
@@ -2218,9 +2206,6 @@
   },
   "@yovoice.ai.keyOptional": {
     "defaultMessage": "Thường không cần cho dịch vụ cục bộ"
-  },
-  "@yovoice.ai.getKey": {
-    "defaultMessage": "Lấy khóa"
   },
   "@yovoice.ai.model": {
     "defaultMessage": "Mô hình"
@@ -2765,6 +2750,120 @@
   "@yovoice.music.exportLrc": {
     "defaultMessage": "Xuất lời bài hát (LRC)"
   },
+  "@yovoice.music.lyricStyle": {
+    "defaultMessage": "Kiểu lời bài hát"
+  },
+  "@yovoice.music.lyricStyleScroll": {
+    "defaultMessage": "Cuộn"
+  },
+  "@yovoice.music.lyricStyleScrollHint": {
+    "defaultMessage": "Toàn bộ lời cuộn theo bài, dòng hiện tại sáng dần từng chữ"
+  },
+  "@yovoice.music.lyricStyleStage": {
+    "defaultMessage": "Tâm điểm"
+  },
+  "@yovoice.music.lyricStyleStageHint": {
+    "defaultMessage": "Mỗi lần một dòng, từng chữ bật lên và phát sáng. Hợp để quay màn hình"
+  },
+  "@yovoice.music.exportWordLrc": {
+    "defaultMessage": "Xuất lời theo từng chữ"
+  },
+  "@yovoice.music.exportWordLrcHint": {
+    "defaultMessage": "LRC mở rộng có thời gian cho từng chữ, dành cho trình phát hỗ trợ lời karaoke"
+  },
+  "@yovoice.music.lyricTools": {
+    "defaultMessage": "Công cụ lời bài hát"
+  },
+  "@yovoice.music.editWords": {
+    "defaultMessage": "Chỉnh thời gian lời bài hát"
+  },
+  "@yovoice.music.editWordsHint": {
+    "defaultMessage": "Khi đang phát, bấm vào một dòng để dòng đó bắt đầu tại vị trí hiện tại; dịch cả dòng hoặc chỉnh từng chữ"
+  },
+  "@yovoice.music.syncLyricsHint": {
+    "defaultMessage": "Đánh dấu điểm bắt đầu từng dòng khi nghe"
+  },
+  "@yovoice.music.editThisLine": {
+    "defaultMessage": "Bấm khi đang phát: dòng này bắt đầu tại đây"
+  },
+  "@yovoice.music.wordEditor": {
+    "defaultMessage": "Thời gian lời bài hát"
+  },
+  "@yovoice.music.wordEditorHint": {
+    "defaultMessage": "Khi đang phát, bấm vào một dòng để neo vào vị trí phát; ←/→ dịch dòng, ↑/↓ đổi dòng; kéo khối chữ hoặc hai đầu để chỉnh từng chữ"
+  },
+  "@yovoice.music.wordTap": {
+    "defaultMessage": "Gõ theo nhịp"
+  },
+  "@yovoice.music.wordTapStop": {
+    "defaultMessage": "Dừng gõ"
+  },
+  "@yovoice.music.wordTapHint": {
+    "defaultMessage": "Nhấn ↓ hoặc Enter khi mỗi chữ bắt đầu; tự chuyển sang chữ tiếp theo. Esc để dừng"
+  },
+  "@yovoice.music.wordLine": {
+    "defaultMessage": "Dòng {n}/{total}"
+  },
+  "@yovoice.music.prevLine": {
+    "defaultMessage": "Dòng trước"
+  },
+  "@yovoice.music.nextLine": {
+    "defaultMessage": "Dòng sau"
+  },
+  "@yovoice.music.playLine": {
+    "defaultMessage": "Phát dòng này"
+  },
+  "@yovoice.music.wordUndo": {
+    "defaultMessage": "Hoàn tác"
+  },
+  "@yovoice.music.wordCancel": {
+    "defaultMessage": "Hủy"
+  },
+  "@yovoice.music.wordSave": {
+    "defaultMessage": "Lưu"
+  },
+  "@yovoice.music.wordStart": {
+    "defaultMessage": "Chỉnh điểm đầu của “{word}”"
+  },
+  "@yovoice.music.wordEnd": {
+    "defaultMessage": "Chỉnh điểm cuối của “{word}”"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Neo vào vị trí phát"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Cho dòng này bắt đầu tại vị trí đang phát (Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "Sớm {n} giây"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "Muộn {n} giây"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Cách chỉnh"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Dịch cả các dòng sau"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Chỉ dòng này"
+  },
+  "@yovoice.music.alignLyrics": {
+    "defaultMessage": "Tự căn chỉnh"
+  },
+  "@yovoice.music.aligningLyrics": {
+    "defaultMessage": "Đang căn chỉnh"
+  },
+  "@yovoice.music.alignLyricsHint": {
+    "defaultMessage": "Tách giọng hát rồi căn từng từ của lời bài hát theo giọng hát; lưu cùng phiên bản này"
+  },
+  "@yovoice.music.alignLyricsDownload": {
+    "defaultMessage": "Hãy tải mô hình căn chỉnh lời bài hát (tùy chọn, khoảng 1,3 GB) trước"
+  },
+  "@yovoice.music.lyricsAligned": {
+    "defaultMessage": "Lời bài hát đã được căn từng từ theo giọng hát; có thể đồng bộ để tinh chỉnh"
+  },
   "@yovoice.music.lyricsAnalyzed": {
     "defaultMessage": "Thời gian lời được đặt theo giọng hát; hãy đồng bộ để tinh chỉnh"
   },
@@ -2963,6 +3062,9 @@
   "@yovoice.book.unsupported": {
     "defaultMessage": "Hãy nhập sách ở định dạng TXT, Markdown hoặc EPUB."
   },
+  "@yovoice.book.savedPartial": {
+    "defaultMessage": "{count} chương đã được lưu; thử lại sẽ không tạo lại chúng."
+  },
   "@yovoice.ai.task.running.cast": {
     "defaultMessage": "AI đang phân vai"
   },
@@ -2972,11 +3074,44 @@
   "@yovoice.ai.task.failed.cast": {
     "defaultMessage": "AI phân vai thất bại"
   },
+  "@yovoice.ai.task.running.image": {
+    "defaultMessage": "AI đang tạo ảnh"
+  },
+  "@yovoice.ai.task.done.image": {
+    "defaultMessage": "AI đã tạo xong ảnh"
+  },
+  "@yovoice.ai.task.failed.image": {
+    "defaultMessage": "AI tạo ảnh thất bại"
+  },
   "@yovoice.activity.planMelody": {
     "defaultMessage": "Đang viết bản nhạc giai điệu"
   },
   "@yovoice.activity.transcribe": {
     "defaultMessage": "Đang trích xuất giai điệu từ bài hát"
+  },
+  "@yovoice.activity.separateVocals": {
+    "defaultMessage": "Đang tách giọng hát"
+  },
+  "@yovoice.activity.alignLyrics": {
+    "defaultMessage": "Đang căn chỉnh lời bài hát ({done}/{total})"
+  },
+  "@yovoice.activity.recognize": {
+    "defaultMessage": "Đang nhận dạng văn bản tham chiếu"
+  },
+  "@yovoice.error.alignModelRequired": {
+    "defaultMessage": "Hãy tải mô hình căn chỉnh lời bài hát trong Mô hình âm nhạc ở Cài đặt trước"
+  },
+  "@yovoice.error.alignLyrics": {
+    "defaultMessage": "Phiên bản này không có lời bài hát để căn chỉnh"
+  },
+  "@yovoice.error.alignEmpty": {
+    "defaultMessage": "Không khớp được lời bài hát với giọng hát; hãy thử đồng bộ thủ công"
+  },
+  "@yovoice.error.recognizeModelRequired": {
+    "defaultMessage": "Hãy tải mô hình nhận dạng giọng nói Qwen3 ASR trong mục Mô hình giọng nói ở Cài đặt trước"
+  },
+  "@yovoice.error.recognizeEmpty": {
+    "defaultMessage": "Không nhận dạng được văn bản. Hãy thử mẫu có giọng nói rõ hơn"
   },
   "@yovoice.error.melodyInvalid": {
     "defaultMessage": "Bản nhạc giai điệu có lỗi: {issue}"
@@ -2992,6 +3127,12 @@
   },
   "@yovoice.settings.modelDesc.sheetsage2": {
     "defaultMessage": "Chép giai điệu và hợp âm của bài hát thành bản nhạc, dùng để cover với YuE2."
+  },
+  "@yovoice.settings.modelDesc.lyricAlign": {
+    "defaultMessage": "Tùy chọn: tách giọng hát và căn lời bài hát theo từng từ với giọng hát, dùng cho hiệu ứng lời từng từ và xuất LRC theo từ. Hỗ trợ 11 ngôn ngữ, gồm tiếng Trung, Anh, Nhật và Hàn."
+  },
+  "@yovoice.settings.modelDesc.recognize": {
+    "defaultMessage": "Tùy chọn: điền văn bản tham chiếu cho mẫu giọng, chép lời âm thanh tải lên thành văn bản và phụ đề, và căn thời gian phụ đề cho giọng nói đã tạo. Hỗ trợ 30 ngôn ngữ, gồm tiếng Trung, Anh, Quảng Đông, Nhật và Hàn."
   },
   "@yovoice.music.generateFromMelody": {
     "defaultMessage": "Tạo theo bản nhạc"
@@ -3094,6 +3235,12 @@
   },
   "@yovoice.melody.invalid": {
     "defaultMessage": "YuE2 chưa thể hát bản nhạc này"
+  },
+  "@yovoice.melody.inspectFailed": {
+    "defaultMessage": "Không thể kiểm tra bản nhạc"
+  },
+  "@yovoice.melody.staffFailed": {
+    "defaultMessage": "Không thể hiển thị khuông nhạc. Hãy chuyển sang chế độ xem bản nhạc hoặc mã nguồn."
   },
   "@yovoice.melody.track.vocal": {
     "defaultMessage": "Giọng hát"
@@ -3566,9 +3713,6 @@
   "@yovoice.assets.clearSelection": {
     "defaultMessage": "Bỏ chọn"
   },
-  "@yovoice.assets.deleteOne": {
-    "defaultMessage": "Xóa {name}"
-  },
   "@yovoice.assets.deleteTitle": {
     "defaultMessage": "Xóa {count} tài nguyên?"
   },
@@ -3607,6 +3751,18 @@
   },
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "Dự án nguồn đã bị xóa"
+  },
+  "@yovoice.assets.more": {
+    "defaultMessage": "Thao tác khác cho {name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "Mở tác phẩm “{name}”"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "Hiện trong thư mục"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "Xóa"
   },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
@@ -3823,6 +3979,300 @@
   },
   "@yovoice.create.precision": {
     "defaultMessage": "Độ chính xác"
+  },
+  "@yovoice.settings.features": {
+    "defaultMessage": "Tính năng"
+  },
+  "@yovoice.settings.featuresHint": {
+    "defaultMessage": "Khi tắt, mục tương ứng sẽ ẩn khỏi thanh bên và menu Tạo mới. Tác phẩm hiện có và mô hình đã tải không bị ảnh hưởng."
+  },
+  "@yovoice.settings.featureStoryHint": {
+    "defaultMessage": "Nhập văn bản hoặc phụ đề và lồng tiếng từng câu theo nhân vật."
+  },
+  "@yovoice.settings.featureMusicHint": {
+    "defaultMessage": "Bài hát, nhạc không lời và bản phối, cùng cài đặt mô hình và soundfont tương ứng."
+  },
+  "@yovoice.settings.featureAssistantHint": {
+    "defaultMessage": "Trợ lý nổi, lối vào trên thanh tiêu đề và các gợi ý. Khi tắt cả tạo nhạc, cài đặt dịch vụ AI và phân vai bằng AI cho sách cũng bị ẩn."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "Âm thanh này có thể có vấn đề: {issues}. Hãy nghe thử và tạo lại nếu cần."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "bị vỡ tiếng ở {count} chỗ, lần đầu tại {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "{count} tiếng lách cách, lần đầu tại {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "phần cuối bị cắt cụt"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "im lặng lâu từ {at} đến {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "gần như không có tiếng"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "âm lượng nhỏ ({loudness} LUFS); chọn độ lớn mục tiêu khi xuất"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Độ lớn"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Không điều chỉnh"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Sách nói (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Podcast (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Nền tảng video (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Chỉ điều chỉnh âm lượng tổng thể, không nén dải động; đỉnh luôn dưới −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Tự chọn"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Chọn 5–15 giây giọng nói rõ nhất, không vỡ tiếng và không ngắt quãng dài"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "Bản ghi dài {total} nên đoạn rõ nhất ({start}–{end}) được dùng làm mẫu. Dùng Cắt để điều chỉnh."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Hãy chọn một bản đã tạo của tác phẩm này để phối lại hoặc vẽ lại một đoạn, hoặc chuyển về tạo từ văn bản."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Tạo nhạc không lời từ mô tả tiếng Anh, có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo; tối đa 2 phút. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Tạo hiệu ứng âm thanh từ mô tả tiếng Anh, có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo; tối đa 2 phút. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "Mô hình Stable Audio 3 lớn hơn: nhạc không lời chất lượng cao hơn và bản nhạc dài hơn (khoảng 6 phút); có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "Từ văn bản"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Phối lại"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Vẽ lại đoạn"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Bản gốc"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Hãy tạo một bản trước, sau đó mới có thể phối lại hoặc vẽ lại."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Mức thay đổi"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: càng nhỏ càng gần bản gốc."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Vẽ lại từ (giây)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Vẽ lại đến (giây)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio chỉ hiểu mô tả tiếng Anh và không hát lời."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Mô tả âm thanh bằng tiếng Anh, ví dụ footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "{count} mô hình có bản mới"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "Có phiên bản mới"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "Cập nhật"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "Tạo hiệu ứng âm thanh"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "Hiệu ứng âm thanh mới"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "Mô tả âm thanh"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "Tạo hiệu ứng âm thanh"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "Tạo dự án hiệu ứng âm thanh và tạo một âm thanh ngắn"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "Hiệu ứng âm thanh đã sẵn sàng. Bạn có muốn điều chỉnh mô tả hoặc cải thiện không?"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "Điều chỉnh mô tả tiếng Anh của hiệu ứng hiện tại và tạo phiên bản cải tiến"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Tạo âm thanh"
+  },
+  "@yovoice.language.nl": {
+    "defaultMessage": "Tiếng Hà Lan"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "Tiếng Ba Lan"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "Tiếng Thổ Nhĩ Kỳ"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "Tiếng Séc"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "Tiếng Hungary"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "Tiếng Trung giản thể"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9 ngôn ngữ · 20 giọng tích hợp · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "Tiếng Đan Mạch · Giọng tích hợp và nhân bản · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17 ngôn ngữ · Nhân bản giọng nói · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "Tiếng Anh · Giọng mặc định · 24 kHz"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "Speaker and event tags · Default voice and cloning · 44.1 kHz"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "Khoảng lặng giữa các đoạn (giây)"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "Số token văn bản mỗi đoạn"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "Giọng phổ thông"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "Giọng tích hợp"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "Giọng mặc định"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "Nhân bản giọng cần bản chép chính xác của âm thanh tham chiếu."
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "XTTS v2 cần 6–30 giây âm thanh tham chiếu."
+  },
+  "@yovoice.activity.transcribeSpeech": {
+    "defaultMessage": "Đang chép lời ({done}/{total})"
+  },
+  "@yovoice.activity.alignText": {
+    "defaultMessage": "Đang căn thời gian phụ đề ({done}/{total})"
+  },
+  "@yovoice.error.transcribeEmpty": {
+    "defaultMessage": "Không nhận ra lời nói nào. Hãy kiểm tra âm thanh có giọng nói rõ ràng"
+  },
+  "@yovoice.error.alignText": {
+    "defaultMessage": "Phiên bản này không có văn bản để căn"
+  },
+  "@yovoice.error.alignTextEmpty": {
+    "defaultMessage": "Không khớp được văn bản với âm thanh. Hãy thử lại hoặc dùng phiên bản khác"
+  },
+  "@yovoice.caption.menu": {
+    "defaultMessage": "Xuất phụ đề"
+  },
+  "@yovoice.caption.title": {
+    "defaultMessage": "Xuất phụ đề"
+  },
+  "@yovoice.caption.export": {
+    "defaultMessage": "Xuất"
+  },
+  "@yovoice.caption.aligning": {
+    "defaultMessage": "Đang căn thời gian…"
+  },
+  "@yovoice.caption.ready": {
+    "defaultMessage": "Đã căn thời gian. Phụ đề được chia theo câu."
+  },
+  "@yovoice.caption.alignHint": {
+    "defaultMessage": "Lần xuất đầu tiên sẽ dùng mô hình nhận dạng giọng nói để căn văn bản với âm thanh và lưu kết quả vào phiên bản này."
+  },
+  "@yovoice.caption.busy": {
+    "defaultMessage": "Đang có tác vụ khác. Hãy xuất phụ đề khi tác vụ đó xong."
+  },
+  "@yovoice.caption.empty": {
+    "defaultMessage": "Không có phụ đề để xuất"
+  },
+  "@yovoice.nav.transcribe": {
+    "defaultMessage": "Chép lời"
+  },
+  "@yovoice.transcribe.title": {
+    "defaultMessage": "Chép lời giọng nói"
+  },
+  "@yovoice.transcribe.upload": {
+    "defaultMessage": "Tải âm thanh lên"
+  },
+  "@yovoice.transcribe.another": {
+    "defaultMessage": "Chép lời âm thanh khác"
+  },
+  "@yovoice.transcribe.busy": {
+    "defaultMessage": "Đang có tác vụ khác. Hãy chép lời khi tác vụ đó xong."
+  },
+  "@yovoice.transcribe.openModels": {
+    "defaultMessage": "Tải mô hình"
+  },
+  "@yovoice.transcribe.defaultName": {
+    "defaultMessage": "Bản chép lời"
+  },
+  "@yovoice.transcribe.saved": {
+    "defaultMessage": "Đã xuất"
+  },
+  "@yovoice.transcribe.copied": {
+    "defaultMessage": "Đã sao chép toàn bộ văn bản"
+  },
+  "@yovoice.transcribe.summary": {
+    "defaultMessage": "{duration} · {count} dòng phụ đề"
+  },
+  "@yovoice.transcribe.exportSrt": {
+    "defaultMessage": "Xuất SRT"
+  },
+  "@yovoice.transcribe.exportVtt": {
+    "defaultMessage": "Xuất WebVTT"
+  },
+  "@yovoice.transcribe.copy": {
+    "defaultMessage": "Sao chép toàn bộ văn bản"
+  },
+  "@yovoice.transcribe.clear": {
+    "defaultMessage": "Xóa"
+  },
+  "@yovoice.transcribe.col.time": {
+    "defaultMessage": "Thời gian"
+  },
+  "@yovoice.transcribe.col.text": {
+    "defaultMessage": "Văn bản"
+  },
+  "@yovoice.transcribe.noCaptions": {
+    "defaultMessage": "Không có thời gian phụ đề"
+  },
+  "@yovoice.transcribe.emptyTitle": {
+    "defaultMessage": "Chuyển lời nói trong bản ghi âm, phỏng vấn, video thành văn bản"
+  },
+  "@yovoice.transcribe.emptyBody": {
+    "defaultMessage": "Tải âm thanh hoặc video lên. Mô hình nhận dạng giọng nói Qwen3 ASR sẽ chép ra văn bản kèm thời gian từng từ, có thể xuất phụ đề SRT / WebVTT. Tối đa 1 giờ và 20 MB."
   },
   "@vvoice.music.title": {
     "defaultMessage": "Background music"
@@ -4223,9 +4673,6 @@
   "@yovoice.music.modelSize": {
     "defaultMessage": "Not installed · {size}"
   },
-  "@yovoice.music.steps": {
-    "defaultMessage": "Sampling steps"
-  },
   "@yovoice.score.copyPromptHint": {
     "defaultMessage": "Ask an AI Agent to write the score JSON, then import it here or render it with the CLI."
   },
@@ -4438,356 +4885,5 @@
   },
   "@yovoice.settings.aiGroup": {
     "defaultMessage": "AI writing"
-  },
-  "@yovoice.error.engineCrashed": {
-    "defaultMessage": "Công cụ suy luận đã thoát bất ngờ khi đang tạo. Bạn có thể thử lại; nếu lặp lại, hãy đóng ứng dụng đang dùng bộ nhớ hoặc GPU, hoặc chọn mô hình nhỏ hơn. ({detail})"
-  },
-  "@yovoice.library.showEarlier": {
-    "defaultMessage": "Hiện thêm {n} mục cũ hơn"
-  },
-  "@yovoice.music.lyricStyle": {
-    "defaultMessage": "Kiểu lời bài hát"
-  },
-  "@yovoice.music.lyricStyleScroll": {
-    "defaultMessage": "Cuộn"
-  },
-  "@yovoice.music.lyricStyleScrollHint": {
-    "defaultMessage": "Toàn bộ lời cuộn theo bài, dòng hiện tại sáng dần từng chữ"
-  },
-  "@yovoice.music.lyricStyleStage": {
-    "defaultMessage": "Tâm điểm"
-  },
-  "@yovoice.music.lyricStyleStageHint": {
-    "defaultMessage": "Mỗi lần một dòng, từng chữ bật lên và phát sáng. Hợp để quay màn hình"
-  },
-  "@yovoice.music.exportWordLrc": {
-    "defaultMessage": "Xuất lời theo từng chữ"
-  },
-  "@yovoice.music.exportWordLrcHint": {
-    "defaultMessage": "LRC mở rộng có thời gian cho từng chữ, dành cho trình phát hỗ trợ lời karaoke"
-  },
-  "@yovoice.music.lyricTools": {
-    "defaultMessage": "Công cụ lời bài hát"
-  },
-  "@yovoice.music.editWords": {
-    "defaultMessage": "Chỉnh thời gian lời bài hát"
-  },
-  "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Khi đang phát, bấm vào một dòng để dòng đó bắt đầu tại vị trí hiện tại; dịch cả dòng hoặc chỉnh từng chữ"
-  },
-  "@yovoice.music.syncLyricsHint": {
-    "defaultMessage": "Đánh dấu điểm bắt đầu từng dòng khi nghe"
-  },
-  "@yovoice.music.editThisLine": {
-    "defaultMessage": "Bấm khi đang phát: dòng này bắt đầu tại đây"
-  },
-  "@yovoice.music.wordEditor": {
-    "defaultMessage": "Thời gian lời bài hát"
-  },
-  "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Khi đang phát, bấm vào một dòng để neo vào vị trí phát; ←/→ dịch dòng, ↑/↓ đổi dòng; kéo khối chữ hoặc hai đầu để chỉnh từng chữ"
-  },
-  "@yovoice.music.wordTap": {
-    "defaultMessage": "Gõ theo nhịp"
-  },
-  "@yovoice.music.wordTapStop": {
-    "defaultMessage": "Dừng gõ"
-  },
-  "@yovoice.music.wordTapHint": {
-    "defaultMessage": "Nhấn ↓ hoặc Enter khi mỗi chữ bắt đầu; tự chuyển sang chữ tiếp theo. Esc để dừng"
-  },
-  "@yovoice.music.wordLine": {
-    "defaultMessage": "Dòng {n}/{total}"
-  },
-  "@yovoice.music.prevLine": {
-    "defaultMessage": "Dòng trước"
-  },
-  "@yovoice.music.nextLine": {
-    "defaultMessage": "Dòng sau"
-  },
-  "@yovoice.music.playLine": {
-    "defaultMessage": "Phát dòng này"
-  },
-  "@yovoice.music.wordUndo": {
-    "defaultMessage": "Hoàn tác"
-  },
-  "@yovoice.music.wordCancel": {
-    "defaultMessage": "Hủy"
-  },
-  "@yovoice.music.wordSave": {
-    "defaultMessage": "Lưu"
-  },
-  "@yovoice.music.wordStart": {
-    "defaultMessage": "Chỉnh điểm đầu của “{word}”"
-  },
-  "@yovoice.music.wordEnd": {
-    "defaultMessage": "Chỉnh điểm cuối của “{word}”"
-  },
-  "@yovoice.music.anchorLine": {
-    "defaultMessage": "Neo vào vị trí phát"
-  },
-  "@yovoice.music.anchorLineHint": {
-    "defaultMessage": "Cho dòng này bắt đầu tại vị trí đang phát (Enter)"
-  },
-  "@yovoice.music.shiftEarlier": {
-    "defaultMessage": "Sớm {n} giây"
-  },
-  "@yovoice.music.shiftLater": {
-    "defaultMessage": "Muộn {n} giây"
-  },
-  "@yovoice.music.shiftMode": {
-    "defaultMessage": "Cách chỉnh"
-  },
-  "@yovoice.music.shiftRipple": {
-    "defaultMessage": "Dịch cả các dòng sau"
-  },
-  "@yovoice.music.shiftSingle": {
-    "defaultMessage": "Chỉ dòng này"
-  },
-  "@yovoice.music.alignLyrics": {
-    "defaultMessage": "Tự căn chỉnh"
-  },
-  "@yovoice.music.aligningLyrics": {
-    "defaultMessage": "Đang căn chỉnh"
-  },
-  "@yovoice.music.alignLyricsHint": {
-    "defaultMessage": "Tách giọng hát rồi căn từng từ của lời bài hát theo giọng hát; lưu cùng phiên bản này"
-  },
-  "@yovoice.music.alignLyricsDownload": {
-    "defaultMessage": "Hãy tải mô hình căn chỉnh lời bài hát (tùy chọn, khoảng 1,3 GB) trước"
-  },
-  "@yovoice.music.lyricsAligned": {
-    "defaultMessage": "Lời bài hát đã được căn từng từ theo giọng hát; có thể đồng bộ để tinh chỉnh"
-  },
-  "@yovoice.activity.separateVocals": {
-    "defaultMessage": "Đang tách giọng hát"
-  },
-  "@yovoice.activity.alignLyrics": {
-    "defaultMessage": "Đang căn chỉnh lời bài hát ({done}/{total})"
-  },
-  "@yovoice.error.alignModelRequired": {
-    "defaultMessage": "Hãy tải mô hình căn chỉnh lời bài hát trong Mô hình âm nhạc ở Cài đặt trước"
-  },
-  "@yovoice.error.alignLyrics": {
-    "defaultMessage": "Phiên bản này không có lời bài hát để căn chỉnh"
-  },
-  "@yovoice.error.alignEmpty": {
-    "defaultMessage": "Không khớp được lời bài hát với giọng hát; hãy thử đồng bộ thủ công"
-  },
-  "@yovoice.settings.modelDesc.lyricAlign": {
-    "defaultMessage": "Tùy chọn: tách giọng hát và căn lời bài hát theo từng từ với giọng hát, dùng cho hiệu ứng lời từng từ và xuất LRC theo từ. Hỗ trợ 11 ngôn ngữ, gồm tiếng Trung, Anh, Nhật và Hàn."
-  },
-  "@yovoice.assets.more": {
-    "defaultMessage": "Thao tác khác cho {name}"
-  },
-  "@yovoice.assets.openProject": {
-    "defaultMessage": "Mở tác phẩm “{name}”"
-  },
-  "@yovoice.assets.reveal": {
-    "defaultMessage": "Hiện trong thư mục"
-  },
-  "@yovoice.assets.delete": {
-    "defaultMessage": "Xóa"
-  },
-  "@yovoice.settings.features": {
-    "defaultMessage": "Tính năng"
-  },
-  "@yovoice.settings.featuresHint": {
-    "defaultMessage": "Khi tắt, mục tương ứng sẽ ẩn khỏi thanh bên và menu Tạo mới. Tác phẩm hiện có và mô hình đã tải không bị ảnh hưởng."
-  },
-  "@yovoice.settings.featureStoryHint": {
-    "defaultMessage": "Nhập văn bản hoặc phụ đề và lồng tiếng từng câu theo nhân vật."
-  },
-  "@yovoice.settings.featureMusicHint": {
-    "defaultMessage": "Bài hát, nhạc không lời và bản phối, cùng cài đặt mô hình và soundfont tương ứng."
-  },
-  "@yovoice.settings.featureAssistantHint": {
-    "defaultMessage": "Trợ lý nổi, lối vào trên thanh tiêu đề và các gợi ý. Khi tắt cả tạo nhạc, cài đặt dịch vụ AI và phân vai bằng AI cho sách cũng bị ẩn."
-  },
-  "@yovoice.check.summary": {
-    "defaultMessage": "Âm thanh này có thể có vấn đề: {issues}. Hãy nghe thử và tạo lại nếu cần."
-  },
-  "@yovoice.check.separator": {
-    "defaultMessage": "; "
-  },
-  "@yovoice.check.clipping": {
-    "defaultMessage": "bị vỡ tiếng ở {count} chỗ, lần đầu tại {at}"
-  },
-  "@yovoice.check.clicks": {
-    "defaultMessage": "{count} tiếng lách cách, lần đầu tại {at}"
-  },
-  "@yovoice.check.cutoff": {
-    "defaultMessage": "phần cuối bị cắt cụt"
-  },
-  "@yovoice.check.silence": {
-    "defaultMessage": "im lặng lâu từ {at} đến {end}"
-  },
-  "@yovoice.check.silent": {
-    "defaultMessage": "gần như không có tiếng"
-  },
-  "@yovoice.check.quiet": {
-    "defaultMessage": "âm lượng nhỏ ({loudness} LUFS); chọn độ lớn mục tiêu khi xuất"
-  },
-  "@yovoice.check.dc": {
-    "defaultMessage": "lệch DC"
-  },
-  "@yovoice.timeline.loudness": {
-    "defaultMessage": "Độ lớn"
-  },
-  "@yovoice.timeline.loudnessOff": {
-    "defaultMessage": "Không điều chỉnh"
-  },
-  "@yovoice.timeline.loudnessAudiobook": {
-    "defaultMessage": "Sách nói (−18 LUFS)"
-  },
-  "@yovoice.timeline.loudnessPodcast": {
-    "defaultMessage": "Podcast (−16 LUFS)"
-  },
-  "@yovoice.timeline.loudnessVideo": {
-    "defaultMessage": "Nền tảng video (−14 LUFS)"
-  },
-  "@yovoice.timeline.loudnessHint": {
-    "defaultMessage": "Chỉ điều chỉnh âm lượng tổng thể, không nén dải động; đỉnh luôn dưới −1 dBTP."
-  },
-  "@yovoice.voice.autoPick": {
-    "defaultMessage": "Tự chọn"
-  },
-  "@yovoice.voice.autoPickHint": {
-    "defaultMessage": "Chọn 5–15 giây giọng nói rõ nhất, không vỡ tiếng và không ngắt quãng dài"
-  },
-  "@yovoice.voice.excerpt": {
-    "defaultMessage": "Bản ghi dài {total} nên đoạn rõ nhất ({start}–{end}) được dùng làm mẫu. Dùng Cắt để điều chỉnh."
-  },
-  "@yovoice.error.musicSourceRequired": {
-    "defaultMessage": "Hãy chọn một bản đã tạo của tác phẩm này để phối lại hoặc vẽ lại một đoạn, hoặc chuyển về tạo từ văn bản."
-  },
-  "@yovoice.settings.modelDesc.stableAudio.music": {
-    "defaultMessage": "Tạo nhạc không lời từ mô tả tiếng Anh, có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo; tối đa 2 phút. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
-  },
-  "@yovoice.settings.modelDesc.stableAudio.sfx": {
-    "defaultMessage": "Tạo hiệu ứng âm thanh từ mô tả tiếng Anh, có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo; tối đa 2 phút. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
-  },
-  "@yovoice.settings.modelDesc.stableAudio.medium": {
-    "defaultMessage": "Mô hình Stable Audio 3 lớn hơn: nhạc không lời chất lượng cao hơn và bản nhạc dài hơn (khoảng 6 phút); có thể phối lại hoặc vẽ lại một đoạn của bản đã tạo. Giấy phép cộng đồng Stability AI: miễn phí khi doanh thu năm dưới 1 triệu USD."
-  },
-  "@yovoice.music.editOff": {
-    "defaultMessage": "Từ văn bản"
-  },
-  "@yovoice.music.editInit": {
-    "defaultMessage": "Phối lại"
-  },
-  "@yovoice.music.editInpaint": {
-    "defaultMessage": "Vẽ lại đoạn"
-  },
-  "@yovoice.music.source": {
-    "defaultMessage": "Bản gốc"
-  },
-  "@yovoice.music.sourceEmpty": {
-    "defaultMessage": "Hãy tạo một bản trước, sau đó mới có thể phối lại hoặc vẽ lại."
-  },
-  "@yovoice.music.editStrength": {
-    "defaultMessage": "Mức thay đổi"
-  },
-  "@yovoice.music.editStrengthHint": {
-    "defaultMessage": "0–1: càng nhỏ càng gần bản gốc."
-  },
-  "@yovoice.music.inpaintStart": {
-    "defaultMessage": "Vẽ lại từ (giây)"
-  },
-  "@yovoice.music.inpaintEnd": {
-    "defaultMessage": "Vẽ lại đến (giây)"
-  },
-  "@yovoice.music.englishPrompt": {
-    "defaultMessage": "Stable Audio chỉ hiểu mô tả tiếng Anh và không hát lời."
-  },
-  "@yovoice.music.soundPlaceholder": {
-    "defaultMessage": "Mô tả âm thanh bằng tiếng Anh, ví dụ footsteps on gravel, close perspective"
-  },
-  "@yovoice.settings.updateNotice": {
-    "defaultMessage": "{count} mô hình có bản mới"
-  },
-  "@yovoice.settings.modelUpdateAvailable": {
-    "defaultMessage": "Có phiên bản mới"
-  },
-  "@yovoice.settings.updateModel": {
-    "defaultMessage": "Cập nhật"
-  },
-  "@yovoice.project.sfx": {
-    "defaultMessage": "Tạo hiệu ứng âm thanh"
-  },
-  "@yovoice.project.new.sfx": {
-    "defaultMessage": "Hiệu ứng âm thanh mới"
-  },
-  "@yovoice.music.soundDescription": {
-    "defaultMessage": "Mô tả âm thanh"
-  },
-  "@yovoice.assistant.chip.sfx": {
-    "defaultMessage": "Tạo hiệu ứng âm thanh"
-  },
-  "@yovoice.assistant.chip.sfxPrompt": {
-    "defaultMessage": "Tạo dự án hiệu ứng âm thanh và tạo một âm thanh ngắn"
-  },
-  "@yovoice.assistant.nudge.done.sfx": {
-    "defaultMessage": "Hiệu ứng âm thanh đã sẵn sàng. Bạn có muốn điều chỉnh mô tả hoặc cải thiện không?"
-  },
-  "@yovoice.assistant.nudge.donePrompt.sfx": {
-    "defaultMessage": "Điều chỉnh mô tả tiếng Anh của hiệu ứng hiện tại và tạo phiên bản cải tiến"
-  },
-  "@yovoice.music.generateAudio": {
-    "defaultMessage": "Tạo âm thanh"
-  },
-  "@yovoice.language.nl": {
-    "defaultMessage": "Tiếng Hà Lan"
-  },
-  "@yovoice.language.pl": {
-    "defaultMessage": "Tiếng Ba Lan"
-  },
-  "@yovoice.language.tr": {
-    "defaultMessage": "Tiếng Thổ Nhĩ Kỳ"
-  },
-  "@yovoice.language.cs": {
-    "defaultMessage": "Tiếng Séc"
-  },
-  "@yovoice.language.hu": {
-    "defaultMessage": "Tiếng Hungary"
-  },
-  "@yovoice.language.zh-cn": {
-    "defaultMessage": "Tiếng Trung giản thể"
-  },
-  "@yovoice.settings.modelDesc.voxtral": {
-    "defaultMessage": "9 ngôn ngữ · 20 giọng tích hợp · 24 kHz"
-  },
-  "@yovoice.settings.modelDesc.plapre": {
-    "defaultMessage": "Tiếng Đan Mạch · Giọng tích hợp và nhân bản · 24 kHz"
-  },
-  "@yovoice.settings.modelDesc.xtts": {
-    "defaultMessage": "17 ngôn ngữ · Nhân bản giọng nói · 24 kHz"
-  },
-  "@yovoice.settings.modelDesc.gradium": {
-    "defaultMessage": "Tiếng Anh · Giọng mặc định · 24 kHz"
-  },
-  "@yovoice.settings.modelDesc.drama": {
-    "defaultMessage": "Speaker and event tags · Default voice and cloning · 44.1 kHz"
-  },
-  "@yovoice.options.silence_duration_sec": {
-    "defaultMessage": "Khoảng lặng giữa các đoạn (giây)"
-  },
-  "@yovoice.options.text_chunk_tokens": {
-    "defaultMessage": "Số token văn bản mỗi đoạn"
-  },
-  "@yovoice.voxtral.generalVoices": {
-    "defaultMessage": "Giọng phổ thông"
-  },
-  "@yovoice.reference.builtInVoice": {
-    "defaultMessage": "Giọng tích hợp"
-  },
-  "@yovoice.reference.defaultVoice": {
-    "defaultMessage": "Giọng mặc định"
-  },
-  "@yovoice.drama.referenceTextHelp": {
-    "defaultMessage": "Nhân bản giọng cần bản chép chính xác của âm thanh tham chiếu."
-  },
-  "@yovoice.error.xttsReferenceDuration": {
-    "defaultMessage": "XTTS v2 cần 6–30 giây âm thanh tham chiếu."
   }
 }

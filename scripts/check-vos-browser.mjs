@@ -15,14 +15,14 @@ const data = mkdtempSync(path.join(build, 'browser-'));
 const require = createRequire(path.join(root, 'web/package.json'));
 const { chromium } = require('@playwright/test');
 const prefix = '/app/com.ictrek.v-voice';
-const modelCount = JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).length;
+const modelCount = JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).models.length;
 const legacyModels = JSON.parse(readFileSync(path.join(root, 'catalog/models.json'))).models.map(model => ({ ...model, status: 'ready' }));
 // 补充真实目录中的仅导入变体，验证旧模型页也不能显示不存在的下载。
-for (const model of JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).filter(model => !model.remotePath)) {
+for (const model of JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).models.filter(model => !model.remotePath)) {
   legacyModels.push({ key: `audiocpp-${model.id}`, name: `${model.name} ${model.precision}`, kind: 'tts', family: model.family,
     description: 'Import-only model', languages: [], modelscope_repo: 'vivibit/v-voice-audiocpp-gguf', status: 'not_installed', import_required: true });
 }
-const creativeModels = JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).map(model => ({ key: `audiocpp-${model.id}`, status: 'not_installed' }));
+const creativeModels = JSON.parse(readFileSync(path.join(root, 'internal/catalog/catalog.json'))).models.map(model => ({ key: `audiocpp-${model.id}`, status: 'not_installed' }));
 let identities = 0;
 const identity = createServer((req, res) => {
   assert.equal(req.headers.authorization, 'Bearer isolated-browser-user');

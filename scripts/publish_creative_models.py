@@ -15,11 +15,11 @@ import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-REVISION = "874fcb41ececda20bcbc0782d6b4ea7f7d069ea8"
+REVISION = json.loads((ROOT / "internal/catalog/catalog.json").read_text())["revision"]
 
 
 def file_specs():
-    rows = json.loads((ROOT / "internal/catalog/catalog.json").read_text())
+    rows = json.loads((ROOT / "internal/catalog/catalog.json").read_text())["models"]
     files = {}
     for model in rows:
         source_repo = model.get("repo") or "audio-cpp/audio.cpp-gguf"
@@ -29,8 +29,11 @@ def file_specs():
             spec = {**f, "path": target, "source_path": f["path"], "repo": source_repo,
                     "family": model["family"],
                     "revision": model.get("revision") or REVISION, "import_only": not bool(f["path"])}
-            if target in files and files[target] != spec:
-                raise ValueError(f"conflicting file: {target}")
+            if target in files:
+                # 识别包与歌词包共用同一份对齐权重，来源与校验值一致时只发布一次。
+                if any(files[target][key] != value for key, value in spec.items() if key != "family"):
+                    raise ValueError(f"conflicting file: {target}")
+                continue
             files[target] = spec
     return list(files.values())
 
@@ -107,7 +110,7 @@ def main():
     if args.downloadable_only:
         specs = [f for f in specs if not f["import_only"]]
     if args.model:
-        rows = json.loads((ROOT / "internal/catalog/catalog.json").read_text())
+        rows = json.loads((ROOT / "internal/catalog/catalog.json").read_text())["models"]
         requested = {row["id"]: row for row in rows if row["id"] in args.model}
         if set(requested) != set(args.model):
             raise SystemExit("Unknown model ID")

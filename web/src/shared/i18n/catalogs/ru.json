@@ -281,18 +281,6 @@
   "@yovoice.draft.copySuffix": {
     "defaultMessage": " · копия"
   },
-  "@yovoice.draft.defaultEmotionText": {
-    "defaultMessage": "Мягко и спокойно, как в разговоре с близким человеком."
-  },
-  "@yovoice.draft.exampleText": {
-    "defaultMessage": "Утренний свет скользит сквозь шторы,\nи комната понемногу светлеет.\n\nНалейте себе чашку тёплого чая\nи позвольте мыслям ненадолго замедлиться.\n\nСегодня мы начинаем с хорошего голоса."
-  },
-  "@yovoice.draft.exampleTitle": {
-    "defaultMessage": "Утреннее чтение"
-  },
-  "@yovoice.draft.untitled": {
-    "defaultMessage": "Без названия"
-  },
   "@yovoice.emotion.afraid": {
     "defaultMessage": "Страх"
   },
@@ -491,6 +479,9 @@
   "@yovoice.error.engineNoAudio": {
     "defaultMessage": "Движок не вернул аудио."
   },
+  "@yovoice.error.engineCrashed": {
+    "defaultMessage": "Движок инференса неожиданно завершился во время генерации. Повторите попытку; если это повторяется, закройте приложения, занимающие память или GPU, или выберите модель поменьше. ({detail})"
+  },
   "@yovoice.error.engineStartFailed": {
     "defaultMessage": "Не удалось запустить движок. Проверьте среду выполнения или смените вычислительное устройство."
   },
@@ -499,6 +490,12 @@
   },
   "@yovoice.error.generateFailed": {
     "defaultMessage": "Ошибка генерации. Проверьте модель, видеопамять и референсное аудио. Журналы можно открыть в настройках."
+  },
+  "@yovoice.error.jobConflict": {
+    "defaultMessage": "Идентификатор запроса уже использован с другими параметрами, либо сервис занят."
+  },
+  "@yovoice.error.jobMissing": {
+    "defaultMessage": "Задача не существует или устарела."
   },
   "@yovoice.error.languageUnsupported": {
     "defaultMessage": "Эта модель не поддерживает выбранный язык."
@@ -1001,9 +998,6 @@
   "@yovoice.reference.transcriptHelp": {
     "defaultMessage": "Точная расшифровка улучшает клонирование; оставьте пустым, чтобы использовать только голос."
   },
-  "@yovoice.reference.designPlaceholder": {
-    "defaultMessage": "Например: female, young adult, moderate pitch. Оставьте пустым для автоматического голоса."
-  },
   "@yovoice.settings.modelDesc.omni": {
     "defaultMessage": "Многоязычная · дизайн и клонирование голоса"
   },
@@ -1018,9 +1012,6 @@
   },
   "@yovoice.settings.modelDesc.qwen": {
     "defaultMessage": "10 языков · клонирование референсного голоса"
-  },
-  "@yovoice.reference.designHelp": {
-    "defaultMessage": "Перечислите атрибуты через запятую, например male/female, young adult/middle-aged, low pitch/moderate pitch, whisper; произвольные описания не поддерживаются."
   },
   "@yovoice.options.text_chunk_size": {
     "defaultMessage": "Размер фрагмента текста (0 — по умолчанию для модели)"
@@ -1337,9 +1328,6 @@
   "@yovoice.error.referenceTextRequired": {
     "defaultMessage": "Для клонирования в {model} нужна полная расшифровка референса."
   },
-  "@yovoice.reference.omniTranscriptHelp": {
-    "defaultMessage": "Расшифровка должна совпадать с референсным аудио."
-  },
   "@yovoice.settings.modelDesc.kokoro": {
     "defaultMessage": "Готовые голоса · многоязычная"
   },
@@ -1381,9 +1369,6 @@
   },
   "@yovoice.character.example": {
     "defaultMessage": "Здравствуйте, приятно познакомиться! Давайте поделимся нашей историей с миром."
-  },
-  "@yovoice.character.save": {
-    "defaultMessage": "Сохранить персонажа"
   },
   "@yovoice.character.copy": {
     "defaultMessage": "Сохранить персонажа как…"
@@ -1436,6 +1421,18 @@
   "@yovoice.voice.transcript": {
     "defaultMessage": "Расшифровка референса"
   },
+  "@yovoice.recognize.action": {
+    "defaultMessage": "Распознать текст"
+  },
+  "@yovoice.recognize.working": {
+    "defaultMessage": "Распознаём…"
+  },
+  "@yovoice.recognize.hint": {
+    "defaultMessage": "Переводит образец голоса в текст с помощью распознавателя. Образец без опорного текста сохранит результат"
+  },
+  "@yovoice.recognize.needVoice": {
+    "defaultMessage": "Сначала выберите опорный голос"
+  },
   "@yovoice.voice.sourceGeneration": {
     "defaultMessage": "Сгенерированное аудио"
   },
@@ -1483,6 +1480,9 @@
   },
   "@yovoice.library.noSearchResults": {
     "defaultMessage": "Ничего не найдено"
+  },
+  "@yovoice.library.showEarlier": {
+    "defaultMessage": "Показать ещё {n} более ранних"
   },
   "@yovoice.settings.modelDesc.kokoroOfficial": {
     "defaultMessage": "8 языков · 49 голосов · без японского"
@@ -1565,14 +1565,8 @@
   "@yovoice.timeline.removeClip": {
     "defaultMessage": "Удалить фрагмент"
   },
-  "@yovoice.timeline.hint": {
-    "defaultMessage": "Выберите фрагмент, чтобы разрезать его по курсору. Перетаскивайте фрагменты по времени или между дорожками."
-  },
   "@yovoice.timeline.tracks": {
     "defaultMessage": "Дорожки"
-  },
-  "@yovoice.timeline.name": {
-    "defaultMessage": "Название: {name}"
   },
   "@yovoice.timeline.mute": {
     "defaultMessage": "Выключить звук: {name}"
@@ -1610,17 +1604,11 @@
   "@yovoice.project.story": {
     "defaultMessage": "Чтение историй"
   },
-  "@yovoice.project.subtitle": {
-    "defaultMessage": "Озвучка субтитров"
-  },
   "@yovoice.project.search": {
     "defaultMessage": "Поиск проектов"
   },
   "@yovoice.project.empty": {
     "defaultMessage": "Проектов пока нет"
-  },
-  "@yovoice.project.copy": {
-    "defaultMessage": "Дублировать проект"
   },
   "@yovoice.project.rename": {
     "defaultMessage": "Переименовать проект"
@@ -1699,9 +1687,6 @@
   },
   "@yovoice.timeline.redo": {
     "defaultMessage": "Повторить"
-  },
-  "@yovoice.timeline.trim": {
-    "defaultMessage": "Диапазон обрезки"
   },
   "@yovoice.timeline.trimStart": {
     "defaultMessage": "Точка входа (с)"
@@ -2045,6 +2030,9 @@
   "@yovoice.music.timesignature": {
     "defaultMessage": "Размер"
   },
+  "@yovoice.music.steps": {
+    "defaultMessage": "Sampling steps"
+  },
   "@yovoice.error.engineUpgradeRequired": {
     "defaultMessage": "Этой модели нужен движок инференса {version} или новее. Обновите движок в настройках."
   },
@@ -2218,9 +2206,6 @@
   },
   "@yovoice.ai.keyOptional": {
     "defaultMessage": "Для локальных сервисов обычно не нужен"
-  },
-  "@yovoice.ai.getKey": {
-    "defaultMessage": "Получить ключ"
   },
   "@yovoice.ai.model": {
     "defaultMessage": "Модель"
@@ -2765,6 +2750,120 @@
   "@yovoice.music.exportLrc": {
     "defaultMessage": "Экспорт текста песни (LRC)"
   },
+  "@yovoice.music.lyricStyle": {
+    "defaultMessage": "Стиль текста"
+  },
+  "@yovoice.music.lyricStyleScroll": {
+    "defaultMessage": "Прокрутка"
+  },
+  "@yovoice.music.lyricStyleScrollHint": {
+    "defaultMessage": "Весь текст прокручивается, текущая строка подсвечивается по словам"
+  },
+  "@yovoice.music.lyricStyleStage": {
+    "defaultMessage": "Прожектор"
+  },
+  "@yovoice.music.lyricStyleStageHint": {
+    "defaultMessage": "По одной строке: слова выпрыгивают и светятся. Удобно для записи экрана"
+  },
+  "@yovoice.music.exportWordLrc": {
+    "defaultMessage": "Экспорт текста по словам"
+  },
+  "@yovoice.music.exportWordLrcHint": {
+    "defaultMessage": "Расширенный LRC с отметкой времени для каждого слова, для плееров с караоке"
+  },
+  "@yovoice.music.lyricTools": {
+    "defaultMessage": "Инструменты текста"
+  },
+  "@yovoice.music.editWords": {
+    "defaultMessage": "Настроить тайминг текста"
+  },
+  "@yovoice.music.editWordsHint": {
+    "defaultMessage": "Во время воспроизведения нажмите на строку, чтобы она начиналась с текущей позиции; сдвигайте строки целиком или настраивайте отдельные слова"
+  },
+  "@yovoice.music.syncLyricsHint": {
+    "defaultMessage": "Отмечайте начало каждой строки во время прослушивания"
+  },
+  "@yovoice.music.editThisLine": {
+    "defaultMessage": "Нажатие во время воспроизведения: строка начинается здесь"
+  },
+  "@yovoice.music.wordEditor": {
+    "defaultMessage": "Тайминг текста"
+  },
+  "@yovoice.music.wordEditorHint": {
+    "defaultMessage": "Во время воспроизведения нажмите на строку, чтобы привязать её к позиции; ←/→ сдвигает строку, ↑/↓ меняет строку; перетаскивайте блоки или края для отдельных слов"
+  },
+  "@yovoice.music.wordTap": {
+    "defaultMessage": "Отстукивать"
+  },
+  "@yovoice.music.wordTapStop": {
+    "defaultMessage": "Остановить"
+  },
+  "@yovoice.music.wordTapHint": {
+    "defaultMessage": "Нажимайте ↓ или Enter в начале каждого слова — выбор перейдёт к следующему. Esc — остановить"
+  },
+  "@yovoice.music.wordLine": {
+    "defaultMessage": "Строка {n}/{total}"
+  },
+  "@yovoice.music.prevLine": {
+    "defaultMessage": "Предыдущая строка"
+  },
+  "@yovoice.music.nextLine": {
+    "defaultMessage": "Следующая строка"
+  },
+  "@yovoice.music.playLine": {
+    "defaultMessage": "Воспроизвести строку"
+  },
+  "@yovoice.music.wordUndo": {
+    "defaultMessage": "Отменить"
+  },
+  "@yovoice.music.wordCancel": {
+    "defaultMessage": "Отмена"
+  },
+  "@yovoice.music.wordSave": {
+    "defaultMessage": "Сохранить"
+  },
+  "@yovoice.music.wordStart": {
+    "defaultMessage": "Начало «{word}»"
+  },
+  "@yovoice.music.wordEnd": {
+    "defaultMessage": "Конец «{word}»"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Привязать к позиции"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Начать эту строку с текущей позиции (Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "На {n} с раньше"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "На {n} с позже"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Режим сдвига"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Сдвигать следующие"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Только эта строка"
+  },
+  "@yovoice.music.alignLyrics": {
+    "defaultMessage": "Автовыравнивание"
+  },
+  "@yovoice.music.aligningLyrics": {
+    "defaultMessage": "Выравнивание"
+  },
+  "@yovoice.music.alignLyricsHint": {
+    "defaultMessage": "Отделяет вокал и выравнивает каждое слово текста по пению; сохраняется с этой версией"
+  },
+  "@yovoice.music.alignLyricsDownload": {
+    "defaultMessage": "Сначала скачайте необязательную модель выравнивания текста (около 1,3 ГБ)"
+  },
+  "@yovoice.music.lyricsAligned": {
+    "defaultMessage": "Текст выровнен по вокалу пословно; синхронизируйте, чтобы уточнить"
+  },
   "@yovoice.music.lyricsAnalyzed": {
     "defaultMessage": "Тайминг текста расставлен по вокалу; синхронизируйте для уточнения"
   },
@@ -2963,6 +3062,9 @@
   "@yovoice.book.unsupported": {
     "defaultMessage": "Импортируйте книгу в формате TXT, Markdown или EPUB."
   },
+  "@yovoice.book.savedPartial": {
+    "defaultMessage": "{count} глав уже сохранено; при повторе они не будут созданы заново."
+  },
   "@yovoice.ai.task.running.cast": {
     "defaultMessage": "ИИ распределяет роли"
   },
@@ -2972,11 +3074,44 @@
   "@yovoice.ai.task.failed.cast": {
     "defaultMessage": "ИИ не смог распределить роли"
   },
+  "@yovoice.ai.task.running.image": {
+    "defaultMessage": "ИИ создаёт изображение"
+  },
+  "@yovoice.ai.task.done.image": {
+    "defaultMessage": "ИИ создал изображение"
+  },
+  "@yovoice.ai.task.failed.image": {
+    "defaultMessage": "ИИ не смог создать изображение"
+  },
   "@yovoice.activity.planMelody": {
     "defaultMessage": "Пишется партитура мелодии"
   },
   "@yovoice.activity.transcribe": {
     "defaultMessage": "Извлечение мелодии из песни"
+  },
+  "@yovoice.activity.separateVocals": {
+    "defaultMessage": "Отделение вокала"
+  },
+  "@yovoice.activity.alignLyrics": {
+    "defaultMessage": "Выравнивание текста ({done}/{total})"
+  },
+  "@yovoice.activity.recognize": {
+    "defaultMessage": "Распознаём опорный текст"
+  },
+  "@yovoice.error.alignModelRequired": {
+    "defaultMessage": "Сначала скачайте модель выравнивания текста в разделе «Музыкальные модели» в настройках"
+  },
+  "@yovoice.error.alignLyrics": {
+    "defaultMessage": "В этой версии нет текста для выравнивания"
+  },
+  "@yovoice.error.alignEmpty": {
+    "defaultMessage": "Не удалось сопоставить текст с вокалом; синхронизируйте вручную"
+  },
+  "@yovoice.error.recognizeModelRequired": {
+    "defaultMessage": "Сначала скачайте распознаватель речи Qwen3 ASR в разделе «Голосовые модели» настроек"
+  },
+  "@yovoice.error.recognizeEmpty": {
+    "defaultMessage": "Текст не распознан. Попробуйте образец с более чёткой речью"
   },
   "@yovoice.error.melodyInvalid": {
     "defaultMessage": "В партитуре мелодии ошибка: {issue}"
@@ -2992,6 +3127,12 @@
   },
   "@yovoice.settings.modelDesc.sheetsage2": {
     "defaultMessage": "Записывает мелодию и аккорды песни в ноты для каверов с YuE2."
+  },
+  "@yovoice.settings.modelDesc.lyricAlign": {
+    "defaultMessage": "Необязательно: отделяет вокал и выравнивает текст по пению пословно — для пословной анимации текста и экспорта пословного LRC. Поддерживает 11 языков, включая китайский, английский, японский и корейский."
+  },
+  "@yovoice.settings.modelDesc.recognize": {
+    "defaultMessage": "Необязательно: заполняет эталонный текст для образцов голоса, расшифровывает загруженное аудио в текст и субтитры и выравнивает субтитры для сгенерированной речи. Поддерживает 30 языков, в том числе китайский, английский, кантонский, японский и корейский."
   },
   "@yovoice.music.generateFromMelody": {
     "defaultMessage": "Создать по нотам"
@@ -3094,6 +3235,12 @@
   },
   "@yovoice.melody.invalid": {
     "defaultMessage": "YuE2 пока не может спеть эти ноты"
+  },
+  "@yovoice.melody.inspectFailed": {
+    "defaultMessage": "Не удалось проверить партитуру"
+  },
+  "@yovoice.melody.staffFailed": {
+    "defaultMessage": "Не удалось отобразить нотный стан. Переключитесь на дорожки или исходный текст."
   },
   "@yovoice.melody.track.vocal": {
     "defaultMessage": "Вокал"
@@ -3566,9 +3713,6 @@
   "@yovoice.assets.clearSelection": {
     "defaultMessage": "Снять выделение"
   },
-  "@yovoice.assets.deleteOne": {
-    "defaultMessage": "Удалить {name}"
-  },
   "@yovoice.assets.deleteTitle": {
     "defaultMessage": "Удалить ресурсы ({count})?"
   },
@@ -3607,6 +3751,18 @@
   },
   "@yovoice.assets.sourceMissing": {
     "defaultMessage": "Исходный проект удалён"
+  },
+  "@yovoice.assets.more": {
+    "defaultMessage": "Другие действия: {name}"
+  },
+  "@yovoice.assets.openProject": {
+    "defaultMessage": "Открыть проект «{name}»"
+  },
+  "@yovoice.assets.reveal": {
+    "defaultMessage": "Показать в папке"
+  },
+  "@yovoice.assets.delete": {
+    "defaultMessage": "Удалить"
   },
   "@yovoice.assistant.launch": {
     "defaultMessage": "Ocho"
@@ -3823,6 +3979,300 @@
   },
   "@yovoice.create.precision": {
     "defaultMessage": "Точность"
+  },
+  "@yovoice.settings.features": {
+    "defaultMessage": "Функции"
+  },
+  "@yovoice.settings.featuresHint": {
+    "defaultMessage": "Отключённые функции скрываются из боковой панели и меню «Создать». Существующие работы и загруженные модели остаются без изменений."
+  },
+  "@yovoice.settings.featureStoryHint": {
+    "defaultMessage": "Импорт текста или субтитров и озвучка каждой реплики по персонажам."
+  },
+  "@yovoice.settings.featureMusicHint": {
+    "defaultMessage": "Песни, инструментальная музыка и партитуры, а также настройки их моделей и звуковых банков."
+  },
+  "@yovoice.settings.featureAssistantHint": {
+    "defaultMessage": "Плавающий помощник, его кнопка в заголовке окна и подсказки. Если отключена и генерация музыки, скрываются также настройки ИИ-сервиса и распределение ролей ИИ для книг."
+  },
+  "@yovoice.check.summary": {
+    "defaultMessage": "Возможно, с аудио есть проблемы: {issues}. Прослушайте и при необходимости сгенерируйте заново."
+  },
+  "@yovoice.check.separator": {
+    "defaultMessage": "; "
+  },
+  "@yovoice.check.clipping": {
+    "defaultMessage": "клиппинг в {count} местах, впервые в {at}"
+  },
+  "@yovoice.check.clicks": {
+    "defaultMessage": "щелчки: {count}, первый в {at}"
+  },
+  "@yovoice.check.cutoff": {
+    "defaultMessage": "конец обрезан"
+  },
+  "@yovoice.check.silence": {
+    "defaultMessage": "долгая тишина с {at} до {end}"
+  },
+  "@yovoice.check.silent": {
+    "defaultMessage": "почти нет звука"
+  },
+  "@yovoice.check.quiet": {
+    "defaultMessage": "тихо ({loudness} LUFS); выберите целевую громкость при экспорте"
+  },
+  "@yovoice.timeline.loudness": {
+    "defaultMessage": "Громкость"
+  },
+  "@yovoice.timeline.loudnessOff": {
+    "defaultMessage": "Без изменений"
+  },
+  "@yovoice.timeline.loudnessAudiobook": {
+    "defaultMessage": "Аудиокнига (−18 LUFS)"
+  },
+  "@yovoice.timeline.loudnessPodcast": {
+    "defaultMessage": "Подкаст (−16 LUFS)"
+  },
+  "@yovoice.timeline.loudnessVideo": {
+    "defaultMessage": "Видеоплатформы (−14 LUFS)"
+  },
+  "@yovoice.timeline.loudnessHint": {
+    "defaultMessage": "Меняется только общая громкость, без сжатия динамики; пики остаются ниже −1 dBTP."
+  },
+  "@yovoice.voice.autoPick": {
+    "defaultMessage": "Подобрать"
+  },
+  "@yovoice.voice.autoPickHint": {
+    "defaultMessage": "Выбирает самые чистые 5–15 с речи без клиппинга и длинных пауз"
+  },
+  "@yovoice.voice.excerpt": {
+    "defaultMessage": "Запись длится {total}, поэтому в качестве образца взят самый чистый фрагмент ({start}–{end}). Его можно изменить через «Обрезать»."
+  },
+  "@yovoice.error.musicSourceRequired": {
+    "defaultMessage": "Выберите уже созданный вариант этой работы для переработки или перерисовки фрагмента либо вернитесь к генерации по тексту."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.music": {
+    "defaultMessage": "Создаёт инструментальную музыку по описанию на английском и может переработать или частично перерисовать готовый вариант; до 2 минут. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.sfx": {
+    "defaultMessage": "Создаёт звуковые эффекты по описанию на английском и может переработать или частично перерисовать готовый вариант; до 2 минут. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
+  },
+  "@yovoice.settings.modelDesc.stableAudio.medium": {
+    "defaultMessage": "Более крупная модель Stable Audio 3: инструментальная музыка выше качеством и более длинные треки (примерно до 6 минут); может переработать или частично перерисовать готовый вариант. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
+  },
+  "@yovoice.music.editOff": {
+    "defaultMessage": "По тексту"
+  },
+  "@yovoice.music.editInit": {
+    "defaultMessage": "Переработать"
+  },
+  "@yovoice.music.editInpaint": {
+    "defaultMessage": "Перерисовать"
+  },
+  "@yovoice.music.source": {
+    "defaultMessage": "Исходный вариант"
+  },
+  "@yovoice.music.sourceEmpty": {
+    "defaultMessage": "Сначала создайте вариант, затем его можно переработать или перерисовать."
+  },
+  "@yovoice.music.editStrength": {
+    "defaultMessage": "Сила изменений"
+  },
+  "@yovoice.music.editStrengthHint": {
+    "defaultMessage": "0–1: чем меньше, тем ближе к исходному варианту."
+  },
+  "@yovoice.music.inpaintStart": {
+    "defaultMessage": "Перерисовать с (с)"
+  },
+  "@yovoice.music.inpaintEnd": {
+    "defaultMessage": "Перерисовать до (с)"
+  },
+  "@yovoice.music.englishPrompt": {
+    "defaultMessage": "Stable Audio понимает только описания на английском и не поёт текст."
+  },
+  "@yovoice.music.soundPlaceholder": {
+    "defaultMessage": "Опишите звук на английском, например footsteps on gravel, close perspective"
+  },
+  "@yovoice.settings.updateNotice": {
+    "defaultMessage": "Обновления моделей: {count}"
+  },
+  "@yovoice.settings.modelUpdateAvailable": {
+    "defaultMessage": "Новая версия"
+  },
+  "@yovoice.settings.updateModel": {
+    "defaultMessage": "Обновить"
+  },
+  "@yovoice.project.sfx": {
+    "defaultMessage": "Генерация звуковых эффектов"
+  },
+  "@yovoice.project.new.sfx": {
+    "defaultMessage": "Новый звуковой эффект"
+  },
+  "@yovoice.music.soundDescription": {
+    "defaultMessage": "Описание звука"
+  },
+  "@yovoice.assistant.chip.sfx": {
+    "defaultMessage": "Создать звуковой эффект"
+  },
+  "@yovoice.assistant.chip.sfxPrompt": {
+    "defaultMessage": "Создай проект звукового эффекта и сгенерируй короткий звук"
+  },
+  "@yovoice.assistant.nudge.done.sfx": {
+    "defaultMessage": "Звуковой эффект готов. Уточнить описание или улучшить результат?"
+  },
+  "@yovoice.assistant.nudge.donePrompt.sfx": {
+    "defaultMessage": "Уточни английское описание текущего звукового эффекта и создай улучшенную версию"
+  },
+  "@yovoice.music.generateAudio": {
+    "defaultMessage": "Создать аудио"
+  },
+  "@yovoice.language.nl": {
+    "defaultMessage": "Нидерландский"
+  },
+  "@yovoice.language.pl": {
+    "defaultMessage": "Польский"
+  },
+  "@yovoice.language.tr": {
+    "defaultMessage": "Турецкий"
+  },
+  "@yovoice.language.cs": {
+    "defaultMessage": "Чешский"
+  },
+  "@yovoice.language.hu": {
+    "defaultMessage": "Венгерский"
+  },
+  "@yovoice.language.zh-cn": {
+    "defaultMessage": "Упрощённый китайский"
+  },
+  "@yovoice.settings.modelDesc.voxtral": {
+    "defaultMessage": "9 языков · 20 встроенных голосов · 24 кГц"
+  },
+  "@yovoice.settings.modelDesc.plapre": {
+    "defaultMessage": "Датский · Встроенные голоса и клонирование · 24 кГц"
+  },
+  "@yovoice.settings.modelDesc.xtts": {
+    "defaultMessage": "17 языков · Клонирование голоса · 24 кГц"
+  },
+  "@yovoice.settings.modelDesc.gradium": {
+    "defaultMessage": "Английский · Голос по умолчанию · 24 кГц"
+  },
+  "@yovoice.settings.modelDesc.drama": {
+    "defaultMessage": "Метки говорящего и событий · Голос по умолчанию и клонирование · 44,1 кГц"
+  },
+  "@yovoice.options.silence_duration_sec": {
+    "defaultMessage": "Пауза между фрагментами (секунды)"
+  },
+  "@yovoice.options.text_chunk_tokens": {
+    "defaultMessage": "Текстовых токенов на фрагмент"
+  },
+  "@yovoice.voxtral.generalVoices": {
+    "defaultMessage": "Общие голоса"
+  },
+  "@yovoice.reference.builtInVoice": {
+    "defaultMessage": "Встроенный голос"
+  },
+  "@yovoice.reference.defaultVoice": {
+    "defaultMessage": "Голос по умолчанию"
+  },
+  "@yovoice.drama.referenceTextHelp": {
+    "defaultMessage": "Для клонирования нужна точная расшифровка референсного аудио."
+  },
+  "@yovoice.error.xttsReferenceDuration": {
+    "defaultMessage": "XTTS v2 требует 6–30 секунд референсного аудио."
+  },
+  "@yovoice.activity.transcribeSpeech": {
+    "defaultMessage": "Расшифровка ({done}/{total})"
+  },
+  "@yovoice.activity.alignText": {
+    "defaultMessage": "Выравнивание субтитров ({done}/{total})"
+  },
+  "@yovoice.error.transcribeEmpty": {
+    "defaultMessage": "Речь не распознана. Убедитесь, что в записи есть отчётливый голос"
+  },
+  "@yovoice.error.alignText": {
+    "defaultMessage": "В этой версии нет текста для выравнивания"
+  },
+  "@yovoice.error.alignTextEmpty": {
+    "defaultMessage": "Не удалось сопоставить текст со звуком. Повторите попытку или выберите другую версию"
+  },
+  "@yovoice.caption.menu": {
+    "defaultMessage": "Экспорт субтитров"
+  },
+  "@yovoice.caption.title": {
+    "defaultMessage": "Экспорт субтитров"
+  },
+  "@yovoice.caption.export": {
+    "defaultMessage": "Экспортировать"
+  },
+  "@yovoice.caption.aligning": {
+    "defaultMessage": "Выравнивание…"
+  },
+  "@yovoice.caption.ready": {
+    "defaultMessage": "Тайминг готов. Субтитры разбиваются по предложениям."
+  },
+  "@yovoice.caption.alignHint": {
+    "defaultMessage": "При первом экспорте текст выравнивается по звуку моделью распознавания речи, результат сохраняется в этой версии."
+  },
+  "@yovoice.caption.busy": {
+    "defaultMessage": "Выполняется другая задача. Экспортируйте субтитры после её завершения."
+  },
+  "@yovoice.caption.empty": {
+    "defaultMessage": "Нет субтитров для экспорта"
+  },
+  "@yovoice.nav.transcribe": {
+    "defaultMessage": "Расшифровка"
+  },
+  "@yovoice.transcribe.title": {
+    "defaultMessage": "Расшифровка речи"
+  },
+  "@yovoice.transcribe.upload": {
+    "defaultMessage": "Загрузить аудио"
+  },
+  "@yovoice.transcribe.another": {
+    "defaultMessage": "Расшифровать другое аудио"
+  },
+  "@yovoice.transcribe.busy": {
+    "defaultMessage": "Выполняется другая задача. Расшифруйте после её завершения."
+  },
+  "@yovoice.transcribe.openModels": {
+    "defaultMessage": "Скачать модель"
+  },
+  "@yovoice.transcribe.defaultName": {
+    "defaultMessage": "Расшифровка"
+  },
+  "@yovoice.transcribe.saved": {
+    "defaultMessage": "Экспортировано"
+  },
+  "@yovoice.transcribe.copied": {
+    "defaultMessage": "Весь текст скопирован"
+  },
+  "@yovoice.transcribe.summary": {
+    "defaultMessage": "{duration} · строк субтитров: {count}"
+  },
+  "@yovoice.transcribe.exportSrt": {
+    "defaultMessage": "Экспорт SRT"
+  },
+  "@yovoice.transcribe.exportVtt": {
+    "defaultMessage": "Экспорт WebVTT"
+  },
+  "@yovoice.transcribe.copy": {
+    "defaultMessage": "Скопировать весь текст"
+  },
+  "@yovoice.transcribe.clear": {
+    "defaultMessage": "Очистить"
+  },
+  "@yovoice.transcribe.col.time": {
+    "defaultMessage": "Время"
+  },
+  "@yovoice.transcribe.col.text": {
+    "defaultMessage": "Текст"
+  },
+  "@yovoice.transcribe.noCaptions": {
+    "defaultMessage": "Тайминг субтитров не получен"
+  },
+  "@yovoice.transcribe.emptyTitle": {
+    "defaultMessage": "Превращайте записи, интервью и видео в текст"
+  },
+  "@yovoice.transcribe.emptyBody": {
+    "defaultMessage": "Загрузите аудио или видео. Модель распознавания речи Qwen3 ASR выдаст текст с таймингом слов, который можно экспортировать в субтитры SRT или WebVTT. До 1 часа и 20 МБ."
   },
   "@vvoice.music.title": {
     "defaultMessage": "Background music"
@@ -4223,9 +4673,6 @@
   "@yovoice.music.modelSize": {
     "defaultMessage": "Not installed · {size}"
   },
-  "@yovoice.music.steps": {
-    "defaultMessage": "Sampling steps"
-  },
   "@yovoice.score.copyPromptHint": {
     "defaultMessage": "Ask an AI Agent to write the score JSON, then import it here or render it with the CLI."
   },
@@ -4438,356 +4885,5 @@
   },
   "@yovoice.settings.aiGroup": {
     "defaultMessage": "AI writing"
-  },
-  "@yovoice.error.engineCrashed": {
-    "defaultMessage": "Движок инференса неожиданно завершился во время генерации. Повторите попытку; если это повторяется, закройте приложения, занимающие память или GPU, или выберите модель поменьше. ({detail})"
-  },
-  "@yovoice.library.showEarlier": {
-    "defaultMessage": "Показать ещё {n} более ранних"
-  },
-  "@yovoice.music.lyricStyle": {
-    "defaultMessage": "Стиль текста"
-  },
-  "@yovoice.music.lyricStyleScroll": {
-    "defaultMessage": "Прокрутка"
-  },
-  "@yovoice.music.lyricStyleScrollHint": {
-    "defaultMessage": "Весь текст прокручивается, текущая строка подсвечивается по словам"
-  },
-  "@yovoice.music.lyricStyleStage": {
-    "defaultMessage": "Прожектор"
-  },
-  "@yovoice.music.lyricStyleStageHint": {
-    "defaultMessage": "По одной строке: слова выпрыгивают и светятся. Удобно для записи экрана"
-  },
-  "@yovoice.music.exportWordLrc": {
-    "defaultMessage": "Экспорт текста по словам"
-  },
-  "@yovoice.music.exportWordLrcHint": {
-    "defaultMessage": "Расширенный LRC с отметкой времени для каждого слова, для плееров с караоке"
-  },
-  "@yovoice.music.lyricTools": {
-    "defaultMessage": "Инструменты текста"
-  },
-  "@yovoice.music.editWords": {
-    "defaultMessage": "Настроить тайминг текста"
-  },
-  "@yovoice.music.editWordsHint": {
-    "defaultMessage": "Во время воспроизведения нажмите на строку, чтобы она начиналась с текущей позиции; сдвигайте строки целиком или настраивайте отдельные слова"
-  },
-  "@yovoice.music.syncLyricsHint": {
-    "defaultMessage": "Отмечайте начало каждой строки во время прослушивания"
-  },
-  "@yovoice.music.editThisLine": {
-    "defaultMessage": "Нажатие во время воспроизведения: строка начинается здесь"
-  },
-  "@yovoice.music.wordEditor": {
-    "defaultMessage": "Тайминг текста"
-  },
-  "@yovoice.music.wordEditorHint": {
-    "defaultMessage": "Во время воспроизведения нажмите на строку, чтобы привязать её к позиции; ←/→ сдвигает строку, ↑/↓ меняет строку; перетаскивайте блоки или края для отдельных слов"
-  },
-  "@yovoice.music.wordTap": {
-    "defaultMessage": "Отстукивать"
-  },
-  "@yovoice.music.wordTapStop": {
-    "defaultMessage": "Остановить"
-  },
-  "@yovoice.music.wordTapHint": {
-    "defaultMessage": "Нажимайте ↓ или Enter в начале каждого слова — выбор перейдёт к следующему. Esc — остановить"
-  },
-  "@yovoice.music.wordLine": {
-    "defaultMessage": "Строка {n}/{total}"
-  },
-  "@yovoice.music.prevLine": {
-    "defaultMessage": "Предыдущая строка"
-  },
-  "@yovoice.music.nextLine": {
-    "defaultMessage": "Следующая строка"
-  },
-  "@yovoice.music.playLine": {
-    "defaultMessage": "Воспроизвести строку"
-  },
-  "@yovoice.music.wordUndo": {
-    "defaultMessage": "Отменить"
-  },
-  "@yovoice.music.wordCancel": {
-    "defaultMessage": "Отмена"
-  },
-  "@yovoice.music.wordSave": {
-    "defaultMessage": "Сохранить"
-  },
-  "@yovoice.music.wordStart": {
-    "defaultMessage": "Начало «{word}»"
-  },
-  "@yovoice.music.wordEnd": {
-    "defaultMessage": "Конец «{word}»"
-  },
-  "@yovoice.music.anchorLine": {
-    "defaultMessage": "Привязать к позиции"
-  },
-  "@yovoice.music.anchorLineHint": {
-    "defaultMessage": "Начать эту строку с текущей позиции (Enter)"
-  },
-  "@yovoice.music.shiftEarlier": {
-    "defaultMessage": "На {n} с раньше"
-  },
-  "@yovoice.music.shiftLater": {
-    "defaultMessage": "На {n} с позже"
-  },
-  "@yovoice.music.shiftMode": {
-    "defaultMessage": "Режим сдвига"
-  },
-  "@yovoice.music.shiftRipple": {
-    "defaultMessage": "Сдвигать следующие"
-  },
-  "@yovoice.music.shiftSingle": {
-    "defaultMessage": "Только эта строка"
-  },
-  "@yovoice.music.alignLyrics": {
-    "defaultMessage": "Автовыравнивание"
-  },
-  "@yovoice.music.aligningLyrics": {
-    "defaultMessage": "Выравнивание"
-  },
-  "@yovoice.music.alignLyricsHint": {
-    "defaultMessage": "Отделяет вокал и выравнивает каждое слово текста по пению; сохраняется с этой версией"
-  },
-  "@yovoice.music.alignLyricsDownload": {
-    "defaultMessage": "Сначала скачайте необязательную модель выравнивания текста (около 1,3 ГБ)"
-  },
-  "@yovoice.music.lyricsAligned": {
-    "defaultMessage": "Текст выровнен по вокалу пословно; синхронизируйте, чтобы уточнить"
-  },
-  "@yovoice.activity.separateVocals": {
-    "defaultMessage": "Отделение вокала"
-  },
-  "@yovoice.activity.alignLyrics": {
-    "defaultMessage": "Выравнивание текста ({done}/{total})"
-  },
-  "@yovoice.error.alignModelRequired": {
-    "defaultMessage": "Сначала скачайте модель выравнивания текста в разделе «Музыкальные модели» в настройках"
-  },
-  "@yovoice.error.alignLyrics": {
-    "defaultMessage": "В этой версии нет текста для выравнивания"
-  },
-  "@yovoice.error.alignEmpty": {
-    "defaultMessage": "Не удалось сопоставить текст с вокалом; синхронизируйте вручную"
-  },
-  "@yovoice.settings.modelDesc.lyricAlign": {
-    "defaultMessage": "Необязательно: отделяет вокал и выравнивает текст по пению пословно — для пословной анимации текста и экспорта пословного LRC. Поддерживает 11 языков, включая китайский, английский, японский и корейский."
-  },
-  "@yovoice.assets.more": {
-    "defaultMessage": "Другие действия: {name}"
-  },
-  "@yovoice.assets.openProject": {
-    "defaultMessage": "Открыть проект «{name}»"
-  },
-  "@yovoice.assets.reveal": {
-    "defaultMessage": "Показать в папке"
-  },
-  "@yovoice.assets.delete": {
-    "defaultMessage": "Удалить"
-  },
-  "@yovoice.settings.features": {
-    "defaultMessage": "Функции"
-  },
-  "@yovoice.settings.featuresHint": {
-    "defaultMessage": "Отключённые функции скрываются из боковой панели и меню «Создать». Существующие работы и загруженные модели остаются без изменений."
-  },
-  "@yovoice.settings.featureStoryHint": {
-    "defaultMessage": "Импорт текста или субтитров и озвучка каждой реплики по персонажам."
-  },
-  "@yovoice.settings.featureMusicHint": {
-    "defaultMessage": "Песни, инструментальная музыка и партитуры, а также настройки их моделей и звуковых банков."
-  },
-  "@yovoice.settings.featureAssistantHint": {
-    "defaultMessage": "Плавающий помощник, его кнопка в заголовке окна и подсказки. Если отключена и генерация музыки, скрываются также настройки ИИ-сервиса и распределение ролей ИИ для книг."
-  },
-  "@yovoice.check.summary": {
-    "defaultMessage": "Возможно, с аудио есть проблемы: {issues}. Прослушайте и при необходимости сгенерируйте заново."
-  },
-  "@yovoice.check.separator": {
-    "defaultMessage": "; "
-  },
-  "@yovoice.check.clipping": {
-    "defaultMessage": "клиппинг в {count} местах, впервые в {at}"
-  },
-  "@yovoice.check.clicks": {
-    "defaultMessage": "щелчки: {count}, первый в {at}"
-  },
-  "@yovoice.check.cutoff": {
-    "defaultMessage": "конец обрезан"
-  },
-  "@yovoice.check.silence": {
-    "defaultMessage": "долгая тишина с {at} до {end}"
-  },
-  "@yovoice.check.silent": {
-    "defaultMessage": "почти нет звука"
-  },
-  "@yovoice.check.quiet": {
-    "defaultMessage": "тихо ({loudness} LUFS); выберите целевую громкость при экспорте"
-  },
-  "@yovoice.check.dc": {
-    "defaultMessage": "смещение постоянной составляющей"
-  },
-  "@yovoice.timeline.loudness": {
-    "defaultMessage": "Громкость"
-  },
-  "@yovoice.timeline.loudnessOff": {
-    "defaultMessage": "Без изменений"
-  },
-  "@yovoice.timeline.loudnessAudiobook": {
-    "defaultMessage": "Аудиокнига (−18 LUFS)"
-  },
-  "@yovoice.timeline.loudnessPodcast": {
-    "defaultMessage": "Подкаст (−16 LUFS)"
-  },
-  "@yovoice.timeline.loudnessVideo": {
-    "defaultMessage": "Видеоплатформы (−14 LUFS)"
-  },
-  "@yovoice.timeline.loudnessHint": {
-    "defaultMessage": "Меняется только общая громкость, без сжатия динамики; пики остаются ниже −1 dBTP."
-  },
-  "@yovoice.voice.autoPick": {
-    "defaultMessage": "Подобрать"
-  },
-  "@yovoice.voice.autoPickHint": {
-    "defaultMessage": "Выбирает самые чистые 5–15 с речи без клиппинга и длинных пауз"
-  },
-  "@yovoice.voice.excerpt": {
-    "defaultMessage": "Запись длится {total}, поэтому в качестве образца взят самый чистый фрагмент ({start}–{end}). Его можно изменить через «Обрезать»."
-  },
-  "@yovoice.error.musicSourceRequired": {
-    "defaultMessage": "Выберите уже созданный вариант этой работы для переработки или перерисовки фрагмента либо вернитесь к генерации по тексту."
-  },
-  "@yovoice.settings.modelDesc.stableAudio.music": {
-    "defaultMessage": "Создаёт инструментальную музыку по описанию на английском и может переработать или частично перерисовать готовый вариант; до 2 минут. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
-  },
-  "@yovoice.settings.modelDesc.stableAudio.sfx": {
-    "defaultMessage": "Создаёт звуковые эффекты по описанию на английском и может переработать или частично перерисовать готовый вариант; до 2 минут. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
-  },
-  "@yovoice.settings.modelDesc.stableAudio.medium": {
-    "defaultMessage": "Более крупная модель Stable Audio 3: инструментальная музыка выше качеством и более длинные треки (примерно до 6 минут); может переработать или частично перерисовать готовый вариант. Лицензия Stability AI Community: бесплатно при годовом доходе до 1 млн долларов США."
-  },
-  "@yovoice.music.editOff": {
-    "defaultMessage": "По тексту"
-  },
-  "@yovoice.music.editInit": {
-    "defaultMessage": "Переработать"
-  },
-  "@yovoice.music.editInpaint": {
-    "defaultMessage": "Перерисовать"
-  },
-  "@yovoice.music.source": {
-    "defaultMessage": "Исходный вариант"
-  },
-  "@yovoice.music.sourceEmpty": {
-    "defaultMessage": "Сначала создайте вариант, затем его можно переработать или перерисовать."
-  },
-  "@yovoice.music.editStrength": {
-    "defaultMessage": "Сила изменений"
-  },
-  "@yovoice.music.editStrengthHint": {
-    "defaultMessage": "0–1: чем меньше, тем ближе к исходному варианту."
-  },
-  "@yovoice.music.inpaintStart": {
-    "defaultMessage": "Перерисовать с (с)"
-  },
-  "@yovoice.music.inpaintEnd": {
-    "defaultMessage": "Перерисовать до (с)"
-  },
-  "@yovoice.music.englishPrompt": {
-    "defaultMessage": "Stable Audio понимает только описания на английском и не поёт текст."
-  },
-  "@yovoice.music.soundPlaceholder": {
-    "defaultMessage": "Опишите звук на английском, например footsteps on gravel, close perspective"
-  },
-  "@yovoice.settings.updateNotice": {
-    "defaultMessage": "Обновления моделей: {count}"
-  },
-  "@yovoice.settings.modelUpdateAvailable": {
-    "defaultMessage": "Новая версия"
-  },
-  "@yovoice.settings.updateModel": {
-    "defaultMessage": "Обновить"
-  },
-  "@yovoice.project.sfx": {
-    "defaultMessage": "Генерация звуковых эффектов"
-  },
-  "@yovoice.project.new.sfx": {
-    "defaultMessage": "Новый звуковой эффект"
-  },
-  "@yovoice.music.soundDescription": {
-    "defaultMessage": "Описание звука"
-  },
-  "@yovoice.assistant.chip.sfx": {
-    "defaultMessage": "Создать звуковой эффект"
-  },
-  "@yovoice.assistant.chip.sfxPrompt": {
-    "defaultMessage": "Создай проект звукового эффекта и сгенерируй короткий звук"
-  },
-  "@yovoice.assistant.nudge.done.sfx": {
-    "defaultMessage": "Звуковой эффект готов. Уточнить описание или улучшить результат?"
-  },
-  "@yovoice.assistant.nudge.donePrompt.sfx": {
-    "defaultMessage": "Уточни английское описание текущего звукового эффекта и создай улучшенную версию"
-  },
-  "@yovoice.music.generateAudio": {
-    "defaultMessage": "Создать аудио"
-  },
-  "@yovoice.language.nl": {
-    "defaultMessage": "Нидерландский"
-  },
-  "@yovoice.language.pl": {
-    "defaultMessage": "Польский"
-  },
-  "@yovoice.language.tr": {
-    "defaultMessage": "Турецкий"
-  },
-  "@yovoice.language.cs": {
-    "defaultMessage": "Чешский"
-  },
-  "@yovoice.language.hu": {
-    "defaultMessage": "Венгерский"
-  },
-  "@yovoice.language.zh-cn": {
-    "defaultMessage": "Упрощённый китайский"
-  },
-  "@yovoice.settings.modelDesc.voxtral": {
-    "defaultMessage": "9 языков · 20 встроенных голосов · 24 кГц"
-  },
-  "@yovoice.settings.modelDesc.plapre": {
-    "defaultMessage": "Датский · Встроенные голоса и клонирование · 24 кГц"
-  },
-  "@yovoice.settings.modelDesc.xtts": {
-    "defaultMessage": "17 языков · Клонирование голоса · 24 кГц"
-  },
-  "@yovoice.settings.modelDesc.gradium": {
-    "defaultMessage": "Английский · Голос по умолчанию · 24 кГц"
-  },
-  "@yovoice.settings.modelDesc.drama": {
-    "defaultMessage": "Метки говорящего и событий · Голос по умолчанию и клонирование · 44,1 кГц"
-  },
-  "@yovoice.options.silence_duration_sec": {
-    "defaultMessage": "Пауза между фрагментами (секунды)"
-  },
-  "@yovoice.options.text_chunk_tokens": {
-    "defaultMessage": "Текстовых токенов на фрагмент"
-  },
-  "@yovoice.voxtral.generalVoices": {
-    "defaultMessage": "Общие голоса"
-  },
-  "@yovoice.reference.builtInVoice": {
-    "defaultMessage": "Встроенный голос"
-  },
-  "@yovoice.reference.defaultVoice": {
-    "defaultMessage": "Голос по умолчанию"
-  },
-  "@yovoice.drama.referenceTextHelp": {
-    "defaultMessage": "Для клонирования нужна точная расшифровка референсного аудио."
-  },
-  "@yovoice.error.xttsReferenceDuration": {
-    "defaultMessage": "XTTS v2 требует 6–30 секунд референсного аудио."
   }
 }

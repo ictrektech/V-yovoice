@@ -19,7 +19,7 @@ and YuE2 remain in **Music generation**; score arranging and every existing spee
 API remain available. No installed weights, shared directories, projects or audio
 are deleted. Rollback can reuse those files with the preceding release.
 
-The upstream v0.5.0 integration uses audio.cpp v0.9.3 and retains 59 creation
+The upstream v0.5.0 integration uses audio.cpp v0.9.3 and retains 60 creation
 variants, including six new TTS families and Stable Audio 3 GGUF music/sound effects.
 Installed previous weights remain usable against a fixed, verified file manifest;
 administrators can update them through the shared model repository. Story tracks
@@ -30,6 +30,13 @@ settings are not exposed as uncalibrated VOS user preferences. Database v3 upgra
 keep an automatic v2 backup; rollback must restore that database snapshot.
 Runtime changes require a complete image rebuild, including audio.cpp v0.9.3;
 application/assets overlays alone do not upgrade the bundled engine.
+
+The post-v0.5.0 upstream sync adds optional Qwen3 ASR reference transcription,
+audio transcription and speech subtitle export on desktop, plus download retries,
+backup recovery and clearer operation errors. VOS keeps its existing scheduled
+speech service; these new desktop tool actions remain unavailable in VOS until
+they are integrated with Scheduler approval and result confirmation. The shared
+catalog retains the optional ASR package without exposing it as a TTS model.
 
 Each feature page has a **Prepare models** button. It opens only the relevant
 speech, creator or soundfont models in a dialog on the current page, with download,

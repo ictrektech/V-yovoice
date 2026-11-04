@@ -15,10 +15,12 @@ spec.loader.exec_module(publisher)
 
 def test_upstream_model_files_remain_complete():
     files = publisher.file_specs()
-    assert len(files) == 72
+    assert len(files) == 73
     assert sum(file["import_only"] for file in files) == 2
     assert len({file["path"] for file in files}) == len(files)
     assert all(file["family"] for file in files)
+    assert sum("Qwen3-ForcedAligner" in file["path"] for file in files) == 1
+    assert any(file["family"] == "qwen3_asr" for file in files)
 
 
 @pytest.mark.parametrize("broken", [None, "missing", "hash", "size"])
@@ -46,4 +48,4 @@ def test_anonymous_audit_requires_every_downloadable_file(monkeypatch, tmp_path,
             publisher.main()
     else:
         publisher.main()
-        assert "Anonymous catalog audit passed: 70 files" in capsys.readouterr().out
+        assert "Anonymous catalog audit passed: 71 files" in capsys.readouterr().out

@@ -3,7 +3,7 @@ import { ResizeHandle, type ResizableProps } from '@astryxdesign/core/Resizable'
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { AudioLines, BookOpen, ChevronRight, Fingerprint, Library, ListFilter, Mic, Music, Pencil, ScanText, Settings2, Speech, Trash2 } from 'lucide-react';
+import { AudioLines, Captions, BookOpen, ChevronRight, Fingerprint, Library, ListFilter, Mic, Music, Pencil, ScanText, Settings2, Speech, Trash2 } from 'lucide-react';
 import { featureHidden, projectKind, type Draft, type ModelPackage, type State } from '../shared/workbench';
 import { overflowTitle } from '../shared/ui/overflow-title';
 import { UpdateSidebarCard } from '../features/update/update-notice';
@@ -11,7 +11,7 @@ import { ModelUpdateSidebarCard } from '../features/settings/model-update-card';
 import { isVos } from '../shared/lib/vos';
 import { readLocal, writeLocal } from '../shared/lib/local-store';
 
-// 侧栏：新建入口、作品类型、声音库、最近作品、创作助手与设置。
+// 侧栏：新建入口、作品类型、声音库、语音转写、最近作品、创作助手与设置。
 export function SidebarNav(props: {
   page: string;
   setPage: (id: string) => void;
@@ -30,6 +30,7 @@ export function SidebarNav(props: {
   const [recentOpen, setRecentOpen] = useState(() => readLocal('yovoice-recent-open') !== 'false');
   const [modelsOpen, setModelsOpen] = useState(true);
   const modelsActive = page === 'models' || page === 'models-creative';
+  // shortcut: VOS 新识别、转写和字幕工具尚未接入调度确认，接入后再统一开放。
   const projectActive = page === 'create' || page === 'history';
   return <VStack as="nav" className="sidebar" aria-label={t('@yovoice.nav.main')} gap={6} data-testid="sidebar" style={isVos ? { overflowY: 'auto' } : undefined}>
     {newDraft}
@@ -49,6 +50,7 @@ export function SidebarNav(props: {
       })}
       <Button data-testid="nav-characters" label={t('@yovoice.nav.characters')} variant="ghost" icon={<AudioLines />} className={`nav-item ${page === 'characters' || page === 'voices' ? 'selected' : ''}`} aria-current={page === 'characters' || page === 'voices' ? 'page' : undefined} onClick={() => setPage('characters')} />
       {isVos ? <Button data-testid="nav-api-docs" label={t('@vvoice.nav.api')} variant="ghost" icon={<BookOpen />} className={`nav-item ${page === 'api-docs' ? 'selected' : ''}`} aria-current={page === 'api-docs' ? 'page' : undefined} onClick={() => setPage('api-docs')} /> : null}
+      {!isVos ? <Button data-testid="nav-transcribe" label={t('@yovoice.nav.transcribe')} variant="ghost" icon={<Captions />} className={`nav-item ${page === 'transcribe' ? 'selected' : ''}`} aria-current={page === 'transcribe' ? 'page' : undefined} onClick={() => setPage('transcribe')} /> : null}
     </VStack>
     <details className="recent-projects" open={recentOpen}>
       <summary onClick={event => { event.preventDefault(); const open = !recentOpen; setRecentOpen(open); writeLocal('yovoice-recent-open', String(open)); }}><ChevronRight aria-hidden />{t('@yovoice.nav.recent')}</summary>

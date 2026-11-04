@@ -10,7 +10,7 @@ import { isVos } from '../../shared/lib/vos';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Selector, SelectorOption } from '../../shared/selector';
-import { formatSize, groupModels, type ModelPackage, type State } from '../../shared/workbench';
+import { formatBytes, groupModels, type ModelPackage, type State } from '../../shared/workbench';
 
 // 可选模型：只列已下载的，当前选中但未下载的也保留；一个都没下载时列出全部，方便首次选择后去下载。
 export function modelChoices(models: ModelPackage[], state: State, current: string) {
@@ -53,7 +53,7 @@ export function ModelSelector({ label, models, state, value, isDisabled, manage,
   // 每组用当前选中的精度，否则用目录里排在前面的那个。
   const options = groups.map(group => {
     const model = group.find(item => item.id === value) ?? group[0];
-    const status = group.length > 1 ? group.map(item => item.precision).join(' · ') : `${model.precision} · ${isInstalled(model) ? t('@yovoice.create.modelInstalled') : formatSize(model.size)}`;
+    const status = group.length > 1 ? group.map(item => item.precision).join(' · ') : `${model.precision} · ${isInstalled(model) ? t('@yovoice.create.modelInstalled') : formatBytes(model.size)}`;
     return { value: model.id, label: name(model), description: status };
   });
   const current = groups.find(group => group.some(item => item.id === value));
@@ -68,10 +68,10 @@ export function ModelSelector({ label, models, state, value, isDisabled, manage,
     {model && !ready && (isDesktop || isVos) ? <VStack gap={2} data-testid="model-download-inline">
       <HStack gap={2} vAlign="center" wrap="wrap">
         <small className="grow" role={downloading ? 'status' : undefined}>
-          {downloading ? `${t('@yovoice.settings.download.running')} · ${formatSize(received)} / ${formatSize(total)}`
+          {downloading ? `${t('@yovoice.settings.download.running')} · ${formatBytes(received)} / ${formatBytes(total)}`
             : verifying ? t('@yovoice.settings.download.verifying')
               : failed ? t('@yovoice.settings.download.failed')
-                : `${t('@yovoice.create.modelMissing')} · ${formatSize(total)}`}
+                : `${t('@yovoice.create.modelMissing')} · ${formatBytes(total)}`}
         </small>
         {downloading ? <Button size="sm" variant="ghost" label={t('@yovoice.action.pause')} icon={<Pause size={14} />} isLoading={busy} onClick={() => void download('model.cancel')} />
           : <Button size="sm" variant="ghost" label={failed ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={14} />} isLoading={busy} isDisabled={verifying} onClick={() => void download('model.download')} />}

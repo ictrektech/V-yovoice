@@ -7,7 +7,7 @@ VOS 使用 ONNX / audio.cpp / 音色库渲染，不安装 PyTorch、Transformers
 原 PyTorch 配乐页面及 `/v1/audio/music/generations`、`/api/v1/music-models` 已移除，
 原权重和用户作品仍保留，回滚旧版本可继续复用。
 
-本次合入上游 v0.5.0，audio.cpp 升级为 v0.9.3，保留全部 59 个创作模型变体，
+本次合入上游 v0.5.0，audio.cpp 升级为 v0.9.3，保留全部 60 个创作模型变体，
 新增六种 TTS 家族及 Stable Audio 3 GGUF 音乐、音效与改编，不恢复 PyTorch 路线。
 每个功能页的“准备模型”只展示相关模型，复用 V-Scheduler / ModelScope 共享下载。
 旧版共享权重继续按固定的旧清单校验，管理员可更新；两个 Kokoro 仅导入条目仍保留。
@@ -15,6 +15,11 @@ VOS 使用 ONNX / audio.cpp / 音色库渲染，不安装 PyTorch、Transformers
 新增权重和新运行时仍需目标设备审批，不向 VOS 用户开放未经校准的桌面 CUDA 性能选项。
 数据库由 v2 升至 v3 前自动备份；回滚旧应用须恢复升级前数据库快照。
 本次运行时升级须完整重建镜像，单独更新应用或前端资产不会升级内置 audio.cpp。
+
+v0.5.0 后续同步新增桌面端可选 Qwen3 ASR 参考原文识别、音频转写与语音字幕导出，
+并改善下载重试、备份恢复和操作错误提示。VOS 继续使用现有的调度语音服务；
+新桌面工具尚未接入调度审批与结果确认，因此不在 VOS 开放。共享目录保留识别包，
+但不会将其列为 TTS 模型。
 
 `VVOICE_CPU_MODELS` 同时作用于 ASR、TTS 与声纹模型。显式卸载与 LRU 替换后回收
 无引用对象，并尽力归还空闲 CPU 堆页；这不代表 GPU 或原生执行已经停止。

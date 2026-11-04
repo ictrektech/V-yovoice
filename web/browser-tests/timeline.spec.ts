@@ -2,6 +2,9 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 import { seedState } from './seed';
 import { emptyState } from '../src/shared/workbench';
 
+// 三条用例都要加载并解码音频、反复拖拽和刷新，单跑十几秒，并发排满工作线程时会翻倍，放宽文件内所有用例的时限。
+test.setTimeout(60_000);
+
 async function expectPlaybackHitArea(page: Page) {
   const play = page.locator('.audio-panel .play-main');
   // 播放按钮的上半部也应命中按钮，不能被调高面板的透明区域拦截。
@@ -127,7 +130,8 @@ test('多轨分割、移动、静音播放、调整高度和重载', async ({ pa
   const box = await handle.boundingBox();
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
   await page.mouse.down(); await page.mouse.move(box!.x + box!.width / 2, box!.y - 90, { steps: 5 }); await page.mouse.up();
-  expect((await page.locator('.multitrack').boundingBox())!.height).toBeGreaterThan(before!.height + 50);
+  // 拖拽结果在松开后才落到面板高度上，用轮询断言等它生效。
+  await expect.poll(async () => (await page.locator('.multitrack').boundingBox())!.height).toBeGreaterThan(before!.height + 50);
   await expect(page.getByText('已保存', { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.locator('.multitrack-clip')).toHaveCount(3);

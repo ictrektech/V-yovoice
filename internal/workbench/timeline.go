@@ -11,6 +11,7 @@ import (
 	"time"
 	"yovoice/internal/audio"
 	"yovoice/internal/msg"
+	"yovoice/internal/platform"
 	"yovoice/internal/schema"
 )
 
@@ -52,7 +53,7 @@ func (w *Workbench) importTimelineAudio(ctx context.Context, path, name string) 
 	if err != nil {
 		return schema.AudioAsset{}, err
 	}
-	if err = os.WriteFile(dest, data, 0600); err != nil {
+	if err = platform.WriteFileAtomic(dest, data, 0600); err != nil {
 		return schema.AudioAsset{}, err
 	}
 	return asset, nil
@@ -116,6 +117,6 @@ func (w *Workbench) ImportTimelineGeneration(ctx context.Context, generationID s
 	if index := slices.IndexFunc(state.Drafts, func(d schema.Draft) bool { return d.ID == generation.Settings.ID }); index >= 0 {
 		workTitle = state.Drafts[index].Title
 	}
-	name := truncateRunes(strings.TrimSpace(workTitle+" · "+generation.Title), 120)
+	name := schema.TruncateRunes(strings.TrimSpace(workTitle+" · "+generation.Title), 120)
 	return w.importTimelineAudio(ctx, path, name)
 }

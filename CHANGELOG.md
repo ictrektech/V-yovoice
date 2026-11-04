@@ -6,12 +6,18 @@
 
 ### English
 
+- Sync post-v0.5.0 upstream updates: optional Qwen3 ASR reference recognition, audio transcription and SRT/WebVTT export for desktop speech versions. VOS keeps its existing scheduled speech service; the new desktop tools are not yet enabled in VOS.
+- Improve interrupted downloads, resume validation, database backup recovery and shutdown handling; preserve unsaved input and show operation failures in the relevant editor or dialog.
+
 - Integrate upstream v0.5.0 with Ming 3.0 TTS, Voxtral TTS, Plapre 3, XTTS v2, Gradium Phonon and Fish Audio Drama 3; add Stable Audio 3 GGUF music, sound effects, remixing and inpainting. VOS models still require shared weights and device approval.
 - Add generated speech, music and sound effects directly to story tracks, and blend two Kokoro voices. VOS imports and remixing only use the current user's confirmed results.
 - Upgrade audio.cpp to v0.9.3 and add the upstream desktop CUDA performance option. Preserve installed shared weights during model catalog updates, verify their original checksums and offer administrator updates.
 - Improve editor layout, model notices and asset dialogs. Back up existing databases before upgrading while preserving projects, history and lyric timing; VOS retains its speech APIs, model administration and platform language settings.
 
 ### 简体中文
+
+- 同步上游 v0.5.0 后续更新：桌面端新增可选 Qwen3 ASR 参考原文识别、音频转写及语音版本的 SRT/WebVTT 字幕导出；VOS 继续使用现有调度语音服务，新桌面工具暂不在 VOS 开放。
+- 改进下载中断与续传校验、状态库备份恢复和退出处理；操作失败时保留未保存的输入，并在对应编辑区或对话框提示。
 
 - 合入上游 v0.5.0，新增 Ming 3.0 TTS、Voxtral TTS、Plapre 3、XTTS v2、Gradium Phonon 和 Fish Audio Drama 3；支持 Stable Audio 3 GGUF 音乐、音效、整体改编与局部重绘。VOS 模型仍需共享权重及设备审批。
 - 故事配音可直接添加已生成的语音、音乐与音效，Kokoro 可混合两种音色；VOS 导入与改编只使用当前用户已确认成功的结果。

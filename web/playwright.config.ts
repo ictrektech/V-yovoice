@@ -11,6 +11,6 @@ const port = Number(process.env.PLAYWRIGHT_TEST_PORT ?? 4173);
 const url = `http://127.0.0.1:${port}`;
 export default defineConfig({
   testDir: './browser-tests', testMatch: '*.spec.ts', testIgnore: process.env.PW_ALL ? [] : sealed, fullyParallel: true,
-  use: { baseURL: url, viewport: { width: 1440, height: 920 }, reducedMotion: 'reduce', launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined } },
+  use: { baseURL: url, viewport: { width: 1440, height: 920 }, reducedMotion: 'reduce', launchOptions: { args: ['--disable-audio-output'], executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined } },
   webServer: { command: `pnpm run dev --port ${port} --strictPort`, url, reuseExistingServer: false },
 });

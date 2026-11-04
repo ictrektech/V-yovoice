@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { emptyState } from '../src/shared/workbench';
 
-const catalog = JSON.parse(readFileSync(new URL('../../internal/catalog/catalog.json', import.meta.url), 'utf8'));
+const catalog = JSON.parse(readFileSync(new URL('../../internal/catalog/catalog.json', import.meta.url), 'utf8')).models;
 const previous = JSON.parse(readFileSync(new URL('../../internal/catalog/previous-model-files.json', import.meta.url), 'utf8'));
 
 test('VOS 旧模型更新使用管理员共享更新接口，时间轴导入走真实传输', async ({ page }) => {
@@ -40,7 +40,8 @@ test('VOS 旧模型更新使用管理员共享更新接口，时间轴导入走�
   await page.locator(`[data-model-id="${id}"]`).getByRole('button', { name: '更新', exact: true }).click();
   await expect.poll(() => updated).toBeTruthy();
   const asset = await page.evaluate(async () => {
-    const { importTimelineGeneration } = await import('/src/shared/lib/client.ts');
+    const clientPath = '/src/shared/lib/client.ts';
+    const { importTimelineGeneration } = await import(/* @vite-ignore */ clientPath);
     return importTimelineGeneration('confirmed-generation');
   });
   expect(imported).toBeTruthy();
