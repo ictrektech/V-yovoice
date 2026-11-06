@@ -89,7 +89,7 @@ func (w *Workbench) adoptModels(dir string) error {
 		sha256 := m.MainFile().SHA256
 		if len(m.Files) > 0 {
 			path = filepath.Join(dir, m.Directory)
-			if packageRoot(m, filepath.Join(path, filepath.FromSlash(m.RemotePath))) == "" {
+			if packageRoot(m, filepath.Join(path, filepath.FromSlash(m.LocalPath(m.RemotePath)))) == "" {
 				continue
 			}
 		} else {

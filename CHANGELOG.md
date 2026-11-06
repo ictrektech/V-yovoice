@@ -12,6 +12,7 @@
 
 ### English
 
+- Fix recognition of existing multi-file models after changing the model directory.
 - Sync post-v0.5.0 upstream updates: optional Qwen3 ASR reference recognition, audio transcription and SRT/WebVTT export for desktop speech versions. VOS keeps its existing scheduled speech service; the new desktop tools are not yet enabled in VOS.
 - Improve interrupted downloads, resume validation, database backup recovery and shutdown handling; preserve unsaved input and show operation failures in the relevant editor or dialog.
 
@@ -22,6 +23,7 @@
 
 ### 简体中文
 
+- 修复切换模型目录后无法识别已有多文件模型的问题。
 - 同步上游 v0.5.0 后续更新：桌面端新增可选 Qwen3 ASR 参考原文识别、音频转写及语音版本的 SRT/WebVTT 字幕导出；VOS 继续使用现有调度语音服务，新桌面工具暂不在 VOS 开放。
 - 改进下载中断与续传校验、状态库备份恢复和退出处理；操作失败时保留未保存的输入，并在对应编辑区或对话框提示。
 
