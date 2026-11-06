@@ -6,6 +6,12 @@
 
 ### English
 
+### 简体中文
+
+## [0.0.33] - 2026-11-06
+
+### English
+
 - Sync post-v0.5.0 upstream updates: optional Qwen3 ASR reference recognition, audio transcription and SRT/WebVTT export for desktop speech versions. VOS keeps its existing scheduled speech service; the new desktop tools are not yet enabled in VOS.
 - Improve interrupted downloads, resume validation, database backup recovery and shutdown handling; preserve unsaved input and show operation failures in the relevant editor or dialog.
 
