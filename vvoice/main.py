@@ -41,7 +41,7 @@ from .runtime import (
 from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore
 from .transcript import normalize_transcript, subtitle
 from .admission import AdmissionMiddleware, run_blocking, admit_model
-app = FastAPI(title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
+app = FastAPI(docs_url=None, title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
 if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
     app.add_middleware(AdmissionMiddleware)
 
@@ -107,7 +107,7 @@ class SchedulerBindingDocument(BaseModel):
     protocol_version: Literal[1]
     binding_revision: int = Field(ge=1)
     app_id: Literal["com.ictrek.v-voice"]
-    url: str = Field(description="Must match fixed VVOICE_SCHEDULER_URL. Default uses V-Scheduler's retained compatibility alias http://v-router:8080/scheduler/api/v1; the unified controller is http://v-scheduler:38120/api/v1.")
+    url: str = Field(description="Must match fixed VVOICE_SCHEDULER_URL. Default is http://v-scheduler:8080/scheduler/api/v1; v-router is a compatibility alias. The controller also listens at http://v-scheduler:38120/api/v1.")
     token: str = Field(min_length=32, max_length=4096, json_schema_extra={"writeOnly": True})
     executor_token: str = Field(min_length=32, max_length=4096, json_schema_extra={"writeOnly": True})
     upstream_url: str = Field(description="Must match V-Voice's advertised native upstream URL")
@@ -1011,6 +1011,19 @@ async def voices(model: str = "kokoro-multilang"):
         "voices": values,
         "data": values,
     }
+
+
+from .api_documentation import build_openapi as _build_openapi
+from fastapi.openapi.docs import get_swagger_ui_html
+app.openapi = lambda: _build_openapi(app)
+
+@app.get("/docs", include_in_schema=False)
+async def api_documentation():
+    return get_swagger_ui_html(openapi_url="openapi.json", title="V-Voice VOS API")
+
+@app.get("/api-guide", include_in_schema=False)
+async def full_api_guide():
+    return FileResponse(Path(__file__).with_name("api-guide.html"), media_type="text/html")
 
 
 frontend = Path(__file__).resolve().parents[1] / "frontend" / "dist"

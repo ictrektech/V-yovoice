@@ -6,7 +6,13 @@
 
 ### English
 
+- Allow only same-origin embedded API pages so VOS documentation can load.
+- Complete VOS API workflows, response fields, identity boundaries, scheduling errors and cancellation documentation; preserve existing speech and workbench APIs.
+
 ### 简体中文
+
+- 仅允许同源内嵌 API 页面，修复 VOS 文档被浏览器拦截的问题。
+- 补齐 VOS API 流程、返回字段、身份边界、调度错误与取消说明，保留现有语音和工作台接口。
 
 ## [0.0.33] - 2026-11-06
 

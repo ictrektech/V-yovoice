@@ -1,0 +1,6811 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V-Voice API</title><style>body{font:16px/1.65 system-ui,sans-serif;color:#233247;background:#fff;max-width:1100px;margin:auto;padding:24px}nav{position:sticky;top:0;background:#fff;padding:12px 0;border-bottom:1px solid #ddd}nav a{margin-right:10px}a{color:#086a81}pre{overflow:auto;background:#f4f6f8;padding:16px;border-radius:8px}code{overflow-wrap:anywhere}table{display:block;overflow:auto;border-collapse:collapse}td,th{padding:8px;border:1px solid #ddd;text-align:left}h2,h3{scroll-margin-top:85px}#zh-doc{display:none}body:has(#zh:target) #en-doc,body:has(#zh-doc :target) #en-doc{display:none}body:has(#zh:target) #zh-doc,body:has(#zh-doc :target) #zh-doc{display:block}</style><span id="zh"></span><span id="en"></span><nav><strong>V-Voice API</strong> · <a href="#zh">简体中文</a> · <a href="#en">English</a></nav><main><article id="zh-doc" lang="zh-CN"><details open><summary>快速跳转</summary><a href="#zh-section-1">选择正确入口</a> · <a href="#zh-section-2">身份、Key 与权限边界</a> · <a href="#zh-section-3">模型、下载、预算和停止</a> · <a href="#zh-section-4">ASR / TTS 输入与返回</a> · <a href="#zh-section-5">HTTP 流与 WebSocket</a> · <a href="#zh-section-6">私有工作台 RPC 与任务</a> · <a href="#zh-section-7">完整接口与返回</a> · <a href="#zh-section-8">GET /health</a> · <a href="#zh-section-9">GET /ready</a> · <a href="#zh-section-10">GET /api/v1/about</a> · <a href="#zh-section-11">GET /api/v1/discovery</a> · <a href="#zh-section-12">GET /api/v1/models</a> · <a href="#zh-section-13">GET /api/v1/models/{key}/input-limits</a> · <a href="#zh-section-14">GET /api/v1/creative-models</a> · <a href="#zh-section-15">POST /api/v1/models/{key}/pull</a> · <a href="#zh-section-16">POST /api/v1/models/{key}/stop</a> · <a href="#zh-section-17">POST /api/v1/models/{key}/unload</a> · <a href="#zh-section-18">GET /api/v1/hotwords</a> · <a href="#zh-section-19">POST /api/v1/hotwords</a> · <a href="#zh-section-20">POST /api/v1/hotwords/import</a> · <a href="#zh-section-21">GET /api/v1/hotwords/{set_id}</a> · <a href="#zh-section-22">PATCH /api/v1/hotwords/{set_id}</a> · <a href="#zh-section-23">DELETE /api/v1/hotwords/{set_id}</a> · <a href="#zh-section-24">GET /api/v1/hotwords/{set_id}/export</a> · <a href="#zh-section-25">GET /v1/models</a> · <a href="#zh-section-26">POST /v1/audio/transcriptions</a> · <a href="#zh-section-27">POST /v1/audio/translations</a> · <a href="#zh-section-28">POST /v1/audio/streaming/transcriptions</a> · <a href="#zh-section-29">GET /api/v1/speakers</a> · <a href="#zh-section-30">POST /api/v1/speakers</a> · <a href="#zh-section-31">DELETE /api/v1/speakers/{speaker_id}</a> · <a href="#zh-section-32">GET /v1/audio/speakers</a> · <a href="#zh-section-33">POST /v1/audio/speakers/identify</a> · <a href="#zh-section-34">POST /v1/audio/speakers/verify</a> · <a href="#zh-section-35">POST /transcribe</a> · <a href="#zh-section-36">POST /v1/audio/speech</a> · <a href="#zh-section-37">GET /v1/audio/voices</a> · <a href="#zh-section-38">GET /api/v1/scheduler/binding</a> · <a href="#zh-section-39">POST /api/v1/scheduler/binding</a> · <a href="#zh-section-40">POST /studio-api/call</a> · <a href="#zh-section-41">GET /studio-api/media/{kind}/{file_name}</a> · <a href="#zh-section-42">共享数据结构</a> · <a href="#zh-section-43">Body_enroll_speaker_api_v1_speakers_post</a> · <a href="#zh-section-44">Body_import_hotword_set_api_v1_hotwords_import_post</a> · <a href="#zh-section-45">Body_speakers_identify_v1_audio_speakers_identify_post</a> · <a href="#zh-section-46">Body_speakers_verify_v1_audio_speakers_verify_post</a> · <a href="#zh-section-47">Body_transcriptions_v1_audio_transcriptions_post</a> · <a href="#zh-section-48">Body_translations_v1_audio_translations_post</a> · <a href="#zh-section-49">HTTPValidationError</a> · <a href="#zh-section-50">HotwordSetCreate</a> · <a href="#zh-section-51">HotwordSetUpdate</a> · <a href="#zh-section-52">SpeechRequest</a> · <a href="#zh-section-53">ValidationError</a> · <a href="#zh-section-54">VoiceManagedModel</a> · <a href="#zh-section-55">VoicePublicModel</a> · <a href="#zh-section-56">VoiceHotwordSet</a> · <a href="#zh-section-57">VoiceSpeaker</a> · <a href="#zh-section-58">VoiceTranscript</a> · <a href="#zh-section-59">VoiceSchedulerContract</a></details><h1>V-Voice API 详细参考</h1>
+<h2 id="zh-section-1">选择正确入口</h2>
+<p>VOS 服务的容器地址为 <code>http://v-voice-backend:7070</code>，默认宿主机映射为 <code>http://&lt;vos-host&gt;:22700</code>，浏览器同源为 <code>/app/com.ictrek.v-voice</code>。完整文档 <code>/api-guide#zh</code>、交互字段参考 <code>/docs</code>、实际启用接口契约 <code>/openapi.json</code> 均追加在该根地址后。工作台的 API 页保留原有分章示例，并链接本参考。安装时保留原 profile 和共享权重目录，不需要用户手工部署 agent。</p>
+<p>这里是 VOS 服务契约，不是桌面 CLI 的独立 <code>/v1/generations</code>/MCP 服务。后者使用单独的本机/CLI Bearer token、数据目录和启动方式，见项目 docs/api_zh.md；不能把 CLI Token 填到 VOS 工作台接口。VOS 中新桌面功能是否开放，以本服务实际目录和路由为准。</p>
+<h2 id="zh-section-2">身份、Key 与权限边界</h2>
+<p>兼容语音 <code>/v1/*</code>、旧 <code>/transcribe</code>、热词和声纹库是应用共享服务，不按 VOS 用户隔离；原生 HTTP 路由不签发个人 API Key，也不把客户端任意 Key 当作 VOS 用户。公共目录声明 authentication=none。对外应用优先通过 V-Scheduler 的统一 <code>/v1/*</code> 调用，使用其个人/模型 Key 或 VOS 身份，public/private 由 V-Scheduler 控制；厂商 Key、调度内部 token 和客户端 Key 不是同一种凭据。</p>
+<p>用户工作台 <code>/studio-api/*</code> 使用经服务端 VOS userinfo 验证的 Bearer token，项目、生成记录和参考音色按用户隔离。model.download/model.cancel 等工作台管理命令还要求 system_admin/platform_admin。原生 Python 模型 pull/stop/unload、共享热词和声纹管理接口不提供相同的逐用户管理鉴权，应仅在已有受信服务入口使用，不能把工作台的管理员校验推定为所有原生路由都具备。</p>
+<p>自动绑定 POST <code>/api/v1/scheduler/binding</code> 只接受 V-Scheduler 的 VOS <strong>应用身份</strong>；管理员用户 token 也不能配置。GET 仅返回 protocol_version、binding_revision、configured、approved_model_count，不返回服务凭据。configured=true 仅表示配置存在，模型还需批准、权重校验与输入校准；不能据此声称推理已验证。内部执行端由调度器携带 executor token、执行 ID、attempt/fence 调用，外部 Agent 不应自行构造。</p>
+<h2 id="zh-section-3">模型、下载、预算和停止</h2>
+<p><code>GET /api/v1/models</code> 是全量语音管理目录；<code>/api/v1/creative-models</code> 包含音乐、音色库等创作精度。共享文件存在后还会后台校验，verifying 不等于 ready；ready 表示文件就绪，ASR inference_ready 才说明该节点的模型审批/校准通过，仍不保证当前资源空闲。<code>/v1/models</code> 和 discovery 只发布文件就绪且属于 ASR/TTS/speaker 的接口模型，创作目录不等于全部可经公开 speech 端点执行。</p>
+<p>pull 的202只表示下载已受理，需轮询目录 status/progress/error。force=true 请求更新但保留共享仓库其他已安装精度。仅导入模型返回409，需管理员提供原始权重，不能自动下载一个不存在的源。stop 取消<strong>下载</strong>，响应 status=cancelled/not_running 和 tasks；unload 卸载驻留运行时、不删除权重；用户推理取消使用工作台 operation.cancel。DELETE 热词/声纹/作品会删除对应记录，不能当成取消执行。</p>
+<p>调度启用时，输入限制从 <code>/api/v1/models/{key}/input-limits</code> 查询，limits 为 null 表示兼容的既有批准路径，不代表无限资源。受管的新模型须有当前节点校准，不要抄其他机器预算。ASR limits 包含 duration_seconds、sample_rate、input_bytes、hotwords_characters；Kokoro 使用 text_characters、speed_min/max。受限 ASR 组合热词/声纹/翻译若未校准会返回422，不能仅以模型本身支持推定组合已批准。503 缺少模型执行审批、绑定或校准，429 资源繁忙，413 上传/时长等限制，422 参数/能力不支持，409 权重未就绪。请求失败不会自动获得直通许可。</p>
+<h2 id="zh-section-4">ASR / TTS 输入与返回</h2>
+<p>ASR transcriptions/translations 使用 multipart 的 file、model 等字段；hotwords_set 可以重复，热词文本、文件和热词集合并去重，具体模型能力以 discovery 为准。<code>timestamp_granularities[]</code> 是含方括号的字段名，可重复 word/segment；json 只返回 text，verbose_json 才保留原生 words/segments、hotwords 和可选 speaker。时间单位是秒，不支持的时间戳不能伪造。text/srt/vtt 返回文本而不是 JSON。输入文件大小上限取服务配置与已批准模型限额较小值。</p>
+<p>TTS speech 使用 JSON。model 从目录选择，voice 从 <code>/v1/audio/voices?model=...</code> 获取；response_format 决定二进制音频，pcm 是裸 PCM，不含 WAV 头。克隆 reference_audio 是纯 Base64 音频，不接受服务器路径；reference_text、voice_description、emotion_text/strength 仅在相应模型能力成立时生效。不要将桌面支持的每个创作模型都推定为该公开同步端点已批准。</p>
+<h2 id="zh-section-5">HTTP 流与 WebSocket</h2>
+<p>HTTP <code>/v1/audio/streaming/transcriptions</code> 的 body 是原始音频分块，参数都放 query，不是 multipart，也不是 SSE：上传结束才返回一次最终 JSON/text。format=pcm 为 s16le 单声道，sample_rate 默认16000；wav 使用头部采样率；auto 收完再解码，不保证增量识别。</p>
+<p>WebSocket <code>/v1/audio/streaming/ws?model=...</code> 接收二进制 PCM/WAV 帧，返回 <code>{type:&quot;partial&quot;,text,is_endpoint}</code>；发送文本 <code>{&quot;type&quot;:&quot;finish&quot;}</code> 请求最终 <code>{type:&quot;final&quot;,...原生结果}</code>。关闭连接主要用于取消，不能保证断开后仍能读到 final；请明确发送 finish 并等 final。错误为 <code>{type:&quot;error&quot;,detail}</code> 后关闭，常见4404/4409/4422/4500，调度错误可能映射其他44xx。WebSocket 未包含在 OpenAPI HTTP 路由表中，本节是其协议说明。</p>
+<h2 id="zh-section-6">私有工作台 RPC 与任务</h2>
+<p>POST <code>/studio-api/call</code> JSON 包含 method、data、requestId。requestId 为32位小写十六进制稳定 ID；生成重试复用相同 ID 和相同参数，冲突不可当成新任务重放。响应始终检查 error，即使 HTTP200；result 是该方法原生返回值。generation.start/cue、character.preview、generation.alignLyrics、melody.plan/cover/listen 经 Scheduler 排队，返回任务并不表示生成完成。通过 state.get 轮询 result.state.activity/history；只有 Scheduler 确认完成后才能通过 <code>/studio-api/media/outputs/{fileName}</code> 下载，未批准或跨用户结果404。音色使用 voices 路径。</p>
+<p>工作台可调用清单包括：state.get、preferences.save（仅个人 uiLocale）；draft.save/delete；generation.start/cue/alignLyrics/lyricTimes/lyricWords；character.save/preview/delete/discardPreview；voice.fromGeneration/suggest/update/record；timeline.import/fromGeneration；media.rename/delete；melody.inspect/transform/dismiss/plan/cover/listen/result；operation.cancel；diag.client；model.download/cancel/forget；runtime.unload。并非全部桌面 RPC 都允许浏览器调用，禁止传入任意服务器文件路径或运行外部命令。方法 data 按实际作品/模型类型解释；未列出的桌面方法403。具体字段结构以同版本 internal/schema 的 Draft/Character/State、internal/desktop/rpc.go 以及 internal/vos/server.go 的方法分支为准，不能把原生 result 统一当成任务 ID。</p>
+<pre><code class="language-bash"># 公共语音经 V-Scheduler；model 使用它发现的完整 ID。
+curl --fail-with-body 'http://&lt;vos-host&gt;:22888/v1/audio/transcriptions' -H &quot;Authorization: Bearer $SCHEDULER_KEY&quot; -F 'model=&lt;qualified-asr-model&gt;' -F file=@sample.wav -F response_format=verbose_json
+# 私有工作台使用 VOS 身份；不要提交 Scheduler 模型 Key。
+curl --fail-with-body 'http://&lt;vos-host&gt;:22700/studio-api/call' -H &quot;Authorization: Bearer $VOS_TOKEN&quot; -H 'Content-Type: application/json' -d '{&quot;method&quot;:&quot;state.get&quot;,&quot;data&quot;:{},&quot;requestId&quot;:&quot;0123456789abcdef0123456789abcdef&quot;}'
+</code></pre>
+<h2 id="zh-section-7">完整接口与返回</h2>
+<h3 id="zh-section-8">GET /health</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>version</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>provider</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-9">GET /ready</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>ready</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model_hub_root</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler</code></td>
+  <td>object</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler.configured</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler.binding_revision</code></td>
+  <td>integer</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler.protocol_version</code></td>
+  <td>integer</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler.approved_model_count</code></td>
+  <td>integer</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-10">GET /api/v1/about</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>app_id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>app_version</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>profile</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>provider</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>port</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>supported_asr_families</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>supported_tts_families</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>supported_speaker_families</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming_asr</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_loaded_models</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_concurrent_inference</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_concurrent_per_model</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-11">GET /api/v1/discovery</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>service_id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>protocol</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>visibility</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>multi_tenant</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>authentication</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>base_url</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>health_path</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>models</code></td>
+  <td>array&lt;VoicePublicModel&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler</code></td>
+  <td>VoiceSchedulerContract</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-12">GET /api/v1/models</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>array&lt;VoiceManagedModel&gt;</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-13">GET /api/v1/models/{key}/input-limits</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><code>path: key</code> · string · 必填 ·</li>
+</ul>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>limits</code></td>
+  <td>object  /  null</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_upload_bytes</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-14">GET /api/v1/creative-models</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>All creator precisions and soundfonts; management metadata, not speech discovery.</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>array&lt;VoiceManagedModel&gt;</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-15">POST /api/v1/models/{key}/pull</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><p><code>path: key</code> · string · 必填 ·</p>
+</li>
+<li><p><code>query: force</code> · boolean · 可选 ·</p>
+</li>
+</ul>
+<p>响应 202 — 202 means download accepted, not installed. Existing task returns status=active/detail; otherwise the native V-Scheduler weight-service task response is forwarded. See its /openapi.json and poll /api/v1/models for ready/error.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>detail</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>task_id</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model_id</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>phase</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-16">POST /api/v1/models/{key}/stop</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><code>path: key</code> · string · 必填 ·</li>
+</ul>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>tasks</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-17">POST /api/v1/models/{key}/unload</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><code>path: key</code> · string · 必填 ·</li>
+</ul>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-18">GET /api/v1/hotwords</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>List saved hotword sets with their derived per-model format tables.</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>array&lt;VoiceHotwordSet&gt;</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-19">POST /api/v1/hotwords</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>请求体：application/json</p>
+<p><code>HotwordSetCreate</code></p>
+<p>响应 201 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceHotwordSet</code></p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-20">POST /api/v1/hotwords/import</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>请求体：multipart/form-data</p>
+<p><code>Body_import_hotword_set_api_v1_hotwords_import_post</code></p>
+<p>响应 201 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceHotwordSet</code></p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-21">GET /api/v1/hotwords/{set_id}</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><code>path: set_id</code> · string · 必填 ·</li>
+</ul>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceHotwordSet</code></p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-22">PATCH /api/v1/hotwords/{set_id}</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><code>path: set_id</code> · string · 必填 ·</li>
+</ul>
+<p>请求体：application/json</p>
+<p><code>HotwordSetUpdate</code></p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceHotwordSet</code></p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-23">DELETE /api/v1/hotwords/{set_id}</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><code>path: set_id</code> · string · 必填 ·</li>
+</ul>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-24">GET /api/v1/hotwords/{set_id}/export</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><p><code>path: set_id</code> · string · 必填 ·</p>
+</li>
+<li><p><code>query: format</code> · string · 可选 · text, qwen3, or zipformer</p>
+</li>
+</ul>
+<p>响应 200 — UTF-8 hotword file; Content-Disposition supplies its name.</p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-25">GET /v1/models</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>data</code></td>
+  <td>array&lt;VoicePublicModel&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-26">POST /v1/audio/transcriptions</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>请求体：multipart/form-data</p>
+<p><code>Body_transcriptions_v1_audio_transcriptions_post</code></p>
+<p>响应 200 — json returns text only; verbose_json keeps native model metadata, available word/segment timestamps and optional hotword/speaker blocks. Times are seconds. text/srt/vtt return text; supported formats depend on this operation. HTTP chunked upload returns one final response, not SSE.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceTranscript</code></p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>响应 404 — ASR model key does not exist or is not an ASR model</p>
+<p>响应 409 — Model exists but its files are not ready</p>
+<p>响应 413 — Audio upload is larger than the configured limit</p>
+<p>响应 422 — Invalid field, hotword file, hotword limit, score, or model capability</p>
+<p>响应 500 — Audio decoding or inference failed</p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-27">POST /v1/audio/translations</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>请求体：multipart/form-data</p>
+<p><code>Body_translations_v1_audio_translations_post</code></p>
+<p>响应 200 — json returns text only; verbose_json keeps native model metadata, available word/segment timestamps and optional hotword/speaker blocks. Times are seconds. text/srt/vtt return text; supported formats depend on this operation. HTTP chunked upload returns one final response, not SSE.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceTranscript</code></p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>响应 404 — ASR model key does not exist or is not an ASR model</p>
+<p>响应 409 — Model exists but its files are not ready</p>
+<p>响应 413 — Audio upload is larger than the configured limit</p>
+<p>响应 422 — Invalid field, hotword file, hotword limit, score, or model capability</p>
+<p>响应 500 — Audio decoding or inference failed</p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-28">POST /v1/audio/streaming/transcriptions</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>Realtime streaming transcription over a chunked HTTP request body.</p>
+<p>The body is audio transmitted incrementally; V-Voice feeds every chunk into
+the OnlineRecognizer as it arrives and returns the final transcript when the
+body ends. Use <code>format=pcm</code> or <code>wav</code> for true incremental decoding;
+<code>auto</code> buffers the whole body and decodes once.</p>
+<ul>
+<li><p><code>query: model</code> · string · 必填 · Ready streaming ASR model key from /api/v1/discovery</p>
+</li>
+<li><p><code>query: language</code> · string · 可选 · Kept for contract symmetry; streaming models auto-detect</p>
+</li>
+<li><p><code>query: format</code> · string · 可选 · pcm (raw s16le mono), wav (uncompressed mono RIFF), or auto (buffered, decoded at end)</p>
+</li>
+<li><p><code>query: sample_rate</code> · integer · 可选 · Sample rate for format=pcm; wav uses its header</p>
+</li>
+<li><p><code>query: response_format</code> · string · 可选 · verbose_json, json, or text</p>
+</li>
+<li><p><code>query: hotwords</code> · string · 可选 · One-shot comma/newline-separated phrases for hotword-capable streaming models</p>
+</li>
+<li><p><code>query: hotwords_set</code> · array&lt;string&gt; | null · 可选 · Repeatable saved hotword set id from /api/v1/hotwords</p>
+</li>
+<li><p><code>query: hotwords_score</code> · number | null · 可选 · Contextual-bias score from 0 to 10; streaming Zipformer only</p>
+</li>
+<li><p><code>query: speaker_model</code> · string · 可选 · Optional ready speaker model key; adds a speaker attribution block to the final response</p>
+</li>
+<li><p><code>query: speaker_threshold</code> · number | null · 可选 · Cosine similarity threshold for the speaker block; default 0.6</p>
+</li>
+</ul>
+<p>请求体：application/octet-stream</p>
+<p><code>string</code></p>
+<p>响应 200 — json returns text only; verbose_json keeps native model metadata, available word/segment timestamps and optional hotword/speaker blocks. Times are seconds. text/srt/vtt return text; supported formats depend on this operation. HTTP chunked upload returns one final response, not SSE.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceTranscript</code></p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>响应 404 — ASR model key does not exist or is not an ASR model</p>
+<p>响应 409 — Model exists but its files are not ready</p>
+<p>响应 413 — Audio upload is larger than the configured limit</p>
+<p>响应 422 — Invalid field, hotword file, hotword limit, score, or model capability</p>
+<p>响应 500 — Audio decoding or inference failed</p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-29">GET /api/v1/speakers</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>List enrolled voiceprints (management plane).</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>array&lt;VoiceSpeaker&gt;</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-30">POST /api/v1/speakers</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>Enroll a speaker voiceprint from uploaded audio.</p>
+<p>请求体：multipart/form-data</p>
+<p><code>Body_enroll_speaker_api_v1_speakers_post</code></p>
+<p>响应 201 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceSpeaker</code></p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-31">DELETE /api/v1/speakers/{speaker_id}</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><code>path: speaker_id</code> · string · 必填 ·</li>
+</ul>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-32">GET /v1/audio/speakers</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>Public list of enrolled voiceprints for dependent clients.</p>
+<ul>
+<li><code>query: model</code> · string · 可选 · Ready speaker model key</li>
+</ul>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>default_threshold</code></td>
+  <td>number</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speakers</code></td>
+  <td>array&lt;VoiceSpeaker&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>data</code></td>
+  <td>array&lt;VoiceSpeaker&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-33">POST /v1/audio/speakers/identify</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>Identify which enrolled speaker (if any) spoke in the audio.</p>
+<p>请求体：multipart/form-data</p>
+<p><code>Body_speakers_identify_v1_audio_speakers_identify_post</code></p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>threshold</code></td>
+  <td>number</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>identified</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker</code></td>
+  <td>object  /  null</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>score</code></td>
+  <td>number</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>ranked</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-34">POST /v1/audio/speakers/verify</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>Verify the audio against one enrolled speaker voiceprint.</p>
+<p>请求体：multipart/form-data</p>
+<p><code>Body_speakers_verify_v1_audio_speakers_verify_post</code></p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker</code></td>
+  <td>VoiceSpeaker</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>threshold</code></td>
+  <td>number</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>score</code></td>
+  <td>number</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>verified</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-35">POST /transcribe</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><p><code>query: model</code> · string · 可选 ·</p>
+</li>
+<li><p><code>query: lang</code> · string · 可选 ·</p>
+</li>
+</ul>
+<p>请求体：application/octet-stream</p>
+<p><code>string</code></p>
+<p>响应 200 — json returns text only; verbose_json keeps native model metadata, available word/segment timestamps and optional hotword/speaker blocks. Times are seconds. text/srt/vtt return text; supported formats depend on this operation. HTTP chunked upload returns one final response, not SSE.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceTranscript</code></p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-36">POST /v1/audio/speech</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>请求体：application/json</p>
+<p><code>SpeechRequest</code></p>
+<p>响应 200 — Binary audio in response_format; raw pcm is not a WAV container.</p>
+<p><code>audio/mpeg</code></p>
+<p><code>string</code></p>
+<p><code>audio/wav</code></p>
+<p><code>string</code></p>
+<p><code>audio/ogg</code></p>
+<p><code>string</code></p>
+<p><code>audio/aac</code></p>
+<p><code>string</code></p>
+<p><code>audio/flac</code></p>
+<p><code>string</code></p>
+<p><code>application/octet-stream</code></p>
+<p><code>string</code></p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-37">GET /v1/audio/voices</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<ul>
+<li><code>query: model</code> · string · 可选 ·</li>
+</ul>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>default_voice</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>data</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-38">GET /api/v1/scheduler/binding</h3>
+<p>身份：公开接口 / 按文中调用边界</p>
+<p>Public redacted automatic-binding status; never returns service credentials.</p>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>protocol_version</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>binding_revision</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>configured</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>approved_model_count</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-39">POST /api/v1/scheduler/binding</h3>
+<p>身份：VOSApplicationBearer</p>
+<p>VOS Scheduler application only: validate and atomically apply a versioned binding.</p>
+<p>The server-to-server JSON contract is documented in docs/scheduler-auto-binding.md.
+User tokens, including administrator user tokens, cannot configure this endpoint.</p>
+<p>请求体：application/json</p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>protocol_version</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td>· const=1</td>
+</tr>
+<tr>
+  <td><code>binding_revision</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td>· minimum=1.0</td>
+</tr>
+<tr>
+  <td><code>app_id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>· const=&quot;com.ictrek.v-voice&quot;</td>
+</tr>
+<tr>
+  <td><code>url</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Must match fixed VVOICE_SCHEDULER_URL. Default is http://v-scheduler:8080/scheduler/api/v1; v-router is a compatibility alias. The controller also listens at http://v-scheduler:38120/api/v1.</td>
+</tr>
+<tr>
+  <td><code>token</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>· minLength=32 · maxLength=4096</td>
+</tr>
+<tr>
+  <td><code>executor_token</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>· minLength=32 · maxLength=4096</td>
+</tr>
+<tr>
+  <td><code>upstream_url</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Must match V-Voice's advertised native upstream URL</td>
+</tr>
+<tr>
+  <td><code>models</code></td>
+  <td>object</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>gateway_executors</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>secondary_models</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>input_limits_version</code></td>
+  <td>integer  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>mixed_input_limits_version</code></td>
+  <td>integer  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>legacy_unbounded_models</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>可选</td>
+  <td>Explicit old approvals only; disjoint from model_limits, together covering models. Does not grant an executor or alter task types.</td>
+</tr>
+<tr>
+  <td><code>model_limits</code></td>
+  <td>object  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>execution_settings</code></td>
+  <td>object  /  null</td>
+  <td>可选</td>
+  <td>Optional calibrated runtime settings retained for binding-document compatibility.</td>
+</tr>
+</tbody>
+</table>
+<p>响应 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>protocol_version</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>binding_revision</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>configured</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>approved_model_count</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-40">POST /studio-api/call</h3>
+<p>身份：VOSUserBearer</p>
+<p>Private user RPC: projects, music/score generation, job polling/cancellation and voices.</p>
+<p>Returns result or error (check error even on HTTP 200). generation.start returns a job ID;
+poll state.get activity/history and read results only after Scheduler-confirmed success.
+Model download/cancel additionally require an administrator. The Go adapter enforces
+identity, method allowlist, payload validation, user isolation and scheduling.
+These are not OpenAI-standard music endpoints or gateway-forwarded public APIs.</p>
+<p>请求体：application/json</p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>method</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>· enum=[&quot;state.get&quot;, &quot;draft.save&quot;, &quot;draft.delete&quot;, &quot;generation.start&quot;, &quot;generation.cue&quot;, &quot;character.save&quot;, &quot;character.preview&quot;, &quot;character.delete&quot;, &quot;character.discardPreview&quot;, &quot;voice.fromGeneration&quot;, &quot;voice.update&quot;, &quot;voice.record&quot;, &quot;timeline.import&quot;, &quot;media.rename&quot;, &quot;media.delete&quot;, &quot;operation.cancel&quot;, &quot;preferences.save&quot;, &quot;model.download&quot;, &quot;model.cancel&quot;, &quot;model.forget&quot;, &quot;runtime.unload&quot;, &quot;diag.client&quot;]</td>
+</tr>
+<tr>
+  <td><code>data</code></td>
+  <td>object</td>
+  <td>必填</td>
+  <td>Method-specific payload. generation.start accepts a Draft with bare creator modelId; kind music or score selects music generation or soundfont rendering.</td>
+</tr>
+<tr>
+  <td><code>requestId</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Stable generation idempotency key; retry with identical data</td>
+</tr>
+</tbody>
+</table>
+<p>响应 200 — Check error even on HTTP200. result is method-specific: state.get returns state/catalog metadata, generation returns job ID; poll until confirmed success before reading media. See the complete workbench workflow and native schema in the guide.</p>
+<p><code>application/json</code></p>
+<p><code>object | object</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="zh-section-41">GET /studio-api/media/{kind}/{file_name}</h3>
+<p>身份：VOSUserBearer</p>
+<p>Download a reference voice or completed output belonging to the authenticated user.</p>
+<p>Obtain file_name from state.get history/voices; internal filesystem paths are not accepted.</p>
+<ul>
+<li><p><code>path: kind</code> · string · 必填 ·</p>
+</li>
+<li><p><code>path: file_name</code> · string · 必填 ·</p>
+</li>
+</ul>
+<p>响应 200 — User-owned audio file</p>
+<p><code>application/json</code></p>
+<p><code>JSON</code></p>
+<p><code>audio/wav</code></p>
+<p><code>string</code></p>
+<p>响应 401 — VOS user authentication required</p>
+<p>响应 404 — Missing, foreign or not-yet-approved result</p>
+<p>响应 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>响应 default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h2 id="zh-section-42">共享数据结构</h2>
+<p>字段保持 API 的原始拼写；JSON 任意扩展字段按其所属服务说明解释。</p>
+<h3 id="zh-section-43">Body_enroll_speaker_api_v1_speakers_post</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Display name of the enrolled speaker</td>
+</tr>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Enrollment audio (speech from this speaker)</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Ready speaker model key · default=&quot;speaker-campplus-zh-en&quot;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-44">Body_import_hotword_set_api_v1_hotwords_import_post</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Display name of the hotword set</td>
+</tr>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>UTF-8 hotword table, one phrase per line</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-45">Body_speakers_identify_v1_audio_speakers_identify_post</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Audio to attribute to an enrolled speaker</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Ready speaker model key · default=&quot;speaker-campplus-zh-en&quot;</td>
+</tr>
+<tr>
+  <td><code>threshold</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td>Cosine similarity threshold · default=0.6 · minimum=0.0 · maximum=1.0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-46">Body_speakers_verify_v1_audio_speakers_verify_post</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Audio to verify against a speaker</td>
+</tr>
+<tr>
+  <td><code>speaker</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Enrolled speaker id or exact name</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Ready speaker model key · default=&quot;speaker-campplus-zh-en&quot;</td>
+</tr>
+<tr>
+  <td><code>threshold</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td>Cosine similarity threshold · default=0.6 · minimum=0.0 · maximum=1.0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-47">Body_transcriptions_v1_audio_transcriptions_post</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Audio file to recognize</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Ready ASR model key from /api/v1/discovery</td>
+</tr>
+<tr>
+  <td><code>language</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Language code; empty lets the model decide · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>response_format</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>json, verbose_json, text, srt, or vtt · default=&quot;json&quot;</td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Comma/newline-separated phrases; SeACo, Qwen3-ASR or Zipformer · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>hotwords_file</code></td>
+  <td>string  /  null</td>
+  <td>可选</td>
+  <td>UTF-8 text, one phrase per line</td>
+</tr>
+<tr>
+  <td><code>hotwords_score</code></td>
+  <td>number  /  null</td>
+  <td>可选</td>
+  <td>Zipformer contextual-bias score from 0 to 10; ignored by other models</td>
+</tr>
+<tr>
+  <td><code>hotwords_set</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>可选</td>
+  <td>Repeatable saved hotword set id from /api/v1/hotwords; merged with hotwords and hotwords_file</td>
+</tr>
+<tr>
+  <td><code>timestamp_granularities[]</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>可选</td>
+  <td>Repeat with word and/or segment; verbose_json includes every available timestamp granularity</td>
+</tr>
+<tr>
+  <td><code>speaker_model</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Optional ready speaker model key; adds a speaker attribution block to verbose_json · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>speaker_threshold</code></td>
+  <td>number  /  null</td>
+  <td>可选</td>
+  <td>Cosine similarity threshold for the speaker block; default 0.6</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-48">Body_translations_v1_audio_translations_post</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Audio file to translate</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Ready ASR model key from /api/v1/discovery</td>
+</tr>
+<tr>
+  <td><code>language</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Input language code; empty lets the model decide · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>response_format</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>json, verbose_json, text, srt, or vtt · default=&quot;json&quot;</td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Comma/newline-separated phrases; SeACo, Qwen3-ASR or Zipformer · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>hotwords_file</code></td>
+  <td>string  /  null</td>
+  <td>可选</td>
+  <td>UTF-8 text, one phrase per line</td>
+</tr>
+<tr>
+  <td><code>hotwords_score</code></td>
+  <td>number  /  null</td>
+  <td>可选</td>
+  <td>Zipformer contextual-bias score from 0 to 10; ignored by other models</td>
+</tr>
+<tr>
+  <td><code>hotwords_set</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>可选</td>
+  <td>Repeatable saved hotword set id from /api/v1/hotwords; merged with hotwords and hotwords_file</td>
+</tr>
+<tr>
+  <td><code>timestamp_granularities[]</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>可选</td>
+  <td>Repeat with word and/or segment; verbose_json includes every available timestamp granularity</td>
+</tr>
+<tr>
+  <td><code>speaker_model</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Optional ready speaker model key; adds a speaker attribution block to verbose_json · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>speaker_threshold</code></td>
+  <td>number  /  null</td>
+  <td>可选</td>
+  <td>Cosine similarity threshold for the speaker block; default 0.6</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-49">HTTPValidationError</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>array&lt;ValidationError&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-50">HotwordSetCreate</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Display name of the hotword set · minLength=1 · maxLength=64</td>
+</tr>
+<tr>
+  <td><code>phrases</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>可选</td>
+  <td>Phrases; preferred over phrases_text when both are sent</td>
+</tr>
+<tr>
+  <td><code>phrases_text</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Comma/newline-separated phrases; used when phrases is empty · default=&quot;&quot; · maxLength=8192</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-51">HotwordSetUpdate</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>name</code></td>
+  <td>string  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>phrases</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-52">SpeechRequest</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Ready TTS model key from /api/v1/discovery</td>
+</tr>
+<tr>
+  <td><code>input</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td>Text to synthesize · minLength=1 · maxLength=20000</td>
+</tr>
+<tr>
+  <td><code>voice</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Voice ID returned by /v1/audio/voices for this model · default=&quot;default&quot;</td>
+</tr>
+<tr>
+  <td><code>response_format</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Binary output audio format · default=&quot;mp3&quot; · enum=[&quot;mp3&quot;, &quot;opus&quot;, &quot;aac&quot;, &quot;flac&quot;, &quot;wav&quot;, &quot;pcm&quot;]</td>
+</tr>
+<tr>
+  <td><code>speed</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td>Speech speed multiplier · default=1.0 · minimum=0.25 · maximum=4.0</td>
+</tr>
+<tr>
+  <td><code>language</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>Language code; empty uses the model/voice default · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>reference_audio</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>audio.cpp only: base64 reference audio; not a server file path · default=&quot;&quot; · maxLength=28000000</td>
+</tr>
+<tr>
+  <td><code>reference_text</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>audio.cpp only: reference audio transcript · default=&quot;&quot; · maxLength=2000</td>
+</tr>
+<tr>
+  <td><code>voice_description</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>audio.cpp only: voice design instruction · default=&quot;&quot; · maxLength=500</td>
+</tr>
+<tr>
+  <td><code>emotion_text</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td>IndexTTS only: emotion instruction; requires emotion_control capability · default=&quot;&quot; · maxLength=500</td>
+</tr>
+<tr>
+  <td><code>emotion_strength</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td>IndexTTS only: emotion strength · default=0.6 · minimum=0.0 · maximum=1.0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-53">ValidationError</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>loc</code></td>
+  <td>array&lt;string  /  integer&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>msg</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>type</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>input</code></td>
+  <td>JSON</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>ctx</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-54">VoiceManagedModel</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>key</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>kind</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>family</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>backend</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>modelscope_repo</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>languages</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>description</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>translation</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>loaded</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>inference_ready</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>inference_error</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>progress</code></td>
+  <td>number  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>downloaded_bytes</code></td>
+  <td>integer  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>total_bytes</code></td>
+  <td>integer  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>import_required</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.{key}.sid</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.{key}.language</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.supported</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.formats</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.score</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.default_score</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.word</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.segment</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.source</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-55">VoicePublicModel</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>owned_by</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>kind</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>capabilities</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>endpoints</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>languages</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.supported</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.formats</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.score</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.default_score</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.word</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.segment</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.source</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming.supported</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming.transports</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming.hotwords</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.endpoint</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.default</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.count</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-56">VoiceHotwordSet</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>phrases</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>phrase_count</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>created_at</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>updated_at</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>formats</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-57">VoiceSpeaker</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>created_at</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>dimension</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-58">VoiceTranscript</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>text</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>language</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>duration</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>words</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>segments</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>tokens</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps</code></td>
+  <td>array&lt;number&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>emotion</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>event</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.requested</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.supported</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.applied</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.sets</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.score_applied</code></td>
+  <td>number  /  null</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.ignored</code></td>
+  <td>boolean</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker</code></td>
+  <td>object</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.model</code></td>
+  <td>string</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.threshold</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.identified</code></td>
+  <td>boolean</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.speaker</code></td>
+  <td>object  /  null</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.score</code></td>
+  <td>number</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.ranked</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>可选</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="zh-section-59">VoiceSchedulerContract</h3>
+<table>
+<thead>
+<tr>
+  <th>字段</th>
+  <th>类型</th>
+  <th>要求</th>
+  <th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>protocol_version</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>input_limits_version</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>mixed_input_limits_version</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>app_id</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>binding_endpoint</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>lifecycle_protocol_version</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>executor_base_url</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>upstream_url</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>sync_models</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>async_models</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>num_threads</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_concurrent_inference</code></td>
+  <td>integer</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>cpu_models</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>provider</code></td>
+  <td>string</td>
+  <td>必填</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+</article><article id="en-doc" lang="en"><details open><summary>Quick navigation</summary><a href="#en-section-1">Choose the correct API</a> · <a href="#en-section-2">Identity, keys and permissions</a> · <a href="#en-section-3">Models, downloading, budgets and stopping</a> · <a href="#en-section-4">ASR and TTS fields</a> · <a href="#en-section-5">HTTP streaming and WebSocket</a> · <a href="#en-section-6">Private workbench RPC and tasks</a> · <a href="#en-section-7">Operations and responses</a> · <a href="#en-section-8">GET /health</a> · <a href="#en-section-9">GET /ready</a> · <a href="#en-section-10">GET /api/v1/about</a> · <a href="#en-section-11">GET /api/v1/discovery</a> · <a href="#en-section-12">GET /api/v1/models</a> · <a href="#en-section-13">GET /api/v1/models/{key}/input-limits</a> · <a href="#en-section-14">GET /api/v1/creative-models</a> · <a href="#en-section-15">POST /api/v1/models/{key}/pull</a> · <a href="#en-section-16">POST /api/v1/models/{key}/stop</a> · <a href="#en-section-17">POST /api/v1/models/{key}/unload</a> · <a href="#en-section-18">GET /api/v1/hotwords</a> · <a href="#en-section-19">POST /api/v1/hotwords</a> · <a href="#en-section-20">POST /api/v1/hotwords/import</a> · <a href="#en-section-21">GET /api/v1/hotwords/{set_id}</a> · <a href="#en-section-22">PATCH /api/v1/hotwords/{set_id}</a> · <a href="#en-section-23">DELETE /api/v1/hotwords/{set_id}</a> · <a href="#en-section-24">GET /api/v1/hotwords/{set_id}/export</a> · <a href="#en-section-25">GET /v1/models</a> · <a href="#en-section-26">POST /v1/audio/transcriptions</a> · <a href="#en-section-27">POST /v1/audio/translations</a> · <a href="#en-section-28">POST /v1/audio/streaming/transcriptions</a> · <a href="#en-section-29">GET /api/v1/speakers</a> · <a href="#en-section-30">POST /api/v1/speakers</a> · <a href="#en-section-31">DELETE /api/v1/speakers/{speaker_id}</a> · <a href="#en-section-32">GET /v1/audio/speakers</a> · <a href="#en-section-33">POST /v1/audio/speakers/identify</a> · <a href="#en-section-34">POST /v1/audio/speakers/verify</a> · <a href="#en-section-35">POST /transcribe</a> · <a href="#en-section-36">POST /v1/audio/speech</a> · <a href="#en-section-37">GET /v1/audio/voices</a> · <a href="#en-section-38">GET /api/v1/scheduler/binding</a> · <a href="#en-section-39">POST /api/v1/scheduler/binding</a> · <a href="#en-section-40">POST /studio-api/call</a> · <a href="#en-section-41">GET /studio-api/media/{kind}/{file_name}</a> · <a href="#en-section-42">Shared data types</a> · <a href="#en-section-43">Body_enroll_speaker_api_v1_speakers_post</a> · <a href="#en-section-44">Body_import_hotword_set_api_v1_hotwords_import_post</a> · <a href="#en-section-45">Body_speakers_identify_v1_audio_speakers_identify_post</a> · <a href="#en-section-46">Body_speakers_verify_v1_audio_speakers_verify_post</a> · <a href="#en-section-47">Body_transcriptions_v1_audio_transcriptions_post</a> · <a href="#en-section-48">Body_translations_v1_audio_translations_post</a> · <a href="#en-section-49">HTTPValidationError</a> · <a href="#en-section-50">HotwordSetCreate</a> · <a href="#en-section-51">HotwordSetUpdate</a> · <a href="#en-section-52">SpeechRequest</a> · <a href="#en-section-53">ValidationError</a> · <a href="#en-section-54">VoiceManagedModel</a> · <a href="#en-section-55">VoicePublicModel</a> · <a href="#en-section-56">VoiceHotwordSet</a> · <a href="#en-section-57">VoiceSpeaker</a> · <a href="#en-section-58">VoiceTranscript</a> · <a href="#en-section-59">VoiceSchedulerContract</a></details><h1>V-Voice API reference</h1>
+<h2 id="en-section-1">Choose the correct API</h2>
+<p>VOS speech uses <code>http://v-voice-backend:7070</code>, default host mapping <code>http://&lt;vos-host&gt;:22700</code>, or same-origin <code>/app/com.ictrek.v-voice</code>. Append <code>/api-guide#en</code> for the complete guide, <code>/docs</code> for interactive fields, or <code>/openapi.json</code> for the active HTTP contract. The workbench API page retains its examples and links to this reference. Preserve the installed profile and shared weights; users do not deploy agents manually.</p>
+<p>These are VOS service contracts. The desktop/CLI <code>/v1/generations</code> and MCP server use a separate configured token, data directory and startup flow documented in docs/api.md. A CLI token is not a VOS workbench identity. Newly added desktop features are not automatically enabled on VOS.</p>
+<h2 id="en-section-2">Identity, keys and permissions</h2>
+<p>Native <code>/v1/*</code>, legacy <code>/transcribe</code>, hotword sets and speaker profiles are shared services without per-user isolation. They do not issue personal client API keys, and an arbitrary key does not establish VOS identity. Discovery declares authentication=none. Dependent apps should use V-Scheduler's unified <code>/v1/*</code> with a personal/model key or VOS identity; Scheduler owns public/private visibility. Provider keys, internal execution tokens and client access keys are different credentials.</p>
+<p>Private <code>/studio-api/*</code> verifies a VOS Bearer token server-side through userinfo and isolates projects, history and reference voices. Workbench model.download/model.cancel require system_admin/platform_admin. Native Python model pull/stop/unload and shared hotword/speaker administration do not enforce the same per-user management authentication; use the existing trusted service boundary. Do not assume a workbench administrator check protects every native HTTP route.</p>
+<p>POST <code>/api/v1/scheduler/binding</code> accepts only the Scheduler's VOS <strong>application identity</strong>, including rejection of administrator user tokens. GET returns only protocol_version, binding_revision, configured and approved_model_count. configured=true means a configuration exists, not that model approval, weights and calibration have passed inference. Internal executor calls require Scheduler execution credentials, execution ID and attempt/fence; ordinary Agents must not fabricate them.</p>
+<h2 id="en-section-3">Models, downloading, budgets and stopping</h2>
+<p><code>/api/v1/models</code> is the speech management catalog; <code>/api/v1/creative-models</code> includes music and soundfont variants. Existing files undergo background verification: verifying is not ready. ready concerns files, while ASR inference_ready checks node approval/calibration and does not guarantee free capacity. <code>/v1/models</code> and discovery publish ready ASR/TTS/speaker service models; the creative catalog does not imply every entry supports public synchronous speech.</p>
+<p>Download202 is acceptance, not completion: poll status/progress/error. force=true requests update while retaining other installed variants in the shared repository. Import-only models return409 and require administrator-provided original weights. stop cancels downloads and returns status=cancelled/not_running plus tasks; unload releases a resident runtime without deleting weights. Use operation.cancel for the user's inference task. DELETE removes the corresponding saved data.</p>
+<p>Query <code>/api/v1/models/{key}/input-limits</code> for approved limits. null means an existing compatible approval path, not unlimited resources. New approvals require calibration on the actual node. ASR uses duration_seconds, sample_rate, input_bytes and hotwords_characters; Kokoro uses text_characters and speed_min/max. Combined hotwords, speaker attribution or translation may return422 when uncalibrated. HTTP503 means missing model approval/binding/calibration,429 busy,413 input limit,422 invalid or unsupported input,409 weights not ready. Failure never grants automatic direct admission.</p>
+<h2 id="en-section-4">ASR and TTS fields</h2>
+<p>Transcriptions/translations use multipart file and model. hotwords_set is repeatable; supported models merge saved sets, text and uploaded words. The field name <code>timestamp_granularities[]</code> includes brackets and accepts repeated word/segment values. json returns text only; verbose_json retains native available words/segments, hotwords and optional speaker information. Timestamps use seconds. text/srt/vtt return text. The smaller global upload and approved model limit applies.</p>
+<p>Speech uses JSON, with model from discovery and voice from <code>/v1/audio/voices?model=...</code>. response_format selects binary audio; pcm has no WAV header. reference_audio is pure Base64 audio, not a server path. reference_text, voice_description and emotion_text/strength require the corresponding model capability and approval. Desktop support alone does not approve public synchronous execution.</p>
+<h2 id="en-section-5">HTTP streaming and WebSocket</h2>
+<p>HTTP <code>/v1/audio/streaming/transcriptions</code> takes raw chunked audio and query parameters, not multipart. It returns one final response after upload ends, not SSE. pcm is s16le mono at sample_rate (default16000); wav uses its header; auto buffers until the end.</p>
+<p>WebSocket <code>/v1/audio/streaming/ws?model=...</code> receives binary PCM/WAV frames and sends <code>{type:&quot;partial&quot;,text,is_endpoint}</code>. Send text <code>{&quot;type&quot;:&quot;finish&quot;}</code> and await <code>{type:&quot;final&quot;,...native result}</code>. Disconnect is primarily cancellation and does not guarantee delivery of final output. Errors send <code>{type:&quot;error&quot;,detail}</code> and close, commonly4404/4409/4422/4500; admission can map other44xx codes. WebSocket is documented here rather than in the HTTP OpenAPI route table.</p>
+<h2 id="en-section-6">Private workbench RPC and tasks</h2>
+<p>POST <code>/studio-api/call</code> takes method, data and a32-character lowercase hexadecimal requestId. Keep the same ID and payload for a generation retry; conflicting reuse is not a new job. Check error even on HTTP200. result is method-specific. generation.start/cue, character.preview, generation.alignLyrics and melody.plan/cover/listen queue through Scheduler; acceptance does not mean audio is finished. Poll state.get result.state.activity/history and download <code>/studio-api/media/outputs/{fileName}</code> only after Scheduler-confirmed success. Foreign/unapproved outputs return404. References use the voices media kind.</p>
+<p>Allowed browser methods: state.get; preferences.save (uiLocale only); draft.save/delete; generation.start/cue/alignLyrics/lyricTimes/lyricWords; character.save/preview/delete/discardPreview; voice.fromGeneration/suggest/update/record; timeline.import/fromGeneration; media.rename/delete; melody.inspect/transform/dismiss/plan/cover/listen/result; operation.cancel; diag.client; model.download/cancel/forget; runtime.unload. Other desktop RPCs are not generally available: arbitrary filesystem paths and external commands are prohibited. Exact data follows the same-version Draft/Character/State schemas in internal/schema and method branches in internal/desktop/rpc.go and internal/vos/server.go. Do not interpret every native result as a job ID.</p>
+<pre><code class="language-bash"># Shared speech through Scheduler, using its complete catalog ID.
+curl --fail-with-body 'http://&lt;vos-host&gt;:22888/v1/audio/transcriptions' -H &quot;Authorization: Bearer $SCHEDULER_KEY&quot; -F 'model=&lt;qualified-asr-model&gt;' -F file=@sample.wav -F response_format=verbose_json
+# Private workbench requires VOS identity, not a Scheduler model key.
+curl --fail-with-body 'http://&lt;vos-host&gt;:22700/studio-api/call' -H &quot;Authorization: Bearer $VOS_TOKEN&quot; -H 'Content-Type: application/json' -d '{&quot;method&quot;:&quot;state.get&quot;,&quot;data&quot;:{},&quot;requestId&quot;:&quot;0123456789abcdef0123456789abcdef&quot;}'
+</code></pre>
+<h2 id="en-section-7">Operations and responses</h2>
+<h3 id="en-section-8">GET /health</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>version</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>provider</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-9">GET /ready</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>ready</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model_hub_root</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler</code></td>
+  <td>object</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler.configured</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler.binding_revision</code></td>
+  <td>integer</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler.protocol_version</code></td>
+  <td>integer</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler.approved_model_count</code></td>
+  <td>integer</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-10">GET /api/v1/about</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>app_id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>app_version</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>profile</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>provider</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>port</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>supported_asr_families</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>supported_tts_families</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>supported_speaker_families</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming_asr</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_loaded_models</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_concurrent_inference</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_concurrent_per_model</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-11">GET /api/v1/discovery</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>service_id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>protocol</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>visibility</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>multi_tenant</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>authentication</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>base_url</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>health_path</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>models</code></td>
+  <td>array&lt;VoicePublicModel&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>scheduler</code></td>
+  <td>VoiceSchedulerContract</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-12">GET /api/v1/models</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>array&lt;VoiceManagedModel&gt;</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-13">GET /api/v1/models/{key}/input-limits</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><code>path: key</code> · string · Required ·</li>
+</ul>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>limits</code></td>
+  <td>object  /  null</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_upload_bytes</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-14">GET /api/v1/creative-models</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>All creator precisions and soundfonts; management metadata, not speech discovery.</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>array&lt;VoiceManagedModel&gt;</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-15">POST /api/v1/models/{key}/pull</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><p><code>path: key</code> · string · Required ·</p>
+</li>
+<li><p><code>query: force</code> · boolean · Optional ·</p>
+</li>
+</ul>
+<p>Response 202 — 202 means download accepted, not installed. Existing task returns status=active/detail; otherwise the native V-Scheduler weight-service task response is forwarded. See its /openapi.json and poll /api/v1/models for ready/error.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>detail</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>task_id</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model_id</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>phase</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-16">POST /api/v1/models/{key}/stop</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><code>path: key</code> · string · Required ·</li>
+</ul>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>tasks</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-17">POST /api/v1/models/{key}/unload</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><code>path: key</code> · string · Required ·</li>
+</ul>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-18">GET /api/v1/hotwords</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>List saved hotword sets with their derived per-model format tables.</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>array&lt;VoiceHotwordSet&gt;</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-19">POST /api/v1/hotwords</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Request body: application/json</p>
+<p><code>HotwordSetCreate</code></p>
+<p>Response 201 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceHotwordSet</code></p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-20">POST /api/v1/hotwords/import</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Request body: multipart/form-data</p>
+<p><code>Body_import_hotword_set_api_v1_hotwords_import_post</code></p>
+<p>Response 201 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceHotwordSet</code></p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-21">GET /api/v1/hotwords/{set_id}</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><code>path: set_id</code> · string · Required ·</li>
+</ul>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceHotwordSet</code></p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-22">PATCH /api/v1/hotwords/{set_id}</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><code>path: set_id</code> · string · Required ·</li>
+</ul>
+<p>Request body: application/json</p>
+<p><code>HotwordSetUpdate</code></p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceHotwordSet</code></p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-23">DELETE /api/v1/hotwords/{set_id}</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><code>path: set_id</code> · string · Required ·</li>
+</ul>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-24">GET /api/v1/hotwords/{set_id}/export</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><p><code>path: set_id</code> · string · Required ·</p>
+</li>
+<li><p><code>query: format</code> · string · Optional · text, qwen3, or zipformer</p>
+</li>
+</ul>
+<p>Response 200 — UTF-8 hotword file; Content-Disposition supplies its name.</p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-25">GET /v1/models</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>data</code></td>
+  <td>array&lt;VoicePublicModel&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-26">POST /v1/audio/transcriptions</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Request body: multipart/form-data</p>
+<p><code>Body_transcriptions_v1_audio_transcriptions_post</code></p>
+<p>Response 200 — json returns text only; verbose_json keeps native model metadata, available word/segment timestamps and optional hotword/speaker blocks. Times are seconds. text/srt/vtt return text; supported formats depend on this operation. HTTP chunked upload returns one final response, not SSE.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceTranscript</code></p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>Response 404 — ASR model key does not exist or is not an ASR model</p>
+<p>Response 409 — Model exists but its files are not ready</p>
+<p>Response 413 — Audio upload is larger than the configured limit</p>
+<p>Response 422 — Invalid field, hotword file, hotword limit, score, or model capability</p>
+<p>Response 500 — Audio decoding or inference failed</p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-27">POST /v1/audio/translations</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Request body: multipart/form-data</p>
+<p><code>Body_translations_v1_audio_translations_post</code></p>
+<p>Response 200 — json returns text only; verbose_json keeps native model metadata, available word/segment timestamps and optional hotword/speaker blocks. Times are seconds. text/srt/vtt return text; supported formats depend on this operation. HTTP chunked upload returns one final response, not SSE.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceTranscript</code></p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>Response 404 — ASR model key does not exist or is not an ASR model</p>
+<p>Response 409 — Model exists but its files are not ready</p>
+<p>Response 413 — Audio upload is larger than the configured limit</p>
+<p>Response 422 — Invalid field, hotword file, hotword limit, score, or model capability</p>
+<p>Response 500 — Audio decoding or inference failed</p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-28">POST /v1/audio/streaming/transcriptions</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Realtime streaming transcription over a chunked HTTP request body.</p>
+<p>The body is audio transmitted incrementally; V-Voice feeds every chunk into
+the OnlineRecognizer as it arrives and returns the final transcript when the
+body ends. Use <code>format=pcm</code> or <code>wav</code> for true incremental decoding;
+<code>auto</code> buffers the whole body and decodes once.</p>
+<ul>
+<li><p><code>query: model</code> · string · Required · Ready streaming ASR model key from /api/v1/discovery</p>
+</li>
+<li><p><code>query: language</code> · string · Optional · Kept for contract symmetry; streaming models auto-detect</p>
+</li>
+<li><p><code>query: format</code> · string · Optional · pcm (raw s16le mono), wav (uncompressed mono RIFF), or auto (buffered, decoded at end)</p>
+</li>
+<li><p><code>query: sample_rate</code> · integer · Optional · Sample rate for format=pcm; wav uses its header</p>
+</li>
+<li><p><code>query: response_format</code> · string · Optional · verbose_json, json, or text</p>
+</li>
+<li><p><code>query: hotwords</code> · string · Optional · One-shot comma/newline-separated phrases for hotword-capable streaming models</p>
+</li>
+<li><p><code>query: hotwords_set</code> · array&lt;string&gt; | null · Optional · Repeatable saved hotword set id from /api/v1/hotwords</p>
+</li>
+<li><p><code>query: hotwords_score</code> · number | null · Optional · Contextual-bias score from 0 to 10; streaming Zipformer only</p>
+</li>
+<li><p><code>query: speaker_model</code> · string · Optional · Optional ready speaker model key; adds a speaker attribution block to the final response</p>
+</li>
+<li><p><code>query: speaker_threshold</code> · number | null · Optional · Cosine similarity threshold for the speaker block; default 0.6</p>
+</li>
+</ul>
+<p>Request body: application/octet-stream</p>
+<p><code>string</code></p>
+<p>Response 200 — json returns text only; verbose_json keeps native model metadata, available word/segment timestamps and optional hotword/speaker blocks. Times are seconds. text/srt/vtt return text; supported formats depend on this operation. HTTP chunked upload returns one final response, not SSE.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceTranscript</code></p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>Response 404 — ASR model key does not exist or is not an ASR model</p>
+<p>Response 409 — Model exists but its files are not ready</p>
+<p>Response 413 — Audio upload is larger than the configured limit</p>
+<p>Response 422 — Invalid field, hotword file, hotword limit, score, or model capability</p>
+<p>Response 500 — Audio decoding or inference failed</p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-29">GET /api/v1/speakers</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>List enrolled voiceprints (management plane).</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>array&lt;VoiceSpeaker&gt;</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-30">POST /api/v1/speakers</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Enroll a speaker voiceprint from uploaded audio.</p>
+<p>Request body: multipart/form-data</p>
+<p><code>Body_enroll_speaker_api_v1_speakers_post</code></p>
+<p>Response 201 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceSpeaker</code></p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-31">DELETE /api/v1/speakers/{speaker_id}</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><code>path: speaker_id</code> · string · Required ·</li>
+</ul>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-32">GET /v1/audio/speakers</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Public list of enrolled voiceprints for dependent clients.</p>
+<ul>
+<li><code>query: model</code> · string · Optional · Ready speaker model key</li>
+</ul>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>default_threshold</code></td>
+  <td>number</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speakers</code></td>
+  <td>array&lt;VoiceSpeaker&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>data</code></td>
+  <td>array&lt;VoiceSpeaker&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-33">POST /v1/audio/speakers/identify</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Identify which enrolled speaker (if any) spoke in the audio.</p>
+<p>Request body: multipart/form-data</p>
+<p><code>Body_speakers_identify_v1_audio_speakers_identify_post</code></p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>threshold</code></td>
+  <td>number</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>identified</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker</code></td>
+  <td>object  /  null</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>score</code></td>
+  <td>number</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>ranked</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-34">POST /v1/audio/speakers/verify</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Verify the audio against one enrolled speaker voiceprint.</p>
+<p>Request body: multipart/form-data</p>
+<p><code>Body_speakers_verify_v1_audio_speakers_verify_post</code></p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker</code></td>
+  <td>VoiceSpeaker</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>threshold</code></td>
+  <td>number</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>score</code></td>
+  <td>number</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>verified</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-35">POST /transcribe</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><p><code>query: model</code> · string · Optional ·</p>
+</li>
+<li><p><code>query: lang</code> · string · Optional ·</p>
+</li>
+</ul>
+<p>Request body: application/octet-stream</p>
+<p><code>string</code></p>
+<p>Response 200 — json returns text only; verbose_json keeps native model metadata, available word/segment timestamps and optional hotword/speaker blocks. Times are seconds. text/srt/vtt return text; supported formats depend on this operation. HTTP chunked upload returns one final response, not SSE.</p>
+<p><code>application/json</code></p>
+<p><code>VoiceTranscript</code></p>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-36">POST /v1/audio/speech</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Request body: application/json</p>
+<p><code>SpeechRequest</code></p>
+<p>Response 200 — Binary audio in response_format; raw pcm is not a WAV container.</p>
+<p><code>audio/mpeg</code></p>
+<p><code>string</code></p>
+<p><code>audio/wav</code></p>
+<p><code>string</code></p>
+<p><code>audio/ogg</code></p>
+<p><code>string</code></p>
+<p><code>audio/aac</code></p>
+<p><code>string</code></p>
+<p><code>audio/flac</code></p>
+<p><code>string</code></p>
+<p><code>application/octet-stream</code></p>
+<p><code>string</code></p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-37">GET /v1/audio/voices</h3>
+<p>Identity: public operation / boundary described above</p>
+<ul>
+<li><code>query: model</code> · string · Optional ·</li>
+</ul>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>default_voice</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>data</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-38">GET /api/v1/scheduler/binding</h3>
+<p>Identity: public operation / boundary described above</p>
+<p>Public redacted automatic-binding status; never returns service credentials.</p>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>protocol_version</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>binding_revision</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>configured</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>approved_model_count</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-39">POST /api/v1/scheduler/binding</h3>
+<p>Identity: VOSApplicationBearer</p>
+<p>VOS Scheduler application only: validate and atomically apply a versioned binding.</p>
+<p>The server-to-server JSON contract is documented in docs/scheduler-auto-binding.md.
+User tokens, including administrator user tokens, cannot configure this endpoint.</p>
+<p>Request body: application/json</p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>protocol_version</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td>· const=1</td>
+</tr>
+<tr>
+  <td><code>binding_revision</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td>· minimum=1.0</td>
+</tr>
+<tr>
+  <td><code>app_id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>· const=&quot;com.ictrek.v-voice&quot;</td>
+</tr>
+<tr>
+  <td><code>url</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Must match fixed VVOICE_SCHEDULER_URL. Default is http://v-scheduler:8080/scheduler/api/v1; v-router is a compatibility alias. The controller also listens at http://v-scheduler:38120/api/v1.</td>
+</tr>
+<tr>
+  <td><code>token</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>· minLength=32 · maxLength=4096</td>
+</tr>
+<tr>
+  <td><code>executor_token</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>· minLength=32 · maxLength=4096</td>
+</tr>
+<tr>
+  <td><code>upstream_url</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Must match V-Voice's advertised native upstream URL</td>
+</tr>
+<tr>
+  <td><code>models</code></td>
+  <td>object</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>gateway_executors</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>secondary_models</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>input_limits_version</code></td>
+  <td>integer  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>mixed_input_limits_version</code></td>
+  <td>integer  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>legacy_unbounded_models</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>Optional</td>
+  <td>Explicit old approvals only; disjoint from model_limits, together covering models. Does not grant an executor or alter task types.</td>
+</tr>
+<tr>
+  <td><code>model_limits</code></td>
+  <td>object  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>execution_settings</code></td>
+  <td>object  /  null</td>
+  <td>Optional</td>
+  <td>Optional calibrated runtime settings retained for binding-document compatibility.</td>
+</tr>
+</tbody>
+</table>
+<p>Response 200 — Native JSON response; extension catalog fields remain available.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>protocol_version</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>binding_revision</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>configured</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>approved_model_count</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-40">POST /studio-api/call</h3>
+<p>Identity: VOSUserBearer</p>
+<p>Private user RPC: projects, music/score generation, job polling/cancellation and voices.</p>
+<p>Returns result or error (check error even on HTTP 200). generation.start returns a job ID;
+poll state.get activity/history and read results only after Scheduler-confirmed success.
+Model download/cancel additionally require an administrator. The Go adapter enforces
+identity, method allowlist, payload validation, user isolation and scheduling.
+These are not OpenAI-standard music endpoints or gateway-forwarded public APIs.</p>
+<p>Request body: application/json</p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>method</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>· enum=[&quot;state.get&quot;, &quot;draft.save&quot;, &quot;draft.delete&quot;, &quot;generation.start&quot;, &quot;generation.cue&quot;, &quot;character.save&quot;, &quot;character.preview&quot;, &quot;character.delete&quot;, &quot;character.discardPreview&quot;, &quot;voice.fromGeneration&quot;, &quot;voice.update&quot;, &quot;voice.record&quot;, &quot;timeline.import&quot;, &quot;media.rename&quot;, &quot;media.delete&quot;, &quot;operation.cancel&quot;, &quot;preferences.save&quot;, &quot;model.download&quot;, &quot;model.cancel&quot;, &quot;model.forget&quot;, &quot;runtime.unload&quot;, &quot;diag.client&quot;]</td>
+</tr>
+<tr>
+  <td><code>data</code></td>
+  <td>object</td>
+  <td>Required</td>
+  <td>Method-specific payload. generation.start accepts a Draft with bare creator modelId; kind music or score selects music generation or soundfont rendering.</td>
+</tr>
+<tr>
+  <td><code>requestId</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Stable generation idempotency key; retry with identical data</td>
+</tr>
+</tbody>
+</table>
+<p>Response 200 — Check error even on HTTP200. result is method-specific: state.get returns state/catalog metadata, generation returns job ID; poll until confirmed success before reading media. See the complete workbench workflow and native schema in the guide.</p>
+<p><code>application/json</code></p>
+<p><code>object | object</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h3 id="en-section-41">GET /studio-api/media/{kind}/{file_name}</h3>
+<p>Identity: VOSUserBearer</p>
+<p>Download a reference voice or completed output belonging to the authenticated user.</p>
+<p>Obtain file_name from state.get history/voices; internal filesystem paths are not accepted.</p>
+<ul>
+<li><p><code>path: kind</code> · string · Required ·</p>
+</li>
+<li><p><code>path: file_name</code> · string · Required ·</p>
+</li>
+</ul>
+<p>Response 200 — User-owned audio file</p>
+<p><code>application/json</code></p>
+<p><code>JSON</code></p>
+<p><code>audio/wav</code></p>
+<p><code>string</code></p>
+<p>Response 401 — VOS user authentication required</p>
+<p>Response 404 — Missing, foreign or not-yet-approved result</p>
+<p>Response 422 — Validation Error</p>
+<p><code>application/json</code></p>
+<p><code>HTTPValidationError</code></p>
+<p>Response default — Check status and Content-Type: public speech uses FastAPI detail, user workbench/automatic binding can return plain text. 400 malformed request, 401 identity, 403 permission, 404 missing, 409 not ready/conflict, 413 input limit, 422 unsupported/calibration, 429 capacity and 503 binding/service unavailable. Do not bypass scheduling to hide the failure.</p>
+<p><code>application/json</code></p>
+<p><code>object</code></p>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<p><code>text/plain</code></p>
+<p><code>string</code></p>
+<h2 id="en-section-42">Shared data types</h2>
+<p>Field names retain their API spelling. Interpret extension metadata according to its owning service.</p>
+<h3 id="en-section-43">Body_enroll_speaker_api_v1_speakers_post</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Display name of the enrolled speaker</td>
+</tr>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Enrollment audio (speech from this speaker)</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Ready speaker model key · default=&quot;speaker-campplus-zh-en&quot;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-44">Body_import_hotword_set_api_v1_hotwords_import_post</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Display name of the hotword set</td>
+</tr>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>UTF-8 hotword table, one phrase per line</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-45">Body_speakers_identify_v1_audio_speakers_identify_post</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Audio to attribute to an enrolled speaker</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Ready speaker model key · default=&quot;speaker-campplus-zh-en&quot;</td>
+</tr>
+<tr>
+  <td><code>threshold</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td>Cosine similarity threshold · default=0.6 · minimum=0.0 · maximum=1.0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-46">Body_speakers_verify_v1_audio_speakers_verify_post</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Audio to verify against a speaker</td>
+</tr>
+<tr>
+  <td><code>speaker</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Enrolled speaker id or exact name</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Ready speaker model key · default=&quot;speaker-campplus-zh-en&quot;</td>
+</tr>
+<tr>
+  <td><code>threshold</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td>Cosine similarity threshold · default=0.6 · minimum=0.0 · maximum=1.0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-47">Body_transcriptions_v1_audio_transcriptions_post</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Audio file to recognize</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Ready ASR model key from /api/v1/discovery</td>
+</tr>
+<tr>
+  <td><code>language</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Language code; empty lets the model decide · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>response_format</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>json, verbose_json, text, srt, or vtt · default=&quot;json&quot;</td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Comma/newline-separated phrases; SeACo, Qwen3-ASR or Zipformer · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>hotwords_file</code></td>
+  <td>string  /  null</td>
+  <td>Optional</td>
+  <td>UTF-8 text, one phrase per line</td>
+</tr>
+<tr>
+  <td><code>hotwords_score</code></td>
+  <td>number  /  null</td>
+  <td>Optional</td>
+  <td>Zipformer contextual-bias score from 0 to 10; ignored by other models</td>
+</tr>
+<tr>
+  <td><code>hotwords_set</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>Optional</td>
+  <td>Repeatable saved hotword set id from /api/v1/hotwords; merged with hotwords and hotwords_file</td>
+</tr>
+<tr>
+  <td><code>timestamp_granularities[]</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>Optional</td>
+  <td>Repeat with word and/or segment; verbose_json includes every available timestamp granularity</td>
+</tr>
+<tr>
+  <td><code>speaker_model</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Optional ready speaker model key; adds a speaker attribution block to verbose_json · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>speaker_threshold</code></td>
+  <td>number  /  null</td>
+  <td>Optional</td>
+  <td>Cosine similarity threshold for the speaker block; default 0.6</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-48">Body_translations_v1_audio_translations_post</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>file</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Audio file to translate</td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Ready ASR model key from /api/v1/discovery</td>
+</tr>
+<tr>
+  <td><code>language</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Input language code; empty lets the model decide · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>response_format</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>json, verbose_json, text, srt, or vtt · default=&quot;json&quot;</td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Comma/newline-separated phrases; SeACo, Qwen3-ASR or Zipformer · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>hotwords_file</code></td>
+  <td>string  /  null</td>
+  <td>Optional</td>
+  <td>UTF-8 text, one phrase per line</td>
+</tr>
+<tr>
+  <td><code>hotwords_score</code></td>
+  <td>number  /  null</td>
+  <td>Optional</td>
+  <td>Zipformer contextual-bias score from 0 to 10; ignored by other models</td>
+</tr>
+<tr>
+  <td><code>hotwords_set</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>Optional</td>
+  <td>Repeatable saved hotword set id from /api/v1/hotwords; merged with hotwords and hotwords_file</td>
+</tr>
+<tr>
+  <td><code>timestamp_granularities[]</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>Optional</td>
+  <td>Repeat with word and/or segment; verbose_json includes every available timestamp granularity</td>
+</tr>
+<tr>
+  <td><code>speaker_model</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Optional ready speaker model key; adds a speaker attribution block to verbose_json · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>speaker_threshold</code></td>
+  <td>number  /  null</td>
+  <td>Optional</td>
+  <td>Cosine similarity threshold for the speaker block; default 0.6</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-49">HTTPValidationError</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>detail</code></td>
+  <td>array&lt;ValidationError&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-50">HotwordSetCreate</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Display name of the hotword set · minLength=1 · maxLength=64</td>
+</tr>
+<tr>
+  <td><code>phrases</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Optional</td>
+  <td>Phrases; preferred over phrases_text when both are sent</td>
+</tr>
+<tr>
+  <td><code>phrases_text</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Comma/newline-separated phrases; used when phrases is empty · default=&quot;&quot; · maxLength=8192</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-51">HotwordSetUpdate</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>name</code></td>
+  <td>string  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>phrases</code></td>
+  <td>array&lt;string&gt;  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-52">SpeechRequest</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Ready TTS model key from /api/v1/discovery</td>
+</tr>
+<tr>
+  <td><code>input</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td>Text to synthesize · minLength=1 · maxLength=20000</td>
+</tr>
+<tr>
+  <td><code>voice</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Voice ID returned by /v1/audio/voices for this model · default=&quot;default&quot;</td>
+</tr>
+<tr>
+  <td><code>response_format</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Binary output audio format · default=&quot;mp3&quot; · enum=[&quot;mp3&quot;, &quot;opus&quot;, &quot;aac&quot;, &quot;flac&quot;, &quot;wav&quot;, &quot;pcm&quot;]</td>
+</tr>
+<tr>
+  <td><code>speed</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td>Speech speed multiplier · default=1.0 · minimum=0.25 · maximum=4.0</td>
+</tr>
+<tr>
+  <td><code>language</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>Language code; empty uses the model/voice default · default=&quot;&quot;</td>
+</tr>
+<tr>
+  <td><code>reference_audio</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>audio.cpp only: base64 reference audio; not a server file path · default=&quot;&quot; · maxLength=28000000</td>
+</tr>
+<tr>
+  <td><code>reference_text</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>audio.cpp only: reference audio transcript · default=&quot;&quot; · maxLength=2000</td>
+</tr>
+<tr>
+  <td><code>voice_description</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>audio.cpp only: voice design instruction · default=&quot;&quot; · maxLength=500</td>
+</tr>
+<tr>
+  <td><code>emotion_text</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td>IndexTTS only: emotion instruction; requires emotion_control capability · default=&quot;&quot; · maxLength=500</td>
+</tr>
+<tr>
+  <td><code>emotion_strength</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td>IndexTTS only: emotion strength · default=0.6 · minimum=0.0 · maximum=1.0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-53">ValidationError</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>loc</code></td>
+  <td>array&lt;string  /  integer&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>msg</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>type</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>input</code></td>
+  <td>JSON</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>ctx</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-54">VoiceManagedModel</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>key</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>kind</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>status</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>family</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>backend</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>modelscope_repo</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>languages</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>description</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>translation</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>loaded</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>inference_ready</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>inference_error</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>error</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>progress</code></td>
+  <td>number  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>downloaded_bytes</code></td>
+  <td>integer  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>total_bytes</code></td>
+  <td>integer  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>import_required</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.{key}.sid</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.{key}.language</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.supported</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.formats</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.score</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.default_score</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.word</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.segment</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.source</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-55">VoicePublicModel</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>object</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>owned_by</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>kind</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>capabilities</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>endpoints</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>languages</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.supported</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.formats</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.score</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.default_score</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.word</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.segment</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps.source</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming.supported</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming.transports</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming.hotwords</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.endpoint</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.default</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>voices.count</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-56">VoiceHotwordSet</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>phrases</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>phrase_count</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>created_at</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>updated_at</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>formats</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-57">VoiceSpeaker</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>name</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>model</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>created_at</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>dimension</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-58">VoiceTranscript</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>text</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>language</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>duration</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>words</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>segments</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>tokens</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>timestamps</code></td>
+  <td>array&lt;number&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>emotion</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>event</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>streaming</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.requested</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.supported</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.applied</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.sets</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.score_applied</code></td>
+  <td>number  /  null</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>hotwords.ignored</code></td>
+  <td>boolean</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker</code></td>
+  <td>object</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.model</code></td>
+  <td>string</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.threshold</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.identified</code></td>
+  <td>boolean</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.speaker</code></td>
+  <td>object  /  null</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.score</code></td>
+  <td>number</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>speaker.ranked</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Optional</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-section-59">VoiceSchedulerContract</h3>
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Requirement</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>protocol_version</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>input_limits_version</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>mixed_input_limits_version</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>app_id</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>binding_endpoint</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>lifecycle_protocol_version</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>executor_base_url</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>upstream_url</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>sync_models</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>async_models</code></td>
+  <td>array&lt;object&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>num_threads</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>max_concurrent_inference</code></td>
+  <td>integer</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>cpu_models</code></td>
+  <td>array&lt;string&gt;</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+<tr>
+  <td><code>provider</code></td>
+  <td>string</td>
+  <td>Required</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+</article></main></html>

@@ -6,6 +6,8 @@ export const languageNames: Record<string, string> = { auto: '自动检测', zh:
 const languageLabels = new Set(Object.values(languageNames))
 
 export const messages: Record<string, Translation> = {
+  "完整 API 流程与字段": ["完整 API 流程與欄位", "Complete API workflows and fields"],
+  "交互字段参考": ["互動欄位參考", "Interactive field reference"],
   '· 尚未获准识别': ['· 尚未獲准辨識', '· Transcription not approved'],
   '个可识别模型': ['個可辨識模型', 'models approved for transcription'],
   '此模型尚未获准在当前设备执行，请先选择其他模型。': ['此模型尚未獲准在目前裝置執行，請先選擇其他模型。', 'This model is not approved on this device. Choose another model.'],

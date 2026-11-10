@@ -358,3 +358,7 @@ VOS 界面默认跟随平台语言，兼容旧版平台语言存储和新版语�
 Native executors acquire admission with POST /scheduler/api/v1/permits/wait and {"request":the existing permits request,"wait_seconds":30}. X-VScheduler-Queue-Wait-Seconds accepts 0..300; the default is 30 and 0 attempts immediate admission. Waiters retain identity and ordering only, reserve no model weights, and never start or replay inference. A deadline returns 429 QUEUE_TIMEOUT. V-Voice, Desensitize and V-Sub enter the central queue before their local execution locks. One approved native process uses one execution lane; actual copies in different processes are budgeted separately. Authorized forced requests run first, followed by request priority, aging and arrival order. Other applications no longer unconditionally unload idle Ollama models: unloading requires memory pressure and confirmed native stop before releasing the budget.
 
 VOS retains Kokoro 1.0 multilingual and 1.1-zh as administrator-provided import-only models; existing IDs, history and speech APIs remain supported.
+
+## Complete VOS API reference
+
+The in-app API page links to `/api-guide` (Chinese/English workflows and native fields), `/docs` and the active `/openapi.json`. VOS speech/shared management, private user workbench and Scheduler application binding use distinct identity contracts. The independent desktop/CLI HTTP and MCP guide remains in [docs/api.md](docs/api.md). Documentation source changes ship with the next app release; no new app/image is published in this documentation task.

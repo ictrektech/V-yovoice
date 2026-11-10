@@ -265,10 +265,11 @@ const asrCurl = ["curl 'http://<VOS-IP>:22700/v1/audio/transcriptions' \\", "  -
 const ttsCurl = ["curl 'http://<VOS-IP>:22700/v1/audio/speech' \\", "  -H 'Content-Type: application/json' \\", "  -d '{\"model\":\"kokoro-multilang\",\"voice\":\"zf_xiaoxiao\",\"input\":\"你好\",\"response_format\":\"mp3\",\"speed\":1.0,\"language\":\"zh\"}' \\", '  --output speech.mp3'].join('\n')
 
 function ApiGuide({ models }: { models: Model[] }) {
+  const { locale } = useLanguage()
   const [tab, setTab] = useState<ApiTab>('overview')
   const tabs: [ApiTab, string][] = [['overview', '概览'], ['asr', '语音识别'], ['streaming', '流式识别'], ['tts', '语音合成'], ['creative', '创作语音与调度'], ['workbench', '音乐、编曲与任务'], ['hotwords', '热词管理'], ['speaker', '声纹识别'], ['models', '模型与发现']]
   return <Localized><section className="api-guide"><p className="eyebrow">OPENAI COMPATIBLE</p><h1>API 接入</h1><p className="intro">公共推理 API 不区分应用用户；创作项目和参考音色通过 VOS 身份隔离。经 V-Router 调用时使用其用户鉴权与模型权限。</p>
-    <p><a href="../openapi.json" target="_blank" rel="noreferrer">OpenAPI JSON</a></p>
+    <p><a href={`../api-guide#${locale === "en-US" ? "en" : "zh"}`} target="_blank" rel="noreferrer">完整 API 流程与字段</a> · <a href="../docs" target="_blank" rel="noreferrer">交互字段参考</a> · <a href="../openapi.json" target="_blank" rel="noreferrer">OpenAPI JSON</a></p>
     <div className="api-addresses"><div><span>宿主机 / 局域网</span><code>{host}/v1</code></div><div><span>VOS 容器网络</span><code>http://v-voice-backend:7070/v1</code></div><div><span>鉴权</span><code>无需 API Key</code></div></div>
     <div className="api-tabs" role="tablist" aria-label="API 文档章节">{tabs.map(([value, label]) => <button role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)} key={value}>{label}</button>)}</div>
     {tab === 'workbench' ? <section className="api-section">
