@@ -104,6 +104,8 @@ configured upload cap. See
 The installable v-harness plugin is maintained in
 [`integrations/v-harness/tool-audio-transcription`](integrations/v-harness/tool-audio-transcription)
 and is released as a prebuilt `.tgz` rather than bundled into the VOS service image.
+The [stable plugin download](https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz)
+tracks the latest plugin release; check host compatibility before upgrading.
 Qwen3-ASR 0.6B and 1.7B accept their own approved duration, source sample-rate,
 encoded-byte and hotword limits; they do not inherit SenseVoice approval. The ASR
 selector distinguishes downloaded files from inference approval on this device
