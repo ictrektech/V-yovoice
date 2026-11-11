@@ -40,18 +40,29 @@ type ModelPackage struct {
 	SessionOptions map[string]string `json:"sessionOptions,omitempty"`
 	// Files 不为空时是多文件模型包：各文件按相对路径下载到 Directory，登记的模型路径是该目录。
 	// RemotePath 仍指向主模型文件，用于导入时识别。
-	Files       []ModelFile `json:"files,omitempty"`
-	Directory   string      `json:"directory,omitempty"`
-	StripPrefix string      `json:"stripPrefix,omitempty"`
-	Task        string      `json:"task,omitempty"`
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	Family      string      `json:"family"`
-	Version     string      `json:"version"`
-	Precision   string      `json:"precision"`
-	RemotePath  string      `json:"remotePath"`
-	Size        int64       `json:"size"`
-	SHA256      string      `json:"sha256"`
+	Files              []ModelFile    `json:"files,omitempty"`
+	Directory          string         `json:"directory,omitempty"`
+	StripPrefix        string         `json:"stripPrefix,omitempty"`
+	Task               string         `json:"task,omitempty"`
+	ID                 string         `json:"id"`
+	Name               string         `json:"name"`
+	Family             string         `json:"family"`
+	Version            string         `json:"version"`
+	Precision          string         `json:"precision"`
+	RemotePath         string         `json:"remotePath"`
+	Size               int64          `json:"size"`
+	SHA256             string         `json:"sha256"`
+	History            []ModelVersion `json:"history,omitempty"`
+	modelScopeRevision string
+}
+
+type ModelVersion struct {
+	Replaced           string      `json:"replaced"`
+	Revision           string      `json:"revision"`
+	ModelScopeRevision string      `json:"modelScopeRevision"`
+	Size               int64       `json:"size"`
+	SHA256             string      `json:"sha256,omitempty"`
+	Files              []ModelFile `json:"files,omitempty"`
 }
 
 // ModelFile 是多文件模型包中的一个文件。
@@ -311,6 +322,22 @@ func Lookup(id string) (ModelPackage, error) {
 	}
 	return ModelPackage{}, msg.Err(msg.ErrModelUnsupported, nil)
 }
+
+// At 根据主文件摘要定位模型版本。
+func (m ModelPackage) At(sha256 string) (ModelPackage, error) {
+	if sha256 == "" || sha256 == m.MainFile().SHA256 {
+		return m, nil
+	}
+	for _, v := range m.History {
+		old := m
+		old.History, old.Revision, old.modelScopeRevision, old.Size, old.SHA256, old.Files = nil, v.Revision, v.ModelScopeRevision, v.Size, v.SHA256, v.Files
+		if old.MainFile().SHA256 == sha256 {
+			return old, nil
+		}
+	}
+	return ModelPackage{}, msg.Err(msg.ErrModelUnsupported, nil)
+}
+
 func (m ModelPackage) URL(source string) (string, error) {
 	return m.FileURL(source, m.RemotePath)
 }
@@ -344,7 +371,11 @@ func (m ModelPackage) FileURL(source, path string) (string, error) {
 	case "mirror":
 		return "https://hf-mirror.com/audio-cpp/audio.cpp-gguf/resolve/" + revision + "/" + path, nil
 	case "modelscope":
-		return "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/" + ModelScopeRevision + "/" + path, nil
+		revision := ModelScopeRevision
+		if m.modelScopeRevision != "" {
+			revision = m.modelScopeRevision
+		}
+		return "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/" + revision + "/" + path, nil
 	}
 	return "", msg.Err(msg.ErrDownloadSource, nil)
 }

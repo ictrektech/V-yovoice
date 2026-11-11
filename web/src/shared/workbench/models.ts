@@ -2,9 +2,9 @@
 import type { Draft, ModelFile, ModelPackage, State } from './types';
 
 export const modelMainFile = (model: ModelPackage): ModelFile => model.files?.find(file => file.path === model.remotePath) ?? { path: model.remotePath, size: model.size, sha256: model.sha256 };
-export const modelUpdateAvailable = (state: Pick<State, 'models'>, model: ModelPackage) => {
+export const modelUpdateAvailable = (state: Pick<State, 'models' | 'modelDownloads' | 'modelActivity'>, model: ModelPackage, allowUnmanaged = false) => {
   const installed = state.models.find(item => item.id === model.id);
-  return installed?.sha256 && installed.sha256 !== modelMainFile(model).sha256 ? installed : undefined;
+  return installed?.sha256 && (allowUnmanaged || installed.managed) && !installed.pinned && !state.modelDownloads?.[model.id] && installed.sha256 !== modelMainFile(model).sha256 ? installed : undefined;
 };
 
 export const isKokoroModel = (id: string) => id.startsWith('kokoro-');

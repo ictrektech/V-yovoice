@@ -208,14 +208,14 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "storage.cleanup":
 		return w.CleanupResiduals()
 	case "model.directory":
-		return true, w.SetModelDirectory(p.Path)
+		return true, w.SetModelDirectoryContext(ctx, p.Path)
 	case "model.import":
 		if p.ID != "" {
 			return true, w.ImportCatalogModel(p.ID, p.Path)
 		}
 		return true, w.ImportModel(p.Path)
 	case "model.download":
-		return true, w.DownloadModel(p.ID)
+		return true, w.DownloadModel(p.ID, p.Version)
 	case "model.forget":
 		return true, w.ForgetModel(p.ID)
 	case "runtime.unload":
@@ -372,9 +372,14 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "operation.cancel":
 		w.Cancel()
 		return true, nil
+	case "model.pause":
+		return true, w.PauseModelDownload(p.ID)
 	case "model.cancel":
-		w.CancelModel()
-		return true, nil
+		if p.ID == "" {
+			w.CancelModel()
+			return true, nil
+		}
+		return true, w.DiscardModelDownload(ctx, p.ID)
 	}
 	return nil, msg.Err(msg.ErrMethodUnsupported, nil)
 }

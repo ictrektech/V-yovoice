@@ -6,6 +6,7 @@
 
 ### English
 
+- Resume or cancel model downloads safely; recover verified models from a selected directory and keep installed models usable during updates.
 - Add desktop synthesis controls and live speech playback.
 - Import existing local model packages, improve resumed downloads and honor Kokoro speaking rate.
 - Keep feature tour cards inside the window so controls remain accessible.
@@ -16,6 +17,7 @@
 
 ### 简体中文
 
+- 模型下载支持安全续传和取消；切换目录后可找回已校验模型，更新期间保留原模型。
 - 桌面端新增推理参数设置与语音实时试听。
 - 支持导入现有本地模型包，改进断点续传并修复 Kokoro 语速设置。
 - 功能引导卡片保持在窗口内，确保操作按钮可见。

@@ -58,6 +58,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
   const downloadOf = (model: ModelPackage) => {
     const hub = shared?.[model.id];
     return hub ? (['downloading', 'verifying', 'failed'].includes(hub.status) ? { received: hub.downloaded_bytes ?? 0, total: hub.total_bytes || model.size, status: hub.status === 'downloading' ? 'running' : hub.status } : null)
+      : state.modelDownloads?.[model.id] ? (activity?.kind === 'download' && activity.modelId === model.id && activity.status === 'running' ? activity : state.modelDownloads[model.id])
       : activity?.kind === 'download' && activity.modelId === model.id && activity.status !== 'completed' ? activity : null;
   };
   const picked = (group: ModelPackage[]) => group.find(model => model.id === picks[group[0].name])
@@ -73,12 +74,12 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
     const hub = shared?.[model.id];
     const download = downloadOf(model);
     const downloading = download?.status === 'running';
-    const removeBlocked = busy || (modelBusy && !(activity?.kind === 'download' && activity.modelId && activity.modelId !== model.id));
+    const removeBlocked = busy || (!isVos && !!state.modelDownloads?.[model.id]) || (modelBusy && !(activity?.kind === 'download' && activity.modelId && activity.modelId !== model.id));
     const inUse = draft.modelId === model.id;
     const owned = group.filter(isInstalled);
     // 应用下载的模型移除时连同文件删除；导入的模型只解除登记。
     const managed = state.models.find(m => m.id === model.id)?.managed ?? false;
-    const update = (isVos || managed) && modelUpdateAvailable(state, model);
+    const update = modelUpdateAvailable(state, model, isVos);
     return <VStack className="model-row settings-row" data-model-id={model.id} data-model-ids={group.map(item => item.id).join(' ')} data-installed={ready} key={group[0].name} gap={3}>
       <HStack className="model-summary" gap={4} vAlign="center" wrap="wrap">
         <VStack className="grow" gap={1}>
@@ -94,7 +95,8 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
         </VStack>
         <HStack gap={2} vAlign="center" wrap="wrap">
         {!isVos && model.remotePath ? <Button size="sm" label={t('@yovoice.settings.importLocalModel')} icon={<FolderOpen size={16} />} isDisabled={busy || modelBusy} onClick={() => run(() => call('model.import', { id: model.id }))} /> : null}
-        {downloading ? <Button size="sm" label={t('@yovoice.action.pause')} icon={<Pause size={16} />} onClick={() => run(() => call('model.cancel', { id: model.id }))} />
+        {downloading ? <HStack gap={1}><Button size="sm" label={t('@yovoice.action.pause')} icon={<Pause size={16} />} onClick={() => run(() => call(isVos ? 'model.cancel' : 'model.pause', { id: model.id }))} />{!isVos ? <Button size="sm" variant="ghost" label={t('@yovoice.settings.cancelDownload')} onClick={() => run(() => call('model.cancel', { id: model.id }))} /> : null}</HStack>
+          : !isVos && download ? <HStack gap={1}><Button size="sm" label={t('@yovoice.settings.resumeDownload')} isDisabled={modelBusy} onClick={() => run(() => call('model.download', { id: model.id }))} /><Button size="sm" variant="ghost" label={t('@yovoice.settings.cancelDownload')} isDisabled={modelBusy} onClick={() => run(() => call('model.cancel', { id: model.id }))} /></HStack>
           : ready ? <HStack gap={1} vAlign="center">
             {update && !model.importRequired ? <Button size="sm" variant="secondary" label={t('@yovoice.settings.updateModel')} icon={<RefreshCw size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(async () => {
               if (!isVos) return call('model.download', { id: model.id });

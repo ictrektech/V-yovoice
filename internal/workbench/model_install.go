@@ -10,168 +10,181 @@ import (
 	"yovoice/internal/diag"
 	"yovoice/internal/download"
 	"yovoice/internal/msg"
-	"yovoice/internal/platform"
 	"yovoice/internal/schema"
 	"yovoice/internal/score"
 	"yovoice/internal/store"
 )
 
-func (w *Workbench) register(id, path string, managed bool, sha256 string) error {
+func (w *Workbench) register(id, path string, managed bool, sha256 string, pinned bool) error {
 	path, e := filepath.Abs(path)
 	if e != nil {
 		return e
 	}
 	return w.Store.Update(func(s *schema.State) {
-		s.Models = slices.DeleteFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == id })
-		s.Models = append(s.Models, schema.InstalledModel{ID: id, Path: path, Managed: managed, SHA256: sha256})
+		putInstalledModel(s, schema.InstalledModel{ID: id, Path: path, Managed: managed, SHA256: sha256, Pinned: pinned})
 	}, true)
 }
-func (w *Workbench) DownloadModel(id string) error {
-	m, e := catalog.Lookup(id)
-	if e != nil {
-		return e
-	}
-	s := w.Store.Read()
-	// 重新下载已安装的模型会替换正在使用的文件，需等生成结束；未安装的模型可与生成同时下载。
-	index := slices.IndexFunc(s.Models, func(installed schema.InstalledModel) bool { return installed.ID == id })
-	installed := index >= 0
-	if installed && !s.Models[index].Managed {
-		return msg.Err(msg.ErrLocalModelProtected, nil)
-	}
-	if installed {
-		w.mu.Lock()
-		busy := w.cancel != nil
-		w.mu.Unlock()
-		if busy {
-			return msg.Err(msg.ErrBusy, nil)
-		}
-	}
-	files := m.PackageFiles()
-	urls := make([]string, len(files))
-	for i, f := range files {
-		if urls[i], e = m.FileURL(s.Preferences.DownloadSource, f.Path); e != nil {
-			return e
-		}
-	}
-	// Kokoro 的发音库不随安装包分发，随模型一起下载，进度计入同一个模型包。
-	var wheels []catalog.KokoroWheel
-	if m.Family == "kokoro_tts" {
-		if wheels, e = kokoroMissing(w.Store.Root); e != nil {
-			return e
-		}
-	}
-	total := m.Size
-	for _, wheel := range wheels {
-		total += wheel.Size
-	}
-	return w.begin("download", msg.ActivityDownload, msg.Params{"name": m.Name}, ptr(id), func(ctx context.Context) error {
-		// 在占用模型任务通道后重新读取登记，防止排队前的数据已过期。
-		s = w.Store.Read()
-		index = slices.IndexFunc(s.Models, func(record schema.InstalledModel) bool { return record.ID == id })
-		installed = index >= 0
-		if installed && !s.Models[index].Managed {
-			return msg.Err(msg.ErrLocalModelProtected, nil)
-		}
-		dir, dest := modelDirectory(s, w.Store.Root), modelDestination(s, w.Store.Root, m)
-		// 单文件模型直接放在模型目录；多文件模型放进自己的子目录并保留相对路径。
-		root := dir
-		if len(m.Files) > 0 {
-			root = dest
-		}
-		if e := os.MkdirAll(root, 0700); e != nil {
-			return e
-		}
-		target := func(f catalog.ModelFile) string {
-			if len(m.Files) > 0 {
-				return filepath.Join(root, filepath.FromSlash(m.LocalPath(f.Path)))
-			}
-			return dest
-		}
-		// 只更新登记在目标位置的自管模型。其他文件即使位于模型目录，也不能被下载覆盖。
-		owned := installed && store.SamePath(s.Models[index].Path, dest)
-		for _, f := range files {
-			path := target(f)
-			for _, record := range s.Models {
-				if !record.Managed && (store.Within(record.Path, path) || store.Within(path, record.Path)) {
-					return msg.Err(msg.ErrLocalModelProtected, nil)
-				}
-			}
-			info, err := os.Lstat(path)
-			if err != nil && !os.IsNotExist(err) {
-				return err
-			}
-			if err == nil {
-				if !info.Mode().IsRegular() {
-					return msg.Err(msg.ErrLocalModelProtected, nil)
-				}
-				if !owned {
-					hash, err := download.Hash(ctx, path)
-					if err != nil {
-						return err
-					}
-					if hash != f.SHA256 {
-						return msg.Err(msg.ErrLocalModelProtected, nil)
-					}
-				}
-			}
-		}
-		// 更新已安装的模型时新文件先下载到旁边，替换前旧文件仍可正常使用；内容未变的文件不再下载。
-		staging := func(f catalog.ModelFile) string {
-			if installed {
-				return target(f) + ".new"
-			}
-			return target(f)
-		}
-		var replace []string
-		if installed {
-			for _, f := range files {
-				if h, e := download.Hash(ctx, target(f)); e != nil || h != f.SHA256 {
-					replace = append(replace, target(f))
-				}
-			}
-		}
-		available, e := platform.FreeSpace(dir)
-		if e != nil {
-			return e
-		}
-		need := int64(100<<20) + total - m.Size
-		for _, f := range files {
-			need += max(int64(0), f.Size-download.FileSize(staging(f)+".part")-download.FileSize(staging(f)))
-		}
-		if available < uint64(need) {
-			return msg.Err(msg.ErrModelDirSpace, nil)
-		}
-		// 进度按整个模型包累计，多个文件依次下载。
-		var done int64
-		for i, f := range files {
-			if installed && !slices.Contains(replace, target(f)) {
-				done += f.Size
-				continue
-			}
-			if e = download.File(ctx, w.client, urls[i], staging(f), f.SHA256, f.Size, func(r, _ int64) {
-				code, params := msg.ActivityDownloading, msg.Params{"name": m.Name}
-				if done+r == total {
-					code, params = msg.ActivityVerifying, nil
-				}
-				w.progressOf("download", code, params, done+r, total)
-			}); e != nil {
-				return e
-			}
-			done += f.Size
-		}
-		if len(wheels) > 0 {
-			if e = w.installKokoro(ctx, s.Preferences.DownloadSource, func(r, _ int64) {
-				w.progressOf("download", msg.ActivityDownloading, msg.Params{"name": m.Name}, done+r, total)
-			}); e != nil {
-				return e
-			}
-		}
-		if e = w.swapModelFiles(replace); e != nil {
-			return e
-		}
-		return w.register(id, dest, true, m.MainFile().SHA256)
-	})
+
+func putInstalledModel(s *schema.State, model schema.InstalledModel) {
+	s.Models = slices.DeleteFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == model.ID })
+	s.Models = append(s.Models, model)
 }
+
+// modelDirectory 返回下载模型存放的目录：用户设置的模型目录，否则是数据目录下的 models。
+func modelDirectory(s schema.State, root string) string {
+	if dir := schema.Deref(s.Preferences.ModelDirectory); dir != "" {
+		return dir
+	}
+	return filepath.Join(root, "models")
+}
+
+// modelDestination 返回模型包下载后登记的路径：单文件模型是文件本身，多文件模型是它的子目录。
+func modelDestination(s schema.State, root string, m catalog.ModelPackage) string {
+	return filepath.Join(modelDirectory(s, root), legacyModelName(m))
+}
+
+func legacyModelName(m catalog.ModelPackage) string {
+	if m.RemotePath == "" {
+		return ""
+	}
+	if len(m.Files) > 0 {
+		return m.Directory
+	}
+	return filepath.Base(m.RemotePath)
+}
+
+// ForgetModel 移除模型登记。应用自己下载的模型同时删除文件释放空间（连同下载、更新中途留下的临时文件）；
+// 外部导入的模型只解除登记，保留本地文件。
+// 生成等主操作进行中不能移除（会停止推理引擎）；下载其他模型时可同时移除。
+func (w *Workbench) ForgetModel(id string) error {
+	doomed, err := w.retireModel(id)
+	if err != nil {
+		return err
+	}
+	w.removeRetiredModelFiles(id, doomed)
+	return nil
+}
+
+// 真正删除放在锁外：删几 GB 的模型期间不挡住生成、下载与取消。
+func (w *Workbench) removeRetiredModelFiles(id string, doomed []string) {
+	for _, path := range doomed {
+		if err := os.RemoveAll(path); err != nil {
+			diag.Log(w.Store.Root, "model.files_remove_failed", "model_id", id, "path", path, "error", diag.Error(err))
+		}
+	}
+}
+
+// retireModel 在锁内解除登记，并把要删除的文件改名移出原位（同目录改名瞬间完成），返回待删除的路径。
+// 改名后再开始的同名下载不会与删除赛跑；进程在删除前退出时，带 deletingSuffix 的残留由清理回收。
+func (w *Workbench) retireModel(id string) ([]string, error) {
+	w.edit.Lock()
+	defer w.edit.Unlock()
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	state := w.Store.Read()
+	activity := state.ModelActivity
+	if _, pending := state.ModelDownloads[id]; pending {
+		return nil, msg.Err(msg.ErrModelForgetBlocked, nil)
+	}
+	if w.cancel != nil || (w.installCancel != nil && (activity == nil || activity.Kind != "download" || activity.ModelID == nil || *activity.ModelID == id)) {
+		return nil, msg.Err(msg.ErrModelForgetBlocked, nil)
+	}
+	w.engine.Stop()
+	if err := w.Store.Update(func(s *schema.State) {
+		s.Models = slices.DeleteFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == id })
+	}, true); err != nil {
+		return nil, err
+	}
+	model, _ := installedModel(state, id)
+	definition, _ := catalog.Lookup(id)
+	return w.retireModelFiles(state, model, managedModelPath(state, w.Store.Root, model, legacyModelName(definition)), ""), nil
+}
+
+// retireModelFiles 在登记提交后、仍持有 mu 时移走旧文件；新包和其他模型的路径必须保留。
+func (w *Workbench) retireModelFiles(state schema.State, model schema.InstalledModel, path, replacement string) []string {
+	protected := func(candidate string) bool {
+		if modelPathsOverlap(candidate, replacement) || slices.ContainsFunc(state.Models, func(other schema.InstalledModel) bool {
+			return other.ID != model.ID && modelPathsOverlap(candidate, other.Path)
+		}) {
+			return true
+		}
+		for id, job := range state.ModelDownloads {
+			if id != model.ID && modelPathsOverlap(candidate, modelTransferPath(job)) {
+				return true
+			}
+		}
+		return false
+	}
+	if path == "" || protected(path) {
+		return nil
+	}
+	score.ForgetSoundFont(model.Path)
+	var doomed []string
+	for _, candidate := range append([]string{path}, stagingFiles(path)...) {
+		if candidate != path && protected(candidate) {
+			continue
+		}
+		if _, err := os.Lstat(candidate); err != nil {
+			continue
+		}
+		target := candidate + "." + schema.NewID() + deletingSuffix
+		if err := os.Rename(candidate, target); err != nil {
+			// 未能移走的文件留在原处；释放锁后不能删除可能已被新任务使用的路径。
+			diag.Log(w.Store.Root, "model.files_retire_failed", "model_id", model.ID, "path", candidate, "error", diag.Error(err))
+			continue
+		}
+		doomed = append(doomed, target)
+	}
+	return doomed
+}
+
+// managedModelPath 返回应用托管的文件或包目录；其他模型和下载任务的引用在退役前另行检查。
+func managedModelPath(s schema.State, root string, model schema.InstalledModel, legacyName string) string {
+	if !model.Managed || !filepath.IsAbs(model.Path) {
+		return ""
+	}
+	if owned := modelPackageDirectory(model.Path); owned != "" {
+		return owned
+	}
+	path := filepath.Clean(model.Path)
+	dirs := []string{filepath.Join(root, "models"), modelDirectory(s, root)}
+	if slices.ContainsFunc(dirs, func(dir string) bool { return store.SamePath(dir, path) }) {
+		return ""
+	}
+	// 旧版托管包可能留在上一次设置的目录中，只有符合该型号下载布局的路径才能移除。
+	if store.SamePath(filepath.Base(path), legacyName) || slices.ContainsFunc(dirs, func(dir string) bool { return store.Within(dir, path) }) {
+		return path
+	}
+	return ""
+}
+
+func modelPathsOverlap(a, b string) bool {
+	if a == "" || b == "" {
+		return false
+	}
+	if store.Within(a, b) || store.Within(b, a) {
+		return true
+	}
+	// 外部导入可能通过符号链接引用同一个包。
+	realA, errA := filepath.EvalSymlinks(a)
+	realB, errB := filepath.EvalSymlinks(b)
+	return errA == nil && errB == nil && (store.Within(realA, realB) || store.Within(realB, realA))
+}
+
+// modelPackageDirectory 识别新版下载的专用包目录，单文件模型登记的是目录中的文件。
+func modelPackageDirectory(path string) string {
+	path = filepath.Clean(path)
+	if !filepath.IsAbs(path) {
+		return ""
+	}
+	for _, candidate := range []string{path, filepath.Dir(path)} {
+		if modelTransferDirectory.MatchString(filepath.Base(candidate)) {
+			return candidate
+		}
+	}
+	return ""
+}
+
 func (w *Workbench) ImportModel(path string) error {
 	return w.begin("import", msg.ActivityImport, nil, nil, func(ctx context.Context) error {
 		paths := []string{path}
@@ -209,7 +222,20 @@ func (w *Workbench) ImportModel(path string) error {
 							continue
 						}
 					}
-					if e = w.register(m.ID, path, false, hash); e != nil {
+					// 不用自动识别覆盖已有登记或暂停中的下载。
+					w.mu.Lock()
+					state := w.Store.Read()
+					previous, exists := installedModel(state, m.ID)
+					_, pending := state.ModelDownloads[m.ID]
+					if pending || (exists && !store.SamePath(previous.Path, path) && (previous.Managed || existsPath(previous.Path))) {
+						w.mu.Unlock()
+						continue
+					}
+					managed := exists && previous.Managed && store.SamePath(previous.Path, path)
+					w.engine.Stop()
+					e = w.register(m.ID, path, managed, hash, managed && previous.Pinned)
+					w.mu.Unlock()
+					if e != nil {
 						return e
 					}
 					count++
@@ -223,121 +249,6 @@ func (w *Workbench) ImportModel(path string) error {
 	})
 }
 
-// modelDirectory 返回下载模型存放的目录：用户设置的模型目录，否则是数据目录下的 models。
-func modelDirectory(s schema.State, root string) string {
-	if dir := schema.Deref(s.Preferences.ModelDirectory); dir != "" {
-		return dir
-	}
-	return filepath.Join(root, "models")
-}
-
-// modelDestination 返回模型包下载后登记的路径：单文件模型是文件本身，多文件模型是它的子目录。
-func modelDestination(s schema.State, root string, m catalog.ModelPackage) string {
-	dir := modelDirectory(s, root)
-	if len(m.Files) > 0 {
-		return filepath.Join(dir, m.Directory)
-	}
-	return filepath.Join(dir, filepath.Base(m.RemotePath))
-}
-
-// swapModelFiles 用下载校验过的 .new 文件替换旧模型文件。内核可能仍打开着旧文件（Windows 上无法覆盖），
-// 替换前先停内核；生成进行中时返回忙碌，已下载的新文件保留，稍后重试会直接完成替换。
-func (w *Workbench) swapModelFiles(paths []string) error {
-	if len(paths) == 0 {
-		return nil
-	}
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.cancel != nil {
-		return msg.Err(msg.ErrBusy, nil)
-	}
-	w.engine.Stop()
-	for _, path := range paths {
-		if e := os.Rename(path+".new", path); e != nil {
-			return e
-		}
-	}
-	return nil
-}
-
-// ForgetModel 移除模型登记。应用自己下载的模型同时删除文件释放空间（连同下载、更新中途留下的临时文件）；
-// 模型目录中原有的模型只解除登记，保留本地文件。
-// 生成等主操作进行中不能移除（会停止推理引擎）；下载其他模型时可同时移除。
-func (w *Workbench) ForgetModel(id string) error {
-	doomed, err := w.retireModel(id)
-	if err != nil {
-		return err
-	}
-	// 真正删除放在锁外：删几 GB 的模型期间不挡住生成、下载与取消。
-	for _, path := range doomed {
-		if err := os.RemoveAll(path); err != nil {
-			diag.Log(w.Store.Root, "model.files_remove_failed", "model_id", id, "path", path, "error", diag.Error(err))
-		}
-	}
-	return nil
-}
-
-// retireModel 在锁内解除登记，并把要删除的文件改名移出原位（同目录改名瞬间完成），返回待删除的路径。
-// 改名后再开始的同名下载不会与删除赛跑；进程在删除前退出时，带 deletingSuffix 的残留由清理回收。
-func (w *Workbench) retireModel(id string) ([]string, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	state := w.Store.Read()
-	activity := state.ModelActivity
-	if w.cancel != nil || (w.installCancel != nil && (activity == nil || activity.Kind != "download" || activity.ModelID == nil || *activity.ModelID == id)) {
-		return nil, msg.Err(msg.ErrModelForgetBlocked, nil)
-	}
-	w.engine.Stop()
-	if err := w.Store.Update(func(s *schema.State) {
-		s.Models = slices.DeleteFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == id })
-	}, true); err != nil {
-		return nil, err
-	}
-	path := managedModelPath(state, w.Store.Root, id)
-	if path == "" {
-		return nil, nil
-	}
-	score.ForgetSoundFont(path)
-	var doomed []string
-	for _, candidate := range append([]string{path}, stagingFiles(path)...) {
-		if _, err := os.Lstat(candidate); err != nil {
-			continue
-		}
-		retired := candidate + deletingSuffix
-		if err := os.Rename(candidate, retired); err != nil {
-			// 改不了名就原地删除，仍比留着占空间好。
-			retired = candidate
-		}
-		doomed = append(doomed, retired)
-	}
-	return doomed, nil
-}
-
-// managedModelPath 返回可安全删除的下载模型路径：必须是应用下载的模型，位于模型目录内部（不是目录本身），
-// 且没有其他已登记模型使用同一位置；否则返回空串，只解除登记。
-func managedModelPath(s schema.State, root, id string) string {
-	i := slices.IndexFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == id })
-	if i < 0 || !s.Models[i].Managed || s.Models[i].Path == "" {
-		return ""
-	}
-	path := filepath.Clean(s.Models[i].Path)
-	dirs := []string{filepath.Join(root, "models")}
-	if dir := schema.Deref(s.Preferences.ModelDirectory); dir != "" {
-		dirs = append(dirs, dir)
-	}
-	inside := slices.ContainsFunc(dirs, func(dir string) bool { return store.Within(dir, path) && !store.SamePath(dir, path) })
-	if !inside {
-		return ""
-	}
-	for j, m := range s.Models {
-		if j != i && m.Path != "" && (store.Within(path, m.Path) || store.Within(m.Path, path)) {
-			return ""
-		}
-	}
-	return path
-}
-
-// packageRoot 根据主模型文件位置推出多文件模型包的目录，文件不全时返回空串。
 func packageRoot(m catalog.ModelPackage, main string) string {
 	root := filepath.Dir(main)
 	for i := 0; i < strings.Count(m.LocalPath(m.RemotePath), "/"); i++ {

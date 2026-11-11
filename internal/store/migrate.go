@@ -50,6 +50,8 @@ var migrations = []migration{
 			return backfillModelSHA256(data)
 		})
 	}},
+	// 4：初始化持久化下载任务；已安装模型和历史保持原样。
+	{sql: `INSERT INTO settings (key, pos, data) VALUES ('modelDownloads', 0, '{}') ON CONFLICT(key) DO NOTHING;`},
 }
 
 func backfillModelSHA256(data []byte) ([]byte, error) {

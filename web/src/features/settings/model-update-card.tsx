@@ -3,6 +3,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Download, X } from 'lucide-react';
+import { isVos } from '../../shared/lib/vos';
 import { readLocal, writeLocal } from '../../shared/lib/local-store';
 import { modelUpdateAvailable, type ModelPackage, type State } from '../../shared/workbench';
 
@@ -11,7 +12,7 @@ const dismissedKey = 'yovoice-model-update-dismissed';
 export function ModelUpdateSidebarCard({ state, catalog, revision, openSettings }: { state: State; catalog: ModelPackage[]; revision: string; openSettings: (modelId: string) => void }) {
   const t = useTranslator();
   const [dismissedRevision, setDismissedRevision] = useState(() => readLocal(dismissedKey));
-  const updates = catalog.filter(model => modelUpdateAvailable(state, model));
+  const updates = catalog.filter(model => modelUpdateAvailable(state, model, isVos));
   if (!updates.length || dismissedRevision === revision) return null;
   const dismiss = () => {
     writeLocal(dismissedKey, revision);

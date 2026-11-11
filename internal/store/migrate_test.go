@@ -169,3 +169,33 @@ func TestMigrationPreservesDownstreamHistoryAndSharedModels(t *testing.T) {
 		t.Fatal("缺少升级前备份", snapshots)
 	}
 }
+
+func TestVersionThreeMigrationPreservesModelsAndInitializesDownloads(t *testing.T) {
+	root := t.TempDir()
+	s, err := New(root)
+	must(t, err)
+	before := s.Read()
+	before.Models = []schema.InstalledModel{{ID: "custom", Path: "/models/custom.gguf", Managed: false}}
+	before.History = []schema.Generation{{ID: schema.NewID(), FileName: "kept.wav", Settings: schema.DefaultDraft()}}
+	must(t, s.Update(func(state *schema.State) { *state = before }, true))
+	_, err = s.db.Exec("DELETE FROM settings WHERE key = 'modelDownloads'")
+	must(t, err)
+	_, err = s.db.Exec("PRAGMA user_version = 3")
+	must(t, err)
+	must(t, s.Close())
+	s, err = New(root)
+	must(t, err)
+	defer s.Close()
+	after := s.Read()
+	if len(after.Models) != 1 || after.Models[0].Path != before.Models[0].Path || len(after.History) != 1 || after.History[0].FileName != "kept.wav" || len(after.ModelDownloads) != 0 {
+		t.Fatal("升级未保留历史和模型或未初始化下载", after.Models, after.History, after.ModelDownloads)
+	}
+	var downloads string
+	must(t, s.db.QueryRow("SELECT data FROM settings WHERE key = 'modelDownloads'").Scan(&downloads))
+	if downloads != "{}" {
+		t.Fatal("下载记录未初始化", downloads)
+	}
+	if files, _ := filepath.Glob(filepath.Join(root, upgradeSnapshot+"-v3-*.db")); len(files) != 1 {
+		t.Fatal("缺少升级前备份", files)
+	}
+}

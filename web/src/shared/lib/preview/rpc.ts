@@ -392,12 +392,24 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
   if (method === 'assistant.proposal') return assistantProposal(state, data) as T;
   if (method === 'assistant.forget') return assistantForget(state, data) as T;
   if (method === 'assistant.delete') return assistantDelete(state, data) as T;
+  if (method === 'model.cancel' || method === 'model.pause') {
+    const { id } = data as { id: string };
+    if (method === 'model.cancel' && state.modelDownloads) delete state.modelDownloads[id];
+    if (method === 'model.pause' && state.modelDownloads?.[id]) state.modelDownloads[id].status = 'paused';
+    if (state.modelActivity?.modelId === id) state.modelActivity = null;
+    publish();
+    return true as T;
+  }
   if (method === 'model.download') {
     const id = (data as { id: string }).id;
     const installed = state.models.find(model => model.id === id);
     const definition = catalog.find(model => model.id === id);
     if (!installed || !definition) throw new CallError('@yovoice.error.previewDesktopOnly');
-    installed.sha256 = modelMainFile(definition as Parameters<typeof modelMainFile>[0]).sha256;
+    if (!installed.managed) throw new CallError('@yovoice.error.localModelProtected');
+    const latest = modelMainFile(definition as Parameters<typeof modelMainFile>[0]).sha256;
+    installed.sha256 = state.modelDownloads?.[id]?.version || latest;
+    installed.pinned = installed.sha256 !== latest || undefined;
+    if (state.modelDownloads) delete state.modelDownloads[id];
     publish();
     return true as T;
   }

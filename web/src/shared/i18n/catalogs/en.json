@@ -4981,5 +4981,8 @@
   },
   "@yovoice.options.value.fixed": {
     "defaultMessage": "Fixed"
+  },
+  "@yovoice.settings.cancelDownload": {
+    "defaultMessage": "Cancel download"
   }
 }

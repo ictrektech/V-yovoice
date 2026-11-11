@@ -4981,5 +4981,8 @@
   },
   "@yovoice.options.value.fixed": {
     "defaultMessage": "고정"
+  },
+  "@yovoice.settings.cancelDownload": {
+    "defaultMessage": "다운로드 취소"
   }
 }

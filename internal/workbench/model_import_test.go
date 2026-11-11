@@ -123,7 +123,7 @@ func TestModelImportAndDownloadAreMutuallyExclusive(t *testing.T) {
 	}
 }
 
-func TestDownloadDoesNotReplaceImportedOrUnregisteredFiles(t *testing.T) {
+func TestDownloadDoesNotReplaceImportedFiles(t *testing.T) {
 	w, err := New(t.TempDir())
 	must(t, err)
 	defer w.Close()
@@ -143,20 +143,49 @@ func TestDownloadDoesNotReplaceImportedOrUnregisteredFiles(t *testing.T) {
 		t.Fatal("导入文件被修改")
 	}
 	must(t, w.ForgetModel(model.ID))
-	other, err := catalog.Lookup("index-2-q8")
+
+}
+
+func TestAutomaticImportKeepsExistingModelRegistration(t *testing.T) {
+	w, err := New(t.TempDir())
 	must(t, err)
-	dest := modelDestination(w.Store.Read(), w.Store.Root, other)
-	must(t, os.MkdirAll(filepath.Dir(dest), 0700))
-	must(t, os.WriteFile(dest, []byte("local weights"), 0600))
-	must(t, w.DownloadModel(other.ID))
+	defer w.Close()
+	original := catalog.Models
+	defer func() { catalog.Models = original }()
+	content := []byte("matching imported file")
+	file := modelTestFile("voice.gguf", content)
+	catalog.Models = []catalog.ModelPackage{{ID: "voice", RemotePath: file.Path, Size: file.Size, SHA256: file.SHA256}}
+	existing := filepath.Join(t.TempDir(), "existing.gguf")
+	incoming := filepath.Join(t.TempDir(), "incoming.gguf")
+	must(t, os.WriteFile(existing, content, 0600))
+	must(t, os.WriteFile(incoming, content, 0600))
+	must(t, w.register("voice", existing, false, file.SHA256, false))
+	must(t, w.ImportModel(incoming))
 	<-w.ModelDone()
-	activity := w.Store.Read().ModelActivity
-	if activity == nil || activity.ErrorCode == nil || *activity.ErrorCode != msg.ErrLocalModelProtected {
-		t.Fatalf("未保护已有文件: %+v", activity)
+	model, ok := installedModel(w.Store.Read(), "voice")
+	if !ok || model.Path != existing || model.Managed {
+		t.Fatal("自动导入改变了原有登记", model)
 	}
-	got, err = os.ReadFile(dest)
-	must(t, err)
-	if string(got) != "local weights" {
-		t.Fatal("已有文件被修改")
+	for _, path := range []string{existing, incoming} {
+		got, err := os.ReadFile(path)
+		must(t, err)
+		if !bytes.Equal(got, content) {
+			t.Fatal("自动导入修改了用户文件", path)
+		}
+	}
+}
+
+func TestPackageRoot(t *testing.T) {
+	root := t.TempDir()
+	m := catalog.ModelPackage{RemotePath: "main.gguf", Files: []catalog.ModelFile{{Path: "main.gguf", Size: 4}, {Path: "sidecars/config.json", Size: 2}}}
+	main := filepath.Join(root, "main.gguf")
+	must(t, os.WriteFile(main, []byte("gguf"), 0600))
+	if packageRoot(m, main) != "" {
+		t.Fatal("缺少附属文件时不应登记")
+	}
+	must(t, os.MkdirAll(filepath.Join(root, "sidecars"), 0700))
+	must(t, os.WriteFile(filepath.Join(root, "sidecars", "config.json"), []byte("{}"), 0600))
+	if packageRoot(m, main) != root {
+		t.Fatal("文件齐全时应返回模型目录")
 	}
 }

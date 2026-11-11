@@ -1,7 +1,6 @@
 package workbench
 
 import (
-	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -60,67 +59,6 @@ func (w *Workbench) savePreferences(p schema.Preferences) error {
 		if !w.selectRuntime(s) && runtime.GOOS == "darwin" && s.RuntimePath != nil {
 			s.RuntimeBackend = ptr(p.Backend)
 		}
-	}, true)
-}
-
-// SetModelDirectory 只更换模型下载目录，其余偏好保持不变。
-func (w *Workbench) SetModelDirectory(path string) error {
-	w.edit.Lock()
-	defer w.edit.Unlock()
-	p := w.Store.Read().Preferences
-	p.ModelDirectory = ptr(path)
-	if err := w.savePreferences(p); err != nil {
-		return err
-	}
-	return w.adoptModels(path)
-}
-
-// adoptModels 登记新模型目录中已有的模型：按应用下载时的布局查找（单文件模型在目录根部，
-// 多文件模型在各自子目录），单文件大小匹配当前或更新前清单，多文件大小全部匹配当前清单才视为完整。
-// 已登记且文件仍在的模型保持不变。
-func (w *Workbench) adoptModels(dir string) error {
-	type adoptedModel struct {
-		path   string
-		sha256 string
-	}
-	found := map[string]adoptedModel{}
-	for _, m := range catalog.Models {
-		path := filepath.Join(dir, filepath.Base(m.RemotePath))
-		sha256 := m.MainFile().SHA256
-		if len(m.Files) > 0 {
-			path = filepath.Join(dir, m.Directory)
-			if packageRoot(m, filepath.Join(path, filepath.FromSlash(m.LocalPath(m.RemotePath)))) == "" {
-				continue
-			}
-		} else {
-			size := download.FileSize(path)
-			if size == 0 {
-				continue
-			}
-			if size != m.Size {
-				legacy := catalog.LegacyModelFiles[m.ID]
-				if size != legacy.Size {
-					continue
-				}
-				sha256 = legacy.SHA256
-			}
-		}
-		found[m.ID] = adoptedModel{path: path, sha256: sha256}
-	}
-	if len(found) == 0 {
-		return nil
-	}
-	return w.Store.Update(func(s *schema.State) {
-		for _, m := range s.Models {
-			if _, err := os.Stat(m.Path); err == nil {
-				delete(found, m.ID)
-			}
-		}
-		for id, adopted := range found {
-			s.Models = slices.DeleteFunc(s.Models, func(m schema.InstalledModel) bool { return m.ID == id })
-			s.Models = append(s.Models, schema.InstalledModel{ID: id, Path: adopted.path, Managed: true, SHA256: adopted.sha256})
-		}
-		diag.Log(w.Store.Root, "model.directory_adopted", "count", len(found))
 	}, true)
 }
 

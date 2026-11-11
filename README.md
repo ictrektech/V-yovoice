@@ -38,6 +38,8 @@ speech service; these new desktop tool actions remain unavailable in VOS until
 they are integrated with Scheduler approval and result confirmation. The shared
 catalog retains the optional ASR package without exposing it as a TTS model.
 
+Desktop model downloads now resume in separate package directories; cancellation preserves installed and imported files. Changing the model directory verifies recoverable packages in the background. Desktop synthesis also supports engine-advertised runtime controls and live playback; VOS continues to enforce Scheduler-approved settings. Database v4 records pending downloads and backs up a v3 database before upgrading; restore that backup when rolling back to v3-only code. See [model management](docs/models.md#model-downloads-and-recovery).
+
 Each feature page has a **Prepare models** button. It opens only the relevant
 speech, creator or soundfont models in a dialog on the current page, with download,
 pause, resume and verification states using V-Scheduler / ModelScope. Closing it

@@ -4981,5 +4981,8 @@
   },
   "@yovoice.options.value.fixed": {
     "defaultMessage": "固定"
+  },
+  "@yovoice.settings.cancelDownload": {
+    "defaultMessage": "取消下載"
   }
 }
