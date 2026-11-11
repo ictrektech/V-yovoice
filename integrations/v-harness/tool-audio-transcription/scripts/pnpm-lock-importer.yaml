@@ -7,6 +7,15 @@
         specifier: 4.4.3
         version: 4.4.3
     devDependencies:
+      '@deepseek-ai/dsh-tool-executor-ptc':
+        specifier: workspace:*
+        version: link:../../core/tool-executor-ptc
+      '@deepseek-ai/dsh-tool-executor-native':
+        specifier: workspace:*
+        version: link:../../core/tool-executor-native
+      '@deepseek-ai/dsh-tool-testkit':
+        specifier: workspace:*
+        version: link:../../test-support/tool-testkit
       '@deepseek-ai/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis

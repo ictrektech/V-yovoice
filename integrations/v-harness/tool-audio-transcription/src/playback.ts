@@ -8,7 +8,7 @@ import type { AttachmentId } from '@deepseek-ai/dsh-attachment'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { audioStateOfSession } from './projection.ts'
+import { audioStateOfSession, type AudioProjection } from './projection.ts'
 import { AUDIO_PLAYBACK_PATH } from './playback-route.ts'
 
 const BASE_HEADERS = {
@@ -47,14 +47,17 @@ export function parseByteRange(header: string | null, size: number): ByteRange |
   return { start, end: Math.min(requestedEnd, size - 1) }
 }
 
-async function response(request: Request, sessionId: string, attachmentId: string, ctx: Context, lifetime: AbortSignal): Promise<Response> {
+async function response(
+  request: Request, sessionId: string, attachmentId: string, ctx: Context,
+  lifetime: AbortSignal, projection: AudioProjection,
+): Promise<Response> {
   const fail = (status: number, message: string): Response =>
     new Response(request.method === 'HEAD' ? null : message, { status, headers: BASE_HEADERS })
   const sessions = ctx.get('sessions')
   if (sessions === undefined) return fail(404, 'session store unavailable')
   const session = sessions.get(brandString<SessionId>(sessionId))
   if (session === undefined) return fail(404, 'session not found')
-  const file = audioStateOfSession(ctx, session)?.files.find(candidate => candidate.id === attachmentId)
+  const file = audioStateOfSession(projection, session).files.find(candidate => candidate.id === attachmentId)
   if (file === undefined) return fail(404, 'audio attachment is not part of this session')
   const ref = { attachmentId: brandString<AttachmentId>(file.id), name: file.name, bytes: file.bytes }
   const path = ctx.attachments.fileHostPath(ref)
@@ -101,16 +104,19 @@ async function response(request: Request, sessionId: string, attachmentId: strin
  * @param ctx - attachment, session and projection services.
  * @param request - authenticated GET or HEAD request.
  * @param lifetime - plugin unload cancellation for active streams.
+ * @param projection - registered session projection.
  * @returns streamed audio with byte-range support.
  */
-export async function audioPlaybackResponse(ctx: Context, request: Request, lifetime = new AbortController().signal): Promise<Response> {
+export async function audioPlaybackResponse(
+  ctx: Context, request: Request, projection: AudioProjection, lifetime = new AbortController().signal,
+): Promise<Response> {
   const url = new URL(request.url)
   const sessionId = url.searchParams.get('sessionId')
   const attachmentId = url.searchParams.get('attachmentId')
   if (sessionId === null || sessionId === '' || attachmentId === null || attachmentId === '') {
     return new Response('sessionId and attachmentId are required', { status: 400, headers: BASE_HEADERS })
   }
-  return response(request, sessionId, attachmentId, ctx, lifetime)
+  return response(request, sessionId, attachmentId, ctx, lifetime, projection)
 }
 
 /** Adapt the authenticated Fetch response to an exact Host HTTP route.
@@ -118,8 +124,11 @@ export async function audioPlaybackResponse(ctx: Context, request: Request, life
  * @param req - incoming GET or HEAD request.
  * @param res - response owned to completion.
  * @param lifetime - plugin unload cancellation for active streams.
+ * @param projection - registered session projection.
  */
-export async function serveNodeAudio(ctx: Context, req: IncomingMessage, res: ServerResponse, lifetime: AbortSignal): Promise<void> {
+export async function serveNodeAudio(
+  ctx: Context, req: IncomingMessage, res: ServerResponse, lifetime: AbortSignal, projection: AudioProjection,
+): Promise<void> {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { Allow: 'GET, HEAD' })
     res.end()
@@ -147,7 +156,7 @@ export async function serveNodeAudio(ctx: Context, req: IncomingMessage, res: Se
     method: req.method,
     headers,
     signal: AbortSignal.any([abort.signal, lifetime]),
-  }), lifetime)
+  }), projection, lifetime)
   res.writeHead(responseValue.status, Object.fromEntries(responseValue.headers))
   if (responseValue.body === null) {
     res.end()

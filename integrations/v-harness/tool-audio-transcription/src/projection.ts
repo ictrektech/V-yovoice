@@ -2,7 +2,8 @@
 import { z } from 'zod'
 import type { Context } from '@deepseek-ai/cordis'
 import type { ToolRunContext } from '@deepseek-ai/dsh-tools'
-import type {} from '@deepseek-ai/dsh-session-projection'
+import type { ProjectionHandle } from '@deepseek-ai/dsh-session-projection'
+import type {} from '@deepseek-ai/dsh-tool-executor-ptc/types'
 import { HarnessError } from '@deepseek-ai/dsh-llm'
 
 const savedSchema = z.object({
@@ -15,18 +16,14 @@ const stateSchema = z.object({
   pendingCalls: z.array(z.string()),
 })
 type AudioState = z.infer<typeof stateSchema>
-declare module '@deepseek-ai/dsh-session-projection/types' {
-  interface SessionProjectionStateMap {
-    /** Audio sources and original transcripts owned by this session. */
-    audioTranscription: AudioState
-  }
-}
+export type AudioProjection = ProjectionHandle<AudioState>
+
 
 /** Register the pure fold before sessions start accepting audio.
  * @param ctx - plugin scope owning registration and disposal.
  */
-export function registerAudioProjection(ctx: Context): void {
-  ctx.sessionProjections.register({
+export async function registerAudioProjection(ctx: Context): Promise<AudioProjection> {
+  return await ctx.sessionProjections.register({
     key: 'audioTranscription', stateVersion: 2, stateSchema,
     init: () => ({ files: [], citations: [], transcripts: [], pendingCalls: [] }),
     apply(state, event) {
@@ -56,24 +53,22 @@ export function registerAudioProjection(ctx: Context): void {
 }
 
 /** Read the maintained state of the calling conversation; other sessions are inaccessible.
- * @param ctx - scope providing session projections.
+ * @param projection - registered session projection.
  * @param exec - tool caller identity.
  * @returns the caller's restored audio state.
  */
-export function audioState(ctx: Context, exec: ToolRunContext): AudioState {
+export function audioState(projection: AudioProjection, exec: ToolRunContext): AudioState {
   if (!exec.agent) throw new HarnessError('Audio tools require a conversation', 'AUDIO_SESSION_REQUIRED')
-  const state = audioStateOfSession(ctx, exec.agent.session)
-  if (!state) throw new HarnessError('Audio projection is unavailable', 'AUDIO_STATE_UNAVAILABLE')
-  return state
+  return audioStateOfSession(projection, exec.agent.session)
 }
 
 /** Read one session's durable audio projection without granting another session access.
- * @param ctx - scope providing Session projections.
+ * @param projection - registered session projection.
  * @param session - exact loaded session.
  * @returns restored audio state when the projection is available.
  */
-export function audioStateOfSession(ctx: Context, session: Parameters<Context['sessionProjections']['stateOf']>[0]): AudioState | undefined {
-  return ctx.sessionProjections.stateOf(session, 'audioTranscription')
+export function audioStateOfSession(projection: AudioProjection, session: Parameters<AudioProjection['stateOf']>[0]): AudioState {
+  return projection.stateOf(session)
 }
 
 /** Accept exact whitespace-delimited, quoted or @-mentioned paths supplied in user messages.

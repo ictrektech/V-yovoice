@@ -5,6 +5,8 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeModelToolFixture } from '@deepseek-ai/dsh-tool-testkit'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
 import Projections from '@deepseek-ai/dsh-session-projection'
@@ -23,8 +25,11 @@ it.skipIf(!process.env.AUDIO_E2E_URL || !process.env.AUDIO_E2E_FILE)(
       await ctx.plugin(Projections)
       await ctx.plugin(SessionStore)
       await ctx.plugin(ToolRuntime)
+      await ctx.plugin(NativeToolExecutor)
       await ctx.plugin(Attachments, { dshHome: dir })
       await ctx.plugin(Fs, { cwd: dir })
+      ctx.provide('connection', { fetch: { register: () => async () => {} }, requestRejection: () => undefined })
+      ctx.provide('webServer', { register: () => () => {} })
       const url = process.env.AUDIO_E2E_URL
       if (!url) throw new Error('AUDIO_E2E_URL is required')
       await ctx.plugin(Loader)
@@ -38,7 +43,7 @@ it.skipIf(!process.env.AUDIO_E2E_URL || !process.env.AUDIO_E2E_FILE)(
       session.append('user/message', createUserMessage({ source: { kind: 'user' }, content: [
         { type: 'text', text: 'What does this audio say?' }, { type: 'file', attachment: ref },
       ] }), { surfaceOp: 'append' })
-      const result = await ctx.tools.execute({ name: 'transcribe_audio', arguments: { attachment_id: ref.attachmentId },
+      const result = await executeModelToolFixture(ctx, { name: 'transcribe_audio', arguments: { attachment_id: ref.attachmentId },
         callId: ToolCallId('live-audio'), agent: { session } as Agent, signal: new AbortController().signal })
       expect(result.isError, JSON.stringify(result.content)).not.toBe(true)
       const meta = result.meta

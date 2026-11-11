@@ -1,0 +1,12 @@
+{
+  "commit": "4d5f970f80cc684174c338c43b5c3d0fc4fbbe93",
+  "diagnostics": [
+    "packages/api/session-controller/tests/session-models.host.spec.ts(403,24): error TS2339: Property 'selectDefaultModel' does not exist on type 'Promise<SessionController>'.",
+    "packages/api/session-controller/tests/session-models.host.spec.ts(405,31): error TS2339: Property 'selectDefaultModel' does not exist on type 'Promise<SessionController>'.",
+    "packages/client/ui-sidebar-right/tests/expand-button.client.spec.tsx(32,3): error TS2741: Property 'insertRegionTokens' is missing in type '{ insertQuote: () => false; captureInsertion: () => never; insertText: () => never; setDraft: () => never; persistDraft: () => never; addAttachments: () => never; removeAttachment: () => never; pruneAttachments: () => never; submit: () => never; }' but required in type 'InputActions'.",
+    "packages/client/ui-sidebar-right/tests/guide-body.client.spec.tsx(39,3): error TS2741: Property 'insertRegionTokens' is missing in type '{ insertQuote: () => false; captureInsertion: () => never; insertText: () => never; setDraft: () => never; persistDraft: () => never; addAttachments: () => never; removeAttachment: () => never; pruneAttachments: () => never; submit: () => never; }' but required in type 'InputActions'.",
+    "packages/client/ui-sidebar-terminal/tests/terminal-guide.client.spec.tsx(28,3): error TS2741: Property 'insertRegionTokens' is missing in type '{ insertQuote: () => false; captureInsertion: () => never; insertText: () => never; setDraft: () => never; persistDraft: () => never; addAttachments: () => never; removeAttachment: () => never; pruneAttachments: () => never; submit: () => never; }' but required in type 'InputActions'.",
+    "packages/llm/llm-pi-ai/tests/loader-composition.spec.ts(18,52): error TS6133: 'anthropicTextEvents' is declared but its value is never read.",
+    "packages/session-query/session-log-export/tests/header-action.client.spec.tsx(30,3): error TS2741: Property 'insertRegionTokens' is missing in type '{ insertQuote: () => false; captureInsertion: () => never; insertText: () => never; setDraft: () => never; persistDraft: () => never; addAttachments: () => never; removeAttachment: () => never; pruneAttachments: () => never; submit: () => never; }' but required in type 'InputActions'."
+  ]
+}

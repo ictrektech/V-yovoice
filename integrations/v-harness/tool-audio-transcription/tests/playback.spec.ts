@@ -25,7 +25,7 @@ it('streams only an attachment owned by the selected session and supports seekin
   const sessions = { get: (id: string) => id === 'session-a' ? session : undefined }
   const ctx = {
     get: () => sessions,
-    sessionProjections: { stateOf: (target: unknown) => target === session ? state : undefined },
+    projection: { stateOf: (target: unknown) => target === session ? state : undefined },
     attachments: { fileHostPath: () => path },
   }
   const request = (range?: string, method = 'GET') => new Request(
@@ -33,20 +33,20 @@ it('streams only an attachment owned by the selected session and supports seekin
     { method, headers: range === undefined ? {} : { Range: range } },
   )
 
-  const ranged = await audioPlaybackResponse(ctx as never, request('bytes=2-5'))
+  const ranged = await audioPlaybackResponse(ctx as never, request('bytes=2-5'), ctx.projection as never)
   expect(ranged.status).toBe(206)
   expect(ranged.headers.get('content-range')).toBe('bytes 2-5/10')
   expect(ranged.headers.get('content-type')).toBe('audio/mpeg')
   expect(await ranged.text()).toBe('cdef')
 
-  const head = await audioPlaybackResponse(ctx as never, request('bytes=-3', 'HEAD'))
+  const head = await audioPlaybackResponse(ctx as never, request('bytes=-3', 'HEAD'), ctx.projection as never)
   expect(head.status).toBe(206)
   expect(head.headers.get('content-length')).toBe('3')
   expect(await head.text()).toBe('')
 
   const wrongSession = await audioPlaybackResponse(ctx as never, new Request(
     `http://host/api/tool-audio-transcription/file?sessionId=session-b&attachmentId=${encodeURIComponent(attachmentId)}`,
-  ))
+  ), ctx.projection as never)
   expect(wrongSession.status).toBe(404)
 })
 
@@ -54,13 +54,13 @@ it('rejects missing identities and unowned attachments', async () => {
   const sessions = { get: () => ({}) }
   const ctx = {
     get: () => sessions,
-    sessionProjections: { stateOf: () => ({ files: [] }) },
+    projection: { stateOf: () => ({ files: [] }) },
     attachments: { fileHostPath: () => '/never-read' },
   }
-  expect((await audioPlaybackResponse(ctx as never, new Request('http://host/api/tool-audio-transcription/file'))).status).toBe(400)
+  expect((await audioPlaybackResponse(ctx as never, new Request('http://host/api/tool-audio-transcription/file'), ctx.projection as never)).status).toBe(400)
   expect((await audioPlaybackResponse(ctx as never, new Request(
     'http://host/api/tool-audio-transcription/file?sessionId=s&attachmentId=outside',
-  ))).status).toBe(404)
+  ), ctx.projection as never)).status).toBe(404)
 })
 
 it('bridges an authenticated exact Host route to the ranged audio response', async () => {
@@ -74,7 +74,7 @@ it('bridges an authenticated exact Host route to the ranged audio response', asy
   const ctx = {
     get: () => sessions,
     connection: { requestRejection: () => undefined },
-    sessionProjections: { stateOf: () => ({ files: [{ id: attachmentId, name: 'meeting.wav', bytes: 10 }] }) },
+    projection: { stateOf: () => ({ files: [{ id: attachmentId, name: 'meeting.wav', bytes: 10 }] }) },
     attachments: { fileHostPath: () => path },
   }
   const output: Buffer[] = []
@@ -101,7 +101,7 @@ it('bridges an authenticated exact Host route to the ranged audio response', asy
     url: `/api/tool-audio-transcription/file?sessionId=session-route&attachmentId=${encodeURIComponent(attachmentId)}`,
     headers: { host: 'dsh.test', range: 'bytes=3-5' },
   }
-  await serveNodeAudio(ctx as never, request as never, response as never, new AbortController().signal)
+  await serveNodeAudio(ctx as never, request as never, response as never, new AbortController().signal, ctx.projection as never)
   expect(response.status).toBe(206)
   expect(response.headers['content-range']).toBe('bytes 3-5/10')
   expect(Buffer.concat(output).toString()).toBe('def')

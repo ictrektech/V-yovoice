@@ -63,7 +63,7 @@ const TEXT_OUTPUT = { schema: { type: 'string' as const }, render: (_args: unkno
  * @param ctx - plugin scope providing tools, attachments, filesystem and projections.
  * @param config - deployment endpoint, selected model and resource bounds.
  */
-export function apply(ctx: Context, config: Config): void {
+export async function apply(ctx: Context, config: Config): Promise<void> {
   const lifetime = new AbortController()
   ctx.effect(() => () => { lifetime.abort(new Error('Audio plugin unloaded')) })
   const options = (): VoiceConfig => ({
@@ -72,13 +72,13 @@ export function apply(ctx: Context, config: Config): void {
     pageCharacters: config.pageCharacters.get(),
   })
   const current = (): VoiceConfig => resolveConfig(options())
-  ctx.inject(['typert'], (child) => { new AudioController(child, () => resolveConfig(options(), false), lifetime.signal) })
+  const projection = await registerAudioProjection(ctx)
+  ctx.inject(['typert'], (child) => { new AudioController(child, () => resolveConfig(options(), false), lifetime.signal, projection) })
   ctx.inject(['settings'], (child) => { child.settings.configure({ auto: false }, ctx.fiber) })
-  registerAudioProjection(ctx)
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
     path: AUDIO_PLAYBACK_PATH,
-    handler: (req, res) => serveNodeAudio(ctx, req, res, lifetime.signal),
+    handler: (req, res) => serveNodeAudio(ctx, req, res, lifetime.signal, projection),
   }), 'tool-audio-transcription: session-audio playback')
   ctx.systemPrompt.section({
     name: 'tool:audio-transcription', order: ctx.systemPrompt.getSectionOrder('TOOL_READ'),
@@ -100,7 +100,7 @@ export function apply(ctx: Context, config: Config): void {
     name: 'list_audio_files',
     description: 'List uploaded files in this conversation with exact attachment IDs. For audio questions, call transcribe_audio; ordinary text-file reading cannot recognize speech. Desktop file references can be passed by their exact user-provided path.',
     parameters: {}, output: TEXT_OUTPUT,
-    execute: (_args, exec) => Promise.resolve(JSON.stringify(audioState(ctx, exec).files.map(ref => ({
+    execute: (_args, exec) => Promise.resolve(JSON.stringify(audioState(projection, exec).files.map(ref => ({
       attachment_id: ref.id, name: ref.name, bytes: ref.bytes,
     })))),
   }))
@@ -145,7 +145,7 @@ export function apply(ctx: Context, config: Config): void {
       let file: string
       let attachmentId: string | undefined
       if (args.file_path === undefined) {
-        const ref = selectAudioFile(audioState(ctx, exec).files, args.attachment_id)
+        const ref = selectAudioFile(audioState(projection, exec).files, args.attachment_id)
         if (ref.bytes > limit) throw new HarnessError('Audio exceeds the configured or calibrated upload limit; no partial transcription was attempted.', 'AUDIO_TOO_LARGE')
         const chunks: Uint8Array[] = []
         let size = 0
@@ -161,7 +161,7 @@ export function apply(ctx: Context, config: Config): void {
       } else {
         const path = args.file_path
         const session = sessionOf(exec)
-        const cited = audioState(ctx, exec).citations.some(text => citesPath(text, path))
+        const cited = audioState(projection, exec).citations.some(text => citesPath(text, path))
         if (!path.trim() || !cited) throw new HarnessError('File path must be explicitly supplied in this conversation', 'AUDIO_SOURCE_DENIED')
         const target = await ctx.fs.resolve(path, {
           ...session.header.cwd === undefined ? {} : { cwd: session.header.cwd }, signal,
@@ -172,7 +172,7 @@ export function apply(ctx: Context, config: Config): void {
       const source = createHash('sha256').update(data).digest('hex')
       const capabilities = await voiceJson(resolved, `/api/v1/models/${encodeURIComponent(resolved.model)}/input-limits`, signal)
       const fullLimit = fullUploadLimit(capabilities, resolved.maxUploadBytes)
-      const cached = args.reprocess || fullLimit !== undefined ? undefined : audioState(ctx, exec).transcripts.findLast(row =>
+      const cached = args.reprocess || fullLimit !== undefined ? undefined : audioState(projection, exec).transcripts.findLast(row =>
         row.source === source && row.model === resolved.model && row.endpoint === resolved.baseUrl && row.cacheKey === undefined)
       if (cached) return {
         source, model: cached.model, endpoint: cached.endpoint, file, text: cached.text,
@@ -201,8 +201,8 @@ export function apply(ctx: Context, config: Config): void {
     name: 'read_audio_transcript', description: 'Read an ALREADY CREATED transcript. This does NOT transcribe audio. First call transcribe_audio for a new audio file. Read a bounded character window from a complete transcript saved in this conversation. Use the source returned by transcribe_audio. Offsets are zero-based UTF-16 positions.',
     parameters: { source: { type: 'string', required: true }, offset: { type: 'integer' } }, output: TEXT_OUTPUT,
     execute: (args, exec) => {
-      const saved = audioState(ctx, exec).transcripts.findLast(row => row.source === args.source)
-      if (!saved) throw new HarnessError(missingTranscript(audioState(ctx, exec).files), 'AUDIO_TRANSCRIPT_NOT_FOUND')
+      const saved = audioState(projection, exec).transcripts.findLast(row => row.source === args.source)
+      if (!saved) throw new HarnessError(missingTranscript(audioState(projection, exec).files), 'AUDIO_TRANSCRIPT_NOT_FOUND')
       const offset = args.offset ?? 0
       if (offset < 0 || offset > saved.text.length) throw new HarnessError('Transcript offset is outside the text', 'AUDIO_INVALID_OFFSET')
       const end = Math.min(saved.text.length, offset + config.pageCharacters.get())

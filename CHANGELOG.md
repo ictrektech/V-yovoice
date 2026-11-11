@@ -6,10 +6,12 @@
 
 ### English
 
+- Support the audio transcription plugin on DSH 0.2.2-rc.1, including restoration of saved transcripts.
 - Prepare the audio transcription plugin for publication under an ICTREK package name.
 
 ### 简体中文
 
+- 音频转写插件支持 DSH 0.2.2-rc.1，并可恢复已保存的转写原文。
 - 准备将音频转写插件以 ICTREK 包名发布。
 
 ## [0.0.35] - 2026-11-10

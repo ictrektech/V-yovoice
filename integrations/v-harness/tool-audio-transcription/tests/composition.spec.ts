@@ -16,6 +16,8 @@ import { once } from 'node:events'
 import { createHash } from 'node:crypto'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeModelToolFixture } from '@deepseek-ai/dsh-tool-testkit'
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
 import Projections from '@deepseek-ai/dsh-session-projection'
 import LocalAttachments from '@deepseek-ai/dsh-attachment-local'
@@ -75,7 +77,7 @@ it('loads the real tools, uploads original bytes, persists full text, pages, res
   const address = server.address()
   if (address === null || typeof address === 'string') throw new Error('missing server address')
   const configPath = join(dir, 'cordis.yml')
-  await writeFile(configPath, `- name: llm\n- name: agents\n- name: agent-loop\n- name: prompt\n- name: projections\n- name: sessions\n- name: tools\n  config:\n    mode: native\n- name: attachments\n  config:\n    dshHome: ${JSON.stringify(dir)}\n- name: fs\n  config:\n    cwd: ${JSON.stringify(dir)}\n- name: audio\n  config:\n    baseUrl: http://127.0.0.1:${address.port}\n    model: sensevoice\n    pageCharacters: 4\n`)
+  await writeFile(configPath, `- name: llm\n- name: agents\n- name: agent-loop\n- name: prompt\n- name: projections\n- name: sessions\n- name: tools\n- name: executor\n- name: attachments\n  config:\n    dshHome: ${JSON.stringify(dir)}\n- name: fs\n  config:\n    cwd: ${JSON.stringify(dir)}\n- name: audio\n  config:\n    baseUrl: http://127.0.0.1:${address.port}\n    model: sensevoice\n    pageCharacters: 4\n`)
   const ctx = new Context()
   cleanup.push(() => ctx.fiber.dispose())
   ctx.provide('connection', { fetch: { register: () => async () => {} }, requestRejection: () => undefined })
@@ -84,7 +86,7 @@ it('loads the real tools, uploads original bytes, persists full text, pages, res
   await ctx.plugin(Loader)
   ctx.loader.builtins.include = Include
   provideWorkingDirectoryFixture(ctx)
-  const modules = new Map<string, unknown>([['llm', LlmRuntime], ['agents', AgentRegistry], ['agent-loop', AgentLoop], ['prompt', SystemPrompt], ['projections', Projections], ['sessions', SessionStore], ['tools', ToolRuntime], ['attachments', LocalAttachments], ['fs', LocalFs], ['audio', plugin]])
+  const modules = new Map<string, unknown>([['llm', LlmRuntime], ['agents', AgentRegistry], ['agent-loop', AgentLoop], ['prompt', SystemPrompt], ['projections', Projections], ['sessions', SessionStore], ['tools', ToolRuntime], ['executor', NativeToolExecutor], ['attachments', LocalAttachments], ['fs', LocalFs], ['audio', plugin]])
   // Loader's importer uses only this operation in this fixture.
   Object.assign(ctx.loader, { internal: { version: 'v2', import: async (id: string) => modules.get(id) } })
   await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(configPath).href } })
@@ -96,7 +98,7 @@ it('loads the real tools, uploads original bytes, persists full text, pages, res
   session.append('turn/start', { turn: 1 })
   session.append('user/message', createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: '这段音频内容是什么？' }, { type: 'file', attachment: ref }] }), { surfaceOp: 'append' })
   let serial = 0
-  const call = (name: string, args: Record<string, unknown>, caller = agent) => ctx.tools.execute({ name, arguments: args, callId: ToolCallId(`audio-${++serial}`), agent: caller, signal: new AbortController().signal })
+  const call = (name: string, args: Record<string, unknown>, caller = agent) => executeModelToolFixture(ctx, { name, arguments: args, callId: ToolCallId(`audio-${++serial}`), agent: caller, signal: new AbortController().signal })
   expect(JSON.stringify((await call('list_audio_files', {})).content)).toContain('audio.mp3')
   const result = await call('transcribe_audio', { attachment_id: ref.attachmentId })
   expect(result.isError).not.toBe(true)
@@ -104,6 +106,14 @@ it('loads the real tools, uploads original bytes, persists full text, pages, res
   expect(JSON.stringify(result.content)).toContain('next_offset')
   const meta = result.meta
   if (typeof meta !== 'object' || meta === null || !('source' in meta)) throw new Error('missing result source')
+  const ptcSession = ctx.sessions.create(SessionId('audio-ptc'))
+  ptcSession.append('tool/ptc-dispatch', {
+    rootCallId: ToolCallId('root'), parentCallId: ToolCallId('root'), subCallId: ToolCallId('nested'),
+    name: 'transcribe_audio', arguments: {}, isError: false, content: result.content, meta,
+  })
+  const restoredPtc = ctx.sessions.create(SessionId('audio-ptc-restored'), { seed: ptcSession.snapshotEvents() })
+  const ptcResult = await call('read_audio_transcript', { source: meta.source }, { session: restoredPtc } as Agent)
+  expect(JSON.stringify(ptcResult.content)).toContain('第一段')
   session.append('tool/call', { turn: 1, step: 1, callId: ToolCallId('unrelated-result'), name: 'unrelated_tool', arguments: '{}' })
   session.append('tool/result', { turn: 1, step: 1, message: createToolResultMessage({ callId: ToolCallId('unrelated-result'), content: result.content, isError: false }), meta }, { surfaceOp: 'append' })
   expect((await call('read_audio_transcript', { source: meta.source })).isError).toBe(true)
@@ -147,7 +157,7 @@ it('loads the real tools, uploads original bytes, persists full text, pages, res
   byteLimit = 10000
   responseText = ''
   expect((await call('transcribe_audio', { attachment_id: ref.attachmentId, reprocess: true })).meta).toMatchObject({ text: '' })
-  const cancelled = await ctx.tools.execute({ name: 'transcribe_audio', arguments: { attachment_id: ref.attachmentId }, callId: ToolCallId('cancelled'), agent, signal: AbortSignal.abort() })
+  const cancelled = await executeModelToolFixture(ctx, { name: 'transcribe_audio', arguments: { attachment_id: ref.attachmentId }, callId: ToolCallId('cancelled'), agent, signal: AbortSignal.abort() })
   expect(cancelled.isError).toBe(true)
 
   expect({ preview: result.content, fullText: 'text' in meta ? meta.text : null, page: next.content }).toMatchSnapshot()

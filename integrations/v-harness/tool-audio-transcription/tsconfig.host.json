@@ -7,6 +7,9 @@
   },
   "references": [
     {
+      "path": "../../core/tool-executor-ptc"
+    },
+    {
       "path": "../../../vendor/cosmokit"
     },
     {

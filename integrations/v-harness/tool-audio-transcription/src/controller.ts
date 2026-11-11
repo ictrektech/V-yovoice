@@ -4,7 +4,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import { audioStateOfSession } from './projection.ts'
+import { audioStateOfSession, type AudioProjection } from './projection.ts'
 import { modelRows, voiceJson, type VoiceConfig } from './client.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -20,8 +20,12 @@ export class AudioController extends TypertRemoteService {
    * @param ctx - plugin context with the authenticated Typert gateway.
    * @param options - current profile settings, resolved at request admission.
    * @param lifetime - plugin disposal cancellation.
+   * @param projection - registered session projection.
    */
-  constructor(ctx: Context, private readonly options: () => VoiceConfig, private readonly lifetime: AbortSignal) {
+  constructor(
+    ctx: Context, private readonly options: () => VoiceConfig,
+    private readonly lifetime: AbortSignal, private readonly projection: AudioProjection,
+  ) {
     super(ctx, 'audioTranscription')
   }
 
@@ -56,10 +60,10 @@ export class AudioController extends TypertRemoteService {
       if (sessions === undefined) return null
       const session = sessions.get(brandString<SessionId>(sessionId))
       if (session === undefined) return null
-      const state = audioStateOfSession(this.ctx, session)
-      const saved = state?.transcripts.findLast(row => row.source === source)
+      const state = audioStateOfSession(this.projection, session)
+      const saved = state.transcripts.findLast(row => row.source === source)
       if (saved === undefined) return null
-      const attachment = state?.files.find(file => file.id === `sha256:${source}`)
+      const attachment = state.files.find(file => file.id === `sha256:${source}`)
       return {
         source: saved.source,
         file: saved.file,

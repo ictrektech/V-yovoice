@@ -1,7 +1,7 @@
 {
   "name": "@ictrek/dsh-tool-audio-transcription",
   "description": "Session-authorized audio transcription through V-yovoice",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": false,
   "publishConfig": { "access": "public" },
   "packageManager": "pnpm@11.28.5",
@@ -72,6 +72,9 @@
     "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-tool-executor-ptc": "workspace:*",
+    "@deepseek-ai/dsh-tool-executor-native": "workspace:*",
+    "@deepseek-ai/dsh-tool-testkit": "workspace:*",
     "@deepseek-ai/dsh-agent": "workspace:*",
     "@deepseek-ai/dsh-attachment": "workspace:*",
     "@deepseek-ai/dsh-client-connection": "workspace:*",
@@ -116,8 +119,8 @@
     "zod": "4.4.3"
   },
   "engines": {
-    "dsh": "0.2.1-rc.2 || 0.2.1-rc.5",
-    "node": "^22.19.0 || >=24.0.0"
+    "dsh": "0.2.2-rc.1",
+    "node": ">=24.9.0"
   },
   "dsh": {
     "bundle": {

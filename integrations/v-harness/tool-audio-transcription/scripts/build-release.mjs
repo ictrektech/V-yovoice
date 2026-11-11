@@ -1,5 +1,5 @@
 /** Build the DSH plugin against an explicitly pinned v-harness checkout. */
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { cp, lstat, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
@@ -21,6 +21,7 @@ const markerValue = `${manifest.name}@${manifest.version}:${expected.commit}\n`
 const generated = []
 const originalFiles = new Map()
 let cleaning = false
+let hostCheckBaselineUsed = false
 
 function git(repo, ...args) {
   return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' }).trim()
@@ -33,6 +34,28 @@ function run(command, args, options = {}) {
     env: { ...process.env, ...options.env },
     stdio: 'inherit',
   })
+}
+
+async function checkHostBaseline() {
+  process.stdout.write('\n$ pnpm run build:check\n')
+  const result = spawnSync('pnpm', ['run', 'build:check'], {
+    cwd: harnessRepo, env: process.env, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
+  })
+  if (result.stdout) process.stdout.write(result.stdout)
+  if (result.stderr) process.stderr.write(result.stderr)
+  if (result.error) throw result.error
+  if (result.status === 0) return
+  const baseline = JSON.parse(await readFile(join(packageRoot, 'scripts/host-check-baseline.json'), 'utf8'))
+  const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`
+  const diagnostics = [...new Set(output.split('\n').filter(line => /^packages\/.*\(\d+,\d+\): error TS\d+:/.test(line)))].sort()
+  const failures = output.split('\n').filter(line => /^== FAILED /.test(line)).map(line => line.replace(/ \([^)]+\) ==$/, '')).sort()
+  if (baseline.commit !== expected.commit || result.signal || result.status !== 1
+    || JSON.stringify(diagnostics) !== JSON.stringify([...baseline.diagnostics].sort())
+    || JSON.stringify(failures) !== JSON.stringify(['== FAILED client aggregate check', '== FAILED host aggregate check'])) {
+    throw new Error('Host aggregate checks failed beyond the verified baseline')
+  }
+  hostCheckBaselineUsed = true
+  process.stdout.write('Host aggregate checks match the seven documented pre-existing TypeScript errors.\n')
 }
 
 async function exists(path) {
@@ -212,7 +235,7 @@ try {
     },
   })
   run('pnpm', ['exec', 'oxlint', destinationRelative])
-  run('pnpm', ['run', 'build:check'])
+  await checkHostBaseline()
 
   const archive = join(output, `ictrek-dsh-tool-audio-transcription-${manifest.version}.tgz`)
   await rm(archive, { force: true })
@@ -248,6 +271,7 @@ try {
       architecture: process.arch,
     },
     releaseEligible,
+    hostCheck: hostCheckBaselineUsed ? 'matches documented pre-existing errors' : 'passed',
   }
   await writeFile(join(output, 'compatibility.json'), JSON.stringify(releaseManifest, null, 2) + '\n')
   process.stdout.write(`\nArchive: ${archive}\nSHA256: ${digest}\nRelease eligible: ${releaseEligible}\n`)

@@ -13,14 +13,14 @@ kind: "package-bundle"
 
 ## 安装与配置
 
-预构建安装包为 `ictrek-dsh-tool-audio-transcription-0.1.1.tgz`，首先适配 v-harness **0.1.36** 和 DSH **0.2.1-rc.2 / 0.2.1-rc.5**。打开**插件 → 添加插件**，填写宿主可访问的安装包 URL 或绝对路径。这里不是文件上传器：Mac 本地路径不能表示远程 VOS 上的文件。VOS 使用前将包复制到目标租户工作区，并使用租户内部路径，例如 `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`；容器共享的 `/tmp` 在租户内不可见。也可填写固定 Release 地址 `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz`。安装进目标租户的 profile，不修改共享运行时。
+预构建安装包为 `ictrek-dsh-tool-audio-transcription-0.1.2.tgz`，适配 v-harness **0.2.2-rc.1.vos.03** 和 DSH **0.2.2-rc.1**；旧版 DSH 0.2.1-rc.2 / 0.2.1-rc.5 请继续使用插件 0.1.1。打开**插件 → 添加插件**，填写宿主可访问的安装包 URL 或绝对路径。这里不是文件上传器：Mac 本地路径不能表示远程 VOS 上的文件。VOS 使用前将包复制到目标租户工作区，并使用租户内部路径，例如 `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`；容器共享的 `/tmp` 在租户内不可见。也可填写固定 Release 地址 `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz`。安装进目标租户的 profile，不修改共享运行时。
 
 npm 包发布后，插件市场可从可访问的 npm 源安装 `@ictrek/dsh-tool-audio-transcription`。
 
 在宿主上以 profile 所有者执行 CLI 示例：
 
 ```sh
-dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-audio-transcription-0.1.1.tgz
+dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-audio-transcription-0.1.2.tgz
 ```
 
 启用组合包后打开配置页，保存 V-yovoice **服务根地址**（不含 `/v1`），点击**检查连接 / 获取模型**，选择已就绪的 ASR 模型并再次保存。地址必须能从宿主所在容器访问。Desktop 应通过其插件页安装进受管 Desktop profile，不能用无关的 `web` profile 代替。按宿主提示刷新或重启。尚未配置的插件可以正常加载，调用转写时会明确提示配置要求。
@@ -64,6 +64,8 @@ V_HARNESS_REPO=/absolute/path/to/v-harness \
 ```
 
 脚本校验固定宿主 revision，将本包临时放入该 v-harness workspace，依次执行插件测试、lint、Host/Client 编译、`build:artifacts` 和 `build:check`，然后在被忽略的 `dist/dsh-plugin/` 下生成 `.tgz`、SHA256 和 `compatibility.json`。脚本同时检查归档不含 workspace 声明、源码入口、安装脚本或本机构建路径。将三个文件上传到专用 `harness-plugin-vX.Y.Z` Release；安装验收必须使用最终发布包。
+
+锁定的 0.2.2-rc.1 宿主源码自身有 7 条测试文件 TypeScript 错误；脚本仅接受与已复核基线完全一致的错误，并在 `compatibility.json` 标记，任何新增错误或其他构建失败均会阻止发布。
 
 
 ## 模型体验

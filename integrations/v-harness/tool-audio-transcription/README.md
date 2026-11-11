@@ -13,14 +13,14 @@ Paste an MP3 into a normal Web or Desktop conversation and ask what it says. The
 
 ## Install and configure
 
-Use the prebuilt `ictrek-dsh-tool-audio-transcription-0.1.1.tgz` with v-harness **0.1.36** and DSH **0.2.1-rc.2 / 0.2.1-rc.5**. In **Plugins → Add plugin**, enter a tarball URL or absolute path readable by the Host. This is not an upload picker: a Mac path cannot name a file on a remote VOS Host. For VOS, copy the archive into the intended tenant's workspace and use its in-tenant path, for example `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`; the container's shared `/tmp` is not visible inside the tenant. Alternatively, enter the immutable release URL `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz`. Install into that tenant's profile, not the shared runtime.
+Use the prebuilt `ictrek-dsh-tool-audio-transcription-0.1.2.tgz` with v-harness **0.2.2-rc.1.vos.03** and DSH **0.2.2-rc.1**; for DSH 0.2.1-rc.2 / 0.2.1-rc.5, use plugin 0.1.1. In **Plugins → Add plugin**, enter a tarball URL or absolute path readable by the Host. This is not an upload picker: a Mac path cannot name a file on a remote VOS Host. For VOS, copy the archive into the intended tenant's workspace and use its in-tenant path, for example `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`; the container's shared `/tmp` is not visible inside the tenant. Alternatively, enter the immutable release URL `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz`. Install into that tenant's profile, not the shared runtime.
 
 After npm publication, the market can install `@ictrek/dsh-tool-audio-transcription` from an accessible registry.
 
 CLI example, executed as the profile owner on the Host:
 
 ```sh
-dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-audio-transcription-0.1.1.tgz
+dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-audio-transcription-0.1.2.tgz
 ```
 
 Enable the installed bundle. Open its configuration, save the V-yovoice **service root URL** (without `/v1`), select **Check connection / list models**, choose a ready ASR model and save again. Use an address reachable from the Host, including from its container. Desktop uses its managed Desktop profile: install through its Plugins page, not an unrelated `web` profile. Follow any restart or refresh notice from the Host. Unconfigured installations remain loadable and report configuration requirements when transcription is attempted.
@@ -64,6 +64,8 @@ V_HARNESS_REPO=/absolute/path/to/v-harness \
 ```
 
 The script checks the pinned host revision, temporarily installs this package into that v-harness workspace, runs the plugin tests, lint, Host/Client compilation, `build:artifacts` and `build:check`, then writes the `.tgz`, SHA256 sidecar and `compatibility.json` under the ignored `dist/dsh-plugin/` directory. It verifies that the archive contains no workspace specifications, source entries, install scripts or local build paths. Publish those three files to the dedicated `harness-plugin-vX.Y.Z` release. Installation must be tested outside the source workspace using the exact published archive.
+
+The pinned 0.2.2-rc.1 host source has seven pre-existing TypeScript errors in test files. The script accepts only the exact reviewed baseline and records it in `compatibility.json`; additional errors or other build failures stop the release.
 
 
 ## Model Experience
