@@ -29,8 +29,19 @@ v0.5.0 后续同步新增桌面端可选 Qwen3 ASR 参考原文识别、音频�
 语音识别页会读取所选模型的实际批准限制，在浏览器中转换为 16 kHz 单声道 WAV，
 按时长和文件大小分段后顺序识别、合并文本，并显示进度、支持取消。每段仍单独通过
 原接口申请和释放调度许可，不放宽单次推理范围。原文件须符合 `VVOICE_MAX_UPLOAD_MB`
-（默认 200 MiB），格式须由浏览器支持；旧审批继续直接上传。公共 API 调用方仍须自行
-分段；输入检查保持有效，请求体上限随实际批准大小调整，且受全局上传配置约束。
+（默认 200 MiB），格式须由浏览器支持；旧审批继续直接上传。服务调用方也可把完整原文件
+提交到 `POST /v1/audio/transcriptions/full`：服务端用镜像内的 `ffmpeg` 探测并解码、
+混为 16 kHz 单声道，经 VAD 与模型校准推导的字节/时长上限分段，再逐段校验、申请和
+释放许可，最后按原顺序合并文本。该接口只接受已校准 ASR 模型，默认最长 30 分钟，
+编码大小沿用 `VVOICE_MAX_UPLOAD_MB`；只有全部段落成功才返回 `complete: true`。
+失败响应给出稳定 `error.code`，已完成文本仅放在明确 `complete: false` 的 partial
+块中。`/api/v1/models/{key}/input-limits` 会公布完整文件限制与处理版本。
+原有单段接口保持不变；请求体上限仍随实际批准大小调整，并受全局上传配置约束。
+接口字段、错误语义和 v-harness 接入步骤见
+[全文件音频转写](docs/full-file-transcription.md)。
+可安装的 v-harness 插件位于
+[`integrations/v-harness/tool-audio-transcription`](integrations/v-harness/tool-audio-transcription)，
+以预构建 `.tgz` 独立发布，不打入 VOS 服务镜像。
 
 Qwen3-ASR 0.6B 与 1.7B 支持各自批准的时长、源采样率、文件字节数和热词长度限制，
 不能借用 SenseVoice 的审批。识别页区分「文件已下载」与「当前设备已获准推理」，

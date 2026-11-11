@@ -52,6 +52,13 @@ def test_merge_and_cap_merges_small_gaps_and_splits_long_runs() -> None:
     assert len(merged[1:]) >= 2
 
 
+def test_merge_and_cap_can_defer_cap_to_caller() -> None:
+    rate = 100
+    segments = [(0.0, np.zeros(2500, dtype=np.float32))]
+    merged = _merge_and_cap(segments, rate, max_segment_seconds=None)
+    assert len(merged) == 1 and len(merged[0][1]) == 2500
+
+
 def test_needs_split_respects_threshold(monkeypatch) -> None:
     import dataclasses
 
@@ -68,7 +75,8 @@ def test_long_transcription_uses_vad_segments(monkeypatch) -> None:
     """Long audio is split via VAD, decoded per segment, and merged."""
     import dataclasses
 
-    from vvoice import runtime, vad as vad_module
+    from vvoice import runtime
+    from vvoice import vad as vad_module
 
     item = {"key": "sensevoice-int8", "kind": "asr", "runtime": {"factory": "from_sense_voice"}}
     monkeypatch.setattr(runtime, "find_model", lambda key, kind: item)
@@ -117,7 +125,8 @@ def test_vad_failure_falls_back_to_whole_decode(monkeypatch) -> None:
 def test_cpu_models_pin_forces_cpu_provider(monkeypatch) -> None:
     import dataclasses
 
-    from vvoice import runtime, vad as vad_module
+    from vvoice import runtime
+    from vvoice import vad as vad_module
 
     monkeypatch.setattr(runtime, "resolve_files", lambda item: {})
     monkeypatch.setattr(runtime, "detect_provider", lambda: "cuda")

@@ -7,6 +7,69 @@ configs:
       en: V-Scheduler shared model directory; installed models are shared by all V-Voice users. The legacy configuration key and path remain upgrade-compatible.
     default: /data/vos_workspace/model_hub
     hints: [com.ictrek.model.storage]
+  - name: VVOICE_MAX_UPLOAD_MB
+    type: integer
+    title: {zh-CN: 最大上传文件大小(MiB), en: Maximum Upload Size (MiB)}
+    description:
+      zh-CN: 单个音频请求的编码文件上限；全文件转写也受此限制。
+      en: Encoded size limit for one audio request; complete-file transcription also uses this limit.
+    default: 200
+    minimum: 1
+    maximum: 4096
+  - name: VVOICE_FULL_TRANSCRIPTION_MAX_SECONDS
+    type: integer
+    title: {zh-CN: 全文件转写最长音频(秒), en: Complete-file Audio Limit (s)}
+    description:
+      zh-CN: 服务端完整音频转写接受的最长解码时长；超限返回明确错误。
+      en: Maximum decoded audio duration accepted by complete-file transcription; larger inputs return an explicit error.
+    default: 1800
+    minimum: 1
+    maximum: 7200
+  - name: VVOICE_FULL_TRANSCRIPTION_TIMEOUT_SECONDS
+    type: integer
+    title: {zh-CN: 全文件转写总时限(秒), en: Complete-file Deadline (s)}
+    description:
+      zh-CN: 整个请求的总处理时限；超时返回不完整错误，不交付伪完整结果。
+      en: Total processing deadline for one request; timeouts return an explicit incomplete error, never a fake complete result.
+    default: 1800
+    minimum: 1
+    maximum: 86400
+  - name: VVOICE_FULL_TRANSCRIPTION_DECODE_TIMEOUT_SECONDS
+    type: integer
+    title: {zh-CN: 音频解码时限(秒), en: Audio Decode Deadline (s)}
+    description:
+      zh-CN: 单次 ffprobe/ffmpeg 子进程的时限；超时会终止解码并清理临时文件。
+      en: Deadline for each ffprobe/ffmpeg child process; timeouts terminate decoding and clean temporary files.
+    default: 300
+    minimum: 1
+    maximum: 3600
+  - name: VVOICE_FULL_TRANSCRIPTION_MAX_PARTS
+    type: integer
+    title: {zh-CN: 全文件最大分段数, en: Maximum Transcription Parts}
+    description:
+      zh-CN: 防止异常校准或超短分段产生过多调度许可；超过时明确拒绝。
+      en: Prevents abnormal calibration or tiny segments from creating excessive permits; exceeding it is rejected explicitly.
+    default: 512
+    minimum: 1
+    maximum: 4096
+  - name: VVOICE_FULL_TRANSCRIPTION_MAX_SOURCE_SAMPLE_RATE
+    type: integer
+    title: {zh-CN: 原始音频最高采样率(Hz), en: Maximum Source Sample Rate (Hz)}
+    description:
+      zh-CN: 仅在解码前限制异常源采样率；普通 48 kHz 文件会在服务端转换为 16 kHz。
+      en: Bounds abnormal source sample rates before decoding; ordinary 48 kHz files are converted to 16 kHz by the service.
+    default: 192000
+    minimum: 8000
+    maximum: 384000
+  - name: VVOICE_FULL_TRANSCRIPTION_MAX_SOURCE_CHANNELS
+    type: integer
+    title: {zh-CN: 原始音频最大声道数, en: Maximum Source Channels}
+    description:
+      zh-CN: 解码前限制不可信多声道文件；所有接受音频都会混为单声道。
+      en: Bounds untrusted multichannel files before decoding; every accepted input is mixed to mono.
+    default: 8
+    minimum: 1
+    maximum: 32
   - name: VVOICE_NUM_THREADS
     type: integer
     title: {zh-CN: CPU 线程数, en: CPU Threads}

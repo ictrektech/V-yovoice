@@ -1,28 +1,70 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import dataclasses
 import json
 import os
+import tempfile
 from pathlib import Path
 from typing import Literal
 
-import numpy as np
 import httpx
-from fastapi import Body, FastAPI, File, Form, HTTPException, Query, Request, Security, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import numpy as np
+from fastapi import (
+    Body,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    Security,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.encoders import jsonable_encoder
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import __version__
+from .admission import (
+    AdmissionMiddleware,
+    Execution,
+    admit_model,
+    model_limits,
+    run_blocking,
+    validate_inputs,
+)
+from .admission import (
+    current as admission_current,
+)
 from .audio import StreamingPcmDecoder, decode_audio, decode_calibrated_audio, encode_audio
-from .admission import model_limits
 from .catalog import catalog, find_model
 from .config import settings
+from .full_transcription import (
+    RESPONSE_FORMATS,
+    FullTranscriptionError,
+    SpeechPart,
+    cache_identity,
+    decode_upload,
+    full_transcription_metadata,
+    segment_policy,
+    split_parts,
+)
 from .hotwords import (
     HOTWORD_SET_FORMATS,
-    HotwordStore,
     MAX_HOTWORDS_FILE_BYTES,
+    HotwordStore,
     merge_phrases,
     parse_hotwords,
     render_hotword_format,
@@ -40,7 +82,7 @@ from .runtime import (
 )
 from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore
 from .transcript import normalize_transcript, subtitle
-from .admission import AdmissionMiddleware, run_blocking, admit_model
+
 app = FastAPI(docs_url=None, title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
 if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
     app.add_middleware(AdmissionMiddleware)
@@ -284,7 +326,11 @@ async def input_limits(key: str):
         find_model(key, "asr")
     except KeyError:
         raise HTTPException(404, "ASR model not found") from None
-    return {"limits": model_limits(key), "max_upload_bytes": settings.max_upload_mb * 1024 * 1024}
+    return {
+        "limits": model_limits(key),
+        "max_upload_bytes": settings.max_upload_mb * 1024 * 1024,
+        "full_transcription": full_transcription_metadata(),
+    }
 
 
 @app.get("/api/v1/creative-models")
@@ -498,6 +544,442 @@ async def _transcription(
     if response_format == "json":
         return {"text": result["text"]}
     return JSONResponse(result)
+
+
+@dataclasses.dataclass
+class FullTranscriptionRun:
+    """一次全文件请求的计划、已完成段落和结果身份。"""
+
+    language: str
+    limits: dict | None = None
+    decoded: object | None = None
+    parts_total: int = 0
+    results: list[tuple[SpeechPart, dict]] = dataclasses.field(default_factory=list)
+
+
+_FULL_FILE_PATH = "/v1/audio/transcriptions/full"
+_GATEWAY_ADMISSION_HEADERS = {
+    "x-vscheduler-permit-id",
+    "x-vscheduler-execution-token",
+    "x-vscheduler-executor-id",
+}
+_SEGMENT_ADMISSION_HEADERS = {
+    *_GATEWAY_ADMISSION_HEADERS,
+    "authorization",
+    "x-vscheduler-priority",
+    "x-vscheduler-preemptible",
+    "x-vscheduler-allow-preemption",
+    "x-vscheduler-force-admission",
+    "x-vscheduler-queue-wait-seconds",
+}
+
+
+def _full_segment_headers(request: Request) -> dict[str, str]:
+    """拒绝复用网关单次许可，只把直连调度意图传给每一段。"""
+    inherited = sorted(
+        header for header in _GATEWAY_ADMISSION_HEADERS if header in request.headers
+    )
+    if inherited:
+        raise FullTranscriptionError(
+            409,
+            "direct_admission_required",
+            "full-file transcription requires direct V-Scheduler admission; "
+            "use the per-segment endpoint behind V-Router",
+        )
+    headers = {
+        name: request.headers[name]
+        for name in _SEGMENT_ADMISSION_HEADERS
+        if name in request.headers and name not in _GATEWAY_ADMISSION_HEADERS
+    }
+    if headers.get("x-vscheduler-force-admission") != "true":
+        headers.pop("authorization", None)
+    return headers
+
+
+@contextlib.asynccontextmanager
+async def _segment_execution(headers: dict[str, str]):
+    """每段使用独立许可，避免把多次模型计算记在一次预约下。"""
+    execution = Execution(headers)
+    token = admission_current.set(execution)
+    try:
+        yield execution
+    finally:
+        admission_current.reset(token)
+        await asyncio.shield(asyncio.to_thread(execution.end))
+
+
+async def _watch_disconnect(request: Request, cancel: asyncio.Event) -> None:
+    """客户端断开后停止后续解码和段落，已开始的原生调用留给停止核验。"""
+    try:
+        while not cancel.is_set():
+            if await request.is_disconnected():
+                cancel.set()
+                return
+            await asyncio.sleep(0.5)
+    except asyncio.CancelledError:
+        pass
+
+
+def _full_http_error(exc: HTTPException, part_number: int | None = None) -> FullTranscriptionError:
+    status = exc.status_code
+    codes = {
+        403: "admission_denied",
+        404: "model_not_found",
+        409: "model_not_ready",
+        413: "audio_file_too_large",
+        422: "invalid_input",
+        429: "service_busy",
+        503: "scheduler_unavailable",
+        504: "transcription_timeout",
+    }
+    detail = str(exc.detail or "request failed")
+    if part_number is not None:
+        detail = f"part {part_number}: {detail}"
+    retry_after = None
+    if exc.headers:
+        try:
+            retry_after = max(0, int(exc.headers.get("Retry-After", "")))
+        except (TypeError, ValueError):
+            retry_after = None
+    return FullTranscriptionError(
+        status,
+        codes.get(status, "transcription_failed"),
+        detail,
+        retryable=status in {429, 503, 504},
+        retry_after=retry_after,
+        part_number=part_number,
+    )
+
+
+def _clean_results(run: FullTranscriptionRun) -> tuple[list[dict], list[float]]:
+    results = []
+    offsets = []
+    for part, result in run.results:
+        cleaned = dict(result)
+        cleaned["text"] = str(cleaned.get("text") or "").strip()
+        results.append(cleaned)
+        offsets.append(part.start)
+    return results, offsets
+
+
+def _part_rows(run: FullTranscriptionRun) -> list[dict]:
+    return [
+        {
+            "index": part.index,
+            "start": round(part.start, 3),
+            "end": round(part.end, 3),
+            "duration": round(part.duration, 3),
+            "text": result["text"],
+        }
+        for part, result in run.results
+    ]
+
+
+def _merged_full_result(run: FullTranscriptionRun) -> dict:
+    if run.decoded is None:
+        raise RuntimeError("decoded audio is unavailable")
+    results, offsets = _clean_results(run)
+    if not results:
+        return {
+            "text": "",
+            "tokens": [],
+            "timestamps": [],
+            "words": [],
+            "segments": [],
+            "duration": round(run.decoded.duration, 3),
+        }
+    from .transcript import merge_segment_transcripts
+
+    return merge_segment_transcripts(results, offsets, run.decoded.duration)
+
+
+def _partial_payload(run: FullTranscriptionRun) -> dict | None:
+    if run.decoded is None or not run.results:
+        return None
+    merged = _merged_full_result(run)
+    return {
+        "complete": False,
+        "text": merged.get("text", ""),
+        "duration": round(run.decoded.duration, 3),
+        "parts_completed": len(run.results),
+        "parts_total": run.parts_total,
+        "parts": _part_rows(run),
+    }
+
+
+def _full_error_response(
+    error: FullTranscriptionError,
+    run: FullTranscriptionRun,
+    part_number: int | None = None,
+) -> JSONResponse:
+    headers = {
+        "Cache-Control": "no-store",
+        "X-VVoice-Transcription-Complete": "false",
+    }
+    if error.retry_after is not None:
+        headers["Retry-After"] = str(error.retry_after)
+    body = {
+        "detail": error.detail,
+        "complete": False,
+        "error": {
+            "code": error.code,
+            "message": error.detail,
+            "status": error.status_code,
+            "part_number": part_number,
+            "parts_total": run.parts_total or None,
+            "retryable": error.retryable,
+        },
+    }
+    partial = _partial_payload(run)
+    if partial is not None:
+        body["partial"] = partial
+    return JSONResponse(status_code=error.status_code, content=body, headers=headers)
+
+
+def _full_success(
+    run: FullTranscriptionRun,
+    model: str,
+    item: dict,
+    response_format: str,
+):
+    if run.decoded is None or run.limits is None:
+        raise RuntimeError("full transcription result is incomplete")
+    merged = _merged_full_result(run)
+    cache = cache_identity(
+        model, item, run.limits, run.decoded.source_sha256, run.language
+    )
+    base = {
+        "text": merged.get("text", ""),
+        "complete": True,
+        "model": model,
+        "task": "transcribe",
+        "duration": round(run.decoded.duration, 3),
+        "parts_total": len(run.results),
+        "speech_detected": bool(merged.get("text")),
+        "audio": {
+            "source_sample_rate": run.decoded.source_sample_rate,
+            "source_channels": run.decoded.source_channels,
+            "decoded_sample_rate": 16000,
+        },
+        "cache": cache,
+    }
+    headers = {
+        "Cache-Control": "no-store",
+        "X-VVoice-Transcription-Complete": "true",
+        "X-VVoice-Cache-Key": cache["key"],
+        "X-VVoice-Processing-Version": cache["processing_version"],
+    }
+    if response_format == "text":
+        return PlainTextResponse(base["text"], headers=headers)
+    verbose = {**merged, **base, "parts": _part_rows(run)}
+    if response_format in {"srt", "vtt"}:
+        return PlainTextResponse(
+            subtitle(verbose, response_format),
+            media_type="text/vtt" if response_format == "vtt" else "text/plain",
+            headers=headers,
+        )
+    if response_format == "verbose_json":
+        return JSONResponse(verbose, headers=headers)
+    return JSONResponse(
+        {key: base[key] for key in (
+            "text",
+            "complete",
+            "model",
+            "task",
+            "duration",
+            "parts_total",
+            "speech_detected",
+            "audio",
+            "cache",
+        )},
+        headers=headers,
+    )
+
+
+FULL_TRANSCRIPTION_RESPONSES = {
+    404: {"description": "ASR model key does not exist or is not an ASR model"},
+    409: {"description": "Model is not ready or gateway admission cannot be split per segment"},
+    413: {"description": "Encoded audio, decoded duration, or part count exceeds the configured limit"},
+    415: {"description": "Unsupported, invalid, or undecodable audio"},
+    422: {"description": "Invalid field or an unapproved model input metric"},
+    429: {
+        "description": "Scheduler resources are busy; completed parts are returned as explicit partial data"
+    },
+    503: {
+        "description": "Scheduler admission, model calibration, or the server media decoder is unavailable"
+    },
+    504: {"description": "Audio decoding or the total transcription deadline expired"},
+    500: {
+        "description": "Model inference or result assembly failed; no successful complete result is returned"
+    },
+}
+
+
+@app.exception_handler(StarletteHTTPException)
+async def full_http_exception(request: Request, exc: StarletteHTTPException):
+    """保证请求体中间件等路由外错误也遵守完整文件错误契约。"""
+    if request.url.path != _FULL_FILE_PATH:
+        return await http_exception_handler(request, exc)
+    mapped = _full_http_error(exc)
+    return _full_error_response(mapped, FullTranscriptionRun(language=""))
+
+
+@app.exception_handler(RequestValidationError)
+async def full_validation_exception(request: Request, exc: RequestValidationError):
+    """把 multipart/字段校验失败转换为同一结构，避免伪成功或裸 422。"""
+    if request.url.path != _FULL_FILE_PATH:
+        return await request_validation_exception_handler(request, exc)
+    error = FullTranscriptionError(
+        422,
+        "invalid_request",
+        "full-file transcription request validation failed",
+    )
+    response = _full_error_response(error, FullTranscriptionRun(language=""))
+    payload = json.loads(response.body)
+    payload["error"]["details"] = jsonable_encoder(exc.errors())
+    headers = {
+        name: value
+        for name, value in response.headers.items()
+        if name.lower() != "content-length"
+    }
+    return JSONResponse(status_code=422, content=payload, headers=headers)
+
+
+@app.post(
+    _FULL_FILE_PATH,
+    responses=FULL_TRANSCRIPTION_RESPONSES,
+    summary="Transcribe one complete audio file",
+)
+async def full_transcriptions(
+    request: Request,
+    file: UploadFile = File(..., description="Complete audio file in any decoder-supported format"),
+    model: str = Form(..., description="Ready and calibrated ASR model key"),
+    language: str = Form("", description="Language code; empty lets the model decide"),
+    response_format: str = Form("json", description="json, verbose_json, text, srt, or vtt"),
+):
+    """服务端完成解码、声道转换、VAD 分段和逐段准入，返回一个完整结果。
+
+    该端点不接受热词、声纹或翻译扩展，也不复用 V-Router 的单次许可。
+    每段都通过原有校准检查并独立取得、确认释放一次调度许可。
+    """
+    run = FullTranscriptionRun(language=language)
+    try:
+        if response_format not in RESPONSE_FORMATS:
+            raise FullTranscriptionError(
+                422,
+                "invalid_response_format",
+                f"response_format must be one of {sorted(RESPONSE_FORMATS)}",
+            )
+        content_length = request.headers.get("content-length", "")
+        if content_length.isdecimal() and int(content_length) > settings.max_upload_mb * 1024 * 1024 + 65536:
+            raise FullTranscriptionError(413, "audio_file_too_large", "audio file is too large")
+        headers = _full_segment_headers(request)
+        try:
+            item = find_model(model, "asr")
+            run.limits = model_limits(model)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="ASR model not found") from None
+        policy = segment_policy(run.limits)
+
+        cancel = asyncio.Event()
+        watcher = asyncio.create_task(_watch_disconnect(request, cancel))
+
+        async def process():
+            with tempfile.TemporaryDirectory(prefix="vvoice-full-") as directory:
+                run.decoded = await decode_upload(file, Path(directory), cancel)
+                parts = await asyncio.to_thread(split_parts, run.decoded.samples, policy)
+                run.parts_total = len(parts)
+                for part in parts:
+                    if cancel.is_set():
+                        raise asyncio.CancelledError
+                    if part.wav_bytes > int(run.limits["input_bytes"]):
+                        raise FullTranscriptionError(
+                            503,
+                            "invalid_model_calibration",
+                            "planned audio part exceeds calibrated input bytes",
+                        )
+                    try:
+                        async with _segment_execution(headers) as execution:
+                            validate_inputs(
+                                model,
+                                duration_seconds=part.duration,
+                                sample_rate=16000,
+                                hotwords_characters=0,
+                            )
+                            await admit_model(model)
+                            result = await run_blocking(
+                                transcribe,
+                                model,
+                                part.samples,
+                                16000,
+                                language,
+                                "transcribe",
+                                [],
+                                None,
+                            )
+                        if execution.failed:
+                            raise FullTranscriptionError(
+                                503,
+                                "scheduler_stopped",
+                                f"part {part.index + 1}: compute lease requested a stop",
+                                retryable=True,
+                                part_number=part.index + 1,
+                            )
+                    except HTTPException as exc:
+                        raise _full_http_error(exc, part.index + 1) from None
+                    except FileNotFoundError as exc:
+                        raise FullTranscriptionError(
+                            409,
+                            "model_not_ready",
+                            f"part {part.index + 1}: model is not ready: {exc}",
+                            part_number=part.index + 1,
+                        ) from None
+                    except ValueError as exc:
+                        raise FullTranscriptionError(
+                            422,
+                            "invalid_input",
+                            f"part {part.index + 1}: {exc}",
+                            part_number=part.index + 1,
+                        ) from None
+                    cleaned = dict(result)
+                    cleaned["text"] = str(cleaned.get("text") or "").strip()
+                    run.results.append((part, cleaned))
+                    if cancel.is_set():
+                        raise asyncio.CancelledError
+
+        try:
+            await asyncio.wait_for(
+                process(), timeout=settings.full_transcription_timeout_seconds
+            )
+        except asyncio.TimeoutError:
+            raise FullTranscriptionError(
+                504,
+                "transcription_timeout",
+                f"full-file transcription exceeded {settings.full_transcription_timeout_seconds} seconds",
+                retryable=True,
+            ) from None
+        except asyncio.CancelledError:
+            raise
+        finally:
+            cancel.set()
+            watcher.cancel()
+            await asyncio.gather(watcher, return_exceptions=True)
+        return _full_success(run, model, item, response_format)
+    except FullTranscriptionError as exc:
+        return _full_error_response(exc, run, exc.part_number)
+    except HTTPException as exc:
+        return _full_error_response(_full_http_error(exc), run)
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        return _full_error_response(
+            FullTranscriptionError(
+                500,
+                "transcription_failed",
+                f"full-file transcription failed: {exc}",
+            ),
+            run,
+        )
 
 
 ASR_RESPONSES = {

@@ -22,6 +22,24 @@ class Settings:
     max_concurrent_inference: int = max(1, int(os.getenv("VVOICE_MAX_CONCURRENT_INFERENCE", "2")))
     max_concurrent_per_model: int = max(1, int(os.getenv("VVOICE_MAX_CONCURRENT_PER_MODEL", "2")))
     max_upload_mb: int = max(1, int(os.getenv("VVOICE_MAX_UPLOAD_MB", "200")))
+    full_transcription_max_seconds: int = max(
+        1, int(os.getenv("VVOICE_FULL_TRANSCRIPTION_MAX_SECONDS", "1800"))
+    )
+    full_transcription_timeout_seconds: int = max(
+        1, int(os.getenv("VVOICE_FULL_TRANSCRIPTION_TIMEOUT_SECONDS", "1800"))
+    )
+    full_transcription_decode_timeout_seconds: int = max(
+        1, int(os.getenv("VVOICE_FULL_TRANSCRIPTION_DECODE_TIMEOUT_SECONDS", "300"))
+    )
+    full_transcription_max_parts: int = max(
+        1, int(os.getenv("VVOICE_FULL_TRANSCRIPTION_MAX_PARTS", "512"))
+    )
+    full_transcription_max_source_sample_rate: int = max(
+        8000, int(os.getenv("VVOICE_FULL_TRANSCRIPTION_MAX_SOURCE_SAMPLE_RATE", "192000"))
+    )
+    full_transcription_max_source_channels: int = max(
+        1, int(os.getenv("VVOICE_FULL_TRANSCRIPTION_MAX_SOURCE_CHANNELS", "8"))
+    )
     vad_split_seconds: float = float(os.getenv("VVOICE_VAD_SPLIT_SECONDS", "30"))
     cpu_models: tuple[str, ...] = tuple(
         model.strip() for model in os.getenv("VVOICE_CPU_MODELS", "").split(",") if model.strip()

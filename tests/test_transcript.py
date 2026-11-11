@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from vvoice.transcript import normalize_transcript, subtitle, words_from_tokens
+from vvoice.transcript import (
+    merge_segment_transcripts,
+    normalize_transcript,
+    subtitle,
+    words_from_tokens,
+)
 
 
 def test_sentencepiece_tokens_are_merged_into_words() -> None:
@@ -34,3 +39,29 @@ def test_missing_token_timestamps_are_not_fabricated() -> None:
 def test_subtitles_use_real_audio_duration_when_model_has_no_timestamps() -> None:
     value = subtitle({"text": "hello", "duration": 1.25, "segments": []}, "srt")
     assert "00:00:00,000 --> 00:00:01,250" in value
+
+
+def test_segment_text_uses_cjk_aware_spacing() -> None:
+    parts = [
+        {"text": "你好。", "words": [], "segments": [], "tokens": [], "timestamps": []},
+        {"text": "世界", "words": [], "segments": [], "tokens": [], "timestamps": []},
+        {"text": "hello", "words": [], "segments": [], "tokens": [], "timestamps": []},
+    ]
+    merged = merge_segment_transcripts(parts, [0.0, 1.0, 2.0], 3.0)
+    assert merged["text"] == "你好。世界 hello"
+
+
+def test_single_segment_shifts_timestamps_to_original_audio_offset() -> None:
+    part = {
+        "text": "later",
+        "words": [{"word": "later", "start": 0.2, "end": 0.8}],
+        "segments": [{"id": 0, "start": 0.2, "end": 0.8, "text": "later"}],
+        "tokens": ["later"],
+        "timestamps": [0.2],
+        "duration": 1.0,
+    }
+    merged = merge_segment_transcripts([part], [10.0], 12.0)
+    assert merged["words"][0]["start"] == 10.2
+    assert merged["segments"][0]["start"] == 10.2
+    assert merged["timestamps"] == [10.2]
+    assert merged["duration"] == 12.0

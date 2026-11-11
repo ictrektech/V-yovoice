@@ -2,6 +2,8 @@ ARG VVOICE_STUDIO_BASE_IMAGE
 FROM ${VVOICE_STUDIO_BASE_IMAGE}
 # 仅用于应用变更；运行时依赖改变时必须完整重建镜像。
 ARG TARGETARCH
+# 覆盖前清空基础镜像中的应用文件，避免旧哈希资源和已删除模块残留。
+RUN rm -rf /opt/vvoice/web /app/frontend/dist /app/vvoice
 COPY --from=studio_artifacts /linux-${TARGETARCH}/vvoice-studio /opt/vvoice/vvoice-studio
 COPY --from=studio_artifacts /web/ /opt/vvoice/web/
 COPY --from=studio_artifacts /frontend/ /app/frontend/dist/

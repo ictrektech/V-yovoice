@@ -1,0 +1,3 @@
+- insert:
+    - id: tool-audio-transcription
+      name: '@deepseek-ai/dsh-tool-audio-transcription'

@@ -16,7 +16,6 @@ from typing import Any
 import httpx
 from fastapi import HTTPException
 
-
 current: contextvars.ContextVar[Execution | None] = contextvars.ContextVar("vvoice_execution", default=None)
 
 
@@ -336,7 +335,17 @@ class AdmissionMiddleware:
         async def guarded_receive():
             nonlocal received_bytes
             message = await receive()
-            if scope["type"] == "http" and scope.get("path") in {"/transcribe", "/v1/audio/transcriptions", "/v1/audio/translations", "/v1/audio/speech"}:
+            if scope["type"] == "http" and scope.get("path") == "/v1/audio/transcriptions/full":
+                received_bytes += len(message.get("body", b""))
+                from .config import settings
+                if received_bytes > settings.max_upload_mb * 1024 * 1024 + 65536:
+                    raise HTTPException(413, "Request exceeds configured full-file upload limit")
+            elif scope["type"] == "http" and scope.get("path") in {
+                "/transcribe",
+                "/v1/audio/transcriptions",
+                "/v1/audio/translations",
+                "/v1/audio/speech",
+            }:
                 config = configuration()
                 if "model_limits" in config:
                     received_bytes += len(message.get("body", b""))

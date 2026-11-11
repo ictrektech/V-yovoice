@@ -1,0 +1,11 @@
+{
+  "target": {
+    "release": "0.1.36",
+    "commit": "077b70e783aa522c2fc2af81578e9177988097dd"
+  },
+  "dshVersion": "0.2.1-rc.2",
+  "supportedDshVersions": [
+    "0.2.1-rc.2",
+    "0.2.1-rc.5"
+  ]
+}

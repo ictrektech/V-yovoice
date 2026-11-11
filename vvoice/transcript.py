@@ -1,10 +1,33 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Any
 
-
 _PUNCTUATION = re.compile(r"^[\s\.,!?;:'\"，。！？；：、…—\-]+$")
+
+
+def _cjk(character: str) -> bool:
+    code = ord(character)
+    return (
+        0x3400 <= code <= 0x9FFF
+        or 0x3040 <= code <= 0x30FF
+        or 0xAC00 <= code <= 0xD7AF
+    )
+
+
+def _join_text(left: str, right: str) -> str:
+    """按前端一致规则拼接；中日韩文字之间不加空格。"""
+    if not left:
+        return right
+    if not right:
+        return left
+    if left[-1].isspace() or right[0].isspace():
+        return left + right
+    left_joins = _cjk(left[-1]) or unicodedata.category(left[-1]).startswith("P")
+    if left_joins and _cjk(right[0]):
+        return left + right
+    return left + " " + right
 
 
 def _span(word: str, start: float, end: float) -> dict[str, Any]:
@@ -78,19 +101,19 @@ def merge_segment_transcripts(parts: list[dict[str, Any]], offsets: list[float],
     """
     if len(parts) == 1:
         merged = dict(parts[0])
+        offset = offsets[0] if offsets else 0.0
+        if offset:
+            for word in merged.get("words") or []:
+                word["start"] = round(word["start"] + offset, 3)
+                word["end"] = round(word["end"] + offset, 3)
+            for segment in merged.get("segments") or []:
+                segment["start"] = round(segment["start"] + offset, 3)
+                segment["end"] = round(segment["end"] + offset, 3)
+            merged["timestamps"] = [
+                float(value) + offset for value in merged.get("timestamps") or []
+            ]
         merged["duration"] = round(max(0.0, duration), 3)
         return normalize_transcript(merged, duration) if not merged.get("words") else merged
-
-    def joiner(left: str, right: str) -> str:
-        if not left:
-            return right
-        if not right:
-            return left
-        if left[-1].isspace() or right[0].isspace():
-            return left + right
-        if (left[-1].isascii() and left[-1].isalnum()) or (right[0].isascii() and right[0].isalnum()):
-            return left + " " + right
-        return left + right
 
     text = ""
     words: list[dict[str, Any]] = []
@@ -99,7 +122,7 @@ def merge_segment_transcripts(parts: list[dict[str, Any]], offsets: list[float],
     timestamps: list[float] = []
     carried: dict[str, Any] = {}
     for part, offset in zip(parts, offsets):
-        text = joiner(text, str(part.get("text") or ""))
+        text = _join_text(text, str(part.get("text") or ""))
         for word in part.get("words") or []:
             shifted = dict(word)
             shifted["start"] = round(word["start"] + offset, 3)

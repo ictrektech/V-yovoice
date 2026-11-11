@@ -132,8 +132,13 @@ def test_input_limits_exposes_only_validated_asr_limits(calibrated):
     client = TestClient(admission.AdmissionMiddleware(app))
     response = client.get("/api/v1/models/sensevoice-int8/input-limits")
     assert response.status_code == 200
-    assert response.json() == {"limits": calibrated["model_limits"]["sensevoice-int8"],
-                               "max_upload_bytes": main.settings.max_upload_mb * 1024 * 1024}
+    body = response.json()
+    assert body["limits"] == calibrated["model_limits"]["sensevoice-int8"]
+    assert body["max_upload_bytes"] == main.settings.max_upload_mb * 1024 * 1024
+    assert body["full_transcription"]["endpoint"] == "/v1/audio/transcriptions/full"
+    assert body["full_transcription"]["max_upload_bytes"] == body["max_upload_bytes"]
+    assert body["full_transcription"]["max_duration_seconds"] >= 1
+    assert "json" in body["full_transcription"]["response_formats"]
     assert "private" not in response.text
     assert client.get("/api/v1/models/unknown/input-limits").status_code == 404
     assert client.get("/api/v1/models/whisper-tiny/input-limits").status_code == 503

@@ -7,7 +7,6 @@ import numpy as np
 
 from .config import settings
 
-
 VAD_ASSET = Path(__file__).resolve().parent / "assets" / "silero_vad.onnx"
 MERGE_GAP_SECONDS = 0.4
 MAX_SEGMENT_SECONDS = 20.0
@@ -16,11 +15,25 @@ _vad_lock = threading.Lock()
 _vad_config: tuple | None = None
 
 
-def _speech_segments(samples: np.ndarray, rate: int) -> list[tuple[float, np.ndarray]]:
+def vad_available() -> bool:
+    """确认运行时和 VAD 资产可用；用于区分静音与 VAD 缺失。"""
+    try:
+        import sherpa_onnx  # noqa: F401
+    except ImportError:
+        return False
+    return VAD_ASSET.is_file()
+
+
+def _speech_segments(
+    samples: np.ndarray,
+    rate: int,
+    max_segment_seconds: float | None = MAX_SEGMENT_SECONDS,
+) -> list[tuple[float, np.ndarray]]:
     """Split decoded audio into (offset_seconds, samples) speech segments.
 
     Uses the bundled silero VAD through sherpa-onnx; returns [] when the VAD
     asset or runtime is unavailable so callers can fall back to one-shot decode.
+    ``max_segment_seconds=None`` 时保留连续语音，由调用方按模型上限选择切点。
     """
     global _vad_config
     try:
@@ -62,10 +75,14 @@ def _speech_segments(samples: np.ndarray, rate: int) -> list[tuple[float, np.nda
     drain()
     if not collected:
         return []
-    return _merge_and_cap(collected, rate)
+    return _merge_and_cap(collected, rate, max_segment_seconds)
 
 
-def _merge_and_cap(segments: list[tuple[float, np.ndarray]], rate: int) -> list[tuple[float, np.ndarray]]:
+def _merge_and_cap(
+    segments: list[tuple[float, np.ndarray]],
+    rate: int,
+    max_segment_seconds: float | None = MAX_SEGMENT_SECONDS,
+) -> list[tuple[float, np.ndarray]]:
     """Merge segments separated by tiny gaps, then cap segment duration."""
     merged: list[list] = []
     for start, chunk in segments:
@@ -74,8 +91,10 @@ def _merge_and_cap(segments: list[tuple[float, np.ndarray]], rate: int) -> list[
         else:
             merged.append([start, chunk])
 
+    if max_segment_seconds is None:
+        return [(start, chunk) for start, chunk in merged]
     result: list[tuple[float, np.ndarray]] = []
-    max_samples = int(MAX_SEGMENT_SECONDS * rate)
+    max_samples = int(max_segment_seconds * rate)
     for start, chunk in merged:
         if len(chunk) <= max_samples:
             result.append((start, chunk))

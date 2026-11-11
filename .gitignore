@@ -21,6 +21,7 @@ __pycache__/
 # VOS 本地构建产物
 frontend/dist/
 ictrek.app/dist/
+/dist/dsh-plugin/
 ictrek.app/.staging/
 *.egg-info/
 .pytest_cache/

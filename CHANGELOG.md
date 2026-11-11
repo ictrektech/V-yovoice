@@ -8,11 +8,15 @@
 
 - Allow only same-origin embedded API pages so VOS documentation can load.
 - Complete VOS API workflows, response fields, identity boundaries, scheduling errors and cancellation documentation; preserve existing speech and workbench APIs.
+- Add server-side complete-file ASR uploads with bounded FFmpeg decoding, mono conversion, VAD/model-aware splitting, per-part Scheduler admission, ordered text merging, explicit completeness and deterministic cache identity. Existing single-part APIs remain unchanged.
+- Add the independently installable v-harness audio transcription plugin, with session-scoped transcription tools, a waveform player, complete original text and a pinned-source local build.
 
 ### 简体中文
 
 - 仅允许同源内嵌 API 页面，修复 VOS 文档被浏览器拦截的问题。
 - 补齐 VOS API 流程、返回字段、身份边界、调度错误与取消说明，保留现有语音和工作台接口。
+- 新增服务端全文件音频转写：有界 FFmpeg 解码、单声道转换、VAD 与模型限制分段、逐段调度准入、顺序合并文本、明确完整性和可复现缓存标识；原有单段接口保持不变。
+- 新增可独立安装的 v-harness 音频转写插件，提供会话内转写工具、波形播放器、完整识别原文及锁定源码版本的本地构建。
 
 ## [0.0.33] - 2026-11-06
 

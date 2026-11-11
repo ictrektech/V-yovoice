@@ -86,9 +86,22 @@ to mono PCM WAV, and send consecutive parts within both duration and byte limits
 Each part uses the existing public endpoint and its own scheduling permit; progress
 and cancellation are available. Original files must fit `VVOICE_MAX_UPLOAD_MB`
 (default 200 MiB), and their format must be supported by the browser. Legacy
-approvals keep the original upload path. Public API clients must still prepare
-their own parts; the strict per-request checks remain in effect. The request-body
-cap now follows approved encoded-audio sizes, bounded by the configured upload cap.
+approvals keep the original upload path. Service callers can instead send one
+original file to `POST /v1/audio/transcriptions/full`: V-Voice probes and decodes
+it with the image's `ffmpeg`, mixes to mono 16 kHz, applies VAD and model-derived
+byte/duration splitting, then validates and admits every part separately before
+merging the ordered text. The endpoint is limited to calibrated ASR models,
+defaults to 30 minutes, uses `VVOICE_MAX_UPLOAD_MB` for encoded size, and returns
+`complete: true` only after every part succeeds. Errors carry a stable `error.code`
+and any completed text under an explicitly `complete: false` partial block.
+`/api/v1/models/{key}/input-limits` publishes the exact full-file limits and a
+processing version. The strict single-part endpoint remains unchanged. The
+request-body cap now follows approved encoded-audio sizes, bounded by the
+configured upload cap. See
+[the complete-file contract and v-harness integration notes](docs/full-file-transcription.md).
+The installable v-harness plugin is maintained in
+[`integrations/v-harness/tool-audio-transcription`](integrations/v-harness/tool-audio-transcription)
+and is released as a prebuilt `.tgz` rather than bundled into the VOS service image.
 Qwen3-ASR 0.6B and 1.7B accept their own approved duration, source sample-rate,
 encoded-byte and hotword limits; they do not inherit SenseVoice approval. The ASR
 selector distinguishes downloaded files from inference approval on this device

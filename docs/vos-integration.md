@@ -178,6 +178,18 @@ same standard speech endpoint on V-Router. Gateway prefix rewriting preserves
 extension fields and audio responses. Discovery never grants resource admission;
 each newly installed model still needs an approved Scheduler template/policy.
 
+Calibrated ASR models additionally expose
+`POST /v1/audio/transcriptions/full` for complete original-file uploads. V-Voice
+uses the image's FFmpeg/ffprobe under file-only protocol and audio-demuxer
+whitelists, converts to mono 16 kHz, splits by VAD plus the approved byte/duration
+limits, and obtains a separate Scheduler permit for every part. A successful
+response has `complete: true`; failures return a stable `error.code` and only an
+explicitly `complete: false` `partial` block. The endpoint rejects gateway
+single-permit headers, hotwords, speaker attribution and translation. It is
+synchronous and does not persist resumable state. See the exact wire contract,
+error table, limits, cache identity and v-harness integration notes in
+[full-file-transcription.md](full-file-transcription.md) (Chinese).
+
 Creative speech extensions are **not OpenAI-standard parameters**:
 
 - `reference_audio`: base64-encoded audio bytes, never a server path; select a
