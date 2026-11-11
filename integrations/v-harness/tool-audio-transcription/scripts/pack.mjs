@@ -59,7 +59,7 @@ try {
   await cp(join(packageRoot, 'LICENSE'), join(target, 'LICENSE'))
   await writeFile(join(target, 'package.json'), JSON.stringify(manifest, null, 2) + '\n')
   if (JSON.stringify(manifest).includes('workspace:')) throw new Error('Unresolved workspace spec')
-  const filename = `deepseek-ai-dsh-tool-audio-transcription-${manifest.version}.tgz`
+  const filename = `ictrek-dsh-tool-audio-transcription-${manifest.version}.tgz`
   const archive = join(output, filename)
   execFileSync('tar', ['-czf', archive, '-C', stage, 'package'])
   const digest = createHash('sha256').update(await readFile(archive)).digest('hex')

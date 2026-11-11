@@ -1,8 +1,9 @@
 {
-  "name": "@deepseek-ai/dsh-tool-audio-transcription",
+  "name": "@ictrek/dsh-tool-audio-transcription",
   "description": "Session-authorized audio transcription through V-yovoice",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.1.1",
+  "private": false,
+  "publishConfig": { "access": "public" },
   "packageManager": "pnpm@11.28.5",
   "repository": {
     "type": "git",

@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### English
+
+- Prepare the audio transcription plugin for publication under an ICTREK package name.
+
+### 简体中文
+
+- 准备将音频转写插件以 ICTREK 包名发布。
+
 ## [0.0.35] - 2026-11-10
 
 ### English

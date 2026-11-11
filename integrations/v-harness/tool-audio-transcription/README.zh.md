@@ -13,12 +13,14 @@ kind: "package-bundle"
 
 ## 安装与配置
 
-预构建安装包为 `deepseek-ai-dsh-tool-audio-transcription-0.1.0.tgz`，首先适配 v-harness **0.1.36** 和 DSH **0.2.1-rc.2 / 0.2.1-rc.5**。打开**插件 → 添加插件**，填写宿主可访问的安装包 URL 或绝对路径。这里不是文件上传器：Mac 本地路径不能表示远程 VOS 上的文件。VOS 使用前将包复制到目标租户工作区，并使用租户内部路径，例如 `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`；容器共享的 `/tmp` 在租户内不可见。也可填写固定 Release 地址 `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.1.0/deepseek-ai-dsh-tool-audio-transcription-0.1.0.tgz`。安装进目标租户的 profile，不修改共享运行时。
+预构建安装包为 `ictrek-dsh-tool-audio-transcription-0.1.1.tgz`，首先适配 v-harness **0.1.36** 和 DSH **0.2.1-rc.2 / 0.2.1-rc.5**。打开**插件 → 添加插件**，填写宿主可访问的安装包 URL 或绝对路径。这里不是文件上传器：Mac 本地路径不能表示远程 VOS 上的文件。VOS 使用前将包复制到目标租户工作区，并使用租户内部路径，例如 `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`；容器共享的 `/tmp` 在租户内不可见。也可填写固定 Release 地址 `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz`。安装进目标租户的 profile，不修改共享运行时。
+
+npm 包发布后，插件市场可从可访问的 npm 源安装 `@ictrek/dsh-tool-audio-transcription`。
 
 在宿主上以 profile 所有者执行 CLI 示例：
 
 ```sh
-dsh plugin --profile web add /absolute/host/path/deepseek-ai-dsh-tool-audio-transcription-0.1.0.tgz
+dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-audio-transcription-0.1.1.tgz
 ```
 
 启用组合包后打开配置页，保存 V-yovoice **服务根地址**（不含 `/v1`），点击**检查连接 / 获取模型**，选择已就绪的 ASR 模型并再次保存。地址必须能从宿主所在容器访问。Desktop 应通过其插件页安装进受管 Desktop profile，不能用无关的 `web` profile 代替。按宿主提示刷新或重启。尚未配置的插件可以正常加载，调用转写时会明确提示配置要求。
@@ -51,6 +53,8 @@ dsh plugin --profile web add /absolute/host/path/deepseek-ai-dsh-tool-audio-tran
 所有字段可在插件页配置；CLI 用户也可在 profile patch 的 `tool-audio-transcription` 行 `config` 下设置。音频解码、时长限制、调度准入由 V-yovoice 负责；超限或不支持时明确失败，不在客户端分片或静默截断。取消或卸载会中止本地请求，但断连不能证明远端推理已经停止。
 
 ## 构建与验证
+
+npm 包名为 `@ictrek/dsh-tool-audio-transcription`；发布前须确认公司控制该 npm 账号或组织并拥有发布权限。已安装旧版 `@deepseek-ai/dsh-tool-audio-transcription` 的用户应先记录服务地址和模型，再停用并移除旧包，然后安装新包并核对配置；不要同时启用两个包。会话数据不属于插件安装包，不应删除会话或工作区。
 
 插件源码位于 V-yovoice，使用明确且干净的 v-harness 源码副本构建：
 

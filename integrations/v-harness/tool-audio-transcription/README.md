@@ -13,12 +13,14 @@ Paste an MP3 into a normal Web or Desktop conversation and ask what it says. The
 
 ## Install and configure
 
-Use the prebuilt `deepseek-ai-dsh-tool-audio-transcription-0.1.0.tgz` with v-harness **0.1.36** and DSH **0.2.1-rc.2 / 0.2.1-rc.5**. In **Plugins → Add plugin**, enter a tarball URL or absolute path readable by the Host. This is not an upload picker: a Mac path cannot name a file on a remote VOS Host. For VOS, copy the archive into the intended tenant's workspace and use its in-tenant path, for example `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`; the container's shared `/tmp` is not visible inside the tenant. Alternatively, enter the immutable release URL `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.1.0/deepseek-ai-dsh-tool-audio-transcription-0.1.0.tgz`. Install into that tenant's profile, not the shared runtime.
+Use the prebuilt `ictrek-dsh-tool-audio-transcription-0.1.1.tgz` with v-harness **0.1.36** and DSH **0.2.1-rc.2 / 0.2.1-rc.5**. In **Plugins → Add plugin**, enter a tarball URL or absolute path readable by the Host. This is not an upload picker: a Mac path cannot name a file on a remote VOS Host. For VOS, copy the archive into the intended tenant's workspace and use its in-tenant path, for example `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`; the container's shared `/tmp` is not visible inside the tenant. Alternatively, enter the immutable release URL `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz`. Install into that tenant's profile, not the shared runtime.
+
+After npm publication, the market can install `@ictrek/dsh-tool-audio-transcription` from an accessible registry.
 
 CLI example, executed as the profile owner on the Host:
 
 ```sh
-dsh plugin --profile web add /absolute/host/path/deepseek-ai-dsh-tool-audio-transcription-0.1.0.tgz
+dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-audio-transcription-0.1.1.tgz
 ```
 
 Enable the installed bundle. Open its configuration, save the V-yovoice **service root URL** (without `/v1`), select **Check connection / list models**, choose a ready ASR model and save again. Use an address reachable from the Host, including from its container. Desktop uses its managed Desktop profile: install through its Plugins page, not an unrelated `web` profile. Follow any restart or refresh notice from the Host. Unconfigured installations remain loadable and report configuration requirements when transcription is attempted.
@@ -51,6 +53,8 @@ Playback uses a plugin-owned authenticated route. It validates that the requeste
 All fields can be edited on the plugin page. CLI users can set them under the `tool-audio-transcription` row's `config` in their profile patch. Audio decoding, duration limits and scheduler admission belong to V-yovoice. Oversized or unsupported inputs fail explicitly; no client-side splitting or silent truncation is performed. Cancellation or plugin unload stops local requests; a lost connection does not establish whether the remote inference stopped.
 
 ## Build and verify
+
+The npm package name is `@ictrek/dsh-tool-audio-transcription`; publication requires company control of the npm account or organization and publishing access. If the old `@deepseek-ai/dsh-tool-audio-transcription` package is installed, record the service address and model, disable and remove the old package, then install the new package and verify the settings. Do not enable both packages. Session data is separate from the plugin package; do not delete sessions or the workspace.
 
 The plugin source lives in V-yovoice. Build it against an explicit, clean v-harness checkout:
 

@@ -9,7 +9,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-tool/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import contribution from '@deepseek-ai/dsh-tool-audio-transcription/remote'
+import contribution from '@ictrek/dsh-tool-audio-transcription/remote'
 import { audioForm, type AudioSettings } from './form.ts'
 import { AudioSettingsView, AudioTranscriptView, AudioTurnOriginals, type AudioTurnOriginalsInjected } from './Views.tsx'
 import { audioTurnDefinition } from './turn.ts'
@@ -29,7 +29,7 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
     const config = audioForm(child.configForms.get<AudioSettings>('tool-audio-transcription'))
     child.effect(() => () => { config.form.dispose() })
     child.slots.inject('plugins.bundle.config', () => child.slots.register({
-      name: 'plugins.bundle.config', key: '@deepseek-ai/dsh-tool-audio-transcription', locale: NS,
+      name: 'plugins.bundle.config', key: '@ictrek/dsh-tool-audio-transcription', locale: NS,
       inject: () => ({ hooks: { audioSettings: config.store }, ...config.actions, catalog: async (signal: AbortSignal) => {
         const result = await child.remote.audioTranscription.catalog(signal)
         if (!result.ok) throw result.error

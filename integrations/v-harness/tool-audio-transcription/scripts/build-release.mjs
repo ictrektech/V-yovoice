@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const voiceRoot = resolve(packageRoot, '../../..')
-const output = join(voiceRoot, 'dist/dsh-plugin')
+const output = resolve(process.env.VVOICE_PLUGIN_OUTPUT ?? join(voiceRoot, 'dist/dsh-plugin'))
 const manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8'))
 const compatibility = JSON.parse(await readFile(join(packageRoot, 'harness-compatibility.json'), 'utf8'))
 const expected = compatibility.target
@@ -63,14 +63,14 @@ async function replaceHarnessFile(path, update) {
 
 async function prepareHarness() {
   await replaceHarnessFile(join(harnessRepo, 'tsconfig.base.json'), (text) => {
-    if (text.includes('"@deepseek-ai/dsh-tool-audio-transcription"')) return text
+    if (text.includes('"@ictrek/dsh-tool-audio-transcription"')) return text
     const anchor = '      "@deepseek-ai/dsh-skill":'
     if (!text.includes(anchor)) throw new Error('pinned v-harness tsconfig.base.json lacks the skill path anchor')
     const paths = [
-      '      "@deepseek-ai/dsh-tool-audio-transcription": ["./packages/skill/tool-audio-transcription/src/index.ts"],',
-      '      "@deepseek-ai/dsh-tool-audio-transcription/client": ["./packages/skill/tool-audio-transcription/src/client/index.ts"],',
-      '      "@deepseek-ai/dsh-tool-audio-transcription/types": ["./packages/skill/tool-audio-transcription/src/types.ts"],',
-      '      "@deepseek-ai/dsh-tool-audio-transcription/remote": ["./packages/skill/tool-audio-transcription/lib/typert.remote-client.d.ts"],',
+      '      "@ictrek/dsh-tool-audio-transcription": ["./packages/skill/tool-audio-transcription/src/index.ts"],',
+      '      "@ictrek/dsh-tool-audio-transcription/client": ["./packages/skill/tool-audio-transcription/src/client/index.ts"],',
+      '      "@ictrek/dsh-tool-audio-transcription/types": ["./packages/skill/tool-audio-transcription/src/types.ts"],',
+      '      "@ictrek/dsh-tool-audio-transcription/remote": ["./packages/skill/tool-audio-transcription/lib/typert.remote-client.d.ts"],',
     ].join('\n')
     return text.replace(anchor, `${paths}\n${anchor}`)
   })
@@ -211,7 +211,7 @@ try {
   run('pnpm', ['exec', 'oxlint', destinationRelative])
   run('pnpm', ['run', 'build:check'])
 
-  const archive = join(output, `deepseek-ai-dsh-tool-audio-transcription-${manifest.version}.tgz`)
+  const archive = join(output, `ictrek-dsh-tool-audio-transcription-${manifest.version}.tgz`)
   await rm(archive, { force: true })
   await rm(`${archive}.sha256`, { force: true })
   await rm(join(output, 'compatibility.json'), { force: true })
