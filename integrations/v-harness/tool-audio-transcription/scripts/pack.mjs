@@ -61,7 +61,9 @@ try {
   if (JSON.stringify(manifest).includes('workspace:')) throw new Error('Unresolved workspace spec')
   const filename = `ictrek-dsh-tool-audio-transcription-${manifest.version}.tgz`
   const archive = join(output, filename)
-  execFileSync('tar', ['-czf', archive, '-C', stage, 'package'])
+  execFileSync('tar', ['-czf', archive, '-C', stage, 'package'], {
+    env: { ...process.env, COPYFILE_DISABLE: '1' },
+  })
   const digest = createHash('sha256').update(await readFile(archive)).digest('hex')
   await writeFile(`${archive}.sha256`, `${digest}  ${filename}\n`)
   process.stdout.write(`${archive}\n${digest}\n`)

@@ -89,6 +89,9 @@ async function prepareHarness() {
 
 async function auditArchive(archive) {
   const entries = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split('\n')
+  if (entries.some(entry => entry.split('/').some(part => part.startsWith('._')))) {
+    throw new Error('Archive contains macOS metadata files')
+  }
   const sourceEntries = entries.filter(entry => entry.startsWith('package/src/') || entry.startsWith('package/scripts/'))
   const sourceFiles = entries.filter(entry => entry.endsWith('.ts') && !entry.endsWith('.d.ts'))
   if (sourceEntries.length > 0 || sourceFiles.length > 0) {
