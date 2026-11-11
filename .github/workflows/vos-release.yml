@@ -139,6 +139,28 @@ jobs:
           VERSION="$VOS_RELEASE_VERSION"
           PACKAGE_VERSION="$VERSION" ./ictrek.app/scripts/package.sh
           test -f "ictrek.app/dist/v_voice_${VERSION}_pull.tar"
+          if [[ "$VERSION" == 0.0.35 ]]; then
+            python3 - <<'PY'
+          import io, tarfile, yaml
+          expected = {
+              'VVOICE_AMD_IMAGE': 'amd_0.0.33',
+              'VVOICE_AMD_CUDA_IMAGE': 'amd_cu128_0.0.35',
+              'VVOICE_ARM_IMAGE': 'arm_0.0.33',
+              'VVOICE_ARM_CUDA_IMAGE': 'arm_cu130_20261023',
+              'VVOICE_L4T_IMAGE': 'l4t_0.0.35',
+              'VVOICE_THOR_IMAGE': 'thor_0.0.35',
+          }
+          with tarfile.open('ictrek.app/dist/v_voice_0.0.35_pull.tar') as outer:
+              with tarfile.open(fileobj=io.BytesIO(outer.extractfile('app.tar.gz').read()), mode='r:gz') as inner:
+                  images = dict(line.split('=', 1) for line in inner.extractfile('.env').read().decode().splitlines() if line)
+                  manifest = yaml.safe_load(inner.extractfile('manifest.yml'))
+          repo = 'swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:'
+          assert images == {key: repo + tag for key, tag in expected.items()}, 'image references differ from the validated package'
+          deps = manifest['dependencies']['apps']
+          assert any(d['id'] == 'com.ictrek.v-scheduler' and d['version'] == '>=0.0.102' for d in deps), 'dependency differs from the validated package'
+          print('PASS: package images and dependency match the validated 0.0.35 candidate')
+          PY
+          fi
 
       - name: Create release notes
         env:

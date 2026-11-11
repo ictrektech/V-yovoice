@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.0.35] - 2026-11-10
+
 ### English
 
 - Resume or cancel model downloads safely; recover verified models from a selected directory and keep installed models usable during updates.

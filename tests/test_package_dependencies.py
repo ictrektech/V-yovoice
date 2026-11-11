@@ -44,3 +44,15 @@ def test_unreachable_dependency_has_no_fallback():
     with patch("urllib.request.urlopen", side_effect=OSError("unreachable")):
         with pytest.raises(OSError):
             package.resolve_dependencies(manifest())
+
+
+def test_candidate_image_overrides_are_explicit_and_valid():
+    reference = "registry.example.test/team/v-voice:l4t_0.0.35"
+    assert package.parse_image_overrides([f"VVOICE_L4T_IMAGE={reference}"]) == {
+        "VVOICE_L4T_IMAGE": reference
+    }
+    for value in (f"UNKNOWN_IMAGE={reference}", "VVOICE_L4T_IMAGE=not-a-registry-reference"):
+        with pytest.raises(ValueError):
+            package.parse_image_overrides([value])
+    with pytest.raises(ValueError, match="duplicate"):
+        package.parse_image_overrides([f"VVOICE_L4T_IMAGE={reference}"] * 2)

@@ -126,7 +126,7 @@ git diff --check
 bash ictrek.app/scripts/update_version.sh "$RELEASE_PART"
 ```
 
-递增类型与第 2 节保持一致，当前 VERSION 应仍为第 2 节记录的基线。
+递增类型与第 2 节保持一致，当前 VERSION 应仍为第 2 节记录的基线。若已验收的候选版本跳过了未发布版本，可改传明确的较新版本号，例如 `bash ictrek.app/scripts/update_version.sh 0.0.35`。
 
 脚本更新并提交 `ictrek.app/VERSION`，创建 `vos-v-voice-vX.Y.Z`，原子推送当前分支和触发标签。GitHub Actions 随后执行检查、读取飞书镜像和已发布的 V-Scheduler 依赖、重新生成正式安装包，创建公开 `vX.Y.Z` Release，并发布到 VOS App Store。正式打包前保持测试通过的镜像引用不变，并核对 CI 解析的依赖与测试包一致；镜像或依赖变化时重新测试。
 

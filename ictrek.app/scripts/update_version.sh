@@ -11,7 +11,15 @@ case "$part" in
   patch) patch=$((patch + 1)) ;;
   minor) minor=$((minor + 1)); patch=0 ;;
   major) major=$((major + 1)); minor=0; patch=0 ;;
-  *) echo "Usage: $0 [patch|minor|major]" >&2; exit 1 ;;
+  *)
+    [[ "$part" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo "Usage: $0 [patch|minor|major|X.Y.Z]" >&2; exit 1; }
+    IFS=. read -r major minor patch <<< "$part"
+    python3 - "$current" "$part" <<'PY'
+import sys
+if tuple(map(int, sys.argv[2].split('.'))) <= tuple(map(int, sys.argv[1].split('.'))):
+    raise SystemExit('requested version must be newer than VERSION')
+PY
+    ;;
 esac
 version="${major}.${minor}.${patch}"
 trigger="vos-v-voice-v${version}"

@@ -22,6 +22,7 @@ SRC = ROOT / "src"
 DIST = ROOT / "dist"
 SPREADSHEET = os.getenv("FEISHU_SPREADSHEET_TOKEN", "Htotsn3oahO1zxt73YMcaB1zn8e")
 REPOSITORY = "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice"
+IMAGE_REFERENCE = re.compile(r"^[\w.-]+\.[\w.-]+(?::\d+)?/[^\s]+$")
 PROFILES = {
     "VVOICE_AMD_IMAGE": ["AMD_with_mxn100"],
     "VVOICE_AMD_CUDA_IMAGE": ["AMD_with_cuda"],
@@ -210,6 +211,21 @@ def render(version: str, images: dict[str, str], stage: Path) -> None:
         raise RuntimeError("unrendered image variable remains")
 
 
+def parse_image_overrides(values: list[str]) -> dict[str, str]:
+    """解析候选包镜像覆盖；正式打包仍默认读取飞书。"""
+    overrides: dict[str, str] = {}
+    for value in values:
+        variable, separator, image = value.partition("=")
+        if not separator or variable not in PROFILES or not image:
+            raise ValueError(f"invalid image override: {value}")
+        if not IMAGE_REFERENCE.fullmatch(image):
+            raise ValueError(f"invalid image reference: {image}")
+        if variable in overrides:
+            raise ValueError(f"duplicate image override: {variable}")
+        overrides[variable] = image
+    return overrides
+
+
 def package(version: str, stage: Path) -> Path:
     DIST.mkdir(exist_ok=True)
     app_tar = DIST / "app.tar.gz"
@@ -236,7 +252,7 @@ def package(version: str, stage: Path) -> Path:
     if not compose.get("networks", {}).get("vos_default", {}).get("external"):
         raise RuntimeError("missing external vos_default network")
     for service in compose["services"].values():
-        if not re.match(r"^[\w.-]+\.[\w.-]+(?::\d+)?/[^\s]+$", service.get("image", "")):
+        if not IMAGE_REFERENCE.fullmatch(service.get("image", "")):
             raise RuntimeError("invalid service image")
         if not service.get("networks", {}).get("vos_default", {}).get("aliases"):
             raise RuntimeError("missing vos_default service alias")
@@ -246,15 +262,33 @@ def package(version: str, stage: Path) -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", default=os.getenv("PACKAGE_VERSION", ""))
+    parser.add_argument(
+        "--image",
+        action="append",
+        default=[],
+        metavar="VARIABLE=REFERENCE",
+        help="override one profile image, for example VVOICE_L4T_IMAGE=registry.example/v-voice:l4t_0.0.35",
+    )
     args = parser.parse_args()
     version = args.version or (ROOT / "VERSION").read_text().strip()
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         raise SystemExit(f"invalid version: {version}")
+    try:
+        overrides = parse_image_overrides(args.image)
+    except ValueError as exc:
+        parser.error(str(exc))
     print(f"[INFO] Package version: {version}")
     print("[INFO] Image source: pull")
-    feishu = Feishu()
+    feishu = None
     images = {}
     for variable, sheets in PROFILES.items():
+        if variable in overrides:
+            images[variable] = overrides[variable]
+            profile = variable.removeprefix("VVOICE_").removesuffix("_IMAGE").lower().replace("_", "-")
+            print(f"[INFO] {profile} (candidate) v-voice -> {images[variable]}")
+            continue
+        if feishu is None:
+            feishu = Feishu()
         errors = []
         for sheet in sheets:
             try:
