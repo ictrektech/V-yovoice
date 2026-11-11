@@ -44,6 +44,7 @@ MORE CLI:
 - 样式按功能放在 `web/src/features/<功能>/<功能>.css`，外壳与全局放 `web/src/app/`，统一由 `app/styles.css` 按顺序 `@import`，组件里不单独引入；规则写在 `@layer app { }` 内，类名以所属功能开头。
 - 浏览器测试较耗时，日常调试优先定向执行相关用例（如 `pnpm --dir web exec playwright test browser-tests/<file>.spec.ts`），提交前再运行 `pnpm --dir web test`。
 - 功能稳定的用例在 `web/playwright.config.ts` 的 `sealed` 列表中封存，`pnpm --dir web test` 和日常 CI 不跑；改到这些功能或发布前运行 `pnpm --dir web run test:all`（CI 每周一全量跑一次）。功能重新频繁改动时移出列表。
+- 当前 VOS 发布与验证只为 `AMD_with_cuda`、`l4t`、`thor_spark` 构建镜像；未获用户明确授权，不重建 AMD CPU、ARM CPU 或 ARM CUDA 等其他 profile。manifest 和 compose 中保留这些 profile 只表示安装兼容能力，不代表每次发布都要构建。
 - 不将浏览器预览和交叉编译视为 Windows 实机推理已验证。
 - 公共实现只保留一处，不再各写一份：Go 写文件用 `platform.WriteFileAtomic`；界面偏好读写用 `shared/lib/local-store`；音频解码与峰值用 `shared/lib/sound`，波形用 `features/media/waveform`；`mediaUrl` 的结果用 `releaseMediaUrl` 释放；任务计时用 `useElapsed`。
 - 不使用“闪光星星”（Sparkles、Sparkle、WandSparkles 等）图标，按功能选具体的图标；eslint 已禁止从 lucide-react 引入这些图标。

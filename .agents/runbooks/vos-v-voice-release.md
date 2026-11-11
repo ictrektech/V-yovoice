@@ -56,14 +56,16 @@ bash docker/build_image.sh --sheet l4t --dry-run
 
 在对应构建机执行，按表选择 `--sheet`：
 
-| Profile | `--sheet` | 镜像标签 | 构建机 |
-| --- | --- | --- | --- |
-| `amd` | `AMD_with_mxn100` | `amd_X.Y.Z` | x86_64 |
-| `amd-cuda` | `AMD_with_cuda` | `amd_cu128_X.Y.Z` | x86_64 CUDA |
-| `arm` | `ARM_without_cuda` | `arm_X.Y.Z` | ARM64 |
-| `arm-cuda` | `ARM_with_cuda` | `arm_cu130_X.Y.Z` | ARM64 CUDA |
-| `l4t` | `l4t` | `l4t_X.Y.Z` | Jetson L4T |
-| `thor` | `thor_spark` | `thor_X.Y.Z` | Thor / Spark |
+| Profile | `--sheet` | 镜像标签 | 构建机 | 当前重建 |
+| --- | --- | --- | --- | --- |
+| `amd` | `AMD_with_mxn100` | `amd_X.Y.Z` | x86_64 | 否 |
+| `amd-cuda` | `AMD_with_cuda` | `amd_cu128_X.Y.Z` | x86_64 CUDA | 是 |
+| `arm` | `ARM_without_cuda` | `arm_X.Y.Z` | ARM64 | 否 |
+| `arm-cuda` | `ARM_with_cuda` | `arm_cu130_X.Y.Z` | ARM64 CUDA | 否 |
+| `l4t` | `l4t` | `l4t_X.Y.Z` | Jetson L4T | 是 |
+| `thor` | `thor_spark` | `thor_X.Y.Z` | Thor / Spark | 是 |
+
+当前只构建和验证 `AMD_with_cuda`、`l4t`、`thor_spark`。其他 profile 暂时沿用已有镜像，不为本次发布重新构建；未获用户明确授权，不运行对应的 `build_image.sh`。manifest 和 compose 仍保留六个 profile 以维持安装兼容和现有包结构，这不代表每次发布都要重建六个镜像。
 
 例如 AMD CUDA：
 
@@ -82,7 +84,7 @@ bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --
 bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --publish-only
 ```
 
-本次上游合并包含 Go 和前端改动，使用完整构建。一个 VOS 包包含六个平台，先完成所有受影响平台的镜像和飞书记录，再生成测试包；打包器从飞书读取镜像引用，CI 不会代为构建镜像。
+本次上游合并包含 Go 和前端改动，使用完整构建，但重建范围只包括 `AMD_with_cuda`、`l4t` 和 `thor_spark`。其余 profile 在打包时只读取飞书已有的镜像标签，不重新构建或做本次设备验证；打包器不会代为构建镜像。
 
 推送镜像并更新飞书是为了让 pull 测试包能够引用和拉取镜像，此时尚未创建 GitHub Release 或发布应用商店版本。
 
@@ -103,9 +105,9 @@ bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --
 
 打包使用现有飞书读凭据（优先 `~/.feishu.components.json`，其次 `~/.feishu.json`，或由 `FEISHU_CONFIG_FILE` 指定）。V-Scheduler 依赖从已发布的 GitHub 包查询，依次使用 `GH_TOKEN`、`GITHUB_TOKEN` 或本机 `gh auth login` 已保存的登录，避免匿名 API 限流；无需手动导出 CLI 令牌。私有仓库无法读取时，可通过已授权的本机隧道设置 `VVOICE_APPSTORE_API_URL` 查询商店记录。依赖查询失败时先解决凭据或通道问题，不提前触发正式发布。
 
-外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、六个平台镜像引用和依赖，产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。
+外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、镜像引用和依赖，并确认三个本次目标 profile 指向新候选标签；其余 profile 只确认保留了已有标签。产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。
 
-将测试包用于现有 VOS 测试流程，测试发现问题则修复代码、重建受影响镜像并重新打包。这里先停下，由测试结果决定是否进入第 5 节；本手册不自动执行应用安装或升级。
+将测试包用于现有 VOS 测试流程，测试发现问题则修复代码、重建三个目标平台中的受影响镜像并重新打包。这里先停下，由测试结果决定是否进入第 5 节；本手册不自动执行应用安装或升级。
 
 ## 5. 整理 CHANGELOG 并触发正式发布
 
