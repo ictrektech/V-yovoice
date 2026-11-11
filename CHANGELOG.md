@@ -6,6 +6,7 @@
 
 ### English
 
+- Add desktop synthesis controls and live speech playback.
 - Import existing local model packages, improve resumed downloads and honor Kokoro speaking rate.
 - Keep feature tour cards inside the window so controls remain accessible.
 - Allow only same-origin embedded API pages so VOS documentation can load.
@@ -15,6 +16,7 @@
 
 ### 简体中文
 
+- 桌面端新增推理参数设置与语音实时试听。
 - 支持导入现有本地模型包，改进断点续传并修复 Kokoro 语速设置。
 - 功能引导卡片保持在窗口内，确保操作按钮可见。
 - 仅允许同源内嵌 API 页面，修复 VOS 文档被浏览器拦截的问题。

@@ -193,6 +193,9 @@ func (j *Jobs) controller(ctx context.Context, method, path string, body any, ke
 
 // Enqueue 先持久化业务任务，再以同一幂等键提交；失败绝不直接启动模型。
 func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage) (string, error) {
+	if restrictedRuntime(data) {
+		return "", fmt.Errorf("unapproved runtime settings")
+	}
 	if !j.configured() {
 		return "", fmt.Errorf("V-Scheduler configuration required")
 	}
@@ -604,6 +607,9 @@ func (j *Jobs) execute(ctx context.Context, job Job, run *execution) {
 }
 
 func startSnapshot(ctx context.Context, w *workbench.Workbench, job Job) error {
+	if restrictedRuntime(job.Data) {
+		return fmt.Errorf("unapproved runtime settings")
+	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}

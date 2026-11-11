@@ -167,6 +167,12 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 			http.Error(out, "Invalid request", 400)
 			return
 		}
+		if call.Method == "draft.save" || call.Method == "generation.start" || call.Method == "generation.cue" || call.Method == "character.preview" {
+			if restrictedRuntime(call.Data) {
+				http.Error(out, "Unapproved runtime settings", http.StatusForbidden)
+				return
+			}
+		}
 		var result any
 		switch call.Method {
 		case "model.download":
