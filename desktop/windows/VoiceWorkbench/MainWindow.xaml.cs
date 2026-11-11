@@ -530,10 +530,10 @@ public partial class MainWindow : Window
                     }
                     else
                     {
-                        var file = new OpenFileDialog { Filter = HostL10n.T("GGUF 模型", "GGUF Model") + "|*.gguf", Title = HostL10n.T("导入 audio.cpp IndexTTS 模型", "Import audio.cpp IndexTTS Model") };
+                        var file = new OpenFileDialog { Filter = HostL10n.T("GGUF 模型", "GGUF Model") + "|*.gguf;*.sf2", Title = HostL10n.T("导入本地模型", "Import Local Model") };
                         if (file.ShowDialog(this) == true) selected = file.FileName;
                     }
-                    result = selected is null ? null : await service.CallAsync(method, new { path = selected }); break;
+                    result = selected is null ? null : await service.CallAsync(method, new { path = selected, id = data.TryGetProperty("id", out var modelId) ? modelId.GetString() : null }); break;
                 case "model.directory.open":
                     var state = (await service.CallAsync("state.get", new { })).GetProperty("state");
                     string modelDirectory = state.GetProperty("preferences").GetProperty("modelDirectory").GetString() ?? Path.Combine(service.Root, "models");

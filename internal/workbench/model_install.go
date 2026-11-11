@@ -33,7 +33,11 @@ func (w *Workbench) DownloadModel(id string) error {
 	}
 	s := w.Store.Read()
 	// 重新下载已安装的模型会替换正在使用的文件，需等生成结束；未安装的模型可与生成同时下载。
-	installed := slices.ContainsFunc(s.Models, func(installed schema.InstalledModel) bool { return installed.ID == id })
+	index := slices.IndexFunc(s.Models, func(installed schema.InstalledModel) bool { return installed.ID == id })
+	installed := index >= 0
+	if installed && !s.Models[index].Managed {
+		return msg.Err(msg.ErrLocalModelProtected, nil)
+	}
 	if installed {
 		w.mu.Lock()
 		busy := w.cancel != nil
@@ -61,6 +65,13 @@ func (w *Workbench) DownloadModel(id string) error {
 		total += wheel.Size
 	}
 	return w.begin("download", msg.ActivityDownload, msg.Params{"name": m.Name}, ptr(id), func(ctx context.Context) error {
+		// 在占用模型任务通道后重新读取登记，防止排队前的数据已过期。
+		s = w.Store.Read()
+		index = slices.IndexFunc(s.Models, func(record schema.InstalledModel) bool { return record.ID == id })
+		installed = index >= 0
+		if installed && !s.Models[index].Managed {
+			return msg.Err(msg.ErrLocalModelProtected, nil)
+		}
 		dir, dest := modelDirectory(s, w.Store.Root), modelDestination(s, w.Store.Root, m)
 		// 单文件模型直接放在模型目录；多文件模型放进自己的子目录并保留相对路径。
 		root := dir
@@ -75,6 +86,34 @@ func (w *Workbench) DownloadModel(id string) error {
 				return filepath.Join(root, filepath.FromSlash(m.LocalPath(f.Path)))
 			}
 			return dest
+		}
+		// 只更新登记在目标位置的自管模型。其他文件即使位于模型目录，也不能被下载覆盖。
+		owned := installed && store.SamePath(s.Models[index].Path, dest)
+		for _, f := range files {
+			path := target(f)
+			for _, record := range s.Models {
+				if !record.Managed && (store.Within(record.Path, path) || store.Within(path, record.Path)) {
+					return msg.Err(msg.ErrLocalModelProtected, nil)
+				}
+			}
+			info, err := os.Lstat(path)
+			if err != nil && !os.IsNotExist(err) {
+				return err
+			}
+			if err == nil {
+				if !info.Mode().IsRegular() {
+					return msg.Err(msg.ErrLocalModelProtected, nil)
+				}
+				if !owned {
+					hash, err := download.Hash(ctx, path)
+					if err != nil {
+						return err
+					}
+					if hash != f.SHA256 {
+						return msg.Err(msg.ErrLocalModelProtected, nil)
+					}
+				}
+			}
 		}
 		// 更新已安装的模型时新文件先下载到旁边，替换前旧文件仍可正常使用；内容未变的文件不再下载。
 		staging := func(f catalog.ModelFile) string {

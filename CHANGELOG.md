@@ -6,6 +6,7 @@
 
 ### English
 
+- Import existing local model packages, improve resumed downloads and honor Kokoro speaking rate.
 - Keep feature tour cards inside the window so controls remain accessible.
 - Allow only same-origin embedded API pages so VOS documentation can load.
 - Complete VOS API workflows, response fields, identity boundaries, scheduling errors and cancellation documentation; preserve existing speech and workbench APIs.
@@ -14,6 +15,7 @@
 
 ### 简体中文
 
+- 支持导入现有本地模型包，改进断点续传并修复 Kokoro 语速设置。
 - 功能引导卡片保持在窗口内，确保操作按钮可见。
 - 仅允许同源内嵌 API 页面，修复 VOS 文档被浏览器拦截的问题。
 - 补齐 VOS API 流程、返回字段、身份边界、调度错误与取消说明，保留现有语音和工作台接口。

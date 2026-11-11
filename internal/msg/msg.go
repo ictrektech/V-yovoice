@@ -94,6 +94,9 @@ const (
 	ErrEmotionVoiceRequired  Code = "@yovoice.error.emotionVoiceRequired"
 	ErrVoiceRequired         Code = "@yovoice.error.voiceRequired"
 	ErrVoiceBusyDelete       Code = "@yovoice.error.voiceBusyDelete"
+	ErrLocalModelProtected   Code = "@yovoice.error.localModelProtected"
+	ErrLocalModelInvalid     Code = "@yovoice.error.localModelInvalid"
+	ErrLocalModelIncomplete  Code = "@yovoice.error.localModelIncomplete"
 	ErrModelRequired         Code = "@yovoice.error.modelRequired"
 	ErrModelUnsupported      Code = "@yovoice.error.modelUnsupported"
 	ErrModelMoved            Code = "@yovoice.error.modelMoved"
@@ -244,7 +247,7 @@ func All() []Code {
 		ErrNameLength, ErrDraftLimits, ErrDraftIDInvalid, ErrTextRequired, ErrTitleLength,
 		ErrLanguageUnsupported, ErrModeInvalid, ErrEmotionInvalid, ErrEmotionStrength,
 		ErrEmotionTextRequired, ErrEmotionVoiceRequired, ErrVoiceRequired, ErrVoiceBusyDelete,
-		ErrModelRequired, ErrModelUnsupported, ErrModelMoved, ErrModelImportNone, ErrModelForgetBlocked,
+		ErrLocalModelProtected, ErrLocalModelInvalid, ErrLocalModelIncomplete, ErrModelRequired, ErrModelUnsupported, ErrModelMoved, ErrModelImportNone, ErrModelForgetBlocked,
 		ErrDownloadSource, ErrRuntimeRequired, ErrRuntimeMissing, ErrRuntimeUnique,
 		ErrRuntimeArchivePath, ErrRuntimeArchiveLink, ErrRuntimeArchiveSize,
 		ErrEngineStartFailed, ErrEngineStartTimeout, ErrEngineNoAudio, ErrEngineCrashed,

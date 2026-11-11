@@ -4885,5 +4885,20 @@
   },
   "@yovoice.settings.aiGroup": {
     "defaultMessage": "AI writing"
+  },
+  "@yovoice.settings.importLocalModel": {
+    "defaultMessage": "Importar modelo local"
+  },
+  "@yovoice.settings.localModelHint": {
+    "defaultMessage": "Elige el modelo y la precisión correspondientes e importa su archivo GGUF de audio.cpp (SF2 para bancos de sonido). En paquetes, selecciona el GGUF principal y conserva la estructura de archivos. Los archivos no se mueven; quitar el modelo solo elimina el registro. Los pesos PyTorch/MLX requieren conversión previa."
+  },
+  "@yovoice.error.localModelInvalid": {
+    "defaultMessage": "Selecciona un GGUF de audio.cpp de la familia elegida o un SF2 compatible. Los pesos PyTorch/MLX requieren conversión previa."
+  },
+  "@yovoice.error.localModelIncomplete": {
+    "defaultMessage": "El paquete está incompleto o no coincide. Selecciona el GGUF principal y conserva la estructura de todos los archivos asociados."
+  },
+  "@yovoice.error.localModelProtected": {
+    "defaultMessage": "Quita el registro del modelo instalado antes de cambiar de origen."
   }
 }

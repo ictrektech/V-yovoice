@@ -6,7 +6,7 @@ import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Token } from '@astryxdesign/core/Token';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { CircleCheck, Download, FilePlus, Pause, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { CircleCheck, Download, FilePlus, FolderOpen, Pause, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { isVos, vosFetch } from '../../shared/lib/vos';
 import type { SharedModelStatus } from '../../shared/lib/model-inventory';
 import { call } from '../../shared/lib/client';
@@ -76,9 +76,9 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
     const removeBlocked = busy || (modelBusy && !(activity?.kind === 'download' && activity.modelId && activity.modelId !== model.id));
     const inUse = draft.modelId === model.id;
     const owned = group.filter(isInstalled);
-    const update = modelUpdateAvailable(state, model);
     // 应用下载的模型移除时连同文件删除；导入的模型只解除登记。
     const managed = state.models.find(m => m.id === model.id)?.managed ?? false;
+    const update = (isVos || managed) && modelUpdateAvailable(state, model);
     return <VStack className="model-row settings-row" data-model-id={model.id} data-model-ids={group.map(item => item.id).join(' ')} data-installed={ready} key={group[0].name} gap={3}>
       <HStack className="model-summary" gap={4} vAlign="center" wrap="wrap">
         <VStack className="grow" gap={1}>
@@ -92,6 +92,8 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
           </HStack>
           <small>{modelDescription(t, model)}</small>
         </VStack>
+        <HStack gap={2} vAlign="center" wrap="wrap">
+        {!isVos && model.remotePath ? <Button size="sm" label={t('@yovoice.settings.importLocalModel')} icon={<FolderOpen size={16} />} isDisabled={busy || modelBusy} onClick={() => run(() => call('model.import', { id: model.id }))} /> : null}
         {downloading ? <Button size="sm" label={t('@yovoice.action.pause')} icon={<Pause size={16} />} onClick={() => run(() => call('model.cancel', { id: model.id }))} />
           : ready ? <HStack gap={1} vAlign="center">
             {update && !model.importRequired ? <Button size="sm" variant="secondary" label={t('@yovoice.settings.updateModel')} icon={<RefreshCw size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(async () => {
@@ -104,7 +106,9 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
           : isVos && model.importRequired ? <small>{t('@vvoice.models.importRequired')}</small>
           : !model.remotePath ? <Button size="sm" label={t('@yovoice.settings.importGguf')} icon={<FilePlus size={16} />} isDisabled={modelBusy} onClick={() => run(() => call('model.import'))} />
           : <Button size="sm" label={download ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(() => call('model.download', { id: model.id }))} />}
+        </HStack>
       </HStack>
+      {ready && !managed && !isVos ? <small className="model-path" title={state.models.find(m => m.id === model.id)?.path}>{state.models.find(m => m.id === model.id)?.path}</small> : null}
       {group.length > 1 ? <HStack className="model-precisions" gap={3} vAlign="center" wrap="wrap">
         <SegmentedControl size="sm" label={t('@yovoice.settings.precisionOf', { name: model.name })} value={model.id} onChange={id => setPicks(current => ({ ...current, [model.name]: id }))}>
           {group.map(item => <SegmentedControlItem key={item.id} value={item.id} label={item.precision} icon={isInstalled(item) ? <CircleCheck /> : undefined} />)}
@@ -119,6 +123,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
     </VStack>;
   };
   return <>
+    {!isVos ? <small className="settings-intro">{t('@yovoice.settings.localModelHint')}</small> : null}
     {installed.length ? <SettingsGroup title={`${t('@yovoice.settings.downloaded')} · ${installed.length}`} className="model-list">{installed.map(row)}</SettingsGroup> : null}
     {available.length ? <SettingsGroup title={t('@yovoice.settings.available')} className="model-list available"
       actions={available.length > 5 ? <TextInput size="sm" className="model-search" label={t('@yovoice.settings.searchModels')} isLabelHidden startIcon={<Search />} placeholder={t('@yovoice.settings.searchModels')} value={query} onChange={setQuery} width="calc(var(--spacing-10) * 6)" /> : undefined}>

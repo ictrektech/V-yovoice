@@ -209,10 +209,13 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return w.CleanupResiduals()
 	case "model.directory":
 		return true, w.SetModelDirectory(p.Path)
+	case "model.import":
+		if p.ID != "" {
+			return true, w.ImportCatalogModel(p.ID, p.Path)
+		}
+		return true, w.ImportModel(p.Path)
 	case "model.download":
 		return true, w.DownloadModel(p.ID)
-	case "model.import":
-		return true, w.ImportModel(p.Path)
 	case "model.forget":
 		return true, w.ForgetModel(p.ID)
 	case "runtime.install":

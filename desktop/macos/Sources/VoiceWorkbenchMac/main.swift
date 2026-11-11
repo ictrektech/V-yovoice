@@ -542,7 +542,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             panel.canChooseDirectories = ["model.directory", "storage.directory"].contains(method) || (data["directory"] as? Bool == true)
             panel.canChooseFiles = !panel.canChooseDirectories
             panel.allowsMultipleSelection = false
-            if panel.canChooseFiles { panel.allowedContentTypes = [UTType(filenameExtension: "gguf") ?? .data] }
+            if panel.canChooseFiles { panel.allowedContentTypes = [UTType(filenameExtension: "gguf") ?? .data, UTType(filenameExtension: "sf2") ?? .data] }
             let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
             guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": NSNull()] }
             data["path"] = url.path
