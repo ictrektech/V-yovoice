@@ -11,12 +11,22 @@
 - Support the audio transcription plugin on DSH 0.2.2-rc.1 and 0.2.2-rc.2, including restoration of saved transcripts.
 - Prepare the audio transcription plugin for publication under an ICTREK package name.
 
+- When adding reference audio, choose and preview a section of the original recording before saving it as a voice.
+- Export audio as FLAC (lossless) or M4A (AAC 256 kbps) as well as WAV, with title, lyrics, cover and an AI-generated note in the tags; version exports can also target audiobook, podcast or video loudness.
+- YuE2 adds Top P / Top K / repetition penalty for score writing, hum-to-score, style-from-image, re-singing only changed bars, up to 4 candidate takes and LoRA adapters.
+- Music versions can separate stems with the optional HTDemucs 6-stem model, export all stems with DAW-friendly names, and transcribe to MIDI with the optional MuScriptor model.
+
 ### 简体中文
 
 - 新增单插件 `@ictrek/dsh-tool-v-yovoice` 底座，并迁移已跑通的音频转写；保留现有工具、profile 配置、会话和播放兼容。
 - 首版继续使用旧 `tool-audio-transcription` Loader 标识，同时加入后续能力共用的 capability、operation、artifact、服务请求和配置底座。
 - 音频转写插件支持 DSH 0.2.2-rc.1 和 0.2.2-rc.2，并可恢复已保存的转写原文。
 - 准备将音频转写插件以 ICTREK 包名发布。
+- 添加参考音频时，可在原录音上选段并试听，再保存为音色。
+- 导出音频新增 FLAC（无损）和 M4A（AAC 256 kbps），写入标题、歌词、封面并注明 AI 生成；版本导出可选有声书、播客或视频平台响度。
+- YuE2 新增写谱 Top P / Top K / 重复惩罚、哼唱扒谱、看图取风格、按改动小节局部重唱、一次最多 4 个候选及 LoRA。
+- 音乐版本可用可选 HTDemucs 6 轨模型分离音轨、按 DAW 习惯导出全部分轨，并用可选 MuScriptor 模型转为 MIDI。
+
 
 ## [0.0.35] - 2026-11-10
 

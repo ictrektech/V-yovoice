@@ -56,6 +56,8 @@ Single-file imports check the GGUF header and model family and record the file's
 | Stable Audio 3 Medium | — | Q8 · 3.58 GB<br>F16 · 5.83 GB | Larger Stable Audio model for higher-quality, longer instrumentals (about 6 minutes); requires engine v0.9.1 |
 | YuE2 3B | 3B | Q4 · 2.93 GB<br>Q8 · 4.53 GB<br>BF16 · 7.53 GB | Full vocal songs from lyrics and style, length follows the lyrics; instrumentals via a melody score; requires engine v0.9.1 |
 | SheetSage2 | — | F32 · 2.71 GB | Transcribes a song's melody and chords into a score, used for YuE2 covers; requires engine v0.9.1 |
+| HTDemucs 6-stem (optional) | — | Q8 · 42 MB<br>F16 · 55 MB | Splits a song into drums, bass, vocals, guitar, piano and other; requires engine v0.9.1 |
+| MuScriptor Small (optional) | — | F32 · 412 MB | Transcribes a song into multi-instrument MIDI that opens as a score project; requires engine v0.9.1 |
 | Lyric Aligner (optional) | 0.6B | Q8 · 1.30 GB | BS-RoFormer vocal separation plus Qwen3 Forced Aligner: aligns lyrics word by word to a generated song for the playback page and word LRC export; requires engine v0.9.1 |
 
 | Use Case | Recommended Hardware | Recommended Models |
@@ -77,7 +79,19 @@ yovoice generate --model ming3-tts-0.5b-q8 --text-file narration.txt --reference
 
 For VoxCPM2, omit `--reference-text` for ordinary cloning. For Qwen3-TTS Base, adding an accurate transcript enables transcript-guided cloning. OmniVoice and Breeze TTS 2 cloning always require a matching transcript. For Breeze, `--voice-description` acts as voice direction when cloning: it keeps the voice and steers pace, emotion and tone. Ming 3.0 TTS accepts an optional transcript: include it for an acoustic reference prefix, or omit it to condition only on the reference speaker.
 
-Use a clear recording with one speaker and little background noise. Reference audio must be 1 second to 10 minutes and no larger than 20 MB; recordings over 60 seconds are trimmed automatically to their clearest 5–15 seconds.
+Use a clear recording with one speaker and little background noise. In the desktop picker, choose an audio file (1 second to 10 minutes, up to 20 MB), set the start and end, and preview the selection before saving 1–60 seconds as a reference. A long file opens with the first 10 seconds selected. Both ends can be moved anywhere in the recording. When a model uses a reference transcript, enter only the words heard in the saved excerpt. CLI and API imports still select a clear excerpt automatically from files over 60 seconds.
+
+Reference duration guidance varies by implementation:
+
+| Model | Reference duration |
+| --- | --- |
+| IndexTTS 2.0 / 2.5 | The official Python inference takes the first 15 seconds for both speaker and emotion prompts. Select the intended section before inference. [2.0 code](https://github.com/index-tts/index-tts/blob/main/indextts/infer_v2.py) · [2.5 code](https://github.com/index-tts/index-tts/blob/main/indextts/infer_v2_5.py) |
+| VoxCPM2 | The official cloning interface accepts a reference file without documenting a fixed seconds limit. [OpenBMB guide](https://openbmb.cn/docs/en/guides/voxcpm/voxcpm-2) |
+| Qwen3-TTS Base | The team demonstrates cloning with 3 seconds; this is a demonstrated sample length. [Technical report](https://arxiv.org/abs/2601.15621) |
+| OmniVoice | Recommends 3–10 seconds; optional Python preprocessing may trim recordings longer than 20 seconds if no transcript is supplied. [Official implementation](https://github.com/k2-fsa/OmniVoice/blob/master/omnivoice/models/omnivoice.py) |
+| Breeze TTS 2 | YoVoice suggests 5–15 seconds of clean speech with its exact transcript. The official open-weight model card does not specify a fixed duration limit. [Model card](https://huggingface.co/BreezeBlue/Breeze-TTS-2) |
+| XTTS v2 | audio.cpp recommends 6–30 seconds; the Python configuration defaults to a 10-second decoder conditioning cap. [audio.cpp guide](https://github.com/0xShug0/audio.cpp/blob/main/docs/community_models/xtts_v2.md) · [Coqui config](https://github.com/idiap/coqui-ai-TTS/blob/dev/TTS/tts/configs/xtts_config.py) |
+| Ming 3.0, Plapre 3, Drama 3 | The linked upstream cloning examples do not specify a universal fixed duration limit. [Ming 3.0](https://github.com/inclusionAI/Ming-3.0-tts) · [Plapre](https://syv.ai/produkter/plapre) · [Drama 3](https://huggingface.co/fishaudio/drama-3) |
 
 ## Voice design and built-in voices
 
@@ -224,13 +238,20 @@ YuE2 needs lyrics for a vocal song, and the song length follows the lyrics. It c
 
 - **Write melody score**: YuE2 first writes the vocal melody and chords for the lyrics as an ABC score, without singing yet. Review it as tracks or as ABC text, change the tempo, keep only the melody, import an `.abc` file, or ask the assistant to rewrite it (an AI provider is required). Generating then follows the score: with chords YuE2 keeps your harmony, with melody only it arranges the accompaniment freely.
 - **Extract from a song (cover)**: with SheetSage2 installed, pick a song up to 10 minutes long. Its melody is transcribed into a score, the original chords are dropped, and YuE2 re-sings it in your style with your lyrics. The original singer's voice and phrasing are not kept.
+- **Hum a tune**: with SheetSage2 installed, record yourself humming or singing a melody (up to 2 minutes). It goes through the same extraction as a cover, so you get a melody score that YuE2 arranges in your style.
+- **Style from image**: with an AI service that accepts images, pick a picture and its suggested English style tags are added to the style field.
 - **Instrumental**: YuE2 writes a score first, then gives the vocal melody to instruments, keeping the chords, tempo and key. Lyrics are optional; section markers such as `[Verse]` and `[Chorus]` shape the structure. An existing score is converted the same way, and the melody score menu can convert it in place.
 - **Generation**: *From score* follows the score (or writes one first); *Free* skips the score and generates directly, with no editable score. Advanced settings expose the inference steps and the score and audio sampling parameters.
 - Every take stores the score it used; reusing a version restores it.
+- **Re-sing changed bars**: after editing the melody score or one section's lyrics, open the version's menu and choose **Re-sing changed bars**. YuE2 sings the whole song again with the edited score and the version's seed, then only the changed bars (a whole section for a lyric change) are cut from the new take and placed into the original; every sample outside those bars stays exactly as it was. YuE2's real timing drifts from the score, so the two takes are aligned frame by frame and the seams are moved to the quietest point nearby, with a short crossfade inside the edited range. Changing the tempo, key, number of bars or number of sections still needs a full regeneration. The result is a new version labelled with the bars it re-sang.
+- **Candidates**: advanced settings can make up to 4 takes in one go, each with the next seed. Every take records the seed it used, even when the seed field is empty.
+- **LoRA**: under advanced settings, import a YuE2 `.safetensors` LoRA (or LoKr) and pick it for the composition stage (melody and arrangement style) or the timbre stage (sound and vocal texture), each with its own strength. Files are copied into the data folder, so moving the original does not break a project; changing the LoRA restarts the engine.
 
 On the playback page, lyric timing starts from the vocals detected in the mix and can be synced line by line. With the optional Lyric Aligner installed, **Auto-align** separates the vocals, drops interludes and long pauses, and aligns every word of the lyrics to the singing (songs up to 20 minutes; the aligner handles about 100 seconds of singing at a time, so longer songs are aligned in groups of lines split at pauses in the vocals, and re-aligning the same version reuses the separated vocals); the result is saved with the version, and the newest of auto-align and manual sync wins. Words that are still off can be fixed under **Lyric tools › Adjust lyric timing**: while playing, click a line to anchor it to the playhead, or move the whole line earlier or later (shifting the following lines along, or this line only); single words can be dragged on the timeline or tapped along while listening. All of these live in the **Lyric tools** menu at the top of the playback page.
 
-Continuation, repainting and stem extraction are not available yet.
+With HTDemucs 6-stem installed, **Separate stems** in a music version's menu splits it (up to 10 minutes) into drums, bass, vocals, guitar, piano and other; each stem is saved as a version of the same project next to the original, so it can be played, exported or added to the timeline. **Export all stems** saves the mix and every stem into a new folder, named like `Song - 01 Vocals.wav` in a DAW-friendly order; all files share one sample rate and start at 0 so they line up when dragged into a DAW. With MuScriptor installed, **Transcribe to MIDI** turns a version into a new score project with one track per instrument, which you can edit and render with a sound font.
+
+Continuation and repainting are not available yet.
 
 ## Score sound font
 
@@ -238,7 +259,7 @@ Score projects and `yovoice score render` use the MuseScore General sound font (
 
 ## Licenses
 
-OmniVoice weights are licensed under CC-BY-NC and YuE2 weights under CC BY-NC 4.0, both for non-commercial use only. Breeze TTS 2 weights use the [BreezeBlue Research and Non-Commercial License](https://huggingface.co/BreezeBlue/Breeze-TTS-2), and generated speech is not licensed for commercial use either. IndexTTS has a separate [model license](../web/public/model-license.txt). Check the model publisher's license before using generated speech commercially.
+OmniVoice weights are licensed under CC-BY-NC and YuE2 weights under CC BY-NC 4.0, both for non-commercial use only. MuScriptor weights are CC BY-NC as well; HTDemucs is MIT. Breeze TTS 2 weights use the [BreezeBlue Research and Non-Commercial License](https://huggingface.co/BreezeBlue/Breeze-TTS-2), and generated speech is not licensed for commercial use either. IndexTTS has a separate [model license](../web/public/model-license.txt). Check the model publisher's license before using generated speech commercially.
 
 ## Runtime controls
 

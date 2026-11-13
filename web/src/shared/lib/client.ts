@@ -1,5 +1,5 @@
 import type { AudioAsset, State, Voice } from '../workbench';
-import { toBase64 } from './sound';
+import { decodeAudio, toBase64 } from './sound';
 import { CallError, parseCallError } from './call-error';
 import { desktopCall, desktopMediaUrl, isDesktop, isLinux, isMac, reportDesktop, subscribeDesktop } from './bridge';
 import { isVos, vosCall, vosMedia, subscribeVos } from './vos';
@@ -39,6 +39,21 @@ export async function importTimelineFile(file: File): Promise<AudioAsset> {
 export async function importTimelineGeneration(generationID: string): Promise<AudioAsset> {
   if (!isDesktop && !isVos) return (await preview()).previewImportTimelineGeneration(generationID);
   return call<AudioAsset>('timeline.fromGeneration', { id: generationID });
+}
+
+// 先在界面解码供裁剪，系统不支持的格式交给打包的转换器。
+export async function decodeVoiceSource(file: File): Promise<AudioBuffer> {
+  assertUploadSize(file);
+  let buffer: AudioBuffer;
+  try {
+    buffer = await decodeAudio(file, 24000);
+  } catch (error) {
+    if (!isDesktop) throw error;
+    const wav = await call<string>('voice.decode', { base64: await toBase64(file) });
+    buffer = await decodeAudio(await (await fetch(`data:audio/wav;base64,${wav}`)).arrayBuffer(), 24000);
+  }
+  if (buffer.duration < 1 || buffer.duration > 600) throw new CallError('@yovoice.error.audioDuration');
+  return buffer;
 }
 
 export async function importVoiceFile(file: File): Promise<Voice> {
@@ -110,24 +125,40 @@ async function logged(format: string, save: () => Promise<boolean>): Promise<boo
   }
 }
 
+// 导出音频的格式：WAV 原样，FLAC 无损压缩，M4A（AAC）体积小；后两种由本地服务转码并写入标签，只在桌面端可选。
+export type AudioExportFormat = 'wav' | 'flac' | 'm4a';
+// 写进 FLAC / M4A 的标签；cover 是 base64 编码的 JPEG 封面（不带 data: 前缀）。
+export interface AudioExportTags { title?: string; album?: string; lyrics?: string; cover?: string }
+export interface AudioExportOptions { format?: AudioExportFormat; loudness?: number; tags?: AudioExportTags }
+
+// 让本地服务把版本或上传的临时文件转成所选格式，再交给宿主弹保存框；返回用户是否保存。
+async function encodeAndSave(source: { kind: 'outputs' | 'export'; id: string }, name: string, { format = 'wav', loudness, tags }: AudioExportOptions): Promise<boolean> {
+  const reply = await call<{ id: string }>('export.encode', { ...source, format, loudness: source.kind === 'outputs' ? loudness : undefined, ...(format === 'wav' ? {} : tags) });
+  return call<boolean>('audio.export', { id: reply.id, name: `${exportName(name)}.${format}` });
+}
+
 // 界面合成的音频（时间线导出）：桌面端先直接上传给本地服务落成临时文件，宿主再弹保存框复制，
-// 不经宿主消息通道传音频字节，长音频不受消息大小限制；浏览器预览直接下载。
-// loudness 为目标响度（LUFS）时由本地服务整体调整音量后再保存；浏览器预览没有本地服务，原样下载。
-export async function saveAudio(blob: Blob, name: string, loudness?: number): Promise<boolean> {
-  const fileName = `${exportName(name)}.wav`;
-  return logged('wav', async () => {
-    if (!isDesktop) { download(blob, fileName); return true; }
+// 不经宿主消息通道传音频字节，长音频不受消息大小限制；浏览器预览直接下载 WAV。
+// loudness 为目标响度（LUFS）时由本地服务整体调整音量后再保存；选了 FLAC / M4A 时再转码一次。
+export async function saveAudio(blob: Blob, name: string, loudness?: number, format: AudioExportFormat = 'wav'): Promise<boolean> {
+  return logged(isDesktop ? format : 'wav', async () => {
+    if (!isDesktop) { download(blob, `${exportName(name)}.wav`); return true; }
     const response = await fetch(loudness ? `/api/export-audio?loudness=${loudness}` : '/api/export-audio', { method: 'POST', body: blob });
     const reply = await response.json().catch(() => ({})) as { id?: string; error?: unknown };
     if (!response.ok || !reply.id) throw reply.error ? parseCallError(reply.error) : new CallError('@yovoice.error.unknown', { detail: `export upload ${response.status}` });
-    return call<boolean>('audio.export', { id: reply.id, name: fileName });
+    if (format !== 'wav') return encodeAndSave({ kind: 'export', id: reply.id }, name, { format });
+    return call<boolean>('audio.export', { id: reply.id, name: `${exportName(name)}.wav` });
   });
 }
 
-// 导出已生成的版本：桌面端由宿主弹出保存框后直接复制 outputs 中的文件，不经页面传音频字节，长歌也不受消息大小限制；
-// 浏览器预览没有文件可复制，取回音频后下载。
-export async function exportOutput(id: string, fileName: string, name: string): Promise<boolean> {
-  if (isDesktop) return logged('wav', () => call<boolean>('output.export', { kind: 'outputs', id, name: `${exportName(name)}.wav` }));
+// 导出已生成的版本：原样 WAV 由宿主弹出保存框后直接复制 outputs 中的文件，不经页面传音频字节，长歌也不受消息大小限制；
+// 选了目标响度或其他格式时先由本地服务生成临时文件。浏览器预览没有文件可复制，取回音频后下载 WAV。
+export async function exportOutput(id: string, fileName: string, name: string, options: AudioExportOptions = {}): Promise<boolean> {
+  if (isDesktop) {
+    const format = options.format ?? 'wav';
+    if (format === 'wav' && !options.loudness) return logged('wav', () => call<boolean>('output.export', { kind: 'outputs', id, name: `${exportName(name)}.wav` }));
+    return logged(format, () => encodeAndSave({ kind: 'outputs', id }, name, options));
+  }
   const url = await mediaUrl('outputs', fileName);
   try { return await saveAudio(await (await fetch(url)).blob(), name); }
   finally { releaseMediaUrl(url); }

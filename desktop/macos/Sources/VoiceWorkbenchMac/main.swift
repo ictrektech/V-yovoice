@@ -498,9 +498,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             let response = try await request("api/call", body: ["id": "export-path", "method": "export.path", "data": ["id": data["id"] ?? ""]])
             guard let source = response["result"] as? String else { throw failure(Self.hostErrorMessage(response["error"]) ?? HostL10n.t("err.audioPath")) }
             defer { try? FileManager.default.removeItem(atPath: source) }
+            // 格式由本地服务写出的文件决定：WAV、FLAC 或 M4A，保存框只允许这一种。
+            let format = (source as NSString).pathExtension.lowercased()
+            guard ["wav", "flac", "m4a"].contains(format) else { throw failure(HostL10n.t("err.textExportInvalid")) }
+            let base = ((data["name"] as? String ?? "") as NSString).deletingPathExtension
             let panel = NSSavePanel()
-            panel.allowedContentTypes = [UTType(filenameExtension: "wav") ?? .audio]
-            panel.nameFieldStringValue = (data["name"] as? String ?? "yovoice.wav")
+            panel.allowedContentTypes = [UTType(filenameExtension: format) ?? .audio]
+            panel.nameFieldStringValue = (base.isEmpty ? "yovoice" : base) + "." + format
             let choice = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
             guard choice == .OK, let url = panel.url else { return ["id": message["id"]!, "result": false] }
             try Data(contentsOf: URL(fileURLWithPath: source)).write(to: url, options: .atomic)
@@ -538,9 +542,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
             return ["id": message["id"]!, "result": true]
         }
-        if ["model.import", "model.directory", "storage.directory"].contains(method) {
+        if ["model.import", "model.directory", "storage.directory", "stems.export"].contains(method) {
             let panel = NSOpenPanel()
-            panel.canChooseDirectories = ["model.directory", "storage.directory"].contains(method) || (data["directory"] as? Bool == true)
+            panel.canChooseDirectories = ["model.directory", "storage.directory", "stems.export"].contains(method) || (data["directory"] as? Bool == true)
             panel.canChooseFiles = !panel.canChooseDirectories
             panel.allowsMultipleSelection = false
             if panel.canChooseFiles { panel.allowedContentTypes = [UTType(filenameExtension: "gguf") ?? .data, UTType(filenameExtension: "sf2") ?? .data] }
@@ -559,6 +563,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
                 if relocated["error"] == nil { storageRelocated = true }
                 return relocated
             }
+        }
+        if method == "adapter.import" {
+            let panel = NSOpenPanel()
+            panel.canChooseDirectories = false
+            panel.canChooseFiles = true
+            panel.allowsMultipleSelection = false
+            panel.allowedContentTypes = [UTType(filenameExtension: "safetensors") ?? .data]
+            let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
+            guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": NSNull()] }
+            data["path"] = url.path
+            message["data"] = data
         }
         if method == "storage.directory.open" {
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
