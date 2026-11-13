@@ -1,0 +1,10 @@
+{
+  "target": {
+    "release": "0.2.2-rc.1.vos.06",
+    "commit": "d1017fcd06b7aae7a2ceab3f4b8dd51f9def2ab5"
+  },
+  "dshVersion": "0.2.2-rc.2",
+  "supportedDshVersions": [
+    "0.2.2-rc.2"
+  ]
+}

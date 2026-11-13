@@ -6,12 +6,16 @@
 
 ### English
 
-- Support the audio transcription plugin on DSH 0.2.2-rc.1, including restoration of saved transcripts.
+- Introduce the single installable `@ictrek/dsh-tool-v-yovoice` plugin base and migrate the proven transcription flow while preserving existing tools, profile settings, sessions and playback.
+- Keep the legacy `tool-audio-transcription` loader entry for compatibility while adding shared capability, operation, artifact, service and configuration foundations for later V-yovoice features.
+- Support the audio transcription plugin on DSH 0.2.2-rc.1 and 0.2.2-rc.2, including restoration of saved transcripts.
 - Prepare the audio transcription plugin for publication under an ICTREK package name.
 
 ### 简体中文
 
-- 音频转写插件支持 DSH 0.2.2-rc.1，并可恢复已保存的转写原文。
+- 新增单插件 `@ictrek/dsh-tool-v-yovoice` 底座，并迁移已跑通的音频转写；保留现有工具、profile 配置、会话和播放兼容。
+- 首版继续使用旧 `tool-audio-transcription` Loader 标识，同时加入后续能力共用的 capability、operation、artifact、服务请求和配置底座。
+- 音频转写插件支持 DSH 0.2.2-rc.1 和 0.2.2-rc.2，并可恢复已保存的转写原文。
 - 准备将音频转写插件以 ICTREK 包名发布。
 
 ## [0.0.35] - 2026-11-10

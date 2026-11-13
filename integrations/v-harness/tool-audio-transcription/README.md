@@ -7,15 +7,21 @@ kind: "package-bundle"
 
 English | [中文](README.zh.md)
 
+> This package has moved to the single `@ictrek/dsh-tool-v-yovoice` plugin. Its
+> historical releases have been removed. New installations should use
+> [`tool-v-yovoice`](../tool-v-yovoice/README.md).
+
 ## Summary
 
 Paste an MP3 into a normal Web or Desktop conversation and ask what it says. The agent calls V-yovoice on demand. A durable audio card after the closing answer provides playback, byte-range seeking and the complete original independently from assistant summaries. It supports multiple files, continued questions, explicit reprocessing and restored sessions. No local recognition model or plugin market is required.
 
 ## Install and configure
 
-Use the prebuilt `ictrek-dsh-tool-audio-transcription-0.1.2.tgz` with v-harness **0.2.2-rc.1.vos.03** and DSH **0.2.2-rc.1**; for DSH 0.2.1-rc.2 / 0.2.1-rc.5, use plugin 0.1.1. In **Plugins → Add plugin**, enter a tarball URL or absolute path readable by the Host. This is not an upload picker: a Mac path cannot name a file on a remote VOS Host. For VOS, copy the archive into the intended tenant's workspace and use its in-tenant path, for example `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`; the container's shared `/tmp` is not visible inside the tenant. Alternatively, enter the immutable release URL `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz`. Install into that tenant's profile, not the shared runtime.
+This historical package's releases have been removed and it no longer provides a
+new install archive. Use [`tool-v-yovoice`](../tool-v-yovoice/README.md) instead.
 
-After npm publication, the market can install `@ictrek/dsh-tool-audio-transcription` from an accessible registry.
+The old npm package `@ictrek/dsh-tool-audio-transcription` has been unpublished.
+Use `@ictrek/dsh-tool-v-yovoice` instead.
 
 CLI example, executed as the profile owner on the Host:
 

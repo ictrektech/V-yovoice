@@ -1,0 +1,3 @@
+- insert:
+    - id: tool-audio-transcription
+      name: '@ictrek/dsh-tool-v-yovoice'

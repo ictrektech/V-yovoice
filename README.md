@@ -102,10 +102,10 @@ request-body cap now follows approved encoded-audio sizes, bounded by the
 configured upload cap. See
 [the complete-file contract and v-harness integration notes](docs/full-file-transcription.md).
 The installable v-harness plugin is maintained in
-[`integrations/v-harness/tool-audio-transcription`](integrations/v-harness/tool-audio-transcription)
+[`integrations/v-harness/tool-v-yovoice`](integrations/v-harness/tool-v-yovoice)
 and is released as a prebuilt `.tgz` rather than bundled into the VOS service image.
-The [stable plugin download](https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz)
-tracks the latest plugin release; check host compatibility before upgrading.
+The [versioned plugin download](https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.2.1/ictrek-dsh-tool-v-yovoice-0.2.1.tgz)
+points at the current plugin release; check host compatibility before upgrading.
 Qwen3-ASR 0.6B and 1.7B accept their own approved duration, source sample-rate,
 encoded-byte and hotword limits; they do not inherit SenseVoice approval. The ASR
 selector distinguishes downloaded files from inference approval on this device

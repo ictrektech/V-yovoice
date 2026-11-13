@@ -41,11 +41,11 @@ v0.5.0 后续同步新增桌面端可选 Qwen3 ASR 参考原文识别、音频�
 原有单段接口保持不变；请求体上限仍随实际批准大小调整，并受全局上传配置约束。
 接口字段、错误语义和 v-harness 接入步骤见
 [全文件音频转写](docs/full-file-transcription.md)。
-可安装的 v-harness 插件位于
-[`integrations/v-harness/tool-audio-transcription`](integrations/v-harness/tool-audio-transcription)，
+可安装的 v-harness 单插件位于
+[`integrations/v-harness/tool-v-yovoice`](integrations/v-harness/tool-v-yovoice)，
 以预构建 `.tgz` 独立发布，不打入 VOS 服务镜像。
-[插件固定下载地址](https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz)
-指向最新插件；升级前请核对宿主兼容性。
+[插件版本化下载地址](https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.2.1/ictrek-dsh-tool-v-yovoice-0.2.1.tgz)
+指向当前插件；升级前请核对宿主兼容性。
 
 Qwen3-ASR 0.6B 与 1.7B 支持各自批准的时长、源采样率、文件字节数和热词长度限制，
 不能借用 SenseVoice 的审批。识别页区分「文件已下载」与「当前设备已获准推理」，

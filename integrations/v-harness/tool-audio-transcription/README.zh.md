@@ -7,15 +7,20 @@ kind: "package-bundle"
 
 [English](README.md) | 中文
 
+> 此包已迁移到单插件 `@ictrek/dsh-tool-v-yovoice`。历史插件 Release 已移除，
+> 新安装请使用 [`tool-v-yovoice`](../tool-v-yovoice/README.zh.md)。
+
 ## 概述
 
 在 Web 或 Desktop 普通会话中粘贴 MP3，询问“这段音频内容是什么？”。智能体按需调用 V-yovoice。助手最终回答之后的持久化音频卡片提供播放、拖动进度和完整原文，原文与智能体总结分开展示。支持多个文件、后续提问、重新识别及恢复会话，无需本地识别模型或插件市场。
 
 ## 安装与配置
 
-预构建安装包为 `ictrek-dsh-tool-audio-transcription-0.1.2.tgz`，适配 v-harness **0.2.2-rc.1.vos.03** 和 DSH **0.2.2-rc.1**；旧版 DSH 0.2.1-rc.2 / 0.2.1-rc.5 请继续使用插件 0.1.1。打开**插件 → 添加插件**，填写宿主可访问的安装包 URL 或绝对路径。这里不是文件上传器：Mac 本地路径不能表示远程 VOS 上的文件。VOS 使用前将包复制到目标租户工作区，并使用租户内部路径，例如 `/home/admin/workspace/audio-plugin-acceptance/plugin.tgz`；容器共享的 `/tmp` 在租户内不可见。也可填写固定 Release 地址 `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-latest/audio-transcription.tgz`。安装进目标租户的 profile，不修改共享运行时。
+此历史包的 Release 已移除，不再提供新的安装包。请改为安装
+[`tool-v-yovoice`](../tool-v-yovoice/README.zh.md)。
 
-npm 包发布后，插件市场可从可访问的 npm 源安装 `@ictrek/dsh-tool-audio-transcription`。
+旧 npm 包 `@ictrek/dsh-tool-audio-transcription` 已取消发布，请使用
+`@ictrek/dsh-tool-v-yovoice`。
 
 在宿主上以 profile 所有者执行 CLI 示例：
 

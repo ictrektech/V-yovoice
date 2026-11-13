@@ -217,13 +217,13 @@ python3 scripts/check-full-transcription.py \
 ## v-harness 插件接入
 
 插件源码由本仓库的
-[`integrations/v-harness/tool-audio-transcription`](../integrations/v-harness/tool-audio-transcription)
+[`integrations/v-harness/tool-v-yovoice`](../integrations/v-harness/tool-v-yovoice)
 维护，以预构建 `.tgz` 安装到 v-harness，不编入 VOS 服务镜像。本地发布构建使用明确锁定的
 v-harness 源码版本，脚本会临时载入插件并执行插件测试、lint、Host/Client 编译与完整打包：
 
 ```bash
 V_HARNESS_REPO=/absolute/path/to/v-harness \
-  pnpm --dir integrations/v-harness/tool-audio-transcription build:release
+  pnpm --dir integrations/v-harness/tool-v-yovoice build:release
 ```
 
 插件遵循以下接口约束：
