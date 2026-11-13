@@ -25,6 +25,7 @@ import { VosSettings } from './vos-settings';
 import { StorageSettings } from './storage-settings';
 import { LogViewer } from './log-viewer';
 import { AssistantSettings } from './assistant-settings';
+import { CommunitySettings } from '../community/community-settings';
 import { EngineRuntimeSettings } from './engine-runtime-settings';
 import { FeatureSettings } from './feature-settings';
 import { TranscribeSettings } from './transcribe-settings';
@@ -102,6 +103,7 @@ function DesktopSettings({ state, catalog, engine, draft, run, focus, active, on
       <FeatureSettings state={state} run={run} />
       {featureHidden(state.preferences, 'transcribe') ? null : <TranscribeSettings state={state} run={run} />}
       <StorageSettings state={state} run={run} busy={busy || modelBusy} />
+      <CommunitySettings state={state} run={run} />
       <LocalAPISettings run={run} />
       <SettingsGroup title={t('@yovoice.settings.diagnosticsGroup')}>
         <SettingsRow label={t('@yovoice.settings.diagnostics')} hint={t('@yovoice.settings.diagnosticsHint')}>

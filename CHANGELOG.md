@@ -6,6 +6,8 @@
 
 ### English
 
+- Share a song to the yovoice community from the player or version menu. Sign in through your browser, add a title, tags and a license, and the version is uploaded for review. Reference voices are never included. Settings lists what you have shared, with its review status, and lets you delete it.
+
 - Introduce the single installable `@ictrek/dsh-tool-v-yovoice` plugin base and migrate the proven transcription flow while preserving existing tools, profile settings, sessions and playback.
 - Keep the legacy `tool-audio-transcription` loader entry for compatibility while adding shared capability, operation, artifact, service and configuration foundations for later V-yovoice features.
 - Support the audio transcription plugin on DSH 0.2.2-rc.1 and 0.2.2-rc.2, including restoration of saved transcripts.
@@ -45,6 +47,8 @@
 - Fixes: custom data folders with Chinese characters on Windows; choosing PNG, JPEG and WebP images for “Style from image” on macOS, with each import dialog filtering its own formats; a `host.log` check of the local service when the macOS window fails to load.
 
 ### 简体中文
+
+- 可以把歌曲分享到 yovoice 社区：在播放器或版本菜单里选择“分享到社区”，在浏览器里登录，填写标题、标签和使用许可后上传并提交审核；参考音色不会随歌曲上传。设置里可以查看自己分享的作品和审核状态，也可以删除。
 
 - 新增单插件 `@ictrek/dsh-tool-v-yovoice` 底座，并迁移已跑通的音频转写；保留现有工具、profile 配置、会话和播放兼容。
 - 首版继续使用旧 `tool-audio-transcription` Loader 标识，同时加入后续能力共用的 capability、operation、artifact、服务请求和配置底座。
