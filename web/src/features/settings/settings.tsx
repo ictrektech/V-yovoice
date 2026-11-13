@@ -8,12 +8,13 @@ import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { Switch } from '@astryxdesign/core/Switch';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { FolderOpen, FolderCog, FilePlus, ArrowUpRight } from 'lucide-react';
+import { FolderOpen, FolderCog, ArrowUpRight } from 'lucide-react';
 import { call, isLinux, isMac } from '../../shared/lib/client';
 import { aiServiceHidden, featureHidden, runtimeStatus, type EngineInfo, type ModelPackage, type State, type Draft, type UiLocale, modelTab, modelTabs } from '../../shared/workbench';
 import { CallError } from '../../shared/lib/call-error';
 import { uiLocales } from '../../shared/i18n/locale';
 import { AISettings } from './ai-settings';
+import { LocalModelSources } from './local-model-sources';
 import { ModelGroups } from './model-list';
 import { SettingsGroup, SettingsRow } from '../../shared/ui/settings-group';
 import { overflowTitle } from '../../shared/ui/overflow-title';
@@ -117,8 +118,8 @@ function DesktopSettings({ state, catalog, engine, draft, run, focus, active, on
           <Button size="sm" label={t('@yovoice.settings.changeLocation')} icon={<FolderCog size={16} />} isDisabled={modelBusy || recoveringModels} onClick={() => run(() => call('model.directory'))} />
           <Button size="sm" label={t('@yovoice.settings.openFolder')} icon={<FolderOpen size={16} />} onClick={() => run(() => call('model.directory.open'))} />
         </SettingsRow>
-        <SettingsRow label={t('@yovoice.settings.importLocal')} hint={t('@yovoice.settings.importLocalHint')}>
-          <Button size="sm" label={t('@yovoice.settings.importGguf')} icon={<FilePlus size={16} />} isDisabled={modelBusy} onClick={() => run(() => call('model.import'))} />
+        <SettingsRow label={t('@yovoice.settings.localSources')}>
+          {!isVos ? <LocalModelSources catalog={catalog} busy={busy || modelBusy} /> : <small>{t('@yovoice.settings.importLocalHint')}</small>}
         </SettingsRow>
       </SettingsGroup>
       <ModelGroups key={tab} models={catalog.filter(model => modelTab(model.family) === tab)} state={state} draft={draft} run={run} focus={focus?.modelId} />

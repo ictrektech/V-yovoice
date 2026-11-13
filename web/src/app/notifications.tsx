@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@astryxdesign/core/Button';
+import { ProgressBar } from '@astryxdesign/core/ProgressBar';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Check, CircleAlert, LoaderCircle, X } from 'lucide-react';
@@ -8,9 +9,9 @@ import { formatActivity, formatActivityError, formatNotice } from '../shared/i18
 import { readLocal, writeLocal } from '../shared/lib/local-store';
 import { withViewTransition } from '../shared/lib/view-transition';
 
-// 只有下载类进度的 received / total 是字节数；转写、对齐、渲染等任务报的是段数，进度条照常显示，不标字节。
+// 下载和模型校验的 received / total 是字节数；转写、对齐、渲染等任务报的是段数，进度条照常显示，不标字节。
 // 语音转写页在列表里自己显示进行中的转写，停在这一页时不再弹出全局进度条。
-const byteCodes: string[] = ['@yovoice.activity.downloading', '@yovoice.activity.runtimeDownload'];
+const byteCodes: string[] = ['@yovoice.activity.downloading', '@yovoice.activity.runtimeDownload', '@yovoice.activity.verifying'];
 
 function NoticeText({ error, activity }: { error: string; activity: Activity | null | undefined }) {
   const t = useTranslator();
@@ -43,14 +44,16 @@ export function Notifications({ error, clearError, activity, modelActivity, draf
   const [dismissedModel, setDismissedModel] = useState(() => readLocal('yovoice-dismissed-model-task') ?? '');
   const activityKey = activity ? stableJSON(activity) : '';
   const busy = activity?.status === 'running';
-  // 模型下载与导入与生成并行：导入进度在这里展示，下载进度在模型列表中展示；失败在任何页面都提示一次。
+  // 下载进度在模型列表中展示，下载失败在任何页面都提示一次。
   const modelKey = modelActivity ? stableJSON(modelActivity) : '';
   const modelFailed = modelActivity?.status === 'failed' && modelKey !== dismissedModel;
   const dismissModel = (key: string) => { setDismissedModel(key); writeLocal('yovoice-dismissed-model-task', key); };
   return <VStack className="notifications" gap={2}>
       {modelFailed && !error ? <HStack className="notice" role="alert" gap={3} hAlign="between" vAlign="center"><CircleAlert className="notice-icon" aria-hidden /><p className="grow"><NoticeText error="" activity={modelActivity} /></p><Button label={t('@yovoice.action.closeNotice')} size="sm" variant="ghost" isIconOnly icon={<X size={16} />} onClick={() => withViewTransition(() => dismissModel(modelKey), 'notice')} /></HStack> : null}
-      {error || (activity?.status === 'failed' && !activity.characterId && !['recognize', 'transcribe', 'caption'].includes(activity.task ?? '') && (!activity.projectId || activity.projectId === draftId) && page === 'create' && activityKey !== dismissedActivity) ? <HStack className="notice" role="alert" gap={3} hAlign="between" vAlign="center"><CircleAlert className="notice-icon" aria-hidden /><p className="grow"><NoticeText error={error} activity={activity} /></p><Button label={t('@yovoice.action.closeNotice')} size="sm" variant="ghost" isIconOnly icon={<X size={16} />} onClick={() => withViewTransition(() => { clearError(); if (activity?.status === 'failed') { setDismissedActivity(activityKey); writeLocal('yovoice-dismissed-task', activityKey); } }, 'notice')} /></HStack> : null}
-      {busy && activity && !['download', 'generate'].includes(activity.kind) && !(page === 'transcribe' && activity.task === 'transcribe') ? <HStack className="activity" role="status" gap={3} vAlign="center"><VStack className="grow" gap={2}><HStack hAlign="between"><ActivityLabel activity={activity} />{activity.total > 0 && byteCodes.includes(activity.code) ? <small>{formatBytes(activity.received)} / {formatBytes(activity.total)}</small> : null}</HStack><progress value={activity.total > 0 ? activity.received : undefined} max={activity.total || 1} /></VStack><Button label={activity.kind === 'download' ? t('@yovoice.action.pause') : t('@yovoice.action.cancel')} size="sm" onClick={cancel} /></HStack> : null}
+      {error || (activity?.status === 'failed' && !activity.characterId && !['recognize', 'transcribe', 'caption'].includes(activity.task ?? '') && (!activity.projectId || activity.projectId === draftId) && (page === 'create' || activity.kind === 'import') && activityKey !== dismissedActivity) ? <HStack className="notice" role="alert" gap={3} hAlign="between" vAlign="center"><CircleAlert className="notice-icon" aria-hidden /><p className="grow"><NoticeText error={error} activity={activity} /></p><Button label={t('@yovoice.action.closeNotice')} size="sm" variant="ghost" isIconOnly icon={<X size={16} />} onClick={() => withViewTransition(() => { clearError(); if (activity?.status === 'failed') { setDismissedActivity(activityKey); writeLocal('yovoice-dismissed-task', activityKey); } }, 'notice')} /></HStack> : null}
+      {!error && activity?.task === 'local-model-import' && activity.status === 'completed' && activityKey !== dismissedActivity
+        ? <HStack className="notice" role="status" gap={3} hAlign="between" vAlign="center"><Check size={16} aria-hidden /><p className="grow">{t('@yovoice.settings.localModelImported')}</p><Button label={t('@yovoice.action.closeNotice')} size="sm" variant="ghost" isIconOnly icon={<X size={16} />} onClick={() => { setDismissedActivity(activityKey); writeLocal('yovoice-dismissed-task', activityKey); }} /></HStack> : null}
+      {busy && activity && !['download', 'generate'].includes(activity.kind) && !(page === 'transcribe' && activity.task === 'transcribe') ? <HStack className="activity" role="status" gap={3} vAlign="center"><VStack className="grow" gap={2}><HStack hAlign="between"><ActivityLabel activity={activity} />{activity.total > 0 && byteCodes.includes(activity.code) ? <small>{formatBytes(activity.received)} / {formatBytes(activity.total)}</small> : null}</HStack><ProgressBar label={formatActivity(t, activity)} isLabelHidden value={activity.received} max={activity.total || 1} isIndeterminate={!activity.total} /></VStack><Button label={activity.kind === 'download' ? t('@yovoice.action.pause') : t('@yovoice.action.cancel')} size="sm" onClick={cancel} /></HStack> : null}
       {modelActivity?.status === 'running' && modelActivity.kind === 'import' ? <HStack className="activity" role="status" gap={3} vAlign="center"><VStack className="grow" gap={2}><HStack hAlign="between"><ActivityLabel activity={modelActivity} />{modelActivity.total > 0 ? <small>{formatBytes(modelActivity.received)} / {formatBytes(modelActivity.total)}</small> : null}</HStack><progress value={modelActivity.total > 0 ? modelActivity.received : undefined} max={modelActivity.total || 1} /></VStack><Button label={t('@yovoice.action.cancel')} size="sm" onClick={cancelModel} /></HStack> : null}
       {aiTask && aiTask.kind !== 'cast' && aiTask.status !== 'cancelled' && (page !== 'create' || aiTask.projectId !== draftId) ? <AITaskNotice task={aiTask} title={aiTitle} open={openAITask} /> : null}
       {children}

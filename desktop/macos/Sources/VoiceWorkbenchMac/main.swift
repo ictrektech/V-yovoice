@@ -634,12 +634,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
             return ["id": message["id"]!, "result": true]
         }
-        if ["model.import", "model.directory", "storage.directory", "stems.export"].contains(method) {
+        if method == "model.conversionTool" {
             let panel = NSOpenPanel()
-            panel.canChooseDirectories = ["model.directory", "storage.directory", "stems.export"].contains(method) || (data["directory"] as? Bool == true)
-            panel.canChooseFiles = !panel.canChooseDirectories
+            panel.canChooseDirectories = false
+            panel.canChooseFiles = true
             panel.allowsMultipleSelection = false
-            if panel.canChooseFiles { panel.allowedContentTypes = [UTType(filenameExtension: "gguf") ?? .data, UTType(filenameExtension: "sf2") ?? .data] }
+            panel.resolvesAliases = false
+            let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
+            guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": NSNull()] }
+            return ["id": message["id"]!, "result": url.path]
+        }
+        if method == "model.import" {
+            let panel = NSOpenPanel()
+            panel.canChooseDirectories = false
+            panel.canChooseFiles = true
+            panel.allowsMultipleSelection = false
+            panel.allowedContentTypes = [UTType(filenameExtension: "gguf") ?? .data, UTType(filenameExtension: "sf2") ?? .data]
+            let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
+            guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": NSNull()] }
+            data["path"] = url.path
+            message["data"] = data
+        }
+        if method == "adapter.import" {
+            let panel = NSOpenPanel()
+            panel.canChooseDirectories = false
+            panel.canChooseFiles = true
+            panel.allowsMultipleSelection = false
+            panel.allowedContentTypes = [UTType(filenameExtension: "safetensors") ?? .data]
+            let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
+            guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": NSNull()] }
+            data["path"] = url.path
+            message["data"] = data
+        }
+        if ["model.directory", "model.scan", "storage.directory", "stems.export"].contains(method) {
+            let panel = NSOpenPanel()
+            panel.canChooseDirectories = true
+            panel.canChooseFiles = false
+            panel.allowsMultipleSelection = false
             let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
             guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": NSNull()] }
             data["path"] = url.path
@@ -655,17 +686,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
                 if relocated["error"] == nil { storageRelocated = true }
                 return relocated
             }
-        }
-        if method == "adapter.import" {
-            let panel = NSOpenPanel()
-            panel.canChooseDirectories = false
-            panel.canChooseFiles = true
-            panel.allowsMultipleSelection = false
-            panel.allowedContentTypes = [UTType(filenameExtension: "safetensors") ?? .data]
-            let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
-            guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": NSNull()] }
-            data["path"] = url.path
-            message["data"] = data
         }
         if method == "storage.directory.open" {
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

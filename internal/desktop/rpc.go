@@ -257,11 +257,29 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return w.CleanupResiduals()
 	case "model.directory":
 		return true, w.SetModelDirectoryContext(ctx, p.Path)
+	case "model.scan":
+		return w.ScanLocalModels(ctx, p.Path)
+	case "model.importBatch":
+		var input struct {
+			Models []workbench.LocalModelMapping `json:"models"`
+		}
+		if err := json.Unmarshal(data, &input); err != nil {
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
+		}
+		return true, w.ImportLocalModels(input.Models)
+	case "model.conversionTools":
+		return w.ConversionTools()
+	case "model.convert":
+		var input workbench.LocalModelConversion
+		if err := json.Unmarshal(data, &input); err != nil {
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
+		}
+		return true, w.ConvertLocalModel(input)
 	case "model.import":
 		if p.ID != "" {
 			return true, w.ImportCatalogModel(p.ID, p.Path)
 		}
-		return true, w.ImportModel(p.Path)
+		return true, w.ImportModelAuto(p.Path)
 	case "model.download":
 		return true, w.DownloadModel(p.ID, p.Version)
 	case "model.forget":
@@ -346,7 +364,23 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		if e != nil {
 			return nil, msg.Err(msg.ErrRequestInvalid, nil)
 		}
-		return true, w.TranscribeSpeech(input.Name, bytes.NewReader(b))
+		selection, err := w.PrepareTranscribeSpeech(ctx, input.Name, bytes.NewReader(b))
+		if selection != nil {
+			return selection, err
+		}
+		return true, err
+	case "speech.transcribe.select":
+		var input struct {
+			ID    string `json:"id"`
+			Name  string `json:"name"`
+			Track int    `json:"track"`
+		}
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
+		}
+		return true, w.SelectTranscribeTrack(ctx, input.ID, input.Name, input.Track)
+	case "speech.transcribe.discard":
+		return true, w.DiscardTranscribeUpload(p.ID)
 	case "melody.listen":
 		var input struct {
 			Abc string `json:"abc"`

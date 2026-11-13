@@ -211,8 +211,11 @@ type InstalledModel struct {
 	Path    string `json:"path"`
 	Managed bool   `json:"managed"`
 	// Pinned 表示用户主动换到了旧版本，目录里有新版本时不再提示更新。
-	Pinned bool   `json:"pinned,omitempty"`
-	SHA256 string `json:"sha256,omitempty"`
+	// Pinned 表示用户主动换到了旧版本，目录里有新版本时不再提示更新。
+	Pinned bool `json:"pinned,omitempty"`
+	// Converted 是本机转换产生的托管成品，不参与目录版本下载和更新。
+	Converted bool   `json:"converted"`
+	SHA256    string `json:"sha256,omitempty"`
 }
 type Generation struct {
 	ID        string             `json:"id"`

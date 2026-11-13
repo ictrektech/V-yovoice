@@ -141,6 +141,7 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 	emotionReference, emotionVector := "", ""
 	textFile, reference, voice, output := "", "", "", ""
 	var music musicFlags
+	var audioTrack int
 	switch command {
 	case "serve", "mcp":
 		fs.DurationVar(&generationTimeout, "generation-timeout", 30*time.Minute, "单次生成最长时间，包含模型加载")
@@ -164,6 +165,7 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 	case "to-midi":
 		fs.StringVar(&output, "output", "", "输出 .mid，或 .json 编曲乐谱")
 	case "transcribe":
+		fs.IntVar(&audioTrack, "audio-track", 1, "音轨序号，从 1 开始（默认第 1 条）")
 		fs.StringVar(&output, "output", "", "输出 .srt、.vtt、.txt，或 .json（原文、逐词时间与字幕行）")
 	case "generate":
 		fs.Func("option", "模型高级选项 KEY=JSON，可重复；参数见 models list 的 generationOptions", func(value string) error {
@@ -475,7 +477,7 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 	case "voices import":
 		result, err = w.ImportVoice(ctx, operand, name)
 	case "models import":
-		err = waitModel(func() error { return w.ImportModel(operand) })
+		err = waitModel(func() error { return w.ImportModelAuto(operand) })
 		result = w.Store.Read().Models
 	case "setup":
 		p := w.Store.Read().Preferences
@@ -506,7 +508,7 @@ func run(ctx context.Context, args []string, out, progress io.Writer) error {
 		files, _ := filepath.Glob(filepath.Join(folder, "*.wav"))
 		result = map[string]any{"folder": folder, "files": files}
 	case "transcribe":
-		result, err = transcribeFile(w, operand, output, wait)
+		result, err = transcribeFile(ctx, w, operand, output, audioTrack, wait)
 	case "to-midi":
 		if err = wait(func() error { return w.TranscribeMIDIFile(operand, output) }); err != nil {
 			return err

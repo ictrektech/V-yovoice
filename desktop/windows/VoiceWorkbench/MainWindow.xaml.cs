@@ -524,26 +524,22 @@ public partial class MainWindow : Window
                     var explorer = new ProcessStartInfo("explorer.exe");
                     explorer.ArgumentList.Add("/select,"); explorer.ArgumentList.Add(path);
                     Process.Start(explorer); result = true; break;
+                case "model.conversionTool":
+                    var conversionTool = new OpenFileDialog { Filter = "Executable|*.exe|All files|*.*" };
+                    result = conversionTool.ShowDialog(this) == true ? conversionTool.FileName : null; break;
                 case "model.import":
-                case "model.directory":
-                    string? selected = null;
-                    if (method == "model.directory" || (data.TryGetProperty("directory", out var directory) && directory.GetBoolean()))
-                    {
-                        var folder = new OpenFolderDialog { Title = HostL10n.T("选择模型目录", "Choose Model Folder") };
-                        if (folder.ShowDialog(this) == true) selected = folder.FolderName;
-                    }
-                    else
-                    {
-                        var file = new OpenFileDialog { Filter = HostL10n.T("GGUF 模型", "GGUF Model") + "|*.gguf;*.sf2", Title = HostL10n.T("导入本地模型", "Import Local Model") };
-                        if (file.ShowDialog(this) == true) selected = file.FileName;
-                    }
-                    result = selected is null ? null : await service.CallAsync(method, new { path = selected, id = data.TryGetProperty("id", out var modelId) ? modelId.GetString() : null }); break;
+                    var localModel = new OpenFileDialog { Filter = "GGUF / SF2|*.gguf;*.sf2" };
+                    result = localModel.ShowDialog(this) == true ? await service.CallAsync(method, new { id = data.GetProperty("id").GetString(), path = localModel.FileName }) : null; break;
                 case "adapter.import":
                     var adapterFile = new OpenFileDialog { Filter = "Safetensors|*.safetensors" };
                     result = adapterFile.ShowDialog(this) == true ? await service.CallAsync(method, new { path = adapterFile.FileName }, TimeSpan.FromMinutes(30)) : null; break;
                 case "stems.export":
                     var stemFolder = new OpenFolderDialog { Title = HostL10n.T("导出分轨到文件夹", "Export Stems to Folder") };
                     result = stemFolder.ShowDialog(this) == true ? await service.CallAsync(method, new { id = data.GetProperty("id").GetString(), path = stemFolder.FolderName }, TimeSpan.FromMinutes(10)) : null; break;
+                case "model.scan":
+                case "model.directory":
+                    var folder = new OpenFolderDialog { Title = HostL10n.T("选择模型目录", "Choose Model Folder") };
+                    result = folder.ShowDialog(this) == true ? await service.CallAsync(method, new { path = folder.FolderName }) : null; break;
                 case "model.directory.open":
                     var state = (await service.CallAsync("state.get", new { })).GetProperty("state");
                     string modelDirectory = state.GetProperty("preferences").GetProperty("modelDirectory").GetString() ?? Path.Combine(service.Root, "models");

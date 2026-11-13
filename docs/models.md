@@ -31,11 +31,21 @@ Downloads and updates use separate package directories. Pause a download to resu
 
 In Settings → Voice models, Music models or Score sound fonts, choose the matching model/version and precision, then click **Import local model**. Select the audio.cpp GGUF file (or a supported catalog SF2); for a multi-file package select its main GGUF and keep the companion files in the package's original layout. Files remain at their existing location and the model download directory stays unchanged. Removing an imported model only unregisters it, preserving its files. Keep external drives connected while using their models.
 
-Single-file imports check the GGUF header and model family and record the file's SHA-256. Locally converted GGUFs are accepted, but you must choose the correct version and precision; a matching family does not guarantee that every custom conversion is usable. Multi-file packages and SF2 imports must match the supported package checksums. Raw PyTorch (`.pth`, `.pt`, `.safetensors`) and MLX weights cannot run in the native audio.cpp engine directly: convert them with the matching upstream audio.cpp converter first. Importing does not install or run Python and does not convert weights automatically. Imported models use the same voice and advanced generation controls as downloaded models.
+Choose **Scan for local models** to inspect a folder and up to three levels of subfolders. The app suggests a slot when it can identify a GGUF's family, variant and precision, or match a catalog checksum. Confirm the results before importing. For ambiguous files choose the slot yourself. IndexTTS files with a recognized version are checked against the chosen slot before the full checksum, and progress is shown while reading the files. Multi-file packages and SF2 must match their catalog checksums.
+
+The same folder picker can find complete local IndexTTS 2.0 and 2.5 PyTorch checkpoint directories. Select **Convert IndexTTS checkpoint** and choose Q8 or F16. Supply a local Python executable with PyTorch 2.6 or newer and safetensors, and an audio.cpp `audiocpp_gguf` executable that supports IndexTTS. The folder must include the base checkpoints, tokenizer and local auxiliary weights in `hf_cache`. Conversion runs on the device, stores the new GGUF in the model download folder and registers it as a local model. Other raw checkpoint layouts still need their matching converter.
+
+## Model downloads
+
+A downloaded model can be updated to the package shown in the catalog. An imported model stays linked to its own file, even when its checksum differs from the catalog. To switch an imported model to a catalog download, remove its registration and start a new download.
+
+**Pause** keeps the downloaded bytes and the selected version. **Resume download** continues the same task, including after restarting or changing the default download folder. **Cancel download** removes the unfinished files for that task. **Remove model** removes an installed registration and deletes the installed files only for an app-managed download. The new package is checked before replacing a model registration, so a failed update leaves the previous package intact. If an old paused task does not identify its target version, cancel it and start the intended version again.
 
 ## Model versions and rollback
 
-When the model catalog updates, downloaded models show **Update available**. Models replaced by a catalog update also get a version picker in Settings: choosing **Before <date> update** downloads the earlier file from its pinned repository commit, verifies it and replaces the current file, and the update prompt stops. Choose **Latest** to go back. Switching versions keeps no second copy on disk and works with all three download sources.
+When the model catalog updates, downloaded models show **Update available**. In the version picker, choose **Before <date> update** to download the earlier package from its pinned repository commit and stop update prompts for that model. Choose **Latest** to switch back. All three download sources support version switching.
+
+YoVoice downloads and verifies the new package separately, then switches the registration and removes the previous app-managed package if no other model uses it. Selecting an existing download folder in Settings verifies and recovers recognized packages in the background. You can cancel verification without changing their files.
 
 ## Model files and hardware
 

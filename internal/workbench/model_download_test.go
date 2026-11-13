@@ -106,6 +106,7 @@ func TestModelDownloadsPauseResumeAndCancelIndependently(t *testing.T) {
 	must(t, err)
 	useModelTestServer(t, w, server)
 	must(t, w.SetModelDirectory(t.TempDir()))
+	<-w.ModelDone()
 	must(t, w.downloadCatalogModel(definition, ""))
 	<-w.ModelDone()
 	select {
@@ -211,6 +212,7 @@ func TestModelUpdateRetiresPreviousPackages(t *testing.T) {
 	defer w.Close()
 	oldDir := t.TempDir()
 	must(t, w.SetModelDirectory(oldDir))
+	<-w.ModelDone()
 	content := []byte("weights")
 	main := modelTestFile("voice.gguf", content)
 	definition := catalog.ModelPackage{
@@ -222,6 +224,7 @@ func TestModelUpdateRetiresPreviousPackages(t *testing.T) {
 	must(t, w.register(definition.ID, legacy, true, definition.History[0].SHA256, false))
 	// 改过默认目录后，更新也会回收留在原目录里的旧版布局。
 	must(t, w.SetModelDirectory(t.TempDir()))
+	<-w.ModelDone()
 	server := httptest.NewServer(http.HandlerFunc(func(out http.ResponseWriter, req *http.Request) {
 		body := content
 		if strings.Contains(req.URL.Path, "/old/") {

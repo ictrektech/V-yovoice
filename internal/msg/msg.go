@@ -30,6 +30,7 @@ const (
 const (
 	ActivityDownload        Code = "@yovoice.activity.download"
 	ActivityDownloading     Code = "@yovoice.activity.downloading"
+	ActivityModelConverting Code = "@yovoice.activity.modelConverting"
 	ActivityVerifying       Code = "@yovoice.activity.verifying"
 	ActivityImport          Code = "@yovoice.activity.import"
 	ActivityRuntimeDownload Code = "@yovoice.activity.runtimeDownload"
@@ -102,6 +103,8 @@ const (
 	ErrStreamingRetry         Code = "@yovoice.error.streamingRetry"
 	ErrModelOptionUnsupported Code = "@yovoice.error.modelOptionUnsupported"
 	ErrLocalModelProtected    Code = "@yovoice.error.localModelProtected"
+	ErrLocalModelVersion      Code = "@yovoice.error.localModelVersion"
+	ErrModelConversion        Code = "@yovoice.error.modelConversion"
 	ErrLocalModelInvalid      Code = "@yovoice.error.localModelInvalid"
 	ErrLocalModelIncomplete   Code = "@yovoice.error.localModelIncomplete"
 	ErrModelRequired          Code = "@yovoice.error.modelRequired"
@@ -153,6 +156,10 @@ const (
 	ErrAlignModelRequired     Code = "@yovoice.error.alignModelRequired"
 	ErrRecognizeModelRequired Code = "@yovoice.error.recognizeModelRequired"
 	ErrRecognizeEmpty         Code = "@yovoice.error.recognizeEmpty"
+	ErrTranscribeVocalModel   Code = "@yovoice.error.transcribeVocalModel"
+	ErrTranscribeNoTrack      Code = "@yovoice.error.transcribeNoTrack"
+	ErrTranscribeTrackInvalid Code = "@yovoice.error.transcribeTrackInvalid"
+	ErrTranscribeTrackExpired Code = "@yovoice.error.transcribeTrackExpired"
 	ErrTranscribeEmpty        Code = "@yovoice.error.transcribeEmpty"
 	ErrTranscribeTooLarge     Code = "@yovoice.error.transcribeTooLarge"
 	ErrTranscribeDuration     Code = "@yovoice.error.transcribeDuration"
@@ -259,7 +266,7 @@ func All() []Code {
 		ErrModelImportRequired,
 		ErrOmniReferenceRequired, ErrReferenceTextRequired, ErrXTTSReferenceDuration,
 		ErrVoiceDescriptionRequired, ErrOmniAttributes, ErrSpeakerInvalid,
-		ActivityDownload, ActivityDownloading, ActivityVerifying, ActivityImport,
+		ActivityDownload, ActivityDownloading, ActivityVerifying, ActivityImport, ActivityModelConverting,
 		ActivityRuntimeDownload, ActivityRuntimeExtract, ActivityEngineStart,
 		ActivityGenerate, ActivitySynthesizing, ActivitySavingAudio, ActivityRendering,
 		ActivityCompleted, ActivityCancelled, ActivityPaused, ActivityFailed, ActivityInterrupted, ActivityRelocate, ActivityPlanMelody, ActivityTranscribe, ActivitySeparateVocals, ActivityAlignLyrics, ActivityRecognize, ActivityTranscribeSpeech, ActivityAlignText, ActivitySeparateStems, ActivityTranscribeMIDI, ActivityResing,
@@ -272,14 +279,14 @@ func All() []Code {
 		ErrNameLength, ErrDraftLimits, ErrDraftIDInvalid, ErrTextRequired, ErrTitleLength,
 		ErrLanguageUnsupported, ErrModeInvalid, ErrEmotionInvalid, ErrEmotionStrength,
 		ErrEmotionTextRequired, ErrEmotionVoiceRequired, ErrVoiceRequired, ErrVoiceBusyDelete,
-		ErrStreamingRetry, ErrModelOptionUnsupported, ErrLocalModelProtected, ErrLocalModelInvalid, ErrLocalModelIncomplete, ErrModelRequired, ErrModelUnsupported, ErrModelMoved, ErrModelImportNone, ErrModelForgetBlocked,
+		ErrStreamingRetry, ErrModelOptionUnsupported, ErrLocalModelProtected, ErrLocalModelVersion, ErrModelConversion, ErrLocalModelInvalid, ErrLocalModelIncomplete, ErrModelRequired, ErrModelUnsupported, ErrModelMoved, ErrModelImportNone, ErrModelForgetBlocked,
 		ErrDownloadSource, ErrRuntimeRequired, ErrRuntimeMissing, ErrRuntimeUnique,
 		ErrRuntimeArchivePath, ErrRuntimeArchiveLink, ErrRuntimeArchiveSize,
 		ErrEngineStartFailed, ErrEngineStartTimeout, ErrEngineNoAudio, ErrEngineCrashed,
 		ErrCPUBundleInvalid, ErrBackendUnsupported, ErrPlatformArch, ErrMacBackend, ErrMacAppleSilicon,
 		ErrRequestInvalid, ErrMethodUnsupported,
 		ErrVoxModeInvalid, ErrVoxTextLimits, ErrVoxReferenceRequired, ErrVoxParams,
-		ErrMusicStyle, ErrMusicLyrics, ErrMusicParams, ErrMusicLyricsRequired, ErrMusicSourceRequired, ErrEngineUpgradeRequired, ErrScoreInvalid, ErrScoreTooLong, ErrMidiInvalid, ErrMelodyInvalid, ErrMelodyEmpty, ErrCoverModelRequired, ErrMelodySoundFontRequired, ErrAlignModelRequired, ErrAlignLyrics, ErrAlignEmpty, ErrRecognizeModelRequired, ErrRecognizeEmpty, ErrTranscribeEmpty, ErrTranscribeTooLarge, ErrTranscribeDuration, ErrTranscriptMissing, ErrAlignText, ErrAlignTextEmpty, ErrStemModelRequired, ErrStemSource, ErrStemsMissing, ErrMidiModelRequired, ErrMidiEmpty, ErrAdapterMissing, ErrAdapterInvalid, ErrResingSource, ErrResingWhole, ErrResingNoChange, ErrResingAlign, ErrImageInvalid,
+		ErrMusicStyle, ErrMusicLyrics, ErrMusicParams, ErrMusicLyricsRequired, ErrMusicSourceRequired, ErrEngineUpgradeRequired, ErrScoreInvalid, ErrScoreTooLong, ErrMidiInvalid, ErrMelodyInvalid, ErrMelodyEmpty, ErrCoverModelRequired, ErrMelodySoundFontRequired, ErrAlignModelRequired, ErrAlignLyrics, ErrAlignEmpty, ErrRecognizeModelRequired, ErrRecognizeEmpty, ErrTranscribeVocalModel, ErrTranscribeNoTrack, ErrTranscribeTrackInvalid, ErrTranscribeTrackExpired, ErrTranscribeEmpty, ErrTranscribeTooLarge, ErrTranscribeDuration, ErrTranscriptMissing, ErrAlignText, ErrAlignTextEmpty, ErrStemModelRequired, ErrStemSource, ErrStemsMissing, ErrMidiModelRequired, ErrMidiEmpty, ErrAdapterMissing, ErrAdapterInvalid, ErrResingSource, ErrResingWhole, ErrResingNoChange, ErrResingAlign, ErrImageInvalid,
 		ErrAIProviderInvalid, ErrAINotConfigured, ErrAIAuth, ErrAIRateLimit, ErrAINetwork, ErrAIResponse, ErrAIModelsPath, ErrAIResultInvalid, ErrAITimeout, ErrAssistantMissing, ErrAssistantProvider,
 		ErrAIFreeRate, ErrAIFreeBusy, ErrAIFreePromptCap, ErrAIFreeAccess, ErrCodexMissing, ErrCodexLoggedOut, ErrCodexFailed, ErrCodexLimit, ErrCodexNoImage,
 		ErrLocalAPIPort, ErrLocalAPIPortInUse,

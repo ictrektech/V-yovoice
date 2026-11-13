@@ -1,9 +1,10 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@astryxdesign/core/Button';
+import { ProgressBar } from '@astryxdesign/core/ProgressBar';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useLocale, useTranslator } from '@astryxdesign/core/i18n';
 import { Captions, Download, Mic, Square, Upload, X } from 'lucide-react';
-import { call, transcribeSpeechFile } from '../../shared/lib/client';
+import { call, transcribeSpeechFile, type TranscribeSelection } from '../../shared/lib/client';
 import { formatActivity, formatCallError, formatDateTime } from '../../shared/i18n/format';
 import { overflowTitle } from '../../shared/ui/overflow-title';
 import { useElapsed } from '../../shared/lib/use-elapsed';
@@ -13,6 +14,7 @@ import { WaveRing } from '../library/wave-ring';
 import { micError, RecordingMeter, useRecorder } from '../media/recorder';
 import { TranscriptEditor } from './transcript-editor';
 import { TranscriptMenu } from './transcript-menu';
+import { AudioTrackDialog } from './audio-track-dialog';
 
 // 录音码率压低到 32 kbps，三小时的录音也只有约 40 MB；录音时长上限跟随设置里的转写时长上限。
 const recordBitrate = 32000;
@@ -23,6 +25,14 @@ export function TranscribePage({ state, openSettings }: { state: State; openSett
   const t = useTranslator();
   const locale = useLocale();
   const input = useRef<HTMLInputElement>(null);
+  const upload = useRef<AbortController | null>(null);
+  const pending = useRef<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [selection, setSelection] = useState<(TranscribeSelection & { name: string }) | null>(null);
+  useEffect(() => () => {
+    upload.current?.abort();
+    if (pending.current) void discardUpload(pending.current);
+  }, []);
   const settings = transcribeSettings(state.preferences);
   const recordLimit = settings.maxMinutes * 60;
   const recorder = useRecorder(recordLimit);
@@ -45,14 +55,55 @@ export function TranscribePage({ state, openSettings }: { state: State; openSett
   const fallbackName = t('@yovoice.transcribe.defaultName');
   const elapsed = useElapsed(working, activity?.startedAt);
 
-  async function start(file?: File) {
-    if (!file) return;
+  function watchTranscription(name: string) {
     setError('');
-    setPendingName(file.name.replace(/\.[^.]+$/, ''));
+    setPendingName(name.replace(/\.[^.]+$/, ''));
     setSince(activity?.startedAt ?? null);
     setKnown(transcripts.map(item => item.id));
-    try { await transcribeSpeechFile(file, settings.maxFileMB); }
-    catch (e) { setSince(undefined); setKnown(null); setError(formatCallError(t, e)); }
+  }
+  function resetWatch() {
+    setSince(undefined);
+    setKnown(null);
+  }
+  async function start(file?: File) {
+    if (!file || upload.current || pending.current) return;
+    const controller = new AbortController();
+    upload.current = controller;
+    setUploading(true);
+    watchTranscription(file.name);
+    try {
+      const choice = await transcribeSpeechFile(file, settings.maxFileMB, controller.signal);
+      if (choice) {
+        if (controller.signal.aborted) {
+          void discardUpload(choice.id);
+          return;
+        }
+        resetWatch();
+        pending.current = choice.id;
+        setSelection({ ...choice, name: file.name });
+      }
+    } catch (e) {
+      resetWatch();
+      if (!controller.signal.aborted) setError(formatCallError(t, e));
+    } finally {
+      upload.current = null;
+      setUploading(false);
+    }
+  }
+  function cancelSelection() {
+    if (pending.current) void discardUpload(pending.current);
+    pending.current = null;
+    setSelection(null);
+  }
+  async function selectTrack(track: number) {
+    if (!selection || pending.current !== selection.id) return;
+    pending.current = null;
+    setSelection(null);
+    setUploading(true);
+    watchTranscription(selection.name);
+    try { await call('speech.transcribe.select', { id: selection.id, name: selection.name, track }); }
+    catch (e) { resetWatch(); setError(formatCallError(t, e)); }
+    finally { setUploading(false); }
   }
   async function record() {
     setError('');
@@ -74,18 +125,18 @@ export function TranscribePage({ state, openSettings }: { state: State; openSett
   if (opened) return <>{fileInput}<TranscriptEditor key={opened.id} transcript={opened} onBack={() => open(null)} /></>;
 
   // 正在录音或识别时不能再发起；其他任务占用推理时提示稍后。
-  const blocked = busy || recorder.recording;
+  const blocked = busy || recorder.recording || uploading || !!selection;
   const blockedTip = busy && !working ? t('@yovoice.transcribe.busy') : undefined;
   const sources = (size: 'sm' | 'md') => needsModel
     ? <Button size={size} variant="primary" icon={<Download />} label={t('@yovoice.transcribe.openModels')} onClick={openSettings} />
     : <HStack gap={2} vAlign="center">
       <Button size={size} variant="secondary" icon={<Mic />} label={t('@yovoice.transcribe.record')} isDisabled={blocked} tooltip={blockedTip} onClick={() => void record()} />
-      <Button size={size} variant="primary" icon={<Upload />} label={t('@yovoice.transcribe.upload')} isDisabled={blocked} tooltip={blockedTip} onClick={() => input.current?.click()} />
+      <Button size={size} variant="primary" icon={<Upload />} label={t('@yovoice.transcribe.upload')} isLoading={uploading} isDisabled={blocked} tooltip={blockedTip} onClick={() => input.current?.click()} />
+      {uploading && upload.current ? <Button size={size} label={t('@yovoice.action.cancel')} onClick={() => upload.current?.abort()} /> : null}
     </HStack>;
 
   // 录音与识别进度：作为一张进行中的票根排在列表最前，标题栏与搜索框位置不变。
   // 录音时封面的麦克风随声音起伏，识别时封面声波环转动、进度条上有流光。
-  const progress = activity?.total ? Math.min(1, activity.received / activity.total) : 0;
   const task = recorder.stream ? <Ticket key="task" className="transcribe-task" coverClassName="is-recording"
     cover={<WaveRing seed="recording" duration={30}><HStack className="empty-ring-mark" gap={0} hAlign="center" vAlign="center"><Mic /></HStack></WaveRing>}
     eyebrow={t('@yovoice.transcribe.recording')}
@@ -98,7 +149,7 @@ export function TranscribePage({ state, openSettings }: { state: State; openSett
     cover={<WaveRing seed={pendingName || 'transcribe'} duration={60}><HStack className="empty-ring-mark" gap={0} hAlign="center" vAlign="center"><Captions /></HStack></WaveRing>}
     eyebrow={<span role="status">{formatActivity(t, activity)}</span>}
     title={<VStack gap={2}><h3>{pendingName || fallbackName}</h3>
-      <HStack className="transcribe-progress" gap={0} aria-hidden="true" style={{ '--progress': progress } as CSSProperties}><HStack className="transcribe-progress-fill" gap={0} /></HStack></VStack>}
+      <ProgressBar label={formatActivity(t, activity)} isLabelHidden value={activity.received} max={activity.total || 1} isIndeterminate={!activity.total} /></VStack>}
     stub={<TicketStamp value={formatTime(elapsed)} unit={t('@yovoice.create.elapsed')} />}
     stubActions={<Button size="sm" variant="ghost" isIconOnly icon={<X />} label={t('@yovoice.create.cancelGenerate')} onClick={() => void call('operation.cancel').catch(() => undefined)} />} />
   : null;
@@ -110,6 +161,7 @@ export function TranscribePage({ state, openSettings }: { state: State; openSett
   const shown = needle ? transcripts.filter(item => `${item.name ?? ''}\n${item.excerpt ?? ''}`.toLocaleLowerCase().includes(needle)) : transcripts;
   return <VStack className="transcribe-page" gap={0} data-testid="transcribe-page">
     {fileInput}
+    {selection ? <AudioTrackDialog key={selection.id} name={selection.name} tracks={selection.tracks} onCancel={cancelSelection} onSelect={track => void selectTrack(track)} /> : null}
     <LibraryPage title={t('@yovoice.transcribe.title')} actions={transcripts.length ? <HStack className="transcribe-actions" gap={3} vAlign="center">{message ? notice : null}{sources('sm')}</HStack> : undefined}
       query={query} onQueryChange={setQuery} searchLabel={t('@yovoice.transcribe.search')} noResults={t('@yovoice.library.noSearchResults')}
       hasItems={transcripts.length > 0 || !!task} hasSearch={transcripts.length > 0} hasResults={shown.length > 0 || !!task} layout="tickets"
@@ -130,4 +182,9 @@ export function TranscribePage({ state, openSettings }: { state: State; openSett
       })}
     </LibraryPage>
   </VStack>;
+}
+
+
+function discardUpload(id: string) {
+  return call('speech.transcribe.discard', { id }).catch(() => undefined);
 }

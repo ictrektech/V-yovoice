@@ -61,6 +61,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
   // 每组当前选中的精度。
   const [picks, setPicks] = useState<Record<string, string>>({});
   const activity = state.modelActivity;
+  const legacyDownload = activity?.kind === 'download' && activity.status !== 'completed' && activity.modelId && !state.modelDownloads?.[activity.modelId] ? activity : null;
   const downloadOf = (model: ModelPackage) => {
     const hub = shared?.[model.id];
     return hub ? (['downloading', 'verifying', 'failed'].includes(hub.status) ? { received: hub.downloaded_bytes ?? 0, total: hub.total_bytes || model.size, status: hub.status === 'downloading' ? 'running' : hub.status } : null)
@@ -73,7 +74,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
   // 可下载的模型较多时按名称、精度和用途搜索。
   const [query, setQuery] = useState('');
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const matches = available.filter(group => group.some(model => { const text = `${model.name} ${model.precision} ${model.family} ${modelDescription(t, model)}`.toLowerCase(); return terms.every(term => text.includes(term)); }));
+  const matches = available.filter(group => group.some(model => downloadOf(model) || legacyDownload?.modelId === model.id) || group.some(model => { const text = `${model.name} ${model.precision} ${model.family} ${modelDescription(t, model)}`.toLowerCase(); return terms.every(term => text.includes(term)); }));
   const row = (group: ModelPackage[]) => {
     const model = picked(group);
     const ready = isInstalled(model);
@@ -91,7 +92,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
     const latest = modelMainFile(model).sha256;
     const versions = model.history?.length ? [{ value: latest, label: t('@yovoice.settings.modelVersionLatest') },
       ...model.history.map(version => ({ value: modelVersionDigest(model, version), label: t('@yovoice.settings.modelVersionBefore', { date: formatDateTime(version.replaced, state.preferences.uiLocale, 'date') }) }))] : [];
-    const currentVersion = ready && versions.some(version => version.value === record?.sha256) ? record?.sha256 : undefined;
+    const currentVersion = managed && !record?.converted && versions.some(version => version.value === record?.sha256) ? record?.sha256 : undefined;
     return <VStack className="model-row settings-row" data-model-id={model.id} data-model-ids={group.map(item => item.id).join(' ')} data-installed={ready} key={group[0].name} gap={3}>
       <HStack className="model-summary" gap={4} vAlign="center" wrap="wrap">
         <VStack className="grow" gap={1}>
@@ -124,7 +125,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
           : <Button size="sm" label={download ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(() => call('model.download', { id: model.id }))} />}
         </HStack>
       </HStack>
-      {ready && !managed && !isVos ? <small className="model-path" title={state.models.find(m => m.id === model.id)?.path}>{state.models.find(m => m.id === model.id)?.path}</small> : null}
+      {ready && (!managed || record?.converted) && !isVos ? <small className="model-path" title={state.models.find(m => m.id === model.id)?.path}>{state.models.find(m => m.id === model.id)?.path}</small> : null}
       {group.length > 1 ? <HStack className="model-precisions" gap={3} vAlign="center" wrap="wrap">
         <SegmentedControl size="sm" label={t('@yovoice.settings.precisionOf', { name: model.name })} value={model.id} onChange={id => setPicks(current => ({ ...current, [model.name]: id }))}>
           {group.map(item => <SegmentedControlItem onPointerEnter={overflowTitle} key={item.id} value={item.id} label={item.precision} icon={isInstalled(item) ? <CircleCheck /> : undefined} />)}

@@ -5452,5 +5452,95 @@
   },
   "@yovoice.music.tagHint.ends-on-an-a-cappella-line": {
     "defaultMessage": "Termina con una línea a capela"
+  },
+  "@yovoice.settings.cancelDownload": {
+    "defaultMessage": "Cancelar descarga"
+  },
+  "@yovoice.error.localModelProtected": {
+    "defaultMessage": "Quita el registro del modelo instalado antes de cambiar de origen."
+  },
+  "@yovoice.transcribe.chooseTrack": {
+    "defaultMessage": "Elegir una pista de audio"
+  },
+  "@yovoice.transcribe.audioTrack": {
+    "defaultMessage": "Pista {number}"
+  },
+  "@yovoice.transcribe.defaultTrack": {
+    "defaultMessage": "Predeterminada"
+  },
+  "@yovoice.transcribe.startTrack": {
+    "defaultMessage": "Transcribir la pista seleccionada"
+  },
+  "@yovoice.error.transcribeNoTrack": {
+    "defaultMessage": "Este archivo no contiene pistas de audio."
+  },
+  "@yovoice.error.transcribeTrackInvalid": {
+    "defaultMessage": "La pista de audio seleccionada no existe."
+  },
+  "@yovoice.error.transcribeTrackExpired": {
+    "defaultMessage": "El archivo subido ya no está disponible. Vuelve a seleccionarlo."
+  },
+  "@yovoice.error.transcribeVocalModel": {
+    "defaultMessage": "Instala BS-RoFormer o el modelo de alineación de letras para aislar las voces antes de transcribir."
+  },
+  "@yovoice.settings.transcribeNormalize": {
+    "defaultMessage": "Normalizar la sonoridad"
+  },
+  "@yovoice.settings.transcribeNormalizeHint": {
+    "defaultMessage": "Ajusta la sonoridad para el reconocimiento y limita los picos. La reproducción conserva los niveles originales."
+  },
+  "@yovoice.settings.transcribeIsolate": {
+    "defaultMessage": "Aislar las voces primero"
+  },
+  "@yovoice.settings.transcribeIsolateHint": {
+    "defaultMessage": "Reduce la música de fondo con BS-RoFormer. Requiere BS-RoFormer o el modelo de alineación de letras y tarda más."
+  },
+  "@yovoice.activity.modelConverting": {
+    "defaultMessage": "Converting model on this device"
+  },
+  "@yovoice.error.localModelVersion": {
+    "defaultMessage": "This file is IndexTTS {actual}. Select IndexTTS {actual} to import it. The current slot is IndexTTS {expected}."
+  },
+  "@yovoice.error.modelConversion": {
+    "defaultMessage": "Local model conversion failed. {detail}"
+  },
+  "@yovoice.settings.localSources": {
+    "defaultMessage": "Local model files"
+  },
+  "@yovoice.settings.scanLocalModels": {
+    "defaultMessage": "Scan for local models"
+  },
+  "@yovoice.settings.localModelChoice": {
+    "defaultMessage": "Model mapping"
+  },
+  "@yovoice.settings.skipModel": {
+    "defaultMessage": "Skip this file"
+  },
+  "@yovoice.settings.importSelection": {
+    "defaultMessage": "Import selected models"
+  },
+  "@yovoice.settings.convertCheckpoint": {
+    "defaultMessage": "Convert IndexTTS checkpoint"
+  },
+  "@yovoice.settings.converterToolsHint": {
+    "defaultMessage": "Use a local Python environment with PyTorch 2.6 or newer and safetensors, and an audio.cpp audiocpp_gguf executable. The GGUF is saved in your model download folder and linked as a local model."
+  },
+  "@yovoice.settings.pythonPath": {
+    "defaultMessage": "Python executable path"
+  },
+  "@yovoice.settings.ggufToolPath": {
+    "defaultMessage": "audiocpp_gguf executable path"
+  },
+  "@yovoice.settings.modelMappingConflict": {
+    "defaultMessage": "Choose only one file per model slot."
+  },
+  "@yovoice.settings.modelScanEmpty": {
+    "defaultMessage": "No new supported models were found. Check the selected folder or choose a model file directly."
+  },
+  "@yovoice.settings.modelScanLimited": {
+    "defaultMessage": "Only the first 5,000 entries or 100 model sources are shown. Select a more specific folder to see others."
+  },
+  "@yovoice.settings.localModelImported": {
+    "defaultMessage": "Local models are ready to use."
   }
 }

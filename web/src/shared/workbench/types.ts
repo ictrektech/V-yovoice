@@ -7,7 +7,7 @@ export type Mode = 'speaker' | 'reference' | 'vector' | 'text';
 export interface RuntimeSettings { streaming?: boolean }
 // 推理引擎的运行参数（设置 › 推理引擎），对所有模型生效；session 的键带模型族前缀。
 // 语音转写的限制与断句参数（设置 › 常规 › 语音转写），不填的项用默认值（见 transcribeDefaults）。
-export interface TranscribeSettings { maxFileMB?: number; maxMinutes?: number; lineChars?: number; lineSeconds?: number; linePause?: number }
+export interface TranscribeSettings { maxFileMB?: number; maxMinutes?: number; lineChars?: number; lineSeconds?: number; linePause?: number; normalizeLoudness?: boolean; isolateVocals?: boolean }
 export interface EngineSettings { threads?: number; device?: number; idleUnloadSeconds?: number; session?: Record<string, string | number | boolean> }
 export interface SynthesisSettings {
   runtime?: RuntimeSettings;
@@ -52,7 +52,8 @@ export interface VoiceExcerpt { start: number; end: number; total: number }
 export interface ModelFile { path: string; size: number; sha256: string }
 export interface ModelVersion { replaced: string; revision: string; modelScopeRevision: string; size: number; sha256?: string; files?: ModelFile[] }
 export interface ModelPackage { history?: ModelVersion[]; importRequired?: boolean; voices?: string[]; variant?: string; maxDuration?: number; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; stripPrefix?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
-export interface InstalledModel { id: string; path: string; managed: boolean; sha256?: string; pinned?: boolean }
+/** pinned：用户主动换到了旧版本，不再提示更新；converted：本机转换产生的托管成品。 */
+export interface InstalledModel { id: string; path: string; managed: boolean; sha256?: string; pinned?: boolean; converted?: boolean }
 export interface GenerationSegment { cueId: string; speakerId: string; speakerName: string; batchId: string; index: number; targetClipId?: string; placement?: 'ripple' | 'preserve' }
 // 本机 Codex CLI 的检测结果：path 为空表示未安装，login 为 chatgpt、apikey 或空（未登录）。
 export interface CodexInfo { path?: string; version?: string; login?: 'chatgpt' | 'apikey' }
@@ -85,7 +86,7 @@ export interface Activity {
   modelId?: string | null;
   kind: string;
   // melody 为出谱或扒谱，align 为歌词对齐，recognize 为识别声音样本的参考文本。
-  task?: 'melody' | 'align' | 'recognize' | 'transcribe' | 'caption' | 'stems' | 'midi';
+  task?: 'melody' | 'align' | 'recognize' | 'transcribe' | 'caption' | 'stems' | 'midi' | 'local-model-import';
   code: MessageCode;
   params: MessageParams | null;
   status: string;
