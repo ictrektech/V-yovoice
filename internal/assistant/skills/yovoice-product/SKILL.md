@@ -13,13 +13,13 @@ yovoice runs every model locally through its inference engine. Models and the en
 | --- | --- | --- |
 | text | 语音生成 Voice | One script read by one voice. Model, voice and advanced options sit in the right inspector. |
 | story | 故事配音 Story | Multi-speaker dubbing: speakers, lines (cues) and a timeline. Each line can be regenerated alone. Novels and subtitle files can be imported. |
-| music | 音乐 Music | Songs or instrumentals from a style prompt and lyrics (ACE-Step, YuE2), or instrumental music from an English description (Stable Audio 3). YuE2 can write an editable melody score first or extract one from a song (cover). |
+| music | 音乐 Music | Songs or instrumentals from a style prompt and lyrics (ACE-Step, YuE2), or instrumental music from an English description (Stable Audio 3). YuE2 can write an editable melody score first or extract one from a song (cover). A version's menu can separate stems or transcribe to MIDI; both results open in the 分轨工作台 stem studio (play all tracks together with mute/solo/volume; reopen via 打开分轨 Open stems, or 分轨试听 Preview tracks on a score project). Stems are a fixed six (drums, bass, vocals, guitar, piano, other; guitar/piano are weak); with the optional BS-RoFormer model vocals come out cleaner. For per-instrument parts suggest 转为 MIDI. |
 | score | 编曲 Arrangement | Multi-track score rendered through a SoundFont. |
 | sfx | 音效 Sound effects | Short sound effects from an English description (Stable Audio 3 Small SFX or Medium), default 5 s; rework or inpaint an existing take. |
-| characters | 声音库 Voice library | Saved characters: designed or cloned voices with a preview, reusable across works. |
+| characters | 我的声音 Voice library | Saved characters: designed or cloned voices with a preview, reusable across works. |
 | voices | 参考音色 References | Uploaded reference recordings (≤ 20 MB, one clean speaker). Recordings longer than 60 s (up to 10 min) are trimmed automatically to the clearest 5–15 s; the crop dialog's Auto pick does the same for an existing reference. |
 | history | 历史 History | Every generated take; play, reuse settings, save as a voice. |
-| settings | 设置 Settings | Tabs: 常规 General (language, proxy, download source, storage location), 语音模型 Voice models and 音乐模型 Music models (ACE-Step, YuE2, Stable Audio 3, SheetSage2, optional Lyric Aligner; download/remove), 推理引擎 Engine (install, compute device), 编曲音色库 SoundFonts, AI 服务 AI provider (also the model Ocho uses), 资源 Assets (files and cleanup), 日志 Logs (filter, export diagnostics), 本机接口 Local API (HTTP/MCP for other apps). |
+| settings | 设置 Settings | Tabs: 常规 General (language, proxy, download source, storage location, 功能显示 Features: hide 故事配音 Story, 音乐生成 Music, 语音转写 Transcribe or Ocho), 语音模型 Voice models and 音乐模型 Music models (ACE-Step, YuE2, Stable Audio 3, SheetSage2, optional Lyric Aligner; download/remove), 推理引擎 Engine (install, compute device, 运行参数 Runtime: threads, GPU device, idle unload, model session options), 编曲音色库 SoundFonts, AI 服务 AI provider (also the model Ocho uses), 资源 Assets (files and cleanup), 日志 Logs (filter, export diagnostics), 本机接口 Local API (HTTP/MCP for other apps). |
 
 The assistant opens with ⌘J / Ctrl+J, the launcher in the corner, or the title bar button.
 
@@ -60,6 +60,7 @@ Recommend in this order: what the user already has installed (list_models), then
 - Audio check warnings (shown on a take, a story line or in `inspect_audio`): clipping / clicks / cutoff / silence / silent → regenerate that take or line; quiet → pick a target loudness when exporting (Audiobook −18, Podcast −16, Video −14 LUFS), no need to regenerate; dc → ignore.
 - Slow or out of memory: pick Q8 or a smaller model, close other GPU apps, or switch compute device in Settings › Engine.
 - Model missing or engine too old: the user installs it in Settings › Voice models, Settings › Music models (ACE-Step, YuE2, Stable Audio 3, SheetSage2) or Settings › Engine; you can propose it with propose_action.
+- A model got worse after updating: models replaced by a catalog update have a 模型版本 Model version picker in their settings row. Choosing “… 更新前 Before … update” re-downloads the earlier file and stops the update prompt; “最新版 Latest” switches back.
 
 ## Error codes
 
@@ -177,7 +178,7 @@ Errors reach you as stable codes (in <ui_context>, get_generation_status, get_re
 - `error.stemModelRequired` 分离音轨需要 HTDemucs 6 轨模型，请先在设置的模型里下载。
 - `error.stemSource` 这个版本是分轨或片段，不能再分离音轨。
 - `error.stemsMissing` 这个版本还没有分轨，请先分离音轨。
-- `error.midiModelRequired` 扒 MIDI 需要 MuScriptor 模型，请先在设置的模型里下载。
+- `error.midiModelRequired` 转为 MIDI 需要 MuScriptor 模型，请先在设置的模型里下载。
 - `error.midiEmpty` 没有从这段音频里识别出音符。
 - `error.adapterMissing` 这个作品用的 LoRA 已被删除，请重新选择或导入。
 - `error.adapterInvalid` 这不是有效的 safetensors 文件，请选择 YuE2 的 LoRA 文件。

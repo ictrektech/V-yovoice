@@ -11,6 +11,8 @@ const port = Number(process.env.PLAYWRIGHT_TEST_PORT ?? 4173);
 const url = `http://127.0.0.1:${port}`;
 export default defineConfig({
   testDir: './browser-tests', testMatch: '*.spec.ts', testIgnore: process.env.PW_ALL ? [] : sealed, fullyParallel: true,
-  use: { baseURL: url, viewport: { width: 1440, height: 920 }, reducedMotion: 'reduce', launchOptions: { args: ['--disable-audio-output'], executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined } },
+  // 不使用本机声卡：用例依赖音频时钟前进，真实输出设备被占用或休眠时会停住；CI 本就没有声卡，这样两边行为一致。
+  // 没有设置 LANG 的容器里 Chromium 按 ASCII 处理文件名，中文的下载文件名会变成“download”，这里补上 UTF-8。
+  use: { baseURL: url, viewport: { width: 1440, height: 920 }, reducedMotion: 'reduce', launchOptions: { args: ['--disable-audio-output'], env: { ...process.env, LANG: process.env.LANG || 'C.UTF-8' }, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined } },
   webServer: { command: `pnpm run dev --port ${port} --strictPort`, url, reuseExistingServer: false },
 });

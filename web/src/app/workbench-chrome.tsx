@@ -49,13 +49,17 @@ import { WorkbenchOverlays, type VoicePickerMode } from './workbench-overlays';
 import { CaptionDialog } from '../features/media/caption-dialog';
 import { VersionExportDialog } from '../features/media/version-export-dialog';
 import { coverJpeg } from '../features/music/song-cover';
-import { TranscribePage } from '../features/transcribe/transcribe-page';
+import type { StudioTarget } from '../features/music/stem-studio';
 const Settings = lazy(() => import('../features/settings/settings').then(module => ({ default: module.Settings })));
 // 页面级组件按需加载：音乐、编曲、时间线与导入书稿只在用到时取回，首屏主包只含外壳与语音编辑。
 const MusicEditor = lazy(() => import('../features/music/music-editor').then(module => ({ default: module.MusicEditor })));
 const ScoreEditor = lazy(() => import('../features/score/score-editor').then(module => ({ default: module.ScoreEditor })));
 const ScoreDock = lazy(() => import('../features/score/score-arrangement').then(module => ({ default: module.ScoreDock })));
 const TimelineEditor = lazy(() => import('../features/media/timeline-editor').then(module => ({ default: module.TimelineEditor })));
+// 语音转写页带表格组件，打开时再加载。
+const TranscribePage = lazy(() => import('../features/transcribe/transcribe-page').then(module => ({ default: module.TranscribePage })));
+// 分轨工作台（分轨与转 MIDI 的结果）按需加载。
+const StemStudio = lazy(() => import('../features/music/stem-studio').then(module => ({ default: module.StemStudio })));
 const BookImport = lazy(() => import('../features/library/book-import').then(module => ({ default: module.BookImport })));
 
 // 工作台界面：导航、页面切换与各页面之间的协作；作品保存由 useDraftSession 负责。
@@ -66,7 +70,9 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
   const uiLocale = isUiLocale(locale) ? locale : 'en';
   const [aboutOpen, setAboutOpen] = useState(false);
   const { draft, setDraft, draftPersisted, setDraftPersisted, saving, saveFailed, change, persistDraft, setActive, setDeleteTarget } = session;
-  const { navigation, isCollapsed, expand, toggleSidebar, page, setPage, visited, settingsFocus, openSettings, prepareOpen, setPrepareOpen, showInspector, setShowInspector, inspectorCollapsed, toggleInspectorPanel } = useWorkbenchNavigation({ draft, catalog, setActive, setError });
+  // 分轨工作台：分离完成或转 MIDI 完成后自动打开，版本菜单的“打开分轨”与编曲页的“分轨试听”也进入这里。
+  const [studio, setStudio] = useState<StudioTarget | null>(null);
+  const { navigation, inspectorPanel, isCollapsed, expand, toggleSidebar, page, setPage, visited, settingsFocus, openSettings, prepareOpen, setPrepareOpen, showInspector, setShowInspector, inspectorCollapsed, inspectorAvailable, toggleInspectorPanel } = useWorkbenchNavigation({ draft, catalog, preferences: state.preferences, overlay: !!studio, setActive, setError });
   const previousVoices = useRef<Voice[]>([]);
   const [voicePicker, setVoicePicker] = useState<VoicePickerMode>(null);
   const [previewTrack, setPreviewTrack] = useState<Track | null>(null);
@@ -126,6 +132,7 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
   // 正在导出字幕的语音版本。
   const [captionTarget, setCaptionTarget] = useState<Generation | null>(null);
   const [exportTarget, setExportTarget] = useState<Generation | null>(null);
+  const pendingStems = useRef<{ sourceId: string; old: Set<string> } | null>(null);
   const [nowPlaying, setNowPlaying] = useState<Generation | null>(null);
   const libraryTabs = <TabList value={page === 'voices' ? 'voices' : 'characters'} onChange={setPage} role="tablist" hasDivider>
     <Tab value="characters" label={t('@yovoice.library.voicesTab')} panelId="voice-library-panel" />
@@ -171,8 +178,24 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
   const versionName = (item: Generation) => { const stem = item.fileName.replace(/\.wav$/, ''); return /^[0-9a-f]{32}$/.test(stem) ? item.title : stem; };
   // 导出音频：桌面端先选格式与响度，浏览器预览直接下载 WAV。
   const exportVersion = (item: Generation) => { if (isDesktop) setExportTarget(item); else run(() => exportOutput(item.id, item.fileName, versionName(item))); };
-  // 分轨与扒 MIDI 在后台运行，进度在活动栏；分轨结果作为版本出现在版本记录里，扒出的 MIDI 新建编曲作品后自动打开。
-  const separateStems = (item: Generation) => run(() => call('generation.separateStems', { id: item.id }));
+  // 分轨与转为 MIDI 在后台运行，进度在活动栏；分轨结果作为版本出现在版本记录里，扒出的 MIDI 新建编曲作品后自动打开。
+  // 重新分离时记下旧分轨，等新分轨换上来再打开工作台。
+  const separateStems = (item: Generation, replace = false) => run(async () => {
+    const old = new Set(state.history.filter(stem => stem.stemOf === item.id).map(stem => stem.id));
+    if (replace) setStudio(null);
+    await call('generation.separateStems', { id: item.id, replace });
+    pendingStems.current = { sourceId: item.id, old };
+  });
+  const deleteStems = async (item: Generation) => { await call('generation.deleteStems', { id: item.id }); setStudio(null); };
+  const openStems = (item: Generation) => setStudio({ kind: 'stems', sourceId: item.stemOf ?? item.id });
+  // 分离结束、分轨出现在版本里时打开工作台，让人马上听到效果。
+  useEffect(() => {
+    const pending = pendingStems.current;
+    if (!pending || state.activity?.status === 'running' || !state.history.some(item => item.stemOf === pending.sourceId && !pending.old.has(item.id))) return;
+    const { sourceId } = pending;
+    pendingStems.current = null;
+    setStudio({ kind: 'stems', sourceId });
+  }, [state.history, state.activity?.status]);
   const transcribeMidi = (item: Generation) => run(() => call('generation.transcribeMidi', { id: item.id }));
   // 原混音和全部分轨按 DAW 习惯命名后导出到所选文件夹，由宿主弹出文件夹选择框。
   const exportStems = (item: Generation) => run(() => call('stems.export', { id: item.id }));
@@ -183,7 +206,7 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
   useEffect(() => {
     if (!midiImport) return;
     const target = state.drafts.find(item => item.id === midiImport.projectId);
-    if (target) selectDraft(target);
+    if (target) { selectDraft(target); setStudio({ kind: 'midi', projectId: target.id, sourceId: midiImport.sourceId }); }
     void call('midi.dismiss', { id: midiImport.id }).catch(() => undefined);
     // 只在出现新结果时打开一次。
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -220,7 +243,8 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
       { label: t('@yovoice.app.exportVersion'), isDisabled: busy, onClick: () => exportVersion(currentVersion) },
       ...(music && !isVos && !currentVersion.stemOf && !state.history.some(item => item.stemOf === currentVersion.id) ? [{ label: t('@yovoice.stems.separate'), isDisabled: busy, onClick: () => separateStems(currentVersion) }] : []),
       ...(canResing(currentVersion) && !isVos ? [{ label: t('@yovoice.resing.action'), isDisabled: busy, onClick: () => resing(currentVersion) }] : []),
-      ...(music && !isVos && (currentVersion.stemOf || state.history.some(item => item.stemOf === currentVersion.id)) ? [{ label: t('@yovoice.stems.exportAll'), isDisabled: busy, onClick: () => exportStems(currentVersion) }] : []),
+      ...(music && !isVos && (currentVersion.stemOf || state.history.some(item => item.stemOf === currentVersion.id)) ? [{ label: t('@yovoice.stems.open'), onClick: () => openStems(currentVersion) }] : []),
+      ...(music && !isVos && !currentVersion.stemOf && state.history.some(item => item.stemOf === currentVersion.id) ? [{ label: t('@yovoice.stems.resplit'), isDisabled: busy, onClick: () => separateStems(currentVersion, true) }] : []),
       ...(music && !isVos ? [{ label: t('@yovoice.stems.toMidi'), isDisabled: busy, onClick: () => transcribeMidi(currentVersion) }] : []),
       ...(projectKind(draft) === 'text' ? [...(!isVos ? [{ label: t('@yovoice.caption.menu'), onClick: () => setCaptionTarget(currentVersion) }] : []), { label: t('@yovoice.voice.save'), onClick: () => setVoiceEditor(currentVersion) }, { label: t('@yovoice.character.saveAs'), onClick: () => characterFromGeneration(currentVersion) }] : []),
     ]} /> : null}
@@ -238,10 +262,11 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
   const generateReady = scoring ? !!draft.score?.tracks.some(item => item.notes.length) : draft.subtitles ? draft.subtitles.cues.some(cue => cue.text.trim()) : !!draft.text.trim();
   const collapsedAction = busy ? <Button size="sm" icon={<LoaderCircle className="generation-spinner" />} label={t('@yovoice.create.cancelGenerate')} onClick={() => run(() => call('operation.cancel'))} />
     : <Button size="sm" variant="primary" label={generateLabel} aria-keyshortcuts="Control+Enter" isDisabled={!generateReady} onClick={generate} />;
-  return <VStack className={`workbench ${isDesktop ? 'desktop' : 'preview'}`} style={{ '--app-nav': `${navigation.size}px` } as CSSProperties} gap={0}>
-    {!isDesktop ? <HStack as="header" className="browser-titlebar" gap={2} vAlign="center"><Button label={navigation.isCollapsed ? t('@yovoice.app.expandSidebar') : t('@yovoice.app.collapseSidebar')} isIconOnly variant="ghost" size="sm" icon={<PanelLeft size={17} />} aria-expanded={!navigation.isCollapsed} onClick={toggleSidebar} />{isVos ? <img src="./v-voice.png" alt="" style={{ width: 'var(--spacing-6)', height: 'var(--spacing-6)' }} /> : null}<b>{isVos ? 'V-Voice' : 'yovoice'}</b><small>{isVos ? 'ASR · TTS · Studio' : t('@yovoice.app.browserPreview')}</small>{isVos ? <Button label={t('@yovoice.app.about')} variant="ghost" size="sm" icon={<Info size={16} />} aria-haspopup="dialog" onClick={() => setAboutOpen(true)} /> : null}
+  return <VStack className={`workbench ${isDesktop ? 'desktop' : 'preview'}`} style={{ '--app-nav': `${navigation.size}px`, '--app-inspector': `${inspectorPanel.size}px` } as CSSProperties} gap={0}>
+    {!isDesktop ? <HStack as="header" className="browser-titlebar" gap={2} vAlign="center"><Button label={navigation.isCollapsed ? t('@yovoice.app.expandSidebar') : t('@yovoice.app.collapseSidebar')} isIconOnly variant="ghost" size="sm" icon={<PanelLeft size={17} />} aria-expanded={!navigation.isCollapsed} onClick={toggleSidebar} />
+      {isVos ? <><img src="./v-voice.png" alt="" style={{ width: 'var(--spacing-6)', height: 'var(--spacing-6)' }} /><b>V-Voice</b><small>ASR · TTS · Studio</small><Button label={t('@yovoice.app.about')} variant="ghost" size="sm" icon={<Info size={16} />} aria-haspopup="dialog" onClick={() => setAboutOpen(true)} /></> : <><b>yovoice</b><small>{t('@yovoice.app.browserPreview')}</small></>}
       {ready && !assistantHidden && launcherHidden && !assistantOpen ? <PageBoundary name="assistant-title"><Suspense fallback={null}><AssistantTitleButton open={assistantOpen} toggle={() => setAssistantOpen(open => !open)} /></Suspense></PageBoundary> : null}
-      {page === 'create' ? <Button label={inspectorCollapsed ? t('@yovoice.app.expandInspector') : t('@yovoice.app.collapseInspector')} isIconOnly variant="ghost" size="sm" icon={<PanelRight size={17} />} aria-expanded={!inspectorCollapsed} onClick={toggleInspectorPanel} /> : null}</HStack> : null}
+      {inspectorAvailable ? <Button label={inspectorCollapsed ? t('@yovoice.app.expandInspector') : t('@yovoice.app.collapseInspector')} isIconOnly variant="ghost" size="sm" icon={<PanelRight size={17} />} aria-expanded={!inspectorCollapsed} onClick={toggleInspectorPanel} /> : null}</HStack> : null}
     {isVos ? <SchedulerStatus /> : null}
     {isVos && page !== 'models' && page !== 'models-creative' ? <HStack paddingInline={4} paddingBlock={2} hAlign="end">
       <Button data-testid="prepare-models" size="sm" label={t('@vvoice.models.prepare')} aria-haspopup="dialog" onClick={() => setPrepareOpen(true)} />
@@ -252,10 +277,10 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
         {!ready ? <p className="loading" role="status">{t('@yovoice.app.loading')}</p> : <>
 
           {visited.has('create') ? <VStack className="page-panel" gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="create" resetKey={draft.id}>
-            <Studio showInspector={showInspector} inspector={inspector} inspectorCollapsed={inspectorCollapsed} collapsedAction={collapsedAction}
+            <Studio showInspector={showInspector} inspector={inspector} inspectorCollapsed={inspectorCollapsed} resizeInspector={inspectorPanel.props} collapsedAction={collapsedAction}
           title={<input className="document-title" aria-label={t('@yovoice.app.titleLabel')} maxLength={120} value={draft.title} onChange={e => change({ title: e.target.value })} />}
           writingClassName={`${draft.subtitles ? 'writing-subtitles' : ''} ${draft.timeline ? 'writing-timeline' : ''} ${scoring ? 'writing-score' : ''}`.trim()}>
-          <Suspense fallback={<p role="status">{t('@yovoice.app.loading')}</p>}>{scoring ? <><ScoreEditor key={draft.id} draft={draft} change={change} locale={uiLocale} onError={onError} />{editorFooter()}</> : soundEffects ? <><SfxEditor key={draft.id} draft={draft} change={change} />{editorFooter()}</> : music ? <><MusicEditor key={draft.id} draft={draft} state={state} change={change} locale={uiLocale} onError={onError} />{editorFooter()}</> : draft.subtitles ? <SubtitleEditor key={draft.id} history={state.history} playingCue={playingCue} failedCue={activity?.projectId === draft.id && activity.status === 'failed' ? activity.cueId : undefined} draft={draft} characters={state.characters ?? []} change={change} selectedCue={selectedCue} selectCue={selectCue} renderFooter={editorFooter} /> : <><textarea ref={editor} className="script-editor" aria-label={t('@yovoice.app.scriptLabel')} placeholder={t('@yovoice.app.scriptPlaceholder')} maxLength={12000} value={draft.text} spellCheck={false} dir={draft.language === 'ar' ? 'rtl' : 'auto'} onChange={e => change({ text: e.target.value })} />{editorFooter()}</>}</Suspense>
+          <Suspense fallback={<p role="status">{t('@yovoice.app.loading')}</p>}>{scoring ? <><ScoreEditor key={draft.id} draft={draft} change={change} previewTracks={() => setStudio({ kind: 'midi', projectId: draft.id })} locale={uiLocale} onError={onError} />{editorFooter()}</> : soundEffects ? <><SfxEditor key={draft.id} draft={draft} change={change} />{editorFooter()}</> : music ? <><MusicEditor key={draft.id} draft={draft} state={state} change={change} locale={uiLocale} onError={onError} />{editorFooter()}</> : draft.subtitles ? <SubtitleEditor key={draft.id} history={state.history} playingCue={playingCue} failedCue={activity?.projectId === draft.id && activity.status === 'failed' ? activity.cueId : undefined} draft={draft} characters={state.characters ?? []} change={change} selectedCue={selectedCue} selectCue={selectCue} renderFooter={editorFooter} /> : <><textarea ref={editor} className="script-editor" aria-label={t('@yovoice.app.scriptLabel')} placeholder={t('@yovoice.app.scriptPlaceholder')} maxLength={12000} value={draft.text} spellCheck={false} dir={draft.language === 'ar' ? 'rtl' : 'auto'} onChange={e => change({ text: e.target.value })} />{editorFooter()}</>}</Suspense>
         </Studio>
           </PageBoundary></VStack> : null}
           {(['story', 'music', 'score', 'sfx'] as const).filter(kind => visited.has(kind)).map(kind => <VStack key={kind} id={`projects-${kind}-panel`} className="page-panel" gap={0} style={{ display: page === kind ? 'flex' : 'none' }}><PageBoundary name={`projects-${kind}`}>
@@ -265,7 +290,7 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
             <CharacterLibrary controls={libraryTabs} active={page === 'characters' && !voiceTarget && !characterActive} create={createVoice} state={state} catalog={catalog} edit={editCharacter} apply={setVoiceTarget} onError={onError} />
           </PageBoundary></VStack> : null}
           {visited.has('transcribe') ? <VStack id="transcribe-panel" className="page-panel" gap={0} style={{ display: page === 'transcribe' ? 'flex' : 'none' }}><PageBoundary name="transcribe">
-            <TranscribePage state={state} openSettings={() => openSettings('qwen3-asr-0.6b-q8')} />
+            <Suspense fallback={<p className="loading" role="status">{t('@yovoice.app.loading')}</p>}><TranscribePage state={state} openSettings={() => openSettings('qwen3-asr-0.6b-q8')} /></Suspense>
           </PageBoundary></VStack> : null}
           {isVos && (page === 'models' || page === 'models-creative') ? <VStack className="page-panel" gap={0}><PageBoundary name="models"><ModelManagement category={page === 'models' ? 'speech' : 'creative'} state={state} catalog={catalog} draft={draft} run={run} /></PageBoundary></VStack> : null}
           {isVos && (['asr', 'tts', 'speaker', 'hotwords'] as string[]).includes(page) ? <VStack className="page-panel" gap={0}><PageBoundary name={page}><SpeechService page={page as SpeechPage} /></PageBoundary></VStack> : null}
@@ -281,7 +306,7 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
               query={destination === 'voices' ? voiceQuery : historyQuery} onQueryChange={destination === 'voices' ? setVoiceQuery : setHistoryQuery}
               track={page === destination ? previewTrack : null} audition={audition} stop={() => setPreviewTrack(null)} suspended={page !== destination || voicePicker !== null || !!voiceEditor || !!nowPlaying}
               addVoice={() => setVoicePicker('add')} editVoice={setVoiceEditor} exportCaptions={setCaptionTarget} saveCharacter={characterFromGeneration} onError={onError}
-              reuse={reuseGeneration} exportItem={exportVersion} play={setNowPlaying} separate={separateStems} transcribe={transcribeMidi} exportStems={exportStems} resing={item => canResing(item) ? () => resing(item) : undefined} />
+              reuse={reuseGeneration} exportItem={exportVersion} play={setNowPlaying} separate={separateStems} transcribe={transcribeMidi} openStems={openStems} resing={item => canResing(item) ? () => resing(item) : undefined} />
           </PageBoundary></VStack>)}
         </>}
 
@@ -289,6 +314,8 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
     </VStack></AppShell>
     {ready && !assistantHidden ? <PageBoundary name="assistant"><Suspense fallback={null}><AssistantDock state={state} open={assistantOpen} setOpen={setAssistantOpen} context={{ ...assistantContext, page: assistantContext.page === 'create' ? 'text' : assistantContext.page }} expanded={assistantExpanded} quickActions={quickActions(t, assistantPage === 'create' ? 'text' : assistantPage)} onToggleExpand={() => setAssistantExpanded(expanded => !expanded)} actions={askAssistantPanel} launcherHidden={launcherHidden} showLauncher={showLauncher} nudge={nudge} onNudge={actOnNudge} dismissNudge={dismissNudge} /></Suspense></PageBoundary> : null}
     {exportTarget ? <PageBoundary name="version-export"><VersionExportDialog generation={exportTarget} name={versionName(exportTarget)} tags={exportTags(exportTarget)} onClose={() => setExportTarget(null)} /></PageBoundary> : null}
+    {studio ? <PageBoundary name="stem-studio"><Suspense fallback={null}><StemStudio target={studio} history={state.history} project={studio.kind === 'midi' ? (studio.projectId === draft.id ? draft : state.drafts.find(item => item.id === studio.projectId)) : undefined}
+      onClose={() => setStudio(null)} onExport={exportStems} onResplit={source => separateStems(source, true)} onDeleteStems={deleteStems} busy={busy} openSoundFonts={() => { setStudio(null); openSettings('musescore-general-sf2'); }} /></Suspense></PageBoundary> : null}
     {captionTarget ? <PageBoundary name="caption-export"><CaptionDialog state={state} generation={captionTarget} name={versionName(captionTarget)} onClose={() => setCaptionTarget(null)} /></PageBoundary> : null}
     {prepareOpen ? <PrepareModels page={page} state={state} catalog={catalog} draft={draft} run={run} close={() => setPrepareOpen(false)} /> : null}
     {isVos && aboutOpen ? <AboutDialog onClose={() => setAboutOpen(false)} /> : null}

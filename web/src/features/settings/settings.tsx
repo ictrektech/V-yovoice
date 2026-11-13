@@ -24,6 +24,7 @@ import { VosSettings } from './vos-settings';
 import { StorageSettings } from './storage-settings';
 import { LogViewer } from './log-viewer';
 import { AssistantSettings } from './assistant-settings';
+import { EngineRuntimeSettings } from './engine-runtime-settings';
 import { FeatureSettings } from './feature-settings';
 
 // 资源表格依赖较多，切到资源页时才加载。
@@ -76,7 +77,7 @@ function DesktopSettings({ state, catalog, engine, draft, run, focus, active, on
     {tab === 'general' ? <VStack className="settings-panel" gap={6} id="general-panel" role="tabpanel" aria-label={t('@yovoice.settings.tabGeneral')}>
       <UpdateSettings />
       <SettingsGroup title={t('@yovoice.settings.preferences')}>
-        <SettingsRow label={t('@yovoice.settings.uiLocale')} hint={t('@yovoice.settings.uiLocaleHint')}>
+        <SettingsRow label={t('@yovoice.settings.uiLocale')}>
           <Selector data-testid="ui-locale" size="sm" label={t('@yovoice.settings.uiLocale')} isLabelHidden value={preferences.uiLocale}
             options={uiLocales.map(locale => ({ value: locale.id, label: locale.name }))}
             onChange={uiLocale => run(() => call('preferences.save', { ...preferences, uiLocale: uiLocale as UiLocale }))} width="calc(var(--spacing-10) * 5)" />
@@ -121,7 +122,6 @@ function DesktopSettings({ state, catalog, engine, draft, run, focus, active, on
       <ModelGroups key={tab} models={catalog.filter(model => modelTab(model.family) === tab)} state={state} draft={draft} run={run} focus={focus?.modelId} />
       <HStack className="settings-footnote" gap={3} vAlign="center" wrap="wrap"><small>{t('@yovoice.settings.licenseBlurb')}</small><Button size="sm" label={t('@yovoice.settings.licenseButton')} variant="ghost" onClick={() => run(async () => { const response = await fetch('./model-license.txt'); if (!response.ok) throw new CallError('@yovoice.error.licenseReadFailed'); setLicense(await response.text()); })} /></HStack>
     </VStack> : tab === 'soundfonts' ? <VStack className="settings-panel" gap={6} id="soundfonts-panel" role="tabpanel" aria-label={t('@yovoice.settings.tabSoundfonts')}>
-      <small className="settings-intro">{t('@yovoice.settings.soundfontIntro')}</small>
       <ModelGroups models={catalog.filter(model => model.family === 'soundfont')} state={state} draft={draft} run={run} focus={focus?.modelId} />
     </VStack> : tab === 'ai' ? <AISettings state={state} run={run} focus={focus} /> : tab === 'assistant' ? <AssistantSettings state={state} run={run} /> : tab === 'assets'
       ? <Suspense fallback={<p role="status">{t('@yovoice.app.loading')}</p>}><AssetsPage state={state} active={active} run={run} onError={onError} openProject={openProject} /></Suspense> : tab === 'logs' ? <LogViewer run={run} /> : <VStack className="settings-panel engine-settings" gap={6} id="engine-panel" role="tabpanel" aria-label={t('@yovoice.settings.tabEngine')}>
@@ -136,6 +136,7 @@ function DesktopSettings({ state, catalog, engine, draft, run, focus, active, on
           <Button size="sm" label={runtime === 'ready' ? t('@yovoice.settings.reinstallRuntime') : runtime === 'missing' ? t('@yovoice.settings.installRuntime') : t('@yovoice.settings.updateRuntime', { version: engine.version })} isDisabled={busy} onClick={() => run(() => call('runtime.install'))} />
         </SettingsRow>
       </SettingsGroup>
+      {runtime !== 'missing' ? <EngineRuntimeSettings state={state} catalog={catalog} run={run} /> : null}
     </VStack>}
 
     {license ? <AppDialog title={t('@yovoice.settings.licenseTitle')} width={680} onClose={() => setLicense(null)} actions={<Button label={t('@yovoice.settings.closeLicense')} onClick={() => setLicense(null)} />}><pre className="license-text">{license}</pre></AppDialog> : null}

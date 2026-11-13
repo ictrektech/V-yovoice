@@ -16,6 +16,11 @@
 - YuE2 adds Top P / Top K / repetition penalty for score writing, hum-to-score, style-from-image, re-singing only changed bars, up to 4 candidate takes and LoRA adapters.
 - Music versions can separate stems with the optional HTDemucs 6-stem model, export all stems with DAW-friendly names, and transcribe to MIDI with the optional MuScriptor model.
 
+- Stem studio: a full-screen view plays all separated stems in sync with per-track waveform, volume, mute and solo; stems can be exported, re-separated or deleted.
+- The melody score can be zoomed, edited and hand-written, with per-track audition in the score view.
+- Models replaced by a catalog update can be rolled back to the earlier version from Settings.
+- Interface: smoother view transitions, a resizable inspector and lower idle CPU.
+
 ### 简体中文
 
 - 新增单插件 `@ictrek/dsh-tool-v-yovoice` 底座，并迁移已跑通的音频转写；保留现有工具、profile 配置、会话和播放兼容。
@@ -26,6 +31,11 @@
 - 导出音频新增 FLAC（无损）和 M4A（AAC 256 kbps），写入标题、歌词、封面并注明 AI 生成；版本导出可选有声书、播客或视频平台响度。
 - YuE2 新增写谱 Top P / Top K / 重复惩罚、哼唱扒谱、看图取风格、按改动小节局部重唱、一次最多 4 个候选及 LoRA。
 - 音乐版本可用可选 HTDemucs 6 轨模型分离音轨、按 DAW 习惯导出全部分轨，并用可选 MuScriptor 模型转为 MIDI。
+- 分轨工作台：全屏同步播放各分轨，逐轨显示波形、音量、静音和独奏；分轨可导出、重新分离或删除。
+- 旋律谱支持放大编辑和手写，并可在编曲视图逐轨试听。
+- 经模型目录更新替换过的模型可在设置里回退到旧版本。
+- 界面过渡更连贯，右侧检查器可拖动调宽，空闲时更省 CPU。
+
 
 
 ## [0.0.35] - 2026-11-10

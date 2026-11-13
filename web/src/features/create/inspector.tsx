@@ -1,6 +1,6 @@
 import { AdvancedSettings, SeedInput, ReferenceVoice } from './shared-controls';
 import { KokoroControls } from './kokoro-controls';
-import { RuntimeControls } from './runtime-controls';
+import { StreamingControl } from './streaming-control';
 import { isVos } from '../../shared/lib/vos';
 import { ModelOptions } from './model-options';
 import { useState, type ReactNode } from 'react';
@@ -24,6 +24,8 @@ import { GradiumControls } from './gradium-controls';
 import type { Track } from '../../shared/workbench';
 import { formatActivity } from '../../shared/i18n/format';
 import { useElapsed } from '../../shared/lib/use-elapsed';
+import { overflowTitle } from '../../shared/ui/overflow-title';
+import { MorphFrame } from '../../shared/ui/morph-frame';
 
 const modes: Mode[] = ['speaker', 'reference', 'vector', 'text'];
 const emotionKeys = ['happy', 'angry', 'sad', 'afraid', 'disgusted', 'melancholy', 'surprised', 'calm'] as const;
@@ -74,14 +76,14 @@ export function Inspector({ draft, state, catalog, change, chooseVoice, chooseEm
   // 当前模型的目录条目；目录里没有（目录更新后模型下架）时，需要条目的控件不渲染，页面不崩。
   const currentModel = catalog.find(model => model.id === draft.modelId);
   return <VStack as="aside" className={embedded ? undefined : "inspector"} gap={0}>
-    {!embedded ? <VStack className="generation-action" gap={3}>
+    {!embedded ? <MorphFrame><VStack className="generation-action" gap={3}>
       {generationAction ?? (generating ? <Button label={t('@yovoice.create.cancelGenerate')} onClick={cancel} width="100%" /> : <Button label={t('@yovoice.create.generate')} variant="primary" width="100%" aria-keyshortcuts="Control+Enter" isDisabled={busy || !(draft.subtitles ? draft.subtitles.cues.some(cue => cue.text.trim()) : draft.text.trim())} onClick={generate} />)}
       {generating && !generationAction ? <HStack className="generation-status" gap={2} vAlign="center">
         <LoaderCircle size={14} className="generation-spinner" aria-hidden="true" />
         <small className="grow" role="status">{state.activity ? formatActivity(t, state.activity) : ''}</small>
         <small className="generation-elapsed" aria-label={t('@yovoice.create.elapsed')}>{formatTime(elapsed)}</small>
       </HStack> : null}
-    </VStack>
+    </VStack></MorphFrame>
     : null}
     <VStack className={embedded ? undefined : "inspector-scroll"} gap={5}>
     {libraryActions}
@@ -96,7 +98,7 @@ export function Inspector({ draft, state, catalog, change, chooseVoice, chooseEm
       <ReferenceVoice voice={voice} choose={chooseVoice} play={play} />
       <VStack gap={3}>
         <h3>{t('@yovoice.create.expression')}</h3>
-        <SegmentedControl size="sm" label={t('@yovoice.create.expression')} value={draft.mode} onChange={mode => change({ mode: mode as Mode })} layout="fill">{modes.map(id => <SegmentedControlItem key={id} value={id} label={t(`@yovoice.create.mode.${id}`)} />)}</SegmentedControl>
+        <SegmentedControl size="sm" label={t('@yovoice.create.expression')} value={draft.mode} onChange={mode => change({ mode: mode as Mode })} layout="fill">{modes.map(id => <SegmentedControlItem onPointerEnter={overflowTitle} key={id} value={id} label={t(`@yovoice.create.mode.${id}`)} />)}</SegmentedControl>
         {draft.mode === 'reference' ? <ReferenceVoice voice={emotion} choose={chooseEmotion} play={play} label={t('@yovoice.create.mode.reference')} placeholder={t('@yovoice.create.addEmotionReference')} /> : null}
         {draft.mode === 'text' ? <VStack gap={3}>
           <TextArea label={t('@yovoice.create.emotionDescription')} isLabelHidden value={draft.emotionText} onChange={value => change({ emotionText: value.slice(0, 500) })} placeholder={t('@yovoice.create.emotionPlaceholder')} rows={3} isDisabled={draft.inferEmotion} />
@@ -128,7 +130,7 @@ export function Inspector({ draft, state, catalog, change, chooseVoice, chooseEm
         <SeedInput value={draft.seed} change={change} />
       </AdvancedSettings>
       </>}
-      {currentModel && !embedded && !isVos ? <RuntimeControls draft={draft} state={state} family={currentModel.family} change={change} /> : null}
+      {currentModel && !embedded && !isVos ? <StreamingControl draft={draft} state={state} family={currentModel.family} change={change} /> : null}
     </VStack>
 
   </VStack>;

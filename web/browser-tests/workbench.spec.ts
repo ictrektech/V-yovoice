@@ -1,6 +1,9 @@
 import { openProjectHistory } from './project-actions';
 import { seedState } from './seed';
-import { emptyState } from '../src/shared/workbench';
+import { emptyState, type ModelPackage } from '../src/shared/workbench';
+import catalogFile from '../../internal/catalog/catalog.json' with { type: 'json' };
+
+const catalog = catalogFile as { models: ModelPackage[] };
 import { test, expect } from '@playwright/test';
 
 
@@ -48,8 +51,8 @@ test('四种表达方式、草稿持久化与模型协议', async ({ page }) => 
   await page.getByRole('button', { name: '设置', exact: true }).click();
   // 语音模型与音乐模型分页显示，各自带下载设置。
   await page.getByRole('tab', { name: '音乐模型', exact: true }).click();
-  // 同一模型的多种量化合并为一行，用精度切换；含可选的歌词对齐、分轨和扒 MIDI 模型。
-  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(10);
+  // 同一模型的多种量化合并为一行，用精度切换；含可选的歌词对齐、分轨、人声分离（BS-RoFormer）和转为 MIDI 模型。
+  await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(11);
   const yue = page.locator('[data-model-id^="yue2-"]');
   await expect(yue).toHaveCount(1);
   await expect(yue).toHaveAttribute('data-model-id', 'yue2-3b-q8');
@@ -79,8 +82,8 @@ test('真实 WAV 导入、播放、裁剪和空状态', async ({ page }) => {
   const wav = Buffer.alloc(44 + 16000 * 2 * 2);
   wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(16000, 24); wav.writeUInt32LE(32000, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(wav.length - 44, 40);
   for (let i = 0; i < 32000; i++) wav.writeInt16LE(Math.round(Math.sin(i * 440 * Math.PI * 2 / 16000) * 8000), 44 + i * 2);
+  // 60 秒以内的录音直接导入并选中，不经过选段。
   await page.locator('input[type=file][accept^="audio/"]').setInputFiles({ name: '测试音色.wav', mimeType: 'audio/wav', buffer: wav });
-  await page.getByRole('button', { name: '另存为新音色' }).click();
   await page.getByRole('button', { name: '使用所选参考音频', exact: true }).click();
   await expect(page.getByRole('button', { name: '测试音色', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '试听当前音色' }).click();
@@ -143,19 +146,18 @@ test('真实 WAV 导入、播放、裁剪和空状态', async ({ page }) => {
   await page.getByRole('button', { name: '使用所选参考音频', exact: true }).click();
   await expect(page.getByRole('button', { name: '测试音色 · 裁剪', exact: true })).toBeVisible();
   expect(await playingAudio!.evaluate((element: HTMLAudioElement) => element.paused)).toBe(true);
-  await page.getByRole('button', { name: '声音库', exact: true }).click();
+  await page.getByRole('button', { name: '我的声音', exact: true }).click();
   await page.getByRole('tab', { name: '参考音频', exact: true }).click();
   await expect(page.locator('footer.player')).toBeHidden();
   await page.getByRole('button', { name: '添加参考音频', exact: true }).click();
   await expect(page.getByRole('dialog').getByRole('heading', { name: '添加参考音频' })).toBeVisible();
   await expect(page.getByRole('dialog').locator('.voice-list')).toHaveCount(0);
   await page.locator('input[type=file][accept^="audio/"]').setInputFiles({ name: '新增音色.wav', mimeType: 'audio/wav', buffer: wav });
-  await page.getByRole('button', { name: '另存为新音色' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '新增音色', exact: true })).toBeVisible();
   await page.locator('.recent-projects .project-link').first().click();
   await expect(page.getByRole('button', { name: '测试音色 · 裁剪', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '声音库', exact: true }).click();
+  await page.getByRole('button', { name: '我的声音', exact: true }).click();
   await page.getByRole('tab', { name: '参考音频', exact: true }).click();
 
   const entry = page.locator('.library-entry').filter({ has: page.getByRole('heading', { name: '测试音色', exact: true }) });
@@ -282,7 +284,7 @@ test('语音生成只有历史生成：工具栏进入历史页，试听不改�
   await rows.first().getByRole('button', { name: `删除音频${draft.title}`, exact: true }).click();
   await page.getByRole('button', { name: '取消', exact: true }).click();
   await expect(rows).toHaveCount(3);
-  // 生成结果连同当时的参数一起存为角色：角色编辑器带着名称、模型和语速打开，保存后进入声音库。
+  // 生成结果连同当时的参数一起存为角色：角色编辑器带着名称、模型和语速打开，保存后进入我的声音。
   await rows.nth(1).getByRole('button', { name: '音频操作', exact: true }).click();
   await page.getByRole('menuitem', { name: '保存为角色', exact: true }).click();
   await expect(page.getByRole('textbox', { name: '角色名称' })).toHaveValue(draft.title);
@@ -486,6 +488,33 @@ test('已下载模型有新版本时显示轻提示，可关闭并重新下载�
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1') ?? '{}').models?.[0]?.sha256)).not.toBe('0'.repeat(64));
 });
 
+test('目录更新过的模型可以换回更新前的版本，换回旧版后不再提示更新', async ({ page }) => {
+  const kokoro = catalog.models.find(model => model.id === 'kokoro-82m-q8')!;
+  const previous = kokoro.history![0].sha256!;
+  const state = emptyState();
+  state.models = [{ id: 'kokoro-82m-q8', path: 'kokoro-82m-q8_0.gguf', managed: true, sha256: kokoro.sha256 }];
+  await seedState(page, state);
+  await page.goto('/');
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
+  const model = page.locator('[data-model-id="kokoro-82m-q8"]');
+  const version = model.getByRole('combobox', { name: '模型版本', exact: true });
+  await expect(version).toContainText('最新版');
+  // 换到旧版：按旧摘要下载，记为用户固定的版本，不再出现更新提示。
+  await version.click();
+  await page.getByRole('option', { name: /更新前$/ }).click();
+  await expect(version).toContainText('更新前');
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1') ?? '{}').models?.[0]);
+  await expect.poll(saved).toMatchObject({ sha256: previous, pinned: true });
+  await expect(model.getByText('有新版本', { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('model-update-notice')).toHaveCount(0);
+  // 换回最新版后恢复正常。
+  await version.click();
+  await page.getByRole('option', { name: '最新版', exact: true }).click();
+  await expect.poll(saved).toMatchObject({ sha256: kokoro.sha256 });
+  expect((await saved()).pinned).toBeFalsy();
+});
+
 // 冒烟用例：预览模式不走桌面端的 sidebar.save 解析，这里只验证启动不白屏且记录被修正；解析本身由 try/catch 兜底。
 test('侧栏宽度记录损坏时照常启动（冒烟）', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
@@ -526,6 +555,19 @@ test('浮层出错只影响浮层：声音选择的代码没加载到时其余�
   await expect(page.getByRole('dialog')).toBeVisible();
 });
 
+test('60 秒以内的录音直接导入，不需要选段', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '添加参考音频', exact: true }).click();
+  const sampleRate = 8000;
+  const wav = Buffer.alloc(44 + sampleRate * 5 * 2);
+  wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8); wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(sampleRate, 24); wav.writeUInt32LE(sampleRate * 2, 28);
+  wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(wav.length - 44, 40);
+  await page.locator('input[type=file][accept^="audio/"]').setInputFiles({ name: '短录音.wav', mimeType: 'audio/wav', buffer: wav });
+  await expect(page.getByRole('button', { name: '短录音', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('voice-excerpt-editor')).toHaveCount(0);
+});
+
 test('长录音可试听并保存一分钟之后的选段，取消时不登记音色', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '添加参考音频', exact: true }).click();
@@ -542,9 +584,14 @@ test('长录音可试听并保存一分钟之后的选段，取消时不登记�
   await upload();
   const editor = page.getByTestId('voice-excerpt-editor');
   const save = editor.getByRole('button', { name: '另存为新音色' });
+  // 超过 60 秒的录音先选段，预先选中挑出的一段。
+  await expect(editor.getByLabel('入点（秒）')).toHaveValue('0');
+  await expect(editor.getByLabel('出点（秒）')).toHaveValue('10');
   await editor.getByLabel('出点（秒）').fill('80');
+  await editor.getByLabel('出点（秒）').press('Enter');
   await expect(save).toBeDisabled();
   await editor.getByLabel('入点（秒）').fill('75');
+  await editor.getByLabel('入点（秒）').press('Enter');
   await editor.getByRole('button', { name: '试听选段' }).click();
   await expect.poll(() => editor.locator('audio').evaluate((el: HTMLAudioElement) => el.duration)).toBeCloseTo(5);
   const hasSelectedAudio = async (element: HTMLAudioElement) => {

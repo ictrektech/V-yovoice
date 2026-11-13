@@ -216,6 +216,13 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
     if (!voice) throw new CallError('@yovoice.error.audioMissing');
     return { start: 0, end: Math.min(voice.duration, 10) } as T;
   }
+  if (method === 'generation.deleteStems') {
+    // 与服务端一致：任一分轨在时间线上时整体拒绝，否则一并删掉。
+    const ids = state.history.filter(item => item.stemOf === (data as { id: string }).id).map(item => item.id);
+    if (state.drafts.some(d => d.timeline?.tracks.some(t => t.clips.some(c => !!c.generationId && ids.includes(c.generationId))))) throw new CallError('@yovoice.timeline.inUse');
+    for (const id of ids) await dispatch('media.delete', { kind: 'outputs', id });
+    return true as T;
+  }
   if (method === 'media.rename' || method === 'media.delete') {
     const { kind, id, name } = data as { kind: string; id: string; name: string };
     if (!['voices', 'outputs'].includes(kind)) throw new CallError('@yovoice.error.audioKindInvalid');
@@ -353,6 +360,8 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
   // 旋律谱的完整校验在 Go 中；预览只读出谱头与人声旋律，便于查看导入的谱。
   if (method === 'melody.inspect') return previewInspectMelody((data as { abc: string }).abc) as T;
   // 试听要用音色库渲染，只在桌面里做；预览只检查是否装了音色库。
+  // 逐轨渲染要用音色库合成，预览后端只给出与桌面端相同的提示。
+  if (method === 'score.renderTracks') throw new CallError(state.models.some(m => m.id.endsWith('-sf2')) ? '@yovoice.error.previewDesktopOnly' : '@yovoice.error.melodySoundFontRequired');
   if (method === 'melody.listen') throw new CallError(state.models.some(m => m.id.endsWith('-sf2')) ? '@yovoice.error.previewDesktopOnly' : '@yovoice.error.melodySoundFontRequired');
   if (method === 'melody.transform') {
     const { abc, op, tempo } = data as { abc: string; op: string; tempo: number };
@@ -400,17 +409,18 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
     publish();
     return true as T;
   }
-  // 分轨、扒 MIDI 与导入 LoRA 需要本地模型和文件选择框，预览里只给出空列表。
+  // 分轨、转为 MIDI 与导入 LoRA 需要本地模型和文件选择框，预览里只给出空列表。
   if (method === 'adapter.list') return [] as T;
   if (method === 'midi.dismiss') { delete state.midiImport; publish(); return true as T; }
   if (method === 'model.download') {
-    const id = (data as { id: string }).id;
+    // 预览只模拟更新或换版本：记下所选版本的主文件摘要，换到旧版本时不再提示更新。
+    const { id, version } = data as { id: string; version?: string };
     const installed = state.models.find(model => model.id === id);
-    const definition = catalog.find(model => model.id === id);
+    const definition = catalog.find(model => model.id === id) as Parameters<typeof modelMainFile>[0] | undefined;
     if (!installed || !definition) throw new CallError('@yovoice.error.previewDesktopOnly');
     if (!installed.managed) throw new CallError('@yovoice.error.localModelProtected');
-    const latest = modelMainFile(definition as Parameters<typeof modelMainFile>[0]).sha256;
-    installed.sha256 = state.modelDownloads?.[id]?.version || latest;
+    const latest = modelMainFile(definition).sha256;
+    installed.sha256 = version || state.modelDownloads?.[id]?.version || latest;
     installed.pinned = installed.sha256 !== latest || undefined;
     if (state.modelDownloads) delete state.modelDownloads[id];
     publish();

@@ -261,7 +261,7 @@ func (w *Workbench) ListenMelodySnapshot(ctx context.Context, abc, modelID strin
 	}
 	sf, e := score.LoadSoundFont(soundFont)
 	if e != nil {
-		return "", msg.Err(msg.ErrModelMoved, nil)
+		return "", e
 	}
 	file := "audition-melody-" + schema.NewID() + ".wav"
 	path, e := w.Store.MediaPath("outputs", file)

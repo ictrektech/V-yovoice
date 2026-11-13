@@ -2,7 +2,7 @@
 
 English · [简体中文](models_zh.md)
 
-Choose a model based on whether you have a reference recording or want a built-in or designed voice. For models with streaming support, open **Runtime** in the creation inspector to listen while synthesis is running. The final file is still saved when generation finishes.
+Choose a model based on whether you have a reference recording or want a built-in or designed voice. When the model and the installed engine support streaming, turn on **Listen while generating** at the bottom of the creation inspector to hear audio while synthesis is running. The final file is still saved when generation finishes.
 
 | Model | Main use | Required input |
 | --- | --- | --- |
@@ -33,6 +33,10 @@ In Settings → Voice models, Music models or Score sound fonts, choose the matc
 
 Single-file imports check the GGUF header and model family and record the file's SHA-256. Locally converted GGUFs are accepted, but you must choose the correct version and precision; a matching family does not guarantee that every custom conversion is usable. Multi-file packages and SF2 imports must match the supported package checksums. Raw PyTorch (`.pth`, `.pt`, `.safetensors`) and MLX weights cannot run in the native audio.cpp engine directly: convert them with the matching upstream audio.cpp converter first. Importing does not install or run Python and does not convert weights automatically. Imported models use the same voice and advanced generation controls as downloaded models.
 
+## Model versions and rollback
+
+When the model catalog updates, downloaded models show **Update available**. Models replaced by a catalog update also get a version picker in Settings: choosing **Before <date> update** downloads the earlier file from its pinned repository commit, verifies it and replaces the current file, and the update prompt stops. Choose **Latest** to go back. Switching versions keeps no second copy on disk and works with all three download sources.
+
 ## Model files and hardware
 
 | Model | Parameters | Model file size by precision | Core capabilities |
@@ -57,7 +61,9 @@ Single-file imports check the GGUF header and model family and record the file's
 | YuE2 3B | 3B | Q4 · 2.93 GB<br>Q8 · 4.53 GB<br>BF16 · 7.53 GB | Full vocal songs from lyrics and style, length follows the lyrics; instrumentals via a melody score; requires engine v0.9.1 |
 | SheetSage2 | — | F32 · 2.71 GB | Transcribes a song's melody and chords into a score, used for YuE2 covers; requires engine v0.9.1 |
 | HTDemucs 6-stem (optional) | — | Q8 · 42 MB<br>F16 · 55 MB | Splits a song into drums, bass, vocals, guitar, piano and other; requires engine v0.9.1 |
+| BS-RoFormer (optional) | — | Q8 · 173 MB | High-quality vocal separation; with it installed, stem separation takes the vocals from BS-RoFormer and splits only the accompaniment with HTDemucs. The Lyric Aligner package already contains it. |
 | MuScriptor Small (optional) | — | F32 · 412 MB | Transcribes a song into multi-instrument MIDI that opens as a score project; requires engine v0.9.1 |
+| Qwen3 ASR 0.6B (optional) | 0.6B | Q8 · 2.28 GB (with its aligner) | Speech recognition in 30 languages plus Qwen3 Forced Aligner timing: the Transcribe page, “Recognize text” and subtitle export; requires engine v0.9.1 |
 | Lyric Aligner (optional) | 0.6B | Q8 · 1.30 GB | BS-RoFormer vocal separation plus Qwen3 Forced Aligner: aligns lyrics word by word to a generated song for the playback page and word LRC export; requires engine v0.9.1 |
 
 | Use Case | Recommended Hardware | Recommended Models |
@@ -249,7 +255,7 @@ YuE2 needs lyrics for a vocal song, and the song length follows the lyrics. It c
 
 On the playback page, lyric timing starts from the vocals detected in the mix and can be synced line by line. With the optional Lyric Aligner installed, **Auto-align** separates the vocals, drops interludes and long pauses, and aligns every word of the lyrics to the singing (songs up to 20 minutes; the aligner handles about 100 seconds of singing at a time, so longer songs are aligned in groups of lines split at pauses in the vocals, and re-aligning the same version reuses the separated vocals); the result is saved with the version, and the newest of auto-align and manual sync wins. Words that are still off can be fixed under **Lyric tools › Adjust lyric timing**: while playing, click a line to anchor it to the playhead, or move the whole line earlier or later (shifting the following lines along, or this line only); single words can be dragged on the timeline or tapped along while listening. All of these live in the **Lyric tools** menu at the top of the playback page.
 
-With HTDemucs 6-stem installed, **Separate stems** in a music version's menu splits it (up to 10 minutes) into drums, bass, vocals, guitar, piano and other; each stem is saved as a version of the same project next to the original, so it can be played, exported or added to the timeline. **Export all stems** saves the mix and every stem into a new folder, named like `Song - 01 Vocals.wav` in a DAW-friendly order; all files share one sample rate and start at 0 so they line up when dragged into a DAW. With MuScriptor installed, **Transcribe to MIDI** turns a version into a new score project with one track per instrument, which you can edit and render with a sound font.
+With HTDemucs 6-stem installed, **Separate stems** in a music version's menu splits it (up to 10 minutes) into drums, bass, vocals, guitar, piano and other; each stem is saved as a version of the same project next to the original. When BS-RoFormer is available (on its own or inside the Lyric Aligner package), the vocals come from BS-RoFormer and HTDemucs splits only the accompaniment, giving cleaner vocals with less bleed. “Other” holds everything the remaining stems do not, so all six stems add back exactly to the original. HTDemucs's six categories are fixed, and its guitar and piano stems are its weakest (often bleeding into each other or into “other”); for per-instrument tracks use Transcribe to MIDI, so it can be played, exported or added to the timeline. When separation finishes the **stem studio** opens (later from **Open stems** in the version menu): the original and every stem sit side by side with one transport and playhead, each with its own waveform, volume, mute and solo — the original starts muted as a reference, so soloing it compares it with the stems. **Separate again** (in the studio or the version menu) replaces the old stems only once the new ones are ready, and **Delete stems** removes them while keeping the original; both are refused while a stem is on the timeline. **Export all stems** (in the studio) saves the mix and every stem into a new folder, named like `Song - 01 Vocals.wav` in a DAW-friendly order; all files share one sample rate and start at 0 so they line up when dragged into a DAW. With MuScriptor installed, **Transcribe to MIDI** turns a version into a new score project with one track per instrument, which opens together with the stem studio: each instrument track is rendered with your arrangement sound font so it can be heard on its own or against the original. **Preview tracks** on the score page opens the studio again after edits.
 
 Continuation and repainting are not available yet.
 
@@ -261,10 +267,12 @@ Score projects and `yovoice score render` use the MuseScore General sound font (
 
 OmniVoice weights are licensed under CC-BY-NC and YuE2 weights under CC BY-NC 4.0, both for non-commercial use only. MuScriptor weights are CC BY-NC as well; HTDemucs is MIT. Breeze TTS 2 weights use the [BreezeBlue Research and Non-Commercial License](https://huggingface.co/BreezeBlue/Breeze-TTS-2), and generated speech is not licensed for commercial use either. IndexTTS has a separate [model license](../web/public/model-license.txt). Check the model publisher's license before using generated speech commercially.
 
-## Runtime controls
+## Runtime settings and streaming
 
-The creation inspector saves runtime settings with the work. CPU threads use the app default when set to 0; GPU device indices are zero-based. The idle timeout defaults to five minutes, and 0 keeps the model loaded. **Unload model and clear cache** releases the current engine session when there is no active generation. Changing session settings reloads the session on the next run.
+Engine runtime settings live in **Settings › Engine › Runtime** and apply to every model on this computer. CPU threads use the app default when set to 0; GPU device indices are zero-based. The idle timeout defaults to five minutes, and 0 keeps the model loaded. **Unload model and clear cache** releases the current engine session when there is no active task. Changes reload the model on the next task.
 
-The panel uses the installed engine's model manifest to show supported streaming modes and model-specific cache, precision, and execution settings. Streaming previews complete segments on IndexTTS. Other engines can deliver smaller chunks; the final audio is still saved as one file. Stopping the preview leaves generation running. VoxCPM2 streaming disables retrying already emitted audio. VoxCPM2, Breeze TTS 2, Qwen3-TTS and Ming 3.0 can also set the streaming chunk cadence and frame count when the engine advertises these options.
+**Model session options** (collapsed by default) lists the cache, precision and execution options that the installed engine's model manifest declares for each model. Options saved for an older engine that the current one no longer supports are flagged there and can be cleared.
+
+**Listen while generating** is saved with the work and only appears when the engine offers streaming for the selected model. Streaming previews complete segments on IndexTTS. Other engines can deliver smaller chunks; the final audio is still saved as one file. Stopping the preview leaves generation running. VoxCPM2 streaming disables retrying already emitted audio. VoxCPM2, Breeze TTS 2, Qwen3-TTS and Ming 3.0 can also set the streaming chunk cadence and frame count when the engine advertises these options.
 
 IndexTTS segment token limits and the IndexTTS 2.5 normalization switch require an engine that advertises them. The normalization switch controls audio.cpp's own text processing. The separate Python runtime's optional NeMo rules, PyTorch flags and DeepSpeed configuration are not audio.cpp session options.

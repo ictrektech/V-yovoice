@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ResizeHandle, type ResizableProps } from '@astryxdesign/core/Resizable';
 import { Button } from '@astryxdesign/core/Button';
-import { HStack, VStack } from '@astryxdesign/core/Layout';
+import { HStack, StackItem, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { AudioLines, Captions, BookOpen, ChevronRight, Fingerprint, Library, ListFilter, Mic, Music, Pencil, ScanText, Settings2, Speech, Trash2 } from 'lucide-react';
 import { featureHidden, projectKind, type Draft, type ModelPackage, type State } from '../shared/workbench';
@@ -11,7 +11,7 @@ import { ModelUpdateSidebarCard } from '../features/settings/model-update-card';
 import { isVos } from '../shared/lib/vos';
 import { readLocal, writeLocal } from '../shared/lib/local-store';
 
-// 侧栏：新建入口、作品类型、声音库、语音转写、最近作品、创作助手与设置。
+// 侧栏：新建入口、语音生成、语音转写、故事配音、音乐生成、我的声音、最近作品、创作助手与设置。
 export function SidebarNav(props: {
   page: string;
   setPage: (id: string) => void;
@@ -32,7 +32,34 @@ export function SidebarNav(props: {
   const modelsActive = page === 'models' || page === 'models-creative';
   // shortcut: VOS 新识别、转写和字幕工具尚未接入调度确认，接入后再统一开放。
   const projectActive = page === 'create' || page === 'history';
-  return <VStack as="nav" className="sidebar" aria-label={t('@yovoice.nav.main')} gap={6} data-testid="sidebar" style={isVos ? { overflowY: 'auto' } : undefined}>
+  // 选中底块：一个独立的块放到当前入口下面，换页时从上一个入口滑过去（样式见 app/motion.css）。
+  // 位置每次渲染后测量；侧栏宽度或窗口变化时也重新测量。没有选中入口（如我的声音的参考音频页）时淡出。
+  const nav = useRef<HTMLElement>(null);
+  const indicator = useRef<HTMLElement>(null);
+  const place = useRef(() => {});
+  place.current = () => {
+    const root = nav.current, mark = indicator.current;
+    if (!root || !mark) return;
+    const selected = root.querySelector<HTMLElement>('.nav-item.selected');
+    if (!selected) { mark.dataset.hidden = ''; return; }
+    const outer = root.getBoundingClientRect(), box = selected.getBoundingClientRect();
+    mark.style.transform = `translate(${box.left - outer.left}px, ${box.top - outer.top}px)`;
+    mark.style.width = `${box.width}px`;
+    mark.style.height = `${box.height}px`;
+    delete mark.dataset.hidden;
+    // 第一次定位不做动画，之后的位置变化才滑动。
+    if (!('ready' in mark.dataset)) requestAnimationFrame(() => { mark.dataset.ready = ''; });
+  };
+  useLayoutEffect(() => place.current());
+  useEffect(() => {
+    const root = nav.current;
+    if (!root) return;
+    const observer = new ResizeObserver(() => place.current());
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
+  return <VStack ref={nav} as="nav" className="sidebar" aria-label={t('@yovoice.nav.main')} gap={6} data-testid="sidebar" style={isVos ? { overflowY: 'auto' } : undefined}>
+    <StackItem ref={indicator} as="span" className="sidebar-indicator" aria-hidden />
     {newDraft}
     <VStack className="sidebar-destinations" gap={2}>
       {isVos ? <VStack gap={1}>
@@ -42,7 +69,9 @@ export function SidebarNav(props: {
         </VStack> : null}
       </VStack> : null}
       {isVos ? ([['asr', ScanText], ['tts', Speech], ['speaker', Fingerprint], ['hotwords', ListFilter]] as const).map(([destination, Icon]) => <Button key={destination} data-testid={`nav-${destination}`} label={t(`@vvoice.nav.${destination}`)} variant="ghost" icon={<Icon />} className={`nav-item ${page === destination ? 'selected' : ''}`} aria-current={page === destination ? 'page' : undefined} onClick={() => setPage(destination)} />) : null}
-      {(['text', 'story', 'music'] as const).filter(kind => kind === 'text' || !featureHidden(state.preferences, kind)).map(kind => {
+      {/* 顺序：语音生成、语音转写（同属语音）、故事配音、音乐生成，最后是我的声音。 */}
+      {(['text', 'transcribe', 'story', 'music'] as const).filter(kind => kind === 'text' || !featureHidden(state.preferences, kind)).map(kind => {
+        if (kind === 'transcribe') return isVos ? null : <Button key={kind} data-testid="nav-transcribe" label={t('@yovoice.nav.transcribe')} variant="ghost" icon={<Captions />} className={`nav-item ${page === 'transcribe' ? 'selected' : ''}`} aria-current={page === 'transcribe' ? 'page' : undefined} onClick={() => setPage('transcribe')} />;
         // 编曲与音效并入音乐生成：三类作品都高亮「音乐生成」。
         const group = (k: string) => k === 'score' || k === 'sfx' ? 'music' : k;
         const selected = group(page) === kind || (projectActive && group(projectKind(draft)) === kind);
@@ -50,7 +79,6 @@ export function SidebarNav(props: {
       })}
       <Button data-testid="nav-characters" label={t('@yovoice.nav.characters')} variant="ghost" icon={<AudioLines />} className={`nav-item ${page === 'characters' || page === 'voices' ? 'selected' : ''}`} aria-current={page === 'characters' || page === 'voices' ? 'page' : undefined} onClick={() => setPage('characters')} />
       {isVos ? <Button data-testid="nav-api-docs" label={t('@vvoice.nav.api')} variant="ghost" icon={<BookOpen />} className={`nav-item ${page === 'api-docs' ? 'selected' : ''}`} aria-current={page === 'api-docs' ? 'page' : undefined} onClick={() => setPage('api-docs')} /> : null}
-      {!isVos ? <Button data-testid="nav-transcribe" label={t('@yovoice.nav.transcribe')} variant="ghost" icon={<Captions />} className={`nav-item ${page === 'transcribe' ? 'selected' : ''}`} aria-current={page === 'transcribe' ? 'page' : undefined} onClick={() => setPage('transcribe')} /> : null}
     </VStack>
     <details className="recent-projects" open={recentOpen}>
       <summary onClick={event => { event.preventDefault(); const open = !recentOpen; setRecentOpen(open); writeLocal('yovoice-recent-open', String(open)); }}><ChevronRight aria-hidden />{t('@yovoice.nav.recent')}</summary>

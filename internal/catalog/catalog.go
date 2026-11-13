@@ -286,10 +286,10 @@ func IsMusic(family string) bool {
 	return family == "ace_step" || family == "yue2" || family == "stable_audio"
 }
 
-// IsTool 判断模型家族是否只作辅助工具：扒谱（SheetSage2）、歌词对齐、语音识别、分轨（HTDemucs）和扒 MIDI（MuScriptor），
+// IsTool 判断模型家族是否只作辅助工具：扒谱（SheetSage2）、歌词对齐、语音识别、分轨（HTDemucs）和转为 MIDI（MuScriptor），
 // 不能作为作品的生成模型。
 func IsTool(family string) bool {
-	return family == "sheetsage2" || family == "lyric_align" || family == "qwen3_asr" || family == "htdemucs_6stems" || family == "muscriptor"
+	return family == "sheetsage2" || family == "lyric_align" || family == "qwen3_asr" || family == "htdemucs_6stems" || family == "bs_roformer" || family == "muscriptor"
 }
 
 // PackageFiles 返回需要下载的文件；单文件模型只有主模型一项。
@@ -315,16 +315,7 @@ func (m ModelPackage) MainFile() ModelFile {
 	return ModelFile{Path: m.RemotePath, Size: m.Size, SHA256: m.SHA256}
 }
 
-func Lookup(id string) (ModelPackage, error) {
-	for _, m := range Models {
-		if m.ID == id {
-			return m, nil
-		}
-	}
-	return ModelPackage{}, msg.Err(msg.ErrModelUnsupported, nil)
-}
-
-// At 根据主文件摘要定位模型版本。
+// At 返回指定版本的模型包：sha256 为空或等于当前主文件时是最新版，否则在 History 里按主文件摘要查找。
 func (m ModelPackage) At(sha256 string) (ModelPackage, error) {
 	if sha256 == "" || sha256 == m.MainFile().SHA256 {
 		return m, nil
@@ -334,6 +325,15 @@ func (m ModelPackage) At(sha256 string) (ModelPackage, error) {
 		old.History, old.Revision, old.modelScopeRevision, old.Size, old.SHA256, old.Files = nil, v.Revision, v.ModelScopeRevision, v.Size, v.SHA256, v.Files
 		if old.MainFile().SHA256 == sha256 {
 			return old, nil
+		}
+	}
+	return ModelPackage{}, msg.Err(msg.ErrModelUnsupported, nil)
+}
+
+func Lookup(id string) (ModelPackage, error) {
+	for _, m := range Models {
+		if m.ID == id {
+			return m, nil
 		}
 	}
 	return ModelPackage{}, msg.Err(msg.ErrModelUnsupported, nil)

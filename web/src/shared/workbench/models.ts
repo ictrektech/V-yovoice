@@ -1,11 +1,13 @@
 // 模型包的判断：按模型 id 识别家族与用途、设置页分组、新作品的默认模型，以及是否需要参考音色。
-import type { Draft, ModelFile, ModelPackage, State } from './types';
+import type { Draft, ModelFile, ModelPackage, ModelVersion, State } from './types';
 
 export const modelMainFile = (model: ModelPackage): ModelFile => model.files?.find(file => file.path === model.remotePath) ?? { path: model.remotePath, size: model.size, sha256: model.sha256 };
 export const modelUpdateAvailable = (state: Pick<State, 'models' | 'modelDownloads' | 'modelActivity'>, model: ModelPackage, allowUnmanaged = false) => {
   const installed = state.models.find(item => item.id === model.id);
   return installed?.sha256 && (allowUnmanaged || installed.managed) && !installed.pinned && !state.modelDownloads?.[model.id] && installed.sha256 !== modelMainFile(model).sha256 ? installed : undefined;
 };
+/** 旧版本的主文件摘要，用来和已安装模型记录的 sha256 比对、作为 model.download 的 version。 */
+export const modelVersionDigest = (model: ModelPackage, version: ModelVersion) => version.files?.find(file => file.path === model.remotePath)?.sha256 ?? version.sha256 ?? '';
 
 export const isKokoroModel = (id: string) => id.startsWith('kokoro-');
 /** Stable Audio 3 用英文描述生成纯音乐或音效，不唱歌词；可在作品已有的版本上改编或局部重绘。 */
@@ -15,7 +17,7 @@ export const isMusicModel = (id: string) => id.startsWith('ace-step-') || id.sta
 /** YuE2 由歌词或旋律谱决定长度，没有时长设置。 */
 export const isYuE = (id: string) => id.startsWith('yue2-');
 // 设置里模型按用途分页：语音模型、音乐模型（歌曲生成、扒谱与歌词对齐）和编曲音色库。
-const musicFamilies = new Set(['ace_step', 'yue2', 'stable_audio', 'sheetsage2', 'lyric_align', 'htdemucs_6stems', 'muscriptor']);
+const musicFamilies = new Set(['ace_step', 'yue2', 'stable_audio', 'sheetsage2', 'lyric_align', 'htdemucs_6stems', 'bs_roformer', 'muscriptor']);
 export const modelTab = (family: string) => family === 'soundfont' ? 'soundfonts' : musicFamilies.has(family) ? 'music-models' : 'models';
 export const modelTabs = ['models', 'music-models', 'soundfonts'];
 // 音色库只供编曲作品渲染使用。
@@ -26,7 +28,7 @@ export const isTranscriber = (id: string) => id.startsWith('sheetsage2-');
 export const isAligner = (id: string) => id.startsWith('lyric-align-');
 // 语音识别模型只用于把声音样本转成参考文本，可选下载。
 export const isRecognizer = (id: string) => id.startsWith('qwen3-asr-');
-// 分轨模型把一个版本分成六轨，扒 MIDI 模型把版本转成编曲作品，都是可选下载的工具。
+// 分轨模型把一个版本分成六轨，转为 MIDI 模型把版本转成编曲作品，都是可选下载的工具。
 export const isStemModel = (id: string) => id.startsWith('htdemucs-');
 export const isMidiModel = (id: string) => id.startsWith('muscriptor-');
 export const isVoiceModel = (id: string) => !isMusicModel(id) && !isSoundFont(id) && !isTranscriber(id) && !isAligner(id) && !isRecognizer(id) && !isStemModel(id) && !isMidiModel(id);

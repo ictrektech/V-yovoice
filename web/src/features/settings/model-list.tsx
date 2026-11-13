@@ -10,8 +10,11 @@ import { CircleCheck, Download, FilePlus, FolderOpen, Pause, RefreshCw, Search, 
 import { isVos, vosFetch } from '../../shared/lib/vos';
 import type { SharedModelStatus } from '../../shared/lib/model-inventory';
 import { call } from '../../shared/lib/client';
-import { formatBytes, groupModels, modelUpdateAvailable, type Draft, type ModelPackage, type State } from '../../shared/workbench';
+import { formatBytes, groupModels, modelMainFile, modelUpdateAvailable, modelVersionDigest, type Draft, type ModelPackage, type State } from '../../shared/workbench';
+import { formatDateTime } from '../../shared/i18n/format';
+import { Selector } from '../../shared/selector';
 import { SettingsGroup } from '../../shared/ui/settings-group';
+import { overflowTitle } from '../../shared/ui/overflow-title';
 
 function downloadStatusLabel(t: (key: string) => string, downloading: boolean, received: number, size: number, status: string) {
   if (status === 'verifying') return t('@yovoice.settings.download.verifying');
@@ -29,6 +32,7 @@ function modelDescription(t: (key: string) => string, model: ModelPackage) {
   if (model.family === 'lyric_align') return t('@yovoice.settings.modelDesc.lyricAlign');
   if (model.family === 'qwen3_asr') return t('@yovoice.settings.modelDesc.recognize');
   if (model.family === 'htdemucs_6stems') return t('@yovoice.settings.modelDesc.stems');
+  if (model.family === 'bs_roformer') return t('@yovoice.settings.modelDesc.vocalSplit');
   if (model.family === 'muscriptor') return t('@yovoice.settings.modelDesc.muscriptor');
   if (model.family === 'kokoro_tts') return t(model.id === 'kokoro-82m-q8' ? '@yovoice.settings.modelDesc.kokoroOfficial' : '@yovoice.settings.modelDesc.kokoro');
   if (model.family === 'omnivoice') return t('@yovoice.settings.modelDesc.omni');
@@ -80,8 +84,14 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
     const inUse = draft.modelId === model.id;
     const owned = group.filter(isInstalled);
     // 应用下载的模型移除时连同文件删除；导入的模型只解除登记。
-    const managed = state.models.find(m => m.id === model.id)?.managed ?? false;
+    const record = state.models.find(m => m.id === model.id);
+    const managed = record?.managed ?? false;
     const update = modelUpdateAvailable(state, model, isVos);
+    // 目录更新替换过的模型可以换回旧版本；已安装文件不属于任何已知版本（如自行转换的导入文件）时不显示。
+    const latest = modelMainFile(model).sha256;
+    const versions = model.history?.length ? [{ value: latest, label: t('@yovoice.settings.modelVersionLatest') },
+      ...model.history.map(version => ({ value: modelVersionDigest(model, version), label: t('@yovoice.settings.modelVersionBefore', { date: formatDateTime(version.replaced, state.preferences.uiLocale, 'date') }) }))] : [];
+    const currentVersion = ready && versions.some(version => version.value === record?.sha256) ? record?.sha256 : undefined;
     return <VStack className="model-row settings-row" data-model-id={model.id} data-model-ids={group.map(item => item.id).join(' ')} data-installed={ready} key={group[0].name} gap={3}>
       <HStack className="model-summary" gap={4} vAlign="center" wrap="wrap">
         <VStack className="grow" gap={1}>
@@ -96,10 +106,12 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
           <small>{modelDescription(t, model)}</small>
         </VStack>
         <HStack gap={2} vAlign="center" wrap="wrap">
-        {!isVos && model.remotePath ? <Button size="sm" label={t('@yovoice.settings.importLocalModel')} icon={<FolderOpen size={16} />} isDisabled={busy || modelBusy} onClick={() => run(() => call('model.import', { id: model.id }))} /> : null}
+          {!isVos && !ready && !downloading ? <Button size="sm" variant="ghost" isIconOnly label={t('@yovoice.settings.importLocalModel')} tooltip={t('@yovoice.settings.localModelHint')} icon={<FolderOpen size={16} />} isDisabled={busy || modelBusy} onClick={() => run(() => call('model.import', { id: model.id }))} /> : null}
         {downloading ? <HStack gap={1}><Button size="sm" label={t('@yovoice.action.pause')} icon={<Pause size={16} />} onClick={() => run(() => call(isVos ? 'model.cancel' : 'model.pause', { id: model.id }))} />{!isVos ? <Button size="sm" variant="ghost" label={t('@yovoice.settings.cancelDownload')} onClick={() => run(() => call('model.cancel', { id: model.id }))} /> : null}</HStack>
           : !isVos && download ? <HStack gap={1}><Button size="sm" label={t('@yovoice.settings.resumeDownload')} isDisabled={modelBusy} onClick={() => run(() => call('model.download', { id: model.id }))} /><Button size="sm" variant="ghost" label={t('@yovoice.settings.cancelDownload')} isDisabled={modelBusy} onClick={() => run(() => call('model.cancel', { id: model.id }))} /></HStack>
           : ready ? <HStack gap={1} vAlign="center">
+            {!isVos && currentVersion ? <Selector size="sm" className="model-version" label={t('@yovoice.settings.modelVersion')} isLabelHidden value={currentVersion} options={versions} isDisabled={busy || modelBusy}
+              onChange={version => { if (version !== currentVersion) run(() => call('model.download', { id: model.id, version: version === latest ? undefined : version })); }} width="calc(var(--spacing-10) * 4)" /> : null}
             {update && !model.importRequired ? <Button size="sm" variant="secondary" label={t('@yovoice.settings.updateModel')} icon={<RefreshCw size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(async () => {
               if (!isVos) return call('model.download', { id: model.id });
               const response = await vosFetch(`/api/v1/models/audiocpp-${encodeURIComponent(model.id)}/pull?force=true`, { method: 'POST' });
@@ -115,9 +127,9 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
       {ready && !managed && !isVos ? <small className="model-path" title={state.models.find(m => m.id === model.id)?.path}>{state.models.find(m => m.id === model.id)?.path}</small> : null}
       {group.length > 1 ? <HStack className="model-precisions" gap={3} vAlign="center" wrap="wrap">
         <SegmentedControl size="sm" label={t('@yovoice.settings.precisionOf', { name: model.name })} value={model.id} onChange={id => setPicks(current => ({ ...current, [model.name]: id }))}>
-          {group.map(item => <SegmentedControlItem key={item.id} value={item.id} label={item.precision} icon={isInstalled(item) ? <CircleCheck /> : undefined} />)}
+          {group.map(item => <SegmentedControlItem onPointerEnter={overflowTitle} key={item.id} value={item.id} label={item.precision} icon={isInstalled(item) ? <CircleCheck /> : undefined} />)}
         </SegmentedControl>
-        {owned.length ? <small>{t('@yovoice.settings.precisionsInstalled', { list: owned.map(item => item.precision).join(' · ') })}</small> : <small>{t('@yovoice.settings.precisionHint')}</small>}
+        {owned.length ? <small>{t('@yovoice.settings.precisionsInstalled', { list: owned.map(item => item.precision).join(' · ') })}</small> : null}
       </HStack> : null}
       {download ? <VStack className="model-download" gap={2} role="status" aria-label={t('@yovoice.settings.downloadProgress', { name: model.name, precision: model.precision })}>
         <HStack hAlign="between" gap={3}><small>{downloadStatusLabel(t, !!downloading, download.received, download.total, download.status)}</small><small className="model-size">{formatBytes(download.received)} / {formatBytes(download.total)}</small></HStack>
