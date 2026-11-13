@@ -5367,7 +5367,7 @@
     "defaultMessage": "Buscar y reemplazar"
   },
   "@yovoice.transcribe.editHint": {
-    "defaultMessage": "Intro divide en el cursor; Retroceso al inicio une con la línea anterior"
+    "defaultMessage": "Intro divide en el cursor; Retroceso al inicio une con la línea anterior; Supr al final une con la línea siguiente"
   },
   "@yovoice.transcribe.needsModel": {
     "defaultMessage": "La transcripción necesita el modelo de reconocimiento de voz Qwen3 ASR. Descárgalo para subir audio o grabar."
@@ -5452,12 +5452,6 @@
   },
   "@yovoice.music.tagHint.ends-on-an-a-cappella-line": {
     "defaultMessage": "Termina con una línea a capela"
-  },
-  "@yovoice.settings.cancelDownload": {
-    "defaultMessage": "Cancelar descarga"
-  },
-  "@yovoice.error.localModelProtected": {
-    "defaultMessage": "Quita el registro del modelo instalado antes de cambiar de origen."
   },
   "@yovoice.transcribe.chooseTrack": {
     "defaultMessage": "Elegir una pista de audio"
@@ -5698,5 +5692,86 @@
   },
   "@yovoice.community.note.quality": {
     "defaultMessage": "Mala calidad de audio o contenido incompleto"
+  },
+  "@yovoice.transcribe.redo": {
+    "defaultMessage": "Rehacer"
+  },
+  "@yovoice.transcribe.autoPlay": {
+    "defaultMessage": "Reproducción continua"
+  },
+  "@yovoice.transcribe.video": {
+    "defaultMessage": "Vista previa del vídeo"
+  },
+  "@yovoice.transcribe.videoUnsupported": {
+    "defaultMessage": "Este vídeo no se puede reproducir aquí, así que solo se reproducirá el audio"
+  },
+  "@yovoice.settings.appearance": {
+    "defaultMessage": "Apariencia"
+  },
+  "@yovoice.settings.theme": {
+    "defaultMessage": "Tema"
+  },
+  "@yovoice.settings.themeHint": {
+    "defaultMessage": "Cambia al instante los colores de todo el espacio de trabajo. La animación de inicio mantiene los colores de la marca."
+  },
+  "@yovoice.settings.themeSystem": {
+    "defaultMessage": "Según el sistema"
+  },
+  "@yovoice.settings.themeSystemHint": {
+    "defaultMessage": "Papel en modo claro, Tinta en modo oscuro"
+  },
+  "@yovoice.settings.themeLight": {
+    "defaultMessage": "Claro"
+  },
+  "@yovoice.settings.themeDark": {
+    "defaultMessage": "Oscuro"
+  },
+  "@yovoice.settings.theme.paper": {
+    "defaultMessage": "Papel"
+  },
+  "@yovoice.settings.theme.ink": {
+    "defaultMessage": "Tinta"
+  },
+  "@yovoice.settings.theme.lagoon": {
+    "defaultMessage": "Laguna"
+  },
+  "@yovoice.settings.theme.sand": {
+    "defaultMessage": "Arena"
+  },
+  "@yovoice.settings.theme.sage": {
+    "defaultMessage": "Salvia"
+  },
+  "@yovoice.settings.theme.abyss": {
+    "defaultMessage": "Abismo"
+  },
+  "@yovoice.activity.streamingAudio": {
+    "defaultMessage": "{seconds} s de audio generados en {chunks} fragmentos"
+  },
+  "@yovoice.activity.modelLoading": {
+    "defaultMessage": "Cargando modelo"
+  },
+  "@yovoice.activity.synthesisRunning": {
+    "defaultMessage": "Sintetizando voz"
+  },
+  "@yovoice.runtime.modelAbsent": {
+    "defaultMessage": "Ningún modelo cargado"
+  },
+  "@yovoice.runtime.modelReady": {
+    "defaultMessage": "Modelo cargado"
+  },
+  "@yovoice.runtime.modelUnloaded": {
+    "defaultMessage": "Modelo descargado de memoria"
+  },
+  "@yovoice.runtime.modelUnloading": {
+    "defaultMessage": "Liberando el modelo de memoria"
+  },
+  "@yovoice.runtime.statusUnknown": {
+    "defaultMessage": "Estado del modelo no disponible"
+  },
+  "@yovoice.runtime.idlePolicy": {
+    "defaultMessage": "Liberar tras {seconds} segundos de inactividad"
+  },
+  "@yovoice.runtime.idleDisabled": {
+    "defaultMessage": "Liberación automática por inactividad desactivada"
   }
 }

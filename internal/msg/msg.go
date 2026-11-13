@@ -61,6 +61,7 @@ const (
 	ActivityEngineStart     Code = "@yovoice.activity.engineStart"
 	ActivityGenerate        Code = "@yovoice.activity.generate"
 	ActivitySynthesizing    Code = "@yovoice.activity.synthesizing"
+	ActivityStreamingAudio  Code = "@yovoice.activity.streamingAudio"
 	ActivitySavingAudio     Code = "@yovoice.activity.savingAudio"
 	ActivityRendering       Code = "@yovoice.activity.rendering"
 	ActivityCompleted       Code = "@yovoice.activity.completed"
@@ -291,7 +292,7 @@ func All() []Code {
 		ErrVoiceDescriptionRequired, ErrOmniAttributes, ErrSpeakerInvalid,
 		ActivityDownload, ActivityDownloading, ActivityVerifying, ActivityImport, ActivityModelConverting,
 		ActivityRuntimeDownload, ActivityRuntimeExtract, ActivityEngineStart,
-		ActivityGenerate, ActivitySynthesizing, ActivitySavingAudio, ActivityRendering,
+		ActivityGenerate, ActivitySynthesizing, ActivityStreamingAudio, ActivitySavingAudio, ActivityRendering,
 		ActivityCompleted, ActivityCancelled, ActivityPaused, ActivityFailed, ActivityInterrupted, ActivityRelocate, ActivityPlanMelody, ActivityTranscribe, ActivitySeparateVocals, ActivityAlignLyrics, ActivityRecognize, ActivityTranscribeSpeech, ActivityAlignText, ActivitySeparateStems, ActivityTranscribeMIDI, ActivityResing,
 		ErrBusy, ErrProxyURL, ErrModelDirAbsolute, ErrModelDirSpace,
 		ErrDownloadHTTP, ErrDownloadRange, ErrDownloadSize, ErrDownloadIncomplete,

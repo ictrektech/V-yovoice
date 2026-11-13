@@ -28,6 +28,7 @@ import { AssistantSettings } from './assistant-settings';
 import { CommunitySettings } from '../community/community-settings';
 import { EngineRuntimeSettings } from './engine-runtime-settings';
 import { FeatureSettings } from './feature-settings';
+import { AppearanceSettings } from './appearance-settings';
 import { TranscribeSettings } from './transcribe-settings';
 
 // 资源表格依赖较多，切到资源页时才加载。
@@ -79,6 +80,7 @@ function DesktopSettings({ state, catalog, engine, draft, run, focus, active, on
     </TabList>
     {tab === 'general' ? <VStack className="settings-panel" gap={6} id="general-panel" role="tabpanel" aria-label={t('@yovoice.settings.tabGeneral')}>
       <UpdateSettings />
+      <AppearanceSettings state={state} run={run} />
       <SettingsGroup title={t('@yovoice.settings.preferences')}>
         <SettingsRow label={t('@yovoice.settings.uiLocale')}>
           <Selector data-testid="ui-locale" size="sm" label={t('@yovoice.settings.uiLocale')} isLabelHidden value={preferences.uiLocale}

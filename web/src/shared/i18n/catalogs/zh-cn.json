@@ -5367,7 +5367,7 @@
     "defaultMessage": "查找替换"
   },
   "@yovoice.transcribe.editHint": {
-    "defaultMessage": "回车在光标处拆分，行首退格与上一行合并"
+    "defaultMessage": "回车在光标处拆分，行首退格与上一行合并，行尾 Delete 与下一行合并"
   },
   "@yovoice.transcribe.needsModel": {
     "defaultMessage": "转写需要语音识别模型 Qwen3 ASR，下载后即可上传音频或录音。"
@@ -5452,12 +5452,6 @@
   },
   "@yovoice.music.tagHint.ends-on-an-a-cappella-line": {
     "defaultMessage": "最后一句只留人声清唱"
-  },
-  "@yovoice.settings.cancelDownload": {
-    "defaultMessage": "取消下载"
-  },
-  "@yovoice.error.localModelProtected": {
-    "defaultMessage": "切换模型来源前，请先移除当前模型的登记。"
   },
   "@yovoice.transcribe.chooseTrack": {
     "defaultMessage": "选择转写音轨"
@@ -5698,5 +5692,86 @@
   },
   "@yovoice.community.note.quality": {
     "defaultMessage": "音质或内容不完整"
+  },
+  "@yovoice.transcribe.redo": {
+    "defaultMessage": "重做"
+  },
+  "@yovoice.transcribe.autoPlay": {
+    "defaultMessage": "连续播放"
+  },
+  "@yovoice.transcribe.video": {
+    "defaultMessage": "视频预览"
+  },
+  "@yovoice.transcribe.videoUnsupported": {
+    "defaultMessage": "这个视频无法在这里播放，改为只播放声音"
+  },
+  "@yovoice.settings.appearance": {
+    "defaultMessage": "外观"
+  },
+  "@yovoice.settings.theme": {
+    "defaultMessage": "主题"
+  },
+  "@yovoice.settings.themeHint": {
+    "defaultMessage": "切换整个工作台的配色，立即生效；开场动画保持品牌色。"
+  },
+  "@yovoice.settings.themeSystem": {
+    "defaultMessage": "跟随系统"
+  },
+  "@yovoice.settings.themeSystemHint": {
+    "defaultMessage": "浅色用纸白，深色用夜墨"
+  },
+  "@yovoice.settings.themeLight": {
+    "defaultMessage": "浅色"
+  },
+  "@yovoice.settings.themeDark": {
+    "defaultMessage": "深色"
+  },
+  "@yovoice.settings.theme.paper": {
+    "defaultMessage": "纸白"
+  },
+  "@yovoice.settings.theme.ink": {
+    "defaultMessage": "夜墨"
+  },
+  "@yovoice.settings.theme.lagoon": {
+    "defaultMessage": "青岸"
+  },
+  "@yovoice.settings.theme.sand": {
+    "defaultMessage": "宣纸"
+  },
+  "@yovoice.settings.theme.sage": {
+    "defaultMessage": "苔绿"
+  },
+  "@yovoice.settings.theme.abyss": {
+    "defaultMessage": "深海"
+  },
+  "@yovoice.activity.streamingAudio": {
+    "defaultMessage": "已生成 {seconds} 秒音频（{chunks} 个片段）"
+  },
+  "@yovoice.activity.modelLoading": {
+    "defaultMessage": "正在加载模型"
+  },
+  "@yovoice.activity.synthesisRunning": {
+    "defaultMessage": "正在合成语音"
+  },
+  "@yovoice.runtime.modelAbsent": {
+    "defaultMessage": "模型未加载"
+  },
+  "@yovoice.runtime.modelReady": {
+    "defaultMessage": "模型已加载"
+  },
+  "@yovoice.runtime.modelUnloaded": {
+    "defaultMessage": "模型已卸载"
+  },
+  "@yovoice.runtime.modelUnloading": {
+    "defaultMessage": "正在卸载模型"
+  },
+  "@yovoice.runtime.statusUnknown": {
+    "defaultMessage": "暂时无法确认模型状态"
+  },
+  "@yovoice.runtime.idlePolicy": {
+    "defaultMessage": "空闲 {seconds} 秒后自动卸载"
+  },
+  "@yovoice.runtime.idleDisabled": {
+    "defaultMessage": "已关闭空闲自动卸载"
   }
 }

@@ -6,6 +6,11 @@
 
 ### English
 
+- Settings › General › Appearance offers six themes: Paper, Ink, Lagoon, Sand, Sage and Abyss, two of them dark. The default, Match system, uses Paper in light mode and Ink in dark mode. On macOS the title bar follows the theme too.
+- Transcript editing: line playback can carry on to the next line (Continuous playback, on by default) and skips long silences. Ctrl+Z / ⌘Z undoes and Ctrl+Shift+Z, Ctrl+Y or ⇧⌘Z redoes. Delete at the end of a line joins the next one, and on macOS Ctrl+H / Ctrl+D also join lines.
+- Transcribing an MP4, MOV or WebM video now keeps the video and shows it next to the subtitles, with the current line on the picture; videos that can't be played fall back to audio only.
+- Speech generation distinguishes model loading from synthesis and saving, shows model residency and automatic idle unloading, and reports received audio duration and chunk counts during streaming; requests without a known total use an indeterminate progress bar.
+
 - Share a song to the yovoice community from the player or version menu. Sign in through your browser, add a title, tags and a license, and the version is uploaded for review. Reference voices are never included. Settings lists what you have shared, with its review status, and lets you delete it.
 
 - Introduce the single installable `@ictrek/dsh-tool-v-yovoice` plugin base and migrate the proven transcription flow while preserving existing tools, profile settings, sessions and playback.
@@ -47,6 +52,11 @@
 - Fixes: custom data folders with Chinese characters on Windows; choosing PNG, JPEG and WebP images for “Style from image” on macOS, with each import dialog filtering its own formats; a `host.log` check of the local service when the macOS window fails to load.
 
 ### 简体中文
+
+- 设置 › 常规 › 外观新增 6 套主题：纸白、夜墨、青岸、宣纸、苔绿、深海，其中夜墨和深海是深色。默认“跟随系统”，系统浅色时用纸白，深色时用夜墨；macOS 的标题栏也会跟着换色。
+- 转写编辑：试听一行时可以接着播下一行（“连续播放”，默认打开），并跳过较长的静音；支持 Ctrl+Z / ⌘Z 撤销，Ctrl+Shift+Z、Ctrl+Y 或 ⇧⌘Z 重做；在行尾按 Delete 与下一行合并，macOS 上 Ctrl+H / Ctrl+D 同样可以合并。
+- 转写 MP4、MOV、WebM 视频时会保留视频，在字幕旁边显示画面，并在画面上叠加当前字幕；无法播放的视频改为只播放声音。
+- 语音生成分别显示模型加载、合成和保存阶段，展示模型驻留与空闲卸载状态；流式生成显示实际收到的音频时长与片段数，没有已知总量的请求使用等待态进度条。
 
 - 可以把歌曲分享到 yovoice 社区：在播放器或版本菜单里选择“分享到社区”，在浏览器里登录，填写标题、标签和使用许可后上传并提交审核；参考音色不会随歌曲上传。设置里可以查看自己分享的作品和审核状态，也可以删除。
 
