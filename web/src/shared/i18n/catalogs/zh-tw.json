@@ -1902,7 +1902,7 @@
     "defaultMessage": "重新命名演繹"
   },
   "@yovoice.error.musicStyle": {
-    "defaultMessage": "請用 1–512 字描述風格。"
+    "defaultMessage": "請用 1–{max} 字描述風格。"
   },
   "@yovoice.error.musicLyrics": {
     "defaultMessage": "歌詞最多 4000 字。"
@@ -4272,7 +4272,7 @@
     "defaultMessage": "把錄音、訪談或影片裡的話轉成文字"
   },
   "@yovoice.transcribe.emptyBody": {
-    "defaultMessage": "上傳音訊或影片，語音辨識模型 Qwen3 ASR 會辨識出文字和逐詞時間，可匯出 SRT / WebVTT 字幕。最長 1 小時、20 MB。"
+    "defaultMessage": "上傳音訊或影片，或直接錄音，語音辨識模型 Qwen3 ASR 會辨識出文字和逐詞時間。轉寫會儲存下來，可以編輯字幕後匯出 SRT / WebVTT。最長 1 小時、20 MB。"
   },
   "@vvoice.music.title": {
     "defaultMessage": "配樂生成"
@@ -5236,5 +5236,221 @@
   },
   "@yovoice.settings.modelVersionBefore": {
     "defaultMessage": "{date} 更新前"
+  },
+  "@yovoice.settings.transcribe": {
+    "defaultMessage": "語音轉寫"
+  },
+  "@yovoice.settings.transcribeHint": {
+    "defaultMessage": "轉寫的檔案上限與字幕斷句方式。斷句參數用於新的轉寫，以及尚未編輯過的轉寫。"
+  },
+  "@yovoice.settings.transcribeMaxFile": {
+    "defaultMessage": "檔案上限（MB）"
+  },
+  "@yovoice.settings.transcribeMaxMinutes": {
+    "defaultMessage": "長度上限（分鐘）"
+  },
+  "@yovoice.settings.transcribeMaxMinutesHint": {
+    "defaultMessage": "最長 180 分鐘；越長，轉寫時佔用的記憶體越多。"
+  },
+  "@yovoice.settings.transcribeLineChars": {
+    "defaultMessage": "每行最多字數"
+  },
+  "@yovoice.settings.transcribeLineCharsHint": {
+    "defaultMessage": "漢字、假名、諺文一字算 1，其他字元算半個。"
+  },
+  "@yovoice.settings.transcribeLineSeconds": {
+    "defaultMessage": "每行最長（秒）"
+  },
+  "@yovoice.settings.transcribeLinePause": {
+    "defaultMessage": "停頓換行（秒）"
+  },
+  "@yovoice.settings.transcribeLinePauseHint": {
+    "defaultMessage": "說話停頓超過這麼久就另起一行。"
+  },
+  "@yovoice.settings.transcribeReset": {
+    "defaultMessage": "恢復預設"
+  },
+  "@yovoice.error.transcribeTooLarge": {
+    "defaultMessage": "音訊或影片檔案需小於 {size}。可以在「設定 › 一般 › 語音轉寫」中調整上限。"
+  },
+  "@yovoice.error.transcribeDuration": {
+    "defaultMessage": "音訊或影片長度需在 {minutes} 分鐘以內。可以在「設定 › 一般 › 語音轉寫」中調整上限。"
+  },
+  "@yovoice.error.transcriptMissing": {
+    "defaultMessage": "這份轉寫已刪除或字幕檔遺失"
+  },
+  "@yovoice.transcribe.record": {
+    "defaultMessage": "錄音"
+  },
+  "@yovoice.transcribe.stopRecord": {
+    "defaultMessage": "停止並轉寫"
+  },
+  "@yovoice.transcribe.discardRecord": {
+    "defaultMessage": "放棄錄音"
+  },
+  "@yovoice.transcribe.recordingName": {
+    "defaultMessage": "錄音 {time}"
+  },
+  "@yovoice.transcribe.back": {
+    "defaultMessage": "返回轉寫列表"
+  },
+  "@yovoice.transcribe.name": {
+    "defaultMessage": "轉寫名稱"
+  },
+  "@yovoice.transcribe.saving": {
+    "defaultMessage": "正在儲存…"
+  },
+  "@yovoice.transcribe.autosaved": {
+    "defaultMessage": "已自動儲存"
+  },
+  "@yovoice.transcribe.undo": {
+    "defaultMessage": "復原"
+  },
+  "@yovoice.transcribe.delete": {
+    "defaultMessage": "刪除轉寫"
+  },
+  "@yovoice.transcribe.deleteTitle": {
+    "defaultMessage": "刪除「{name}」？"
+  },
+  "@yovoice.transcribe.deleteBody": {
+    "defaultMessage": "字幕和儲存的原音訊會一起刪除，無法復原。"
+  },
+  "@yovoice.transcribe.find": {
+    "defaultMessage": "尋找"
+  },
+  "@yovoice.transcribe.replaceWith": {
+    "defaultMessage": "取代為"
+  },
+  "@yovoice.transcribe.replaceAll": {
+    "defaultMessage": "全部取代"
+  },
+  "@yovoice.transcribe.matches": {
+    "defaultMessage": "{count} 行符合"
+  },
+  "@yovoice.transcribe.replaced": {
+    "defaultMessage": "已取代 {count} 處"
+  },
+  "@yovoice.transcribe.noMatch": {
+    "defaultMessage": "找不到符合的文字"
+  },
+  "@yovoice.transcribe.split": {
+    "defaultMessage": "在游標處拆分"
+  },
+  "@yovoice.transcribe.splitHint": {
+    "defaultMessage": "把游標放在要拆開的位置，再點拆分"
+  },
+  "@yovoice.transcribe.mergeNext": {
+    "defaultMessage": "與下一行合併"
+  },
+  "@yovoice.transcribe.deleteLine": {
+    "defaultMessage": "刪除這一行"
+  },
+  "@yovoice.transcribe.lineText": {
+    "defaultMessage": "第 {n} 行字幕"
+  },
+  "@yovoice.transcribe.loading": {
+    "defaultMessage": "正在讀取字幕…"
+  },
+  "@yovoice.transcribe.more": {
+    "defaultMessage": "「{name}」的更多操作"
+  },
+  "@yovoice.transcribe.rename": {
+    "defaultMessage": "重新命名"
+  },
+  "@yovoice.transcribe.renameTitle": {
+    "defaultMessage": "重新命名轉寫"
+  },
+  "@yovoice.transcribe.exportMenu": {
+    "defaultMessage": "匯出字幕"
+  },
+  "@yovoice.transcribe.findToggle": {
+    "defaultMessage": "尋找與取代"
+  },
+  "@yovoice.transcribe.editHint": {
+    "defaultMessage": "Enter 在游標處拆分，行首退格與上一行合併"
+  },
+  "@yovoice.transcribe.needsModel": {
+    "defaultMessage": "轉寫需要語音辨識模型 Qwen3 ASR，下載後即可上傳音訊或錄音。"
+  },
+  "@yovoice.transcribe.search": {
+    "defaultMessage": "搜尋轉寫"
+  },
+  "@yovoice.transcribe.recording": {
+    "defaultMessage": "正在錄音"
+  },
+  "@yovoice.music.arrangement": {
+    "defaultMessage": "歌曲展開"
+  },
+  "@yovoice.music.arrangementHint": {
+    "defaultMessage": "YuE2 會讀整句描述：選好語言和速度，再挑開場、展開和結尾，讓每首歌的起伏不同。"
+  },
+  "@yovoice.music.tagGroup.language": {
+    "defaultMessage": "演唱語言"
+  },
+  "@yovoice.music.tagGroup.tempo": {
+    "defaultMessage": "速度"
+  },
+  "@yovoice.music.tagGroup.opening": {
+    "defaultMessage": "開場"
+  },
+  "@yovoice.music.tagGroup.development": {
+    "defaultMessage": "展開"
+  },
+  "@yovoice.music.tagGroup.ending": {
+    "defaultMessage": "結尾"
+  },
+  "@yovoice.music.tagHint.mandarin": {
+    "defaultMessage": "普通話演唱"
+  },
+  "@yovoice.music.tagHint.cantonese": {
+    "defaultMessage": "粵語演唱"
+  },
+  "@yovoice.music.tagHint.english": {
+    "defaultMessage": "英語演唱"
+  },
+  "@yovoice.music.tagHint.japanese": {
+    "defaultMessage": "日語演唱"
+  },
+  "@yovoice.music.tagHint.korean": {
+    "defaultMessage": "韓語演唱"
+  },
+  "@yovoice.music.tagHint.72-bpm": {
+    "defaultMessage": "慢板 · 抒情歌"
+  },
+  "@yovoice.music.tagHint.96-bpm": {
+    "defaultMessage": "中速 · 流行、R&B"
+  },
+  "@yovoice.music.tagHint.120-bpm": {
+    "defaultMessage": "輕快 · 舞曲、搖滾"
+  },
+  "@yovoice.music.tagHint.150-bpm": {
+    "defaultMessage": "快速 · 龐克、電子"
+  },
+  "@yovoice.music.tagHint.vocals-enter-immediately": {
+    "defaultMessage": "人聲一開始就進入"
+  },
+  "@yovoice.music.tagHint.long-instrumental-intro": {
+    "defaultMessage": "先有一段較長的器樂前奏"
+  },
+  "@yovoice.music.tagHint.opens-on-the-chorus-hook": {
+    "defaultMessage": "用副歌的記憶點開場"
+  },
+  "@yovoice.music.tagHint.intimate-verses-and-a-bright-singable-chorus": {
+    "defaultMessage": "主歌輕柔、副歌明亮好唱"
+  },
+  "@yovoice.music.tagHint.stripped-down-bridge": {
+    "defaultMessage": "橋段只留少量樂器"
+  },
+  "@yovoice.music.tagHint.instrumental-solo-before-the-last-chorus": {
+    "defaultMessage": "最後一遍副歌前加器樂獨奏"
+  },
+  "@yovoice.music.tagHint.builds-to-a-big-final-chorus": {
+    "defaultMessage": "層層推進到飽滿的最後一遍副歌"
+  },
+  "@yovoice.music.tagHint.fades-out-on-the-intro-theme": {
+    "defaultMessage": "回到前奏主題並漸弱結束"
+  },
+  "@yovoice.music.tagHint.ends-on-an-a-cappella-line": {
+    "defaultMessage": "最後一句只留人聲清唱"
   }
 }

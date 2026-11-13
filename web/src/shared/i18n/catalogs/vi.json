@@ -1902,7 +1902,7 @@
     "defaultMessage": "Đổi tên cách thể hiện"
   },
   "@yovoice.error.musicStyle": {
-    "defaultMessage": "Mô tả phong cách trong 1–512 ký tự."
+    "defaultMessage": "Mô tả phong cách trong 1–{max} ký tự."
   },
   "@yovoice.error.musicLyrics": {
     "defaultMessage": "Lời bài hát tối đa 4000 ký tự."
@@ -4272,7 +4272,7 @@
     "defaultMessage": "Chuyển lời nói trong bản ghi âm, phỏng vấn, video thành văn bản"
   },
   "@yovoice.transcribe.emptyBody": {
-    "defaultMessage": "Tải âm thanh hoặc video lên. Mô hình nhận dạng giọng nói Qwen3 ASR sẽ chép ra văn bản kèm thời gian từng từ, có thể xuất phụ đề SRT / WebVTT. Tối đa 1 giờ và 20 MB."
+    "defaultMessage": "Tải lên âm thanh hoặc video, hoặc ghi âm trực tiếp. Mô hình nhận dạng giọng nói Qwen3 ASR sẽ viết ra văn bản kèm thời gian từng từ. Bản chép lời được lưu lại, bạn có thể sửa phụ đề rồi xuất SRT hoặc WebVTT. Tối đa 1 giờ và 20 MB."
   },
   "@vvoice.music.title": {
     "defaultMessage": "Background music"
@@ -5236,5 +5236,221 @@
   },
   "@yovoice.settings.modelVersionBefore": {
     "defaultMessage": "Trước {date}"
+  },
+  "@yovoice.settings.transcribe": {
+    "defaultMessage": "Chép lời"
+  },
+  "@yovoice.settings.transcribeHint": {
+    "defaultMessage": "Giới hạn tệp và cách chia phụ đề thành dòng. Cài đặt dòng áp dụng cho bản chép lời mới và những bản chưa chỉnh sửa."
+  },
+  "@yovoice.settings.transcribeMaxFile": {
+    "defaultMessage": "Kích thước tối đa (MB)"
+  },
+  "@yovoice.settings.transcribeMaxMinutes": {
+    "defaultMessage": "Thời lượng tối đa (phút)"
+  },
+  "@yovoice.settings.transcribeMaxMinutesHint": {
+    "defaultMessage": "Tối đa 180 phút. Càng dài, chép lời càng dùng nhiều bộ nhớ."
+  },
+  "@yovoice.settings.transcribeLineChars": {
+    "defaultMessage": "Số ký tự tối đa mỗi dòng"
+  },
+  "@yovoice.settings.transcribeLineCharsHint": {
+    "defaultMessage": "Chữ Hán, Kana và Hangul tính là 1, ký tự khác tính là 0,5."
+  },
+  "@yovoice.settings.transcribeLineSeconds": {
+    "defaultMessage": "Số giây tối đa mỗi dòng"
+  },
+  "@yovoice.settings.transcribeLinePause": {
+    "defaultMessage": "Xuống dòng sau khi ngừng (giây)"
+  },
+  "@yovoice.settings.transcribeLinePauseHint": {
+    "defaultMessage": "Bắt đầu dòng mới khi người nói ngừng lâu chừng này."
+  },
+  "@yovoice.settings.transcribeReset": {
+    "defaultMessage": "Khôi phục mặc định"
+  },
+  "@yovoice.error.transcribeTooLarge": {
+    "defaultMessage": "Tệp âm thanh hoặc video phải nhỏ hơn {size}. Bạn có thể đổi giới hạn trong Cài đặt › Chung › Chép lời."
+  },
+  "@yovoice.error.transcribeDuration": {
+    "defaultMessage": "Âm thanh hoặc video phải dài tối đa {minutes} phút. Bạn có thể đổi giới hạn trong Cài đặt › Chung › Chép lời."
+  },
+  "@yovoice.error.transcriptMissing": {
+    "defaultMessage": "Bản chép lời này đã bị xóa hoặc thiếu tệp phụ đề"
+  },
+  "@yovoice.transcribe.record": {
+    "defaultMessage": "Ghi âm"
+  },
+  "@yovoice.transcribe.stopRecord": {
+    "defaultMessage": "Dừng và chép lời"
+  },
+  "@yovoice.transcribe.discardRecord": {
+    "defaultMessage": "Bỏ bản ghi âm"
+  },
+  "@yovoice.transcribe.recordingName": {
+    "defaultMessage": "Ghi âm {time}"
+  },
+  "@yovoice.transcribe.back": {
+    "defaultMessage": "Quay lại danh sách bản chép lời"
+  },
+  "@yovoice.transcribe.name": {
+    "defaultMessage": "Tên bản chép lời"
+  },
+  "@yovoice.transcribe.saving": {
+    "defaultMessage": "Đang lưu…"
+  },
+  "@yovoice.transcribe.autosaved": {
+    "defaultMessage": "Đã tự động lưu"
+  },
+  "@yovoice.transcribe.undo": {
+    "defaultMessage": "Hoàn tác"
+  },
+  "@yovoice.transcribe.delete": {
+    "defaultMessage": "Xóa bản chép lời"
+  },
+  "@yovoice.transcribe.deleteTitle": {
+    "defaultMessage": "Xóa “{name}”?"
+  },
+  "@yovoice.transcribe.deleteBody": {
+    "defaultMessage": "Phụ đề và âm thanh đã lưu sẽ bị xóa và không thể khôi phục."
+  },
+  "@yovoice.transcribe.find": {
+    "defaultMessage": "Tìm"
+  },
+  "@yovoice.transcribe.replaceWith": {
+    "defaultMessage": "Thay bằng"
+  },
+  "@yovoice.transcribe.replaceAll": {
+    "defaultMessage": "Thay tất cả"
+  },
+  "@yovoice.transcribe.matches": {
+    "defaultMessage": "{count} dòng khớp"
+  },
+  "@yovoice.transcribe.replaced": {
+    "defaultMessage": "Đã thay {count} chỗ"
+  },
+  "@yovoice.transcribe.noMatch": {
+    "defaultMessage": "Không tìm thấy văn bản khớp"
+  },
+  "@yovoice.transcribe.split": {
+    "defaultMessage": "Tách tại con trỏ"
+  },
+  "@yovoice.transcribe.splitHint": {
+    "defaultMessage": "Đặt con trỏ ở chỗ muốn tách dòng rồi bấm tách"
+  },
+  "@yovoice.transcribe.mergeNext": {
+    "defaultMessage": "Gộp với dòng tiếp theo"
+  },
+  "@yovoice.transcribe.deleteLine": {
+    "defaultMessage": "Xóa dòng"
+  },
+  "@yovoice.transcribe.lineText": {
+    "defaultMessage": "Dòng phụ đề {n}"
+  },
+  "@yovoice.transcribe.loading": {
+    "defaultMessage": "Đang tải phụ đề…"
+  },
+  "@yovoice.transcribe.more": {
+    "defaultMessage": "Thao tác khác cho {name}"
+  },
+  "@yovoice.transcribe.rename": {
+    "defaultMessage": "Đổi tên"
+  },
+  "@yovoice.transcribe.renameTitle": {
+    "defaultMessage": "Đổi tên bản chép lời"
+  },
+  "@yovoice.transcribe.exportMenu": {
+    "defaultMessage": "Xuất phụ đề"
+  },
+  "@yovoice.transcribe.findToggle": {
+    "defaultMessage": "Tìm và thay thế"
+  },
+  "@yovoice.transcribe.editHint": {
+    "defaultMessage": "Enter để tách tại con trỏ; Backspace ở đầu dòng để nối với dòng trên"
+  },
+  "@yovoice.transcribe.needsModel": {
+    "defaultMessage": "Chép lời cần mô hình nhận dạng giọng nói Qwen3 ASR. Tải về để tải âm thanh lên hoặc ghi âm."
+  },
+  "@yovoice.transcribe.search": {
+    "defaultMessage": "Tìm bản chép lời"
+  },
+  "@yovoice.transcribe.recording": {
+    "defaultMessage": "Đang ghi âm"
+  },
+  "@yovoice.music.arrangement": {
+    "defaultMessage": "Diễn tiến bài hát"
+  },
+  "@yovoice.music.arrangementHint": {
+    "defaultMessage": "YuE2 hiểu cả câu mô tả: chọn ngôn ngữ và nhịp độ, rồi cách mở đầu, phát triển và kết thúc để mỗi bài một khác."
+  },
+  "@yovoice.music.tagGroup.language": {
+    "defaultMessage": "Ngôn ngữ hát"
+  },
+  "@yovoice.music.tagGroup.tempo": {
+    "defaultMessage": "Nhịp độ"
+  },
+  "@yovoice.music.tagGroup.opening": {
+    "defaultMessage": "Mở đầu"
+  },
+  "@yovoice.music.tagGroup.development": {
+    "defaultMessage": "Phát triển"
+  },
+  "@yovoice.music.tagGroup.ending": {
+    "defaultMessage": "Kết thúc"
+  },
+  "@yovoice.music.tagHint.mandarin": {
+    "defaultMessage": "Hát tiếng Quan thoại"
+  },
+  "@yovoice.music.tagHint.cantonese": {
+    "defaultMessage": "Hát tiếng Quảng Đông"
+  },
+  "@yovoice.music.tagHint.english": {
+    "defaultMessage": "Hát tiếng Anh"
+  },
+  "@yovoice.music.tagHint.japanese": {
+    "defaultMessage": "Hát tiếng Nhật"
+  },
+  "@yovoice.music.tagHint.korean": {
+    "defaultMessage": "Hát tiếng Hàn"
+  },
+  "@yovoice.music.tagHint.72-bpm": {
+    "defaultMessage": "Chậm · ballad"
+  },
+  "@yovoice.music.tagHint.96-bpm": {
+    "defaultMessage": "Vừa · pop, R&B"
+  },
+  "@yovoice.music.tagHint.120-bpm": {
+    "defaultMessage": "Sôi động · dance, rock"
+  },
+  "@yovoice.music.tagHint.150-bpm": {
+    "defaultMessage": "Nhanh · punk, điện tử"
+  },
+  "@yovoice.music.tagHint.vocals-enter-immediately": {
+    "defaultMessage": "Giọng hát vào ngay"
+  },
+  "@yovoice.music.tagHint.long-instrumental-intro": {
+    "defaultMessage": "Dạo nhạc dài trước"
+  },
+  "@yovoice.music.tagHint.opens-on-the-chorus-hook": {
+    "defaultMessage": "Mở đầu bằng điệp khúc"
+  },
+  "@yovoice.music.tagHint.intimate-verses-and-a-bright-singable-chorus": {
+    "defaultMessage": "Verse nhẹ nhàng, điệp khúc sáng"
+  },
+  "@yovoice.music.tagHint.stripped-down-bridge": {
+    "defaultMessage": "Đoạn bridge tối giản"
+  },
+  "@yovoice.music.tagHint.instrumental-solo-before-the-last-chorus": {
+    "defaultMessage": "Solo nhạc cụ trước điệp khúc cuối"
+  },
+  "@yovoice.music.tagHint.builds-to-a-big-final-chorus": {
+    "defaultMessage": "Dồn lên điệp khúc cuối thật mạnh"
+  },
+  "@yovoice.music.tagHint.fades-out-on-the-intro-theme": {
+    "defaultMessage": "Nhỏ dần với chủ đề dạo đầu"
+  },
+  "@yovoice.music.tagHint.ends-on-an-a-cappella-line": {
+    "defaultMessage": "Kết bằng một câu hát không đệm"
   }
 }

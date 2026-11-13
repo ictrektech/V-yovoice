@@ -1902,7 +1902,7 @@
     "defaultMessage": "Renombrar interpretación"
   },
   "@yovoice.error.musicStyle": {
-    "defaultMessage": "Describe el estilo en 1 a 512 caracteres."
+    "defaultMessage": "Describe el estilo en 1 a {max} caracteres."
   },
   "@yovoice.error.musicLyrics": {
     "defaultMessage": "La letra puede tener hasta 4000 caracteres."
@@ -4272,7 +4272,7 @@
     "defaultMessage": "Convierte grabaciones, entrevistas y vídeos en texto"
   },
   "@yovoice.transcribe.emptyBody": {
-    "defaultMessage": "Sube audio o vídeo. El reconocedor de voz Qwen3 ASR genera el texto con la sincronización de cada palabra, listo para exportar como subtítulos SRT o WebVTT. Hasta 1 hora y 20 MB."
+    "defaultMessage": "Sube audio o vídeo, o graba directamente. El reconocedor de voz Qwen3 ASR escribe el texto con la sincronización de cada palabra. Las transcripciones se guardan, así que puedes editar los subtítulos y exportarlos en SRT o WebVTT. Hasta 1 hora y 20 MB."
   },
   "@vvoice.music.title": {
     "defaultMessage": "Background music"
@@ -5236,5 +5236,221 @@
   },
   "@yovoice.settings.modelVersionBefore": {
     "defaultMessage": "Antes de {date}"
+  },
+  "@yovoice.settings.transcribe": {
+    "defaultMessage": "Transcripción"
+  },
+  "@yovoice.settings.transcribeHint": {
+    "defaultMessage": "Límites de archivo y cómo se dividen los subtítulos en líneas. Los ajustes de línea se aplican a transcripciones nuevas y a las que aún no has editado."
+  },
+  "@yovoice.settings.transcribeMaxFile": {
+    "defaultMessage": "Tamaño máximo (MB)"
+  },
+  "@yovoice.settings.transcribeMaxMinutes": {
+    "defaultMessage": "Duración máxima (minutos)"
+  },
+  "@yovoice.settings.transcribeMaxMinutesHint": {
+    "defaultMessage": "Hasta 180 minutos. Cuanto más largo, más memoria usa la transcripción."
+  },
+  "@yovoice.settings.transcribeLineChars": {
+    "defaultMessage": "Caracteres máximos por línea"
+  },
+  "@yovoice.settings.transcribeLineCharsHint": {
+    "defaultMessage": "Los caracteres chinos, japoneses y coreanos cuentan 1; los demás, 0,5."
+  },
+  "@yovoice.settings.transcribeLineSeconds": {
+    "defaultMessage": "Segundos máximos por línea"
+  },
+  "@yovoice.settings.transcribeLinePause": {
+    "defaultMessage": "Nueva línea tras pausa (segundos)"
+  },
+  "@yovoice.settings.transcribeLinePauseHint": {
+    "defaultMessage": "Empieza una línea nueva cuando se hace una pausa así de larga."
+  },
+  "@yovoice.settings.transcribeReset": {
+    "defaultMessage": "Restablecer valores"
+  },
+  "@yovoice.error.transcribeTooLarge": {
+    "defaultMessage": "Los archivos de audio o vídeo deben ocupar menos de {size}. Puedes cambiar el límite en Ajustes › General › Transcripción."
+  },
+  "@yovoice.error.transcribeDuration": {
+    "defaultMessage": "El audio o vídeo debe durar como máximo {minutes} minutos. Puedes cambiar el límite en Ajustes › General › Transcripción."
+  },
+  "@yovoice.error.transcriptMissing": {
+    "defaultMessage": "Esta transcripción se eliminó o falta su archivo de subtítulos"
+  },
+  "@yovoice.transcribe.record": {
+    "defaultMessage": "Grabar"
+  },
+  "@yovoice.transcribe.stopRecord": {
+    "defaultMessage": "Detener y transcribir"
+  },
+  "@yovoice.transcribe.discardRecord": {
+    "defaultMessage": "Descartar grabación"
+  },
+  "@yovoice.transcribe.recordingName": {
+    "defaultMessage": "Grabación {time}"
+  },
+  "@yovoice.transcribe.back": {
+    "defaultMessage": "Volver a las transcripciones"
+  },
+  "@yovoice.transcribe.name": {
+    "defaultMessage": "Nombre de la transcripción"
+  },
+  "@yovoice.transcribe.saving": {
+    "defaultMessage": "Guardando…"
+  },
+  "@yovoice.transcribe.autosaved": {
+    "defaultMessage": "Guardado automáticamente"
+  },
+  "@yovoice.transcribe.undo": {
+    "defaultMessage": "Deshacer"
+  },
+  "@yovoice.transcribe.delete": {
+    "defaultMessage": "Eliminar transcripción"
+  },
+  "@yovoice.transcribe.deleteTitle": {
+    "defaultMessage": "¿Eliminar «{name}»?"
+  },
+  "@yovoice.transcribe.deleteBody": {
+    "defaultMessage": "Se eliminarán los subtítulos y el audio guardado. No se puede deshacer."
+  },
+  "@yovoice.transcribe.find": {
+    "defaultMessage": "Buscar"
+  },
+  "@yovoice.transcribe.replaceWith": {
+    "defaultMessage": "Reemplazar por"
+  },
+  "@yovoice.transcribe.replaceAll": {
+    "defaultMessage": "Reemplazar todo"
+  },
+  "@yovoice.transcribe.matches": {
+    "defaultMessage": "{count} líneas coinciden"
+  },
+  "@yovoice.transcribe.replaced": {
+    "defaultMessage": "Se reemplazaron {count} coincidencias"
+  },
+  "@yovoice.transcribe.noMatch": {
+    "defaultMessage": "No se encontró texto coincidente"
+  },
+  "@yovoice.transcribe.split": {
+    "defaultMessage": "Dividir en el cursor"
+  },
+  "@yovoice.transcribe.splitHint": {
+    "defaultMessage": "Coloca el cursor donde quieras cortar la línea y luego divide"
+  },
+  "@yovoice.transcribe.mergeNext": {
+    "defaultMessage": "Unir con la siguiente línea"
+  },
+  "@yovoice.transcribe.deleteLine": {
+    "defaultMessage": "Eliminar línea"
+  },
+  "@yovoice.transcribe.lineText": {
+    "defaultMessage": "Línea de subtítulo {n}"
+  },
+  "@yovoice.transcribe.loading": {
+    "defaultMessage": "Cargando subtítulos…"
+  },
+  "@yovoice.transcribe.more": {
+    "defaultMessage": "Más acciones para {name}"
+  },
+  "@yovoice.transcribe.rename": {
+    "defaultMessage": "Cambiar nombre"
+  },
+  "@yovoice.transcribe.renameTitle": {
+    "defaultMessage": "Cambiar nombre de la transcripción"
+  },
+  "@yovoice.transcribe.exportMenu": {
+    "defaultMessage": "Exportar subtítulos"
+  },
+  "@yovoice.transcribe.findToggle": {
+    "defaultMessage": "Buscar y reemplazar"
+  },
+  "@yovoice.transcribe.editHint": {
+    "defaultMessage": "Intro divide en el cursor; Retroceso al inicio une con la línea anterior"
+  },
+  "@yovoice.transcribe.needsModel": {
+    "defaultMessage": "La transcripción necesita el modelo de reconocimiento de voz Qwen3 ASR. Descárgalo para subir audio o grabar."
+  },
+  "@yovoice.transcribe.search": {
+    "defaultMessage": "Buscar transcripciones"
+  },
+  "@yovoice.transcribe.recording": {
+    "defaultMessage": "Grabando"
+  },
+  "@yovoice.music.arrangement": {
+    "defaultMessage": "Desarrollo"
+  },
+  "@yovoice.music.arrangementHint": {
+    "defaultMessage": "YuE2 entiende frases completas: elige el idioma y el tempo, y luego cómo empieza, crece y termina la canción."
+  },
+  "@yovoice.music.tagGroup.language": {
+    "defaultMessage": "Idioma cantado"
+  },
+  "@yovoice.music.tagGroup.tempo": {
+    "defaultMessage": "Tempo"
+  },
+  "@yovoice.music.tagGroup.opening": {
+    "defaultMessage": "Inicio"
+  },
+  "@yovoice.music.tagGroup.development": {
+    "defaultMessage": "Desarrollo"
+  },
+  "@yovoice.music.tagGroup.ending": {
+    "defaultMessage": "Final"
+  },
+  "@yovoice.music.tagHint.mandarin": {
+    "defaultMessage": "Cantado en mandarín"
+  },
+  "@yovoice.music.tagHint.cantonese": {
+    "defaultMessage": "Cantado en cantonés"
+  },
+  "@yovoice.music.tagHint.english": {
+    "defaultMessage": "Cantado en inglés"
+  },
+  "@yovoice.music.tagHint.japanese": {
+    "defaultMessage": "Cantado en japonés"
+  },
+  "@yovoice.music.tagHint.korean": {
+    "defaultMessage": "Cantado en coreano"
+  },
+  "@yovoice.music.tagHint.72-bpm": {
+    "defaultMessage": "Lento · baladas"
+  },
+  "@yovoice.music.tagHint.96-bpm": {
+    "defaultMessage": "Medio · pop, R&B"
+  },
+  "@yovoice.music.tagHint.120-bpm": {
+    "defaultMessage": "Animado · dance, rock"
+  },
+  "@yovoice.music.tagHint.150-bpm": {
+    "defaultMessage": "Rápido · punk, electrónica"
+  },
+  "@yovoice.music.tagHint.vocals-enter-immediately": {
+    "defaultMessage": "La voz entra de inmediato"
+  },
+  "@yovoice.music.tagHint.long-instrumental-intro": {
+    "defaultMessage": "Intro instrumental largo"
+  },
+  "@yovoice.music.tagHint.opens-on-the-chorus-hook": {
+    "defaultMessage": "Empieza con el gancho del estribillo"
+  },
+  "@yovoice.music.tagHint.intimate-verses-and-a-bright-singable-chorus": {
+    "defaultMessage": "Estrofas íntimas, estribillo brillante"
+  },
+  "@yovoice.music.tagHint.stripped-down-bridge": {
+    "defaultMessage": "Puente despojado"
+  },
+  "@yovoice.music.tagHint.instrumental-solo-before-the-last-chorus": {
+    "defaultMessage": "Solo instrumental antes del último estribillo"
+  },
+  "@yovoice.music.tagHint.builds-to-a-big-final-chorus": {
+    "defaultMessage": "Crece hasta un gran estribillo final"
+  },
+  "@yovoice.music.tagHint.fades-out-on-the-intro-theme": {
+    "defaultMessage": "Se desvanece con el tema de la intro"
+  },
+  "@yovoice.music.tagHint.ends-on-an-a-cappella-line": {
+    "defaultMessage": "Termina con una línea a capela"
   }
 }

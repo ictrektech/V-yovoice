@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -46,10 +47,23 @@ func TestMain(m *testing.M) {
 		_ = json.Unmarshal(b, &c)
 		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "{}") })
 		http.HandleFunc("/v1/tasks/run", func(w http.ResponseWriter, r *http.Request) {
-			var p struct{ Request struct{ Text string } }
+			var p struct {
+				Request struct {
+					Text, Audio string
+				}
+			}
 			_ = json.NewDecoder(r.Body).Decode(&p)
 			if p.Request.Text == "等待取消" {
 				<-r.Context().Done()
+				return
+			}
+			// 语音识别：送入音频、正文为空，返回文字和以样本数计的逐字时间。
+			if p.Request.Audio != "" && p.Request.Text == "" {
+				words := []map[string]any{}
+				for i, w := range []string{"你", "好", "世", "界"} {
+					words = append(words, map[string]any{"word": w, "start_sample": i * 3200, "end_sample": i*3200 + 2400})
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"text": "你好，世界。", "language": "Chinese", "words": words})
 				return
 			}
 			_ = json.NewEncoder(w).Encode(map[string]string{"audio": base64.StdEncoding.EncodeToString(wave())})
@@ -70,13 +84,23 @@ func TestStandalone(t *testing.T) {
 	if e = os.WriteFile(model, []byte("test"), 0600); e != nil {
 		t.Fatal(e)
 	}
+	// 语音识别是多文件包：按目录里的各个文件放好占位文件。
+	asr := filepath.Join(root, "Qwen3-ASR-GGUF")
+	if p, err := catalog.Lookup("qwen3-asr-0.6b-q8"); err == nil {
+		for _, f := range p.Files {
+			path := filepath.Join(asr, filepath.FromSlash(f.Path))
+			if os.MkdirAll(filepath.Dir(path), 0700) != nil || os.WriteFile(path, []byte("test"), 0600) != nil {
+				t.Fatal("准备识别模型失败")
+			}
+		}
+	}
 	e = s.Update(func(s *schema.State) {
 		s.RuntimePath = &exe
 		b := "cpu"
 		s.RuntimeBackend = &b
 		v := catalog.EngineVersion
 		s.RuntimeVersion = &v
-		s.Models = []schema.InstalledModel{{ID: "index-2.5-q8", Path: model}, {ID: "voxcpm2-q8", Path: model}, {ID: "omnivoice-q8", Path: model}, {ID: "qwen3-tts-base-q8", Path: model}, {ID: "qwen3-tts-customvoice-q8", Path: model}, {ID: "qwen3-tts-voicedesign-q8", Path: model}, {ID: "ming3-tts-0.5b-q8", Path: model}}
+		s.Models = []schema.InstalledModel{{ID: "index-2.5-q8", Path: model}, {ID: "voxcpm2-q8", Path: model}, {ID: "omnivoice-q8", Path: model}, {ID: "qwen3-tts-base-q8", Path: model}, {ID: "qwen3-tts-customvoice-q8", Path: model}, {ID: "qwen3-tts-voicedesign-q8", Path: model}, {ID: "ming3-tts-0.5b-q8", Path: model}, {ID: "ace-step-1.5-turbo-q8", Path: model}, {ID: "yue2-3b-q8", Path: model}, {ID: "stable-audio-3-small-sfx-q8", Path: model}, {ID: "qwen3-asr-0.6b-q8", Path: asr}}
 	}, true)
 	if e != nil {
 		t.Fatal(e)
@@ -157,8 +181,12 @@ func TestStandalone(t *testing.T) {
 		{"qwen3-tts-voicedesign-q8", "qwen3_tts", []string{"--voice-description", "Warm narrator"}},
 		{"ming3-tts-0.5b-q8", "ming3_tts", []string{"--voice-description", "Warm narrator", "--language", "ja", "--option", "trim_silence=false"}},
 		{"ming3-tts-0.5b-q8", "ming3_tts", []string{"--voice-mode", "clone", "--reference", ref, "--reference-text", "原文"}},
+		{"ace-step-1.5-turbo-q8", "ace_step", []string{"--lyrics", "[verse]\n晚风吹过海岸线", "--language", "zh", "--option", "duration_seconds=30"}},
+		{"yue2-3b-q8", "yue2", []string{"--lyrics", "[Verse]\n晚风吹过海岸线", "--option", `cot="off"`, "--seed", "7"}},
+		{"stable-audio-3-small-sfx-q8", "stable_audio", []string{"--option", "duration_seconds=3"}},
 	} {
 		args := []string{"generate", "--model", test.model, "--text", "你好", "--output", filepath.Join(root, fmt.Sprintf("new-model-%d.wav", i)), "--data-dir", root}
+		out.Reset()
 		if err := run(ctx, append(args, test.flags...), &out, &progress); err != nil {
 			t.Fatal(test.model, err)
 		}
@@ -166,12 +194,41 @@ func TestStandalone(t *testing.T) {
 		if err != nil || !bytes.Contains(config, []byte(`"family":"`+test.family+`"`)) {
 			t.Fatal(string(config), err)
 		}
+		if test.model == "yue2-3b-q8" && !bytes.Contains(out.Bytes(), []byte(`"seed":7`)) {
+			t.Fatal("音乐生成应返回实际种子", out.String())
+		}
 		if test.model == "qwen3-tts-voicedesign-q8" && !bytes.Contains(config, []byte(`"task":"vdes"`)) {
 			t.Fatal(string(config))
 		}
 		if !bytes.Contains(config, []byte(`"mode":"offline"`)) {
 			t.Fatal(string(config))
 		}
+	}
+	// 转写：有声音的 WAV 直接识别，按扩展名写出字幕，同时留下一份转写记录。
+	speech := filepath.Join(root, "speech.wav")
+	tone := make([]float32, 16000)
+	for i := range tone {
+		tone[i] = float32(.3 * math.Sin(float64(i)*.1))
+	}
+	if e = audio.WriteMono(speech, tone, 16000); e != nil {
+		t.Fatal(e)
+	}
+	srt := filepath.Join(root, "speech.srt")
+	out.Reset()
+	if e = run(ctx, []string{"transcribe", speech, "--output", srt, "--data-dir", root}, &out, &progress); e != nil {
+		t.Fatal(e, progress.String())
+	}
+	if b, _ := os.ReadFile(srt); string(b) != "1\n00:00:00,000 --> 00:00:00,750\n你好，世界\n" {
+		t.Fatalf("%q %s", b, out.String())
+	}
+	if e = run(ctx, []string{"transcribe", speech, "--output", srt, "--data-dir", root}, &out, &progress); e == nil {
+		t.Fatal("不能覆盖已有字幕")
+	}
+	if e = run(ctx, []string{"transcribe", speech, "--output", filepath.Join(root, "speech.docx"), "--data-dir", root}, &out, &progress); e == nil {
+		t.Fatal("未知字幕格式应拒绝")
+	}
+	if e = run(ctx, []string{"separate", speech, "--output-dir", filepath.Join(root, "stems"), "--data-dir", root}, &out, &progress); e == nil {
+		t.Fatal("没装分轨模型时应失败")
 	}
 	lock, e := platform.Lock(filepath.Join(root, "service.lock"))
 	if e != nil {
@@ -200,6 +257,12 @@ func TestModelSpecificFlags(t *testing.T) {
 		{"--model", "qwen3-tts-customvoice-q8", "--speaker", "unknown"},
 		{"--model", "omnivoice-q8", "--option", "streaming=true"},
 		{"--model", "voxcpm2-q8", "--option", "max_tokens=100", "--option", "min_tokens=101"},
+		{"--model", "index-2.5-q8", "--lyrics", "歌词"},
+		{"--model", "ace-step-1.5-turbo-q8", "--reference", "unused.wav"},
+		{"--model", "ace-step-1.5-turbo-q8", "--abc-file", "unused.abc"},
+		{"--model", "yue2-3b-q8", "--language", "zh", "--lyrics", "歌词"},
+		{"--model", "yue2-3b-q8"},
+		{"--model", "yue2-3b-q8", "--lyrics", "歌词", "--option", "candidates=2"},
 	} {
 		var out bytes.Buffer
 		args := append([]string{"generate", "--text", "你好", "--output", "unused.wav"}, flags...)

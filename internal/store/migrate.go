@@ -52,6 +52,8 @@ var migrations = []migration{
 	}},
 	// 4：初始化持久化下载任务；已安装模型和历史保持原样。
 	{sql: `INSERT INTO settings (key, pos, data) VALUES ('modelDownloads', 0, '{}') ON CONFLICT(key) DO NOTHING;`},
+	// 5：转写页的转写记录改为长期保存。
+	{sql: `CREATE TABLE IF NOT EXISTS transcripts (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`},
 }
 
 func backfillModelSHA256(data []byte) ([]byte, error) {

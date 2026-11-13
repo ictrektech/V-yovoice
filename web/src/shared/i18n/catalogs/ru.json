@@ -1902,7 +1902,7 @@
     "defaultMessage": "Переименовать исполнение"
   },
   "@yovoice.error.musicStyle": {
-    "defaultMessage": "Опишите стиль: от 1 до 512 символов."
+    "defaultMessage": "Опишите стиль: от 1 до {max} символов."
   },
   "@yovoice.error.musicLyrics": {
     "defaultMessage": "Текст песни — не более 4000 символов."
@@ -4272,7 +4272,7 @@
     "defaultMessage": "Превращайте записи, интервью и видео в текст"
   },
   "@yovoice.transcribe.emptyBody": {
-    "defaultMessage": "Загрузите аудио или видео. Модель распознавания речи Qwen3 ASR выдаст текст с таймингом слов, который можно экспортировать в субтитры SRT или WebVTT. До 1 часа и 20 МБ."
+    "defaultMessage": "Загрузите аудио или видео либо запишите прямо здесь. Модель распознавания речи Qwen3 ASR запишет текст с таймингом каждого слова. Расшифровки сохраняются: субтитры можно отредактировать и экспортировать в SRT или WebVTT. До 1 часа и 20 МБ."
   },
   "@vvoice.music.title": {
     "defaultMessage": "Background music"
@@ -5236,5 +5236,221 @@
   },
   "@yovoice.settings.modelVersionBefore": {
     "defaultMessage": "До обновления {date}"
+  },
+  "@yovoice.settings.transcribe": {
+    "defaultMessage": "Расшифровка"
+  },
+  "@yovoice.settings.transcribeHint": {
+    "defaultMessage": "Лимиты файлов и разбиение субтитров на строки. Настройки строк применяются к новым и ещё не отредактированным расшифровкам."
+  },
+  "@yovoice.settings.transcribeMaxFile": {
+    "defaultMessage": "Макс. размер файла (МБ)"
+  },
+  "@yovoice.settings.transcribeMaxMinutes": {
+    "defaultMessage": "Макс. длительность (мин)"
+  },
+  "@yovoice.settings.transcribeMaxMinutesHint": {
+    "defaultMessage": "До 180 минут. Чем длиннее запись, тем больше памяти нужно для расшифровки."
+  },
+  "@yovoice.settings.transcribeLineChars": {
+    "defaultMessage": "Макс. символов в строке"
+  },
+  "@yovoice.settings.transcribeLineCharsHint": {
+    "defaultMessage": "Китайские, японские и корейские символы считаются за 1, остальные — за 0,5."
+  },
+  "@yovoice.settings.transcribeLineSeconds": {
+    "defaultMessage": "Макс. секунд в строке"
+  },
+  "@yovoice.settings.transcribeLinePause": {
+    "defaultMessage": "Новая строка после паузы (с)"
+  },
+  "@yovoice.settings.transcribeLinePauseHint": {
+    "defaultMessage": "Начинать новую строку, если пауза в речи длится столько."
+  },
+  "@yovoice.settings.transcribeReset": {
+    "defaultMessage": "Сбросить по умолчанию"
+  },
+  "@yovoice.error.transcribeTooLarge": {
+    "defaultMessage": "Аудио- или видеофайл должен быть меньше {size}. Лимит можно изменить в «Настройки › Общие › Расшифровка»."
+  },
+  "@yovoice.error.transcribeDuration": {
+    "defaultMessage": "Аудио или видео должно быть не длиннее {minutes} мин. Лимит можно изменить в «Настройки › Общие › Расшифровка»."
+  },
+  "@yovoice.error.transcriptMissing": {
+    "defaultMessage": "Эта расшифровка удалена или её файл субтитров отсутствует"
+  },
+  "@yovoice.transcribe.record": {
+    "defaultMessage": "Записать"
+  },
+  "@yovoice.transcribe.stopRecord": {
+    "defaultMessage": "Остановить и расшифровать"
+  },
+  "@yovoice.transcribe.discardRecord": {
+    "defaultMessage": "Отменить запись"
+  },
+  "@yovoice.transcribe.recordingName": {
+    "defaultMessage": "Запись {time}"
+  },
+  "@yovoice.transcribe.back": {
+    "defaultMessage": "К списку расшифровок"
+  },
+  "@yovoice.transcribe.name": {
+    "defaultMessage": "Название расшифровки"
+  },
+  "@yovoice.transcribe.saving": {
+    "defaultMessage": "Сохранение…"
+  },
+  "@yovoice.transcribe.autosaved": {
+    "defaultMessage": "Сохранено автоматически"
+  },
+  "@yovoice.transcribe.undo": {
+    "defaultMessage": "Отменить"
+  },
+  "@yovoice.transcribe.delete": {
+    "defaultMessage": "Удалить расшифровку"
+  },
+  "@yovoice.transcribe.deleteTitle": {
+    "defaultMessage": "Удалить «{name}»?"
+  },
+  "@yovoice.transcribe.deleteBody": {
+    "defaultMessage": "Субтитры и сохранённое аудио будут удалены без возможности восстановления."
+  },
+  "@yovoice.transcribe.find": {
+    "defaultMessage": "Найти"
+  },
+  "@yovoice.transcribe.replaceWith": {
+    "defaultMessage": "Заменить на"
+  },
+  "@yovoice.transcribe.replaceAll": {
+    "defaultMessage": "Заменить все"
+  },
+  "@yovoice.transcribe.matches": {
+    "defaultMessage": "Совпадает строк: {count}"
+  },
+  "@yovoice.transcribe.replaced": {
+    "defaultMessage": "Заменено: {count}"
+  },
+  "@yovoice.transcribe.noMatch": {
+    "defaultMessage": "Совпадений не найдено"
+  },
+  "@yovoice.transcribe.split": {
+    "defaultMessage": "Разделить по курсору"
+  },
+  "@yovoice.transcribe.splitHint": {
+    "defaultMessage": "Поставьте курсор туда, где нужно разделить строку, затем нажмите «Разделить»"
+  },
+  "@yovoice.transcribe.mergeNext": {
+    "defaultMessage": "Объединить со следующей строкой"
+  },
+  "@yovoice.transcribe.deleteLine": {
+    "defaultMessage": "Удалить строку"
+  },
+  "@yovoice.transcribe.lineText": {
+    "defaultMessage": "Строка субтитров {n}"
+  },
+  "@yovoice.transcribe.loading": {
+    "defaultMessage": "Загрузка субтитров…"
+  },
+  "@yovoice.transcribe.more": {
+    "defaultMessage": "Другие действия для «{name}»"
+  },
+  "@yovoice.transcribe.rename": {
+    "defaultMessage": "Переименовать"
+  },
+  "@yovoice.transcribe.renameTitle": {
+    "defaultMessage": "Переименовать расшифровку"
+  },
+  "@yovoice.transcribe.exportMenu": {
+    "defaultMessage": "Экспорт субтитров"
+  },
+  "@yovoice.transcribe.findToggle": {
+    "defaultMessage": "Найти и заменить"
+  },
+  "@yovoice.transcribe.editHint": {
+    "defaultMessage": "Enter делит строку у курсора, Backspace в начале строки объединяет с предыдущей"
+  },
+  "@yovoice.transcribe.needsModel": {
+    "defaultMessage": "Для расшифровки нужна модель распознавания речи Qwen3 ASR. Скачайте её, чтобы загружать аудио или записывать."
+  },
+  "@yovoice.transcribe.search": {
+    "defaultMessage": "Поиск расшифровок"
+  },
+  "@yovoice.transcribe.recording": {
+    "defaultMessage": "Идёт запись"
+  },
+  "@yovoice.music.arrangement": {
+    "defaultMessage": "Развитие песни"
+  },
+  "@yovoice.music.arrangementHint": {
+    "defaultMessage": "YuE2 понимает целые фразы: выберите язык и темп, затем начало, развитие и концовку, чтобы песни звучали по-разному."
+  },
+  "@yovoice.music.tagGroup.language": {
+    "defaultMessage": "Язык пения"
+  },
+  "@yovoice.music.tagGroup.tempo": {
+    "defaultMessage": "Темп"
+  },
+  "@yovoice.music.tagGroup.opening": {
+    "defaultMessage": "Начало"
+  },
+  "@yovoice.music.tagGroup.development": {
+    "defaultMessage": "Развитие"
+  },
+  "@yovoice.music.tagGroup.ending": {
+    "defaultMessage": "Концовка"
+  },
+  "@yovoice.music.tagHint.mandarin": {
+    "defaultMessage": "Пение на путунхуа"
+  },
+  "@yovoice.music.tagHint.cantonese": {
+    "defaultMessage": "Пение на кантонском"
+  },
+  "@yovoice.music.tagHint.english": {
+    "defaultMessage": "Пение на английском"
+  },
+  "@yovoice.music.tagHint.japanese": {
+    "defaultMessage": "Пение на японском"
+  },
+  "@yovoice.music.tagHint.korean": {
+    "defaultMessage": "Пение на корейском"
+  },
+  "@yovoice.music.tagHint.72-bpm": {
+    "defaultMessage": "Медленно · баллады"
+  },
+  "@yovoice.music.tagHint.96-bpm": {
+    "defaultMessage": "Средний · поп, R&B"
+  },
+  "@yovoice.music.tagHint.120-bpm": {
+    "defaultMessage": "Бодро · дэнс, рок"
+  },
+  "@yovoice.music.tagHint.150-bpm": {
+    "defaultMessage": "Быстро · панк, электроника"
+  },
+  "@yovoice.music.tagHint.vocals-enter-immediately": {
+    "defaultMessage": "Вокал вступает сразу"
+  },
+  "@yovoice.music.tagHint.long-instrumental-intro": {
+    "defaultMessage": "Длинное инструментальное вступление"
+  },
+  "@yovoice.music.tagHint.opens-on-the-chorus-hook": {
+    "defaultMessage": "Начинается с хука припева"
+  },
+  "@yovoice.music.tagHint.intimate-verses-and-a-bright-singable-chorus": {
+    "defaultMessage": "Тихие куплеты, яркий припев"
+  },
+  "@yovoice.music.tagHint.stripped-down-bridge": {
+    "defaultMessage": "Минималистичный бридж"
+  },
+  "@yovoice.music.tagHint.instrumental-solo-before-the-last-chorus": {
+    "defaultMessage": "Инструментальное соло перед последним припевом"
+  },
+  "@yovoice.music.tagHint.builds-to-a-big-final-chorus": {
+    "defaultMessage": "Нарастает к мощному финальному припеву"
+  },
+  "@yovoice.music.tagHint.fades-out-on-the-intro-theme": {
+    "defaultMessage": "Затихает на теме вступления"
+  },
+  "@yovoice.music.tagHint.ends-on-an-a-cappella-line": {
+    "defaultMessage": "Заканчивается строкой а капелла"
   }
 }

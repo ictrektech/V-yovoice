@@ -159,6 +159,21 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return true, w.RecognizeVoice(p.ID)
 	case "transcript.dismiss":
 		return true, w.DismissTranscript(p.ID)
+	case "transcript.read":
+		return w.ReadTranscript(p.ID)
+	case "transcript.rename":
+		return true, w.RenameTranscript(p.ID, p.Name)
+	case "transcript.delete":
+		return true, w.DeleteTranscript(p.ID)
+	case "transcript.save":
+		var input struct {
+			ID       string                     `json:"id"`
+			Captions []schema.TranscriptCaption `json:"captions"`
+		}
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
+		}
+		return true, w.SaveTranscript(input.ID, input.Captions)
 	case "media.path":
 		return w.MediaFile(p.Kind, p.ID)
 	case "export.path":
@@ -207,6 +222,18 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return true, w.SetLyricWords(in.ID, in.Words)
 	case "generation.alignText":
 		return true, w.AlignText(p.ID)
+	case "generation.captions":
+		return w.TextCaptions(p.ID)
+	case "captions.format":
+		var in struct {
+			Captions []schema.Caption `json:"captions"`
+			Format   string           `json:"format"`
+			Speaker  bool             `json:"speaker"`
+		}
+		if e := json.Unmarshal(data, &in); e != nil {
+			return nil, msg.Err(msg.ErrRequestInvalid, nil)
+		}
+		return schema.FormatCaptions(in.Captions, in.Format, in.Speaker)
 	case "generation.alignLyrics":
 		var in struct {
 			ID    string                `json:"id"`
