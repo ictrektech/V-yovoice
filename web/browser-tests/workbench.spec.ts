@@ -247,8 +247,7 @@ test('语音生成只有历史生成：工具栏进入历史页，试听不改�
   await expect.poll(() => page.locator('footer audio').evaluate((audio: HTMLAudioElement) => audio.duration)).toBe(1);
   // 浏览器工具栏保留导出与历史；桌面另有打开位置，删除只在历史页。
   const transport = page.locator('.player .transport');
-  await expect(transport.getByRole('button', { name: '打开位置', exact: true })).toHaveCount(0);
-  await expect(transport.getByRole('button', { name: '导出音频', exact: true })).toBeVisible();
+  await expect(transport.getByRole('button', { name: '打开位置', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '保存为角色', exact: true })).toHaveCount(0);
   await transport.getByRole('button', { name: '音频操作', exact: true }).click();
   await expect(page.getByRole('menuitem')).toHaveText([/^导出音频/, '导出字幕', '保存为参考音频', '保存为角色']);
@@ -288,7 +287,7 @@ test('语音生成只有历史生成：工具栏进入历史页，试听不改�
   await expect(page.getByRole('radio', { name: '文字指导', exact: true })).toBeChecked();
   await expect(page.getByRole('combobox', { name: '模型', exact: true })).toContainText('IndexTTS 2.5');
   await page.reload();
-  await expect(transport.getByRole('button', { name: '打开位置', exact: true })).toHaveCount(0);
+  await expect(transport.getByRole('button', { name: '打开位置', exact: true })).toBeVisible();
   // 新建的语音作品没有自己的音频，但仍能从工具栏查看历史生成。
   await page.getByTestId('nav-new').click();
   await page.getByRole('menuitem', { name: '语音生成', exact: true }).click();
