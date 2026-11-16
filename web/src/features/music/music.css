@@ -2,7 +2,7 @@
 
 @layer app {
   /* ===== 分轨工作台：全屏调音台。左侧轨头（色条、名称、音量、静音、独奏），右侧波形；播放头贯穿各轨。 ===== */
-  .stem-studio { height: 100%; min-height: 0; background: var(--app-paper); color: var(--app-ink); --stem-head: calc(var(--spacing-10) * 7); --stem-pad: var(--spacing-6); }
+  .stem-studio { height: 100%; min-height: 0; background: var(--app-paper); color: var(--app-ink); outline: none; --stem-head: calc(var(--spacing-10) * 7); --stem-pad: var(--spacing-6); }
   .stem-studio-header { padding: var(--spacing-5) var(--stem-pad) var(--spacing-3); }
   .stem-studio-header h2 { margin: 0; font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); }
   .stem-studio-header small, .stem-time { color: var(--app-muted); font-size: var(--app-small-font); font-variant-numeric: tabular-nums; }
@@ -36,6 +36,10 @@
   .music-editor { flex: 1; min-height: 0; overflow-y: auto; padding-block: var(--spacing-4) var(--spacing-6); padding-inline-end: var(--spacing-4); }
   .music-editor h2 { font-size: var(--app-ui-font); }
   .music-tag.astryx-button { border-radius: var(--radius-full); }
+  /* 长标签（如“展开”里的整句描述）不撑出检查器：最宽到面板宽度，文字换行，药丸随之变高。 */
+  .music-tag.astryx-button { max-width: 100%; height: auto; min-height: var(--spacing-8); white-space: normal; }
+  /* Astryx 按钮文字层（第一个 span 里的文字）默认单行省略，这里改为换行。 */
+  .music-tag.astryx-button > span:first-child > span { white-space: normal; text-overflow: clip; overflow-wrap: anywhere; text-align: start; }
   .song-cover { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1; border-radius: var(--radius-container); background: var(--app-ink); }
   /* 旋律谱标题下的概要只占一行，放不下时省略，完整内容在悬停提示里（不换行写在后面的排版层里）。 */
   .melody-score .score-summary { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -139,9 +143,11 @@
     background: hsl(var(--now-playing-hue) 30% 4% / 18%); backdrop-filter: blur(var(--spacing-3)) saturate(1.8) brightness(1.16);
     box-shadow: inset 0 0 var(--spacing-0-5) var(--border-width) color-mix(in srgb, var(--now-playing-ink) 28%, transparent), inset 0 0 var(--spacing-3) var(--spacing-1) color-mix(in srgb, var(--now-playing-ink) 8%, transparent);
     transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), transform var(--duration-medium) cubic-bezier(.16, 1, .3, 1); }
-  /* 歌词样式按钮只写当前样式名，不配图标；高度与旁边的圆形按钮一致。 */
-  .now-playing .now-playing-style.now-playing-glass.astryx-button { border: var(--border-width) solid color-mix(in srgb, var(--now-playing-ink) 22%, transparent); background: var(--now-playing-glass); }
-  .now-playing .now-playing-style.astryx-button { height: var(--spacing-10); padding-inline: var(--spacing-4) var(--spacing-3); font-weight: var(--font-weight-medium); }
+  /* 顶栏工具按钮：像标题栏里的按钮，没有底色和描边，矮一档；悬停才显出浅底。 */
+  .now-playing .now-playing-tool.astryx-button { height: var(--spacing-7); min-width: var(--spacing-7); padding-inline: var(--spacing-2); border: 0; border-radius: var(--radius-element); background: transparent; box-shadow: none;
+    color: color-mix(in srgb, var(--now-playing-ink) 78%, transparent); font-size: var(--font-size-base); font-weight: var(--font-weight-medium); transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard); }
+  .now-playing .now-playing-tool.astryx-button svg { width: var(--spacing-5); height: var(--spacing-5); }
+  .now-playing .now-playing-tool.astryx-button:hover:not(:disabled), .now-playing .now-playing-tool.astryx-button[aria-expanded="true"] { color: var(--now-playing-ink); background: var(--color-overlay-hover); }
   .now-playing .now-playing-round.astryx-button { width: var(--spacing-10); height: var(--spacing-10); }
   .now-playing .now-playing-glass.astryx-button:hover:not(:disabled) { color: var(--now-playing-ink); transform: translateY(calc(var(--spacing-0-5) * -.5));
     background: linear-gradient(145deg, color-mix(in srgb, var(--now-playing-ink) 16%, transparent), color-mix(in srgb, var(--now-playing-ink) 5%, transparent) 44%, hsl(var(--now-playing-accent) 80% 60% / 7%)); }
@@ -149,10 +155,12 @@
   .now-playing .astryx-popover-surface { border: var(--border-width) solid color-mix(in srgb, var(--now-playing-ink) 8%, transparent); border-radius: var(--radius-container); color: var(--now-playing-ink);
     background: linear-gradient(145deg, hsl(var(--now-playing-hue) 22% 9% / 84%), hsl(var(--now-playing-hue) 22% 5% / 90%)); backdrop-filter: blur(calc(var(--spacing-8) - var(--spacing-0-5))) saturate(1.4);
     box-shadow: 0 calc(var(--spacing-5) + var(--spacing-0-5)) calc(var(--spacing-12) * 1.45) hsl(var(--now-playing-hue) 40% 2% / 46%); animation: now-playing-pop var(--duration-medium) cubic-bezier(.16, 1, .3, 1) both; }
+  /* 菜单里的按键徽标：播放页把文字色换成了浅色，徽标也改成同一种深色玻璃，不再是白底白字。 */
+  .now-playing .hotkey-key { border-color: color-mix(in srgb, var(--now-playing-ink) 24%, transparent); background: color-mix(in srgb, var(--now-playing-ink) 10%, transparent); color: var(--now-playing-ink); }
   .now-playing .astryx-button:active:not(:disabled) { transform: scale(.94); }
   .now-playing .astryx-button:focus-visible { outline: var(--spacing-0-5) solid color-mix(in srgb, var(--now-playing-ink) 70%, transparent); outline-offset: var(--spacing-0-5); box-shadow: none; }
   .now-playing .astryx-button:focus:not(:focus-visible) { outline: none; box-shadow: none; }
-  .now-playing-bar { position: absolute; inset: var(--spacing-5) var(--spacing-5) auto; z-index: 1; }
+  .now-playing-bar { position: absolute; inset: var(--spacing-4) var(--spacing-4) auto; z-index: 1; }
   .now-playing-chrome { transition: opacity var(--duration-slow) var(--ease-standard), transform var(--duration-slow) var(--ease-standard); }
   .now-playing[data-idle="true"] { cursor: none; }
   .now-playing[data-idle="true"] .now-playing-chrome { opacity: 0; pointer-events: none; }
@@ -256,10 +264,11 @@
   .now-playing[data-style="stage"] .now-playing-skip.astryx-button { width: var(--spacing-10); height: var(--spacing-10); }
   .now-playing[data-style="stage"] .now-playing-toggle.astryx-button { width: var(--spacing-12); height: var(--spacing-12); }
   .now-playing[data-style="stage"] .now-playing-toggle.astryx-button svg { width: var(--spacing-6); height: var(--spacing-6); }
-  /* 对齐进行中在顶栏右侧显示一行小字进度。 */
-  .now-playing-status { color: var(--now-playing-muted); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  /* macOS 桌面端网页铺进了标题栏：顶栏让出红绿灯那一行。 */
-  .now-playing[data-host="macos"] .now-playing-bar { top: calc(var(--spacing-7) + var(--spacing-3)); }
+  /* 对齐中的停止按钮：平时转圈，悬停或聚焦时换成方块。 */
+  .now-playing-stop.astryx-button svg:last-child, .now-playing-stop.astryx-button:is(:hover, :focus-visible) .generation-spinner { display: none; }
+  .now-playing-stop.astryx-button:is(:hover, :focus-visible) svg:last-child { display: block; }
+  /* macOS 桌面端网页铺进了标题栏：顶栏与红绿灯同一行（标题栏高 28px，红绿灯中线离顶边 14px，按钮中线对齐它），左边让出红绿灯。 */
+  .now-playing[data-host="macos"] .now-playing-bar { top: calc(var(--spacing-3) + var(--spacing-0-5) - var(--spacing-7) / 2); left: calc(var(--spacing-12) + var(--spacing-6)); right: var(--spacing-3); }
   .now-playing[data-host="macos"] .now-playing-lyrics { mask-image: linear-gradient(transparent, var(--app-ink) 26%, var(--app-ink) 78%, transparent); }
   /* 逐字编辑：底部一块磨砂面板，上面是这一句的工具，下面是时间轴；字块可拖动，两端是调整长短的把手，播放头随音频移动。 */
   .now-playing[data-editing] .now-playing-stage { padding-block-end: var(--spacing-4); }
@@ -310,7 +319,7 @@
   /* 页内错误提示：停在顶栏下方居中，与校准条同一玻璃质感；控件随静置隐藏时它仍然可见。 */
   .now-playing-notice {
     position: absolute;
-    top: calc(var(--spacing-12) + var(--spacing-4));
+    top: var(--spacing-12);
     left: 50%;
     z-index: 2;
     transform: translateX(-50%);

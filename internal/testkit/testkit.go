@@ -80,6 +80,8 @@ func RunFakeEngine() {
 		Port   int `json:"port"`
 		Models []struct {
 			Task    string         `json:"task"`
+			Family  string         `json:"family"`
+			Path    string         `json:"path"`
 			Session map[string]any `json:"session_options"`
 		} `json:"models"`
 	}
@@ -113,6 +115,13 @@ func RunFakeEngine() {
 		// 歌词对齐：分离任务返回人声分轨；对齐任务把每个非空白字符记作一个字，每字 0.25 秒（16 kHz 样本数）。
 		switch config.Models[0].Task {
 		case "sep":
+			// HTDemucs 一次给出六轨，这里只回人声和鼓两轨。
+			if config.Models[0].Family == "htdemucs_6stems" {
+				_ = json.NewEncoder(w).Encode(map[string]any{"named_audio_outputs": []any{
+					map[string]any{"id": "vocals", "audio": base64.StdEncoding.EncodeToString(VocalWAV())},
+					map[string]any{"id": "drums", "audio": base64.StdEncoding.EncodeToString(VocalWAV())}}})
+				return
+			}
 			if config.Models[0].Session["bs_roformer.num_overlap"] != "1" {
 				http.Error(w, "分离应单遍推理", http.StatusBadRequest)
 				return
@@ -134,8 +143,27 @@ func RunFakeEngine() {
 				http.Error(w, "识别输入应为 16 kHz WAV", http.StatusBadRequest)
 				return
 			}
-			// 会话里要配置包内的对齐模型；要求时间时整段送入，每个字 0.25 秒。
-			if aligner, _ := config.Models[0].Session["qwen3_asr.forced_aligner_path"].(string); !strings.Contains(aligner, "qwen3-forced-aligner") {
+			// Qwen3 ASR 的会话里要配置包内的对齐模型；要求时间时整段送入，每个字 0.25 秒。
+			// Parakeet TDT 不用对齐模型，也不接受时间限制项，逐词时间里把紧跟的标点并进前一个词。
+			// Confucius4-R2T2 只给文字：加载包里的 r2t2 主文件，不接受对齐模型和时间选项，输入末尾要留 300 毫秒静音。
+			if config.Models[0].Family == "confucius4_r2t2" {
+				if !strings.HasSuffix(config.Models[0].Path, "r2t2-q8_0.gguf") || config.Models[0].Session != nil || p.Request.Options != nil {
+					http.Error(w, "R2T2 只加载主模型，不带对齐模型和时间选项", http.StatusBadRequest)
+					return
+				}
+				if len(b) < 44+4800*2 || strings.Trim(string(b[len(b)-4800*2:]), "\x00") != "" {
+					http.Error(w, "R2T2 的输入末尾应补 300 毫秒静音", http.StatusBadRequest)
+					return
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"text": RecognizedText, "language": "Chinese"})
+				return
+			}
+			parakeet := config.Models[0].Family == "parakeet_tdt"
+			if parakeet && (config.Models[0].Session != nil || p.Request.Options["clamp_timestamps_to_audio"] != nil) {
+				http.Error(w, "Parakeet 不接受对齐模型和时间限制项", http.StatusBadRequest)
+				return
+			}
+			if aligner, _ := config.Models[0].Session["qwen3_asr.forced_aligner_path"].(string); !parakeet && !strings.Contains(aligner, "qwen3-forced-aligner") {
 				http.Error(w, "识别会话缺少对齐模型", http.StatusBadRequest)
 				return
 			}
@@ -145,11 +173,13 @@ func RunFakeEngine() {
 					http.Error(w, "带时间的识别应整段送入", http.StatusBadRequest)
 					return
 				}
-				words := []any{}
+				words := []map[string]any{}
 				for _, r := range RecognizedText {
 					if unicode.IsLetter(r) {
 						n := len(words)
 						words = append(words, map[string]any{"word": string(r), "start_sample": n * 4000, "end_sample": n*4000 + 3000})
+					} else if parakeet && len(words) > 0 {
+						words[len(words)-1]["word"] = words[len(words)-1]["word"].(string) + string(r)
 					}
 				}
 				reply["words"] = words

@@ -2,7 +2,31 @@
 
 ### English
 
+- Share songs to the yovoice community from the player or version menu: sign in through your browser, add a title, tags and a license, and the version goes up for review with its aligned lyrics. Reference voices are never included. Ocho offers to share a song once it finishes, and Settings › Community lists what you have shared and its review status.
+- Song covers are drawn from the song's own loudness, the same as on the community page, and are embedded in exported FLAC and M4A files and used for library records.
+- Keyboard shortcuts: a new Settings › Keyboard shortcuts tab lists every shortcut by area. Change keys, see conflicts and system-reserved keys, restore defaults, turn areas off, and export or import with a preview. Press ⌘/ (Ctrl+/) to see the shortcuts for the current page. Shortcuts no longer fire behind dialogs, swallow ⌥ / AltGr characters or interfere with typing, and some defaults moved off system and input-method keys.
+- Six themes in Settings › General › Appearance: Paper, Ink, Lagoon, Sand, Sage and Abyss. Match system uses Paper or Ink, and the macOS title bar follows the theme.
+- Transcribing a video keeps the picture: it plays on top with the current subtitle, the lines scroll below. Transcript editing gains continuous playback that skips long silences, undo and redo, and Delete at the end of a line to join the next one.
+- New speech recognition models: Qwen3 ASR 1.7B, Confucius4-R2T2 and Parakeet TDT 0.6B v3 (the last two need engine v0.9.3). Settings › Models brings all model kinds into one tab and opens on a Defaults sub-tab, where you choose the recognizer and the vocal separation used for lyric alignment — HTDemucs 6-stem is a much faster option than the default BS-RoFormer.
+- Smart lyric alignment is faster and more accurate: aligning again reuses separated vocals, long songs no longer drift toward the end, and bracketed notes in lyrics such as sound effects are skipped (songs with such notes need aligning again).
+- Story narration can even out role volumes when exporting a track, and Balance role levels keeps the differences you set between lines of the same role.
+- The song player's top bar is lighter, with a stop button on the lyric tools while aligning. The bottom player is tidier, and in single-track projects the buttons beside play switch to the previous or next version.
+- Speech generation shows loading, synthesis and saving separately, with model residency, idle unloading and streamed audio duration.
+- Fixes: Windows updates no longer leave `.yovoice-update.*` folders behind; the sidebar button no longer stays in the macOS title bar over the player; long style tags in the music inspector wrap instead of overflowing; dialog backgrounds are no longer blurred into blocks on macOS.
+
 ### 简体中文
+
+- 可以从播放器或版本菜单把歌曲分享到 yovoice 社区：在浏览器里登录，填写标题、标签和使用许可后连同对齐过的歌词提交审核，参考音色不会上传。歌曲生成好后 Ocho 会提示分享；设置 › 社区里可以查看分享过的作品和审核状态。
+- 歌曲封面按这首歌自己的响度起伏来画，和社区页一致；导出的 FLAC、M4A 和作品库唱片封套都用这张封面。
+- 快捷键：设置新增“快捷键”标签，按功能区列出全部快捷键，可修改、提示冲突与系统占用、恢复默认、按功能区关闭，导入导出时先预览变化；任意页面按 ⌘/（Ctrl+/）查看当前页可用的快捷键。快捷键不再作用到弹窗背后、不再吞掉 ⌥ / AltGr 打的字符或妨碍打字，部分默认按键避开了系统和输入法。
+- 设置 › 常规 › 外观新增纸白、夜墨、青岸、宣纸、苔绿、深海 6 套主题，默认跟随系统用纸白或夜墨，macOS 标题栏也跟着换色。
+- 转写视频时保留画面：上面播放画面并叠加当前字幕，下面滚动字幕。转写编辑支持连续播放并跳过长静音、撤销重做，以及在行尾按 Delete 合并下一行。
+- 新增语音识别模型 Qwen3 ASR 1.7B、Confucius4-R2T2 和 Parakeet TDT 0.6B v3（后两个需要 v0.9.3 内核）。“设置 › 模型”把各类模型合到一个标签，首先打开“默认模型”子页，可选语音识别模型和歌词对齐用的人声分离；HTDemucs 6-stem 比默认的 BS-RoFormer 快很多。
+- 歌词“智能对齐”更快更准：再次对齐直接用已分离的人声，长歌后半段不再错位，歌词里括号括起来的音效等注释不参与对齐（有这类注释的歌需要重新对齐）。
+- 故事配音导出音轨时可以统一各角色音量；“均衡角色音量”保留同一角色几句之间手动调的差别。
+- 歌曲播放页顶栏更轻，对齐时歌词工具按钮变成停止按钮；底部播放器更紧凑，单轨作品里播放键两侧改为切换上一版、下一版。
+- 语音生成分别显示加载、合成和保存阶段，以及模型驻留、空闲卸载和流式收到的音频时长。
+- 修复：Windows 更新不再留下 `.yovoice-update.*` 文件夹；macOS 播放页标题栏不再残留侧栏按钮；音乐检查器里较长的风格标签换行，不再超出面板；macOS 上弹窗背后的页面不再糊成方框。
 
 ## [0.0.36] - 2026-11-15
 

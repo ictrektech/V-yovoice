@@ -227,6 +227,8 @@ type Generation struct {
 	Segment   *GenerationSegment `json:"segment,omitempty"`
 	// LyricTimes 是播放页校准的歌词时间：按顺序记录每一行（含器乐段落）的开始秒数。
 	LyricTimes []float64 `json:"lyricTimes,omitempty"`
+	// Gene 是整首歌从头到尾的响度起伏（96 个十六进制字符），封面照着它画；第一次显示封面时才算，算不出来时为空。
+	Gene string `json:"gene,omitempty"`
 	// LyricWords 是强制对齐得到的逐字时间，按歌词顺序排列；与 LyricTimes 只保留较新的一份。
 	LyricWords []LyricWord `json:"lyricWords,omitempty"`
 	// TextWords 是语音版本的正文对齐到音频上的逐字时间，用于导出字幕；歌曲、音效与编曲版本没有。
@@ -353,6 +355,13 @@ type Preferences struct {
 	Engine *EngineSettings `json:"engine,omitempty"`
 	// Transcribe 是语音转写的限制与断句参数（设置 › 常规 › 语音转写），为空时全部沿用默认值。
 	Transcribe *TranscribeSettings `json:"transcribe,omitempty"`
+	// RecognizeModel 是转写和识别参考文本用的语音识别模型（设置 › 模型 › 语音识别模型），为空或已移除时按默认顺序取已安装的。
+	RecognizeModel string `json:"recognizeModel,omitempty"`
+	// AlignSeparator 是歌词对齐时分离人声用的模型（设置 › 模型 › 音乐模型）：为空用对齐包里的 BS-RoFormer，人声最干净；
+	// htdemucs 用已下载的 HTDemucs 6-stem，快很多，人声没那么干净。选了 HTDemucs 但它已移除时退回 BS-RoFormer。
+	AlignSeparator string `json:"alignSeparator,omitempty"`
+	// Hotkeys 是改过的快捷键与快捷键开关（设置 › 快捷键），为空时全部沿用默认值。
+	Hotkeys *HotkeySettings `json:"hotkeys,omitempty"`
 }
 
 // OptionalFeatures 是可在设置中隐藏的功能：故事配音、音乐生成（含编曲）、语音转写与 Ocho 助手。

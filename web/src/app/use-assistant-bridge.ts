@@ -12,8 +12,10 @@ import { assistantUsable, featureHidden, projectKind, type AssistantContext, typ
 import type { DraftSession } from './use-draft-session';
 
 // 助手（Ocho）与工作台的衔接：面板开关与入口、快捷键、助手发起的界面跳转与作品更新、发给助手的上下文与主动提示。
-export function useAssistantBridge({ state, page, setPage, draft, setDraft, setDraftPersisted, saving, openSettings, selectDraft, cue, setError }: Pick<DraftSession, 'draft' | 'setDraft' | 'setDraftPersisted' | 'saving'> & {
+export function useAssistantBridge({ state, page, setPage, draft, setDraft, setDraftPersisted, saving, openSettings, selectDraft, cue, setError, share }: Pick<DraftSession, 'draft' | 'setDraft' | 'setDraftPersisted' | 'saving'> & {
   state: State; page: string; setPage: (page: string) => void; openSettings: (modelId?: string, requested?: string) => void; selectDraft: (item: Draft) => void; cue?: AssistantCue; setError: (message: string) => void;
+  /** 打开某个作品最新一版的分享弹窗，供“分享到社区”的主动提示使用。 */
+  share: (projectId: string) => void;
 }) {
   const locale = useLocale();
   const uiLocale = isUiLocale(locale) ? locale : 'en';
@@ -31,13 +33,10 @@ export function useAssistantBridge({ state, page, setPage, draft, setDraft, setD
   const assistantHidden = isVos || featureHidden(state.preferences, 'assistant');
   useEffect(() => {
     if (assistantHidden) return;
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'j') { event.preventDefault(); setAssistantOpen(open => !open); }
-    };
+    // 快捷键（默认 ⌘J / Ctrl+J）在 use-global-hotkeys 里注册；这里接宿主菜单与其他入口发来的切换事件。
     const onToggle = () => setAssistantOpen(open => !open);
-    window.addEventListener('keydown', onKey);
     window.addEventListener('workbench-toggle-assistant', onToggle);
-    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('workbench-toggle-assistant', onToggle); };
+    return () => window.removeEventListener('workbench-toggle-assistant', onToggle);
   }, [assistantHidden]);
   // 编辑页的当前页面键（text/story/music/score），其余页面直接用页面名。
   const assistantPage = page === 'create' || page === 'history' ? projectKind(draft) : page === 'voices' ? 'voices' : page;
@@ -74,6 +73,7 @@ export function useAssistantBridge({ state, page, setPage, draft, setDraft, setD
   const [nudge, dismissNudge] = useAssistantNudge(state, assistantReady && !assistantHidden && !assistantOpen && !state.preferences.assistantQuiet);
   const actOnNudge = (next: Nudge) => {
     dismissNudge();
+    if (next.share) { share(next.share); return; }
     setAssistantOpen(true);
     void call('assistant.send', { text: next.prompt, context: { ...assistantContext, page: assistantContext.page === 'create' ? 'text' : assistantContext.page, ...takeAssistantFocus() } }).catch(e => setError(noticeMessage(e)));
   };

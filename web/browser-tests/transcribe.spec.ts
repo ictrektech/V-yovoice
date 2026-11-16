@@ -23,10 +23,29 @@ test('没装识别模型时转写页说明原因并可去下载', async ({ page 
   await openTranscribe(page, []);
   const root = page.getByTestId('transcribe-page');
   await expect(root.getByRole('heading', { name: '语音转写', exact: true })).toBeVisible();
-  await expect(root.getByText('转写需要语音识别模型 Qwen3 ASR')).toBeVisible();
+  await expect(root.getByText('转写需要一个语音识别模型')).toBeVisible();
   await expect(root.getByRole('button', { name: '上传音频', exact: true })).toHaveCount(0);
   await root.getByRole('button', { name: '去下载模型', exact: true }).click();
-  await expect(page.getByText('Qwen3 ASR 0.6B').first()).toBeVisible();
+  // 去下载时直接打开“模型 › 语音识别模型”子页，那里列出全部识别模型。
+  await expect(page.getByRole('tab', { name: '语音识别模型', selected: true })).toBeVisible();
+  const panel = page.getByRole('tabpanel', { name: '语音识别模型' });
+  await expect(panel.getByText('Qwen3 ASR 0.6B')).toBeVisible();
+  await expect(panel.getByText('Qwen3 ASR 1.7B', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Parakeet TDT 0.6B v3')).toBeVisible();
+  await expect(panel.getByText('Confucius4-R2T2', { exact: true })).toBeVisible();
+});
+
+test('装了多个识别模型时可以选用哪一个，选择存进偏好', async ({ page }) => {
+  await openTranscribe(page, [recognizer, { id: 'parakeet-tdt-0.6b-v3-q8', path: 'parakeet-tdt-0.6b-v3-q8_0.gguf', managed: true }]);
+  await page.getByTestId('nav-settings').click();
+  // 模型页先打开“默认模型”子页，各件事默认用哪个模型都在这里选。
+  await page.getByRole('tab', { name: '模型', exact: true }).click();
+  await expect(page.getByRole('tab', { name: '默认模型', exact: true })).toHaveAttribute('aria-selected', 'true');
+  const choice = page.getByRole('combobox', { name: '语音识别', exact: true });
+  await expect(choice).toContainText('Qwen3 ASR 0.6B');
+  await choice.click();
+  await page.getByRole('option', { name: /Parakeet/ }).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1') ?? '{}').preferences?.recognizeModel)).toBe('parakeet-tdt-0.6b-v3-q8');
 });
 
 test('字幕编辑：合并相连文字、按逐词时间拆分、查找替换', () => {
@@ -143,7 +162,7 @@ test('录音后直接转写：停止录音即上传，新记录自动打开；�
   await expect(pageRoot.getByRole('button', { name: '周会', exact: true })).toBeVisible();
 });
 
-test('字幕行尾按 Delete 与下一行合并；Ctrl+Z 撤销、Ctrl+Shift+Z 与 Ctrl+Y 重做，查找框里不拦截', async ({ page }) => {
+test('字幕行尾按 Delete 与下一行合并；Ctrl+Z / ⌘Z 撤销，Ctrl+Shift+Z、Ctrl+Y / ⇧⌘Z 重做，查找框里不拦截', async ({ page }) => {
   await openTranscribe(page, [recognizer]);
   await upload(page);
   const editor = page.getByTestId('transcript-editor');
@@ -163,19 +182,19 @@ test('字幕行尾按 Delete 与下一行合并；Ctrl+Z 撤销、Ctrl+Shift+Z �
   await expect(first).toBeFocused();
   expect(await first.evaluate((field: HTMLTextAreaElement) => field.selectionStart)).toBe(11);
   // 撤销合并，再撤销删字；重做两种快捷键都能用。
-  await page.keyboard.press('Control+z');
+  await page.keyboard.press('ControlOrMeta+z');
   await expect(rows).toHaveCount(3);
-  await page.keyboard.press('Control+z');
+  await page.keyboard.press('ControlOrMeta+z');
   await expect(first).toHaveValue('浏览器预览不运行识别模型');
   await expect(editor.getByRole('button', { name: '撤销', exact: true })).toBeDisabled();
-  await page.keyboard.press('Control+Shift+z');
+  await page.keyboard.press('ControlOrMeta+Shift+z');
   await expect(first).toHaveValue('览器预览不运行识别模型');
-  await page.keyboard.press('Control+y');
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+y');
   await expect(rows).toHaveCount(2);
   await expect(editor.getByRole('button', { name: '重做', exact: true })).toBeDisabled();
   // 焦点不在输入框时快捷键也生效；查找框里的 Ctrl+Z 留给输入框自己。
   await editor.getByRole('heading', { name: '采访录音', exact: true }).click();
-  await page.keyboard.press('Control+z');
+  await page.keyboard.press('ControlOrMeta+z');
   await expect(rows).toHaveCount(3);
   await editor.getByRole('button', { name: '查找替换', exact: true }).click();
   const find = editor.getByRole('textbox', { name: '查找' });
@@ -197,7 +216,16 @@ async function seedTranscript(page: Page, captions: { start: number; end: number
     const modulePath = '/src/shared/lib/sound.ts'; const { encodeWav } = await import(/* @vite-ignore */ modulePath);
     const audio = new AudioBuffer({ length: 24000 * seconds, sampleRate: 24000, numberOfChannels: 1 }); audio.getChannelData(0).fill(0.1);
     const files: [string, Blob][] = [[`${id}.wav`, encodeWav(audio)], [`${id}.json`, new Blob([JSON.stringify({ text: '', words: [], captions })], { type: 'application/json' })]];
-    if (video) files.push([video, new Blob(['not a video'], { type: 'video/mp4' })]);
+    // .webm 用画布现录一秒能播的视频，其他扩展名放一个放不了的假文件。
+    if (video?.endsWith('.webm')) {
+      const canvas = Object.assign(document.createElement('canvas'), { width: 64, height: 36 });
+      const paint = canvas.getContext('2d')!; const timer = setInterval(() => { paint.fillStyle = `hsl(${Date.now() % 360} 60% 50%)`; paint.fillRect(0, 0, 64, 36); }, 40);
+      const recorder = new MediaRecorder(canvas.captureStream(25), { mimeType: 'video/webm' }); const chunks: Blob[] = [];
+      recorder.ondataavailable = event => chunks.push(event.data);
+      await new Promise<void>(resolve => { recorder.onstop = () => resolve(); recorder.start(); setTimeout(() => recorder.stop(), 1000); });
+      clearInterval(timer);
+      files.push([video, new Blob(chunks, { type: 'video/webm' })]);
+    } else if (video) files.push([video, new Blob(['not a video'], { type: 'video/mp4' })]);
     await new Promise<void>((resolve, reject) => {
       const req = indexedDB.open('voice-workbench-audio', 1); req.onupgradeneeded = () => req.result.createObjectStore('audio'); req.onerror = () => reject(req.error);
       req.onsuccess = () => { const db = req.result; const tx = db.transaction('audio', 'readwrite'); for (const [name, blob] of files) tx.objectStore('audio').put(blob, name); tx.oncomplete = () => { db.close(); resolve(); }; };
@@ -238,12 +266,85 @@ test('试听一行：连续播放时播完接着播下一行并跳过长静音�
   await expect(editor.getByRole('button', { name: '连续播放', exact: true })).toHaveAttribute('aria-pressed', 'false');
 });
 
+test('试听中途空格暂停再继续：接着按行试听，关掉连续播放时仍停在这一行结尾', async ({ page }) => {
+  const editor = await seedTranscript(page, [{ start: 0, end: 2, text: '第一行' }, { start: 2, end: 2.5, text: '第二行' }]);
+  await editor.getByRole('button', { name: '连续播放', exact: true }).click();
+  const playing = editor.locator('.transcribe-line[data-playing="true"]');
+  const audio = editor.locator('audio');
+  await editor.getByRole('button', { name: '00:00.000', exact: true }).click();
+  await expect(playing).toHaveAttribute('data-line', '0');
+  await page.keyboard.press('Space');
+  await expect(playing).toHaveCount(0);
+  expect(await audio.evaluate((element: HTMLAudioElement) => element.paused)).toBe(true);
+  await page.keyboard.press('Space');
+  await expect(playing).toHaveAttribute('data-line', '0');
+  // 继续的仍是这一行的试听：播到行尾停下，不接着播第二行。
+  await expect(playing).toHaveCount(0, { timeout: 4000 });
+  expect(await audio.evaluate((element: HTMLAudioElement) => element.currentTime)).toBeLessThan(2.3);
+});
+
+test('翻页后上一行 / 下一行留在当前页：没有焦点行时从本页第一行开始，翻页快捷键把光标放到新页第一行', async ({ page }) => {
+  const captions = Array.from({ length: 60 }, (_, i) => ({ start: i * .08, end: i * .08 + .07, text: `第 ${i + 1} 句` }));
+  const editor = await seedTranscript(page, captions);
+  const line = (n: number) => editor.getByRole('textbox', { name: `第 ${n} 行字幕`, exact: true });
+  await expect(line(1)).toBeVisible();
+  // 用按钮翻到第 2 页，焦点不在任何一行里：⌥↓ 落在第 2 页第一行，而不是跳回第 1 页。
+  await editor.getByRole('button', { name: '下一页', exact: true }).click();
+  await expect(line(51)).toBeVisible();
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect(line(51)).toBeFocused();
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect(line(52)).toBeFocused();
+  // 翻页快捷键：翻过去后光标在新页第一行。
+  await page.keyboard.press('ControlOrMeta+Shift+BracketLeft');
+  await expect(line(1)).toBeFocused();
+  await page.keyboard.press('ControlOrMeta+Shift+BracketRight');
+  await expect(line(51)).toBeFocused();
+});
+
 test('原文件是视频时显示画面；视频放不了时提示并退回只播原音频', async ({ page }) => {
   const editor = await seedTranscript(page, [{ start: 0, end: .6, text: '第一行' }], 'd'.repeat(32) + '.mp4');
   await expect(editor.getByText('这个视频无法在这里播放，改为只播放声音')).toBeVisible();
   await expect(editor.locator('video')).toHaveCount(0);
   await editor.getByRole('button', { name: '00:00.000', exact: true }).click();
   await expect(editor.locator('.transcribe-line[data-playing="true"]')).toHaveAttribute('data-line', '0');
+});
+
+test('视频在上、字幕在下：空格播放暂停，字幕里打字时空格照常输入；拖动分隔条调整画面高度，记在本机', async ({ page }) => {
+  const captions = Array.from({ length: 30 }, (_, i) => ({ start: i * .03, end: i * .03 + .03, text: `第 ${i + 1} 句` }));
+  const editor = await seedTranscript(page, captions, 'd'.repeat(32) + '.webm');
+  const video = editor.locator('video');
+  await expect(video).toHaveJSProperty('readyState', 4);
+  const paused = () => video.evaluate((element: HTMLVideoElement) => element.paused);
+  await page.keyboard.press('Space');
+  await expect.poll(paused).toBe(false);
+  await page.keyboard.press('Space');
+  await expect.poll(paused).toBe(true);
+  // 光标在字幕里时空格是文字，不播放。
+  const line = editor.getByRole('textbox', { name: '第 1 行字幕', exact: true });
+  await line.click(); await page.keyboard.press('End'); await page.keyboard.press('Space');
+  await expect(line).toHaveValue('第 1 句 ');
+  expect(await paused()).toBe(true);
+  // 焦点在视频上时空格交给视频自己，只切换一次，不会刚播放就又停下。
+  await video.focus();
+  await page.keyboard.press('Space');
+  await expect.poll(paused).toBe(false);
+  await page.waitForTimeout(200);
+  expect(await paused()).toBe(false);
+  await page.keyboard.press('Space');
+  await expect.poll(paused).toBe(true);
+  // 分隔条可用键盘调整：画面变高，重新打开后保持。
+  const stage = editor.locator('.transcribe-video');
+  const before = (await stage.boundingBox())!.height;
+  const handle = editor.getByRole('separator', { name: '调整视频大小', exact: true });
+  await handle.focus();
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowDown');
+  await expect.poll(async () => (await stage.boundingBox())!.height).toBeGreaterThan(before + 20);
+  const after = (await stage.boundingBox())!.height;
+  await page.reload();
+  await page.getByTestId('nav-transcribe').click();
+  await page.getByTestId('transcribe-page').getByRole('button', { name: '访谈', exact: true }).click();
+  await expect.poll(async () => Math.round((await editor.locator('.transcribe-video').boundingBox())?.height ?? 0)).toBe(Math.round(after));
 });
 
 test('语音版本导出字幕：先对齐正文时间，保存在版本上，再按句导出', async ({ page }, testInfo) => {

@@ -4,7 +4,7 @@ import { emptyState, type ModelPackage } from '../src/shared/workbench';
 import catalogFile from '../../internal/catalog/catalog.json' with { type: 'json' };
 
 const catalog = catalogFile as { models: ModelPackage[] };
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 
 test('四种表达方式、草稿持久化与模型协议', async ({ page }) => {
@@ -50,7 +50,7 @@ test('四种表达方式、草稿持久化与模型协议', async ({ page }) => 
   await page.reload(); await expect(page.getByLabel('作品名称')).toHaveValue('测试旁白');
   await page.getByRole('button', { name: '设置', exact: true }).click();
   // 语音模型与音乐模型分页显示，各自带下载设置。
-  await page.getByRole('tab', { name: '音乐模型', exact: true }).click();
+  await page.getByRole('tab', { name: '模型', exact: true }).click(); await page.getByRole('tab', { name: '音乐模型', exact: true }).click();
   // 同一模型的多种量化合并为一行，用精度切换；含可选的歌词对齐、分轨、人声分离（BS-RoFormer）和转为 MIDI 模型。
   await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(11);
   const yue = page.locator('[data-model-id^="yue2-"]');
@@ -60,14 +60,8 @@ test('四种表达方式、草稿持久化与模型协议', async ({ page }) => 
   await expect(yue).toHaveAttribute('data-model-id', 'yue2-3b-bf16');
   await expect(yue.locator('.model-size')).toHaveText('7.01 GB');
   await expect(page.getByLabel('下载来源', { exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
-  // 保留两个仅导入的 Kokoro，不把它们计入可下载模型组。
+  await page.getByRole('tab', { name: '模型', exact: true }).click(); await page.getByRole('tab', { name: '语音模型', exact: true }).click();
   await expect(page.getByRole('button', { name: '下载模型', exact: true })).toHaveCount(18);
-  for (const id of ['kokoro-1.0-q8', 'kokoro-1.1-zh-q8']) {
-    const row = page.locator(`[data-model-id="${id}"]`);
-    await expect(row).toBeVisible();
-    await expect(row.getByRole('button', { name: '导入 GGUF', exact: true })).toBeVisible();
-  }
   await expect(page.locator('[data-model-id^="ace-step-"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'IndexTTS 协议' }).click();
   await expect(page.getByRole('heading', { name: '模型使用协议' })).toBeVisible();
@@ -91,21 +85,11 @@ test('真实 WAV 导入、播放、裁剪和空状态', async ({ page }) => {
   await page.getByRole('button', { name: '暂停', exact: true }).click();
   const progress = page.getByRole('slider', { name: '播放进度' });
   await expect(progress).toBeVisible();
-  const lane = page.locator('.timeline-lane');
-  const originalWidth = await page.locator('.waveform').evaluate(el => el.getBoundingClientRect().width);
-  await page.getByRole('button', { name: '放大音轨', exact: true }).click();
-  await expect(page.getByRole('button', { name: '适应完整音轨' })).toHaveText('200%');
-  await expect.poll(() => page.locator('.waveform').evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(originalWidth * 1.9);
-  await lane.evaluate(el => { el.scrollLeft = el.scrollWidth; });
-  expect(await lane.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
-  await progress.fill('1.5');
-  await expect.poll(() => page.locator('footer audio').evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(1.5, 1);
-  await page.getByRole('button', { name: '适应完整音轨' }).click();
-  await expect(page.getByRole('button', { name: '缩小音轨' })).toBeDisabled();
-  await expect.poll(() => lane.evaluate(el => el.scrollLeft)).toBe(0);
   await progress.fill('1');
   await expect.poll(() => page.locator('footer audio').evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(1, 1);
-  await page.getByRole('button', { name: '回到开头' }).click();
+  // 单轨播放器不再放回到开头的按钮，Home 键照常回到开头。
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  await page.keyboard.press('Home');
   await expect(progress).toHaveValue('0');
   await page.getByRole('button', { name: '静音', exact: true }).click();
   await expect.poll(() => page.locator('footer audio').evaluate((el: HTMLAudioElement) => el.volume)).toBe(0);
@@ -185,7 +169,7 @@ test('真实 WAV 导入、播放、裁剪和空状态', async ({ page }) => {
   await expect(controls).toHaveAttribute('data-playing', 'false');
   await play.click();
   await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
+  await page.getByRole('tab', { name: '模型', exact: true }).click(); await page.getByRole('tab', { name: '语音模型', exact: true }).click();
   await expect.poll(() => page.locator('audio').evaluateAll(elements => elements.every(el => (el as HTMLAudioElement).paused))).toBeTruthy();
   await page.getByTestId('nav-story').click();
   await expect(page.locator('footer.player')).toBeHidden();
@@ -267,7 +251,7 @@ test('语音生成只有历史生成：工具栏进入历史页，试听不改�
   await expect(transport.getByRole('button', { name: '导出音频', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '保存为角色', exact: true })).toHaveCount(0);
   await transport.getByRole('button', { name: '音频操作', exact: true }).click();
-  await expect(page.getByRole('menuitem')).toHaveText(['导出音频', '导出字幕', '保存为参考音频', '保存为角色']);
+  await expect(page.getByRole('menuitem')).toHaveText([/^导出音频/, '导出字幕', '保存为参考音频', '保存为角色']);
   await page.keyboard.press('Escape');
 
   // 历史生成汇总所有语音作品的结果，不分版本；改过名的显示名称，其余显示正文。
@@ -479,7 +463,7 @@ test('已下载模型有新版本时显示轻提示，可关闭并重新下载�
   await page.reload();
   await expect(page.getByTestId('model-update-notice')).toHaveCount(0);
   await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
+  await page.getByRole('tab', { name: '模型', exact: true }).click(); await page.getByRole('tab', { name: '语音模型', exact: true }).click();
   const model = page.locator('[data-model-id="kokoro-82m-q8"]');
   await expect(model.getByText('有新版本', { exact: true })).toBeVisible();
   await model.getByRole('button', { name: '更新', exact: true }).click();
@@ -496,7 +480,7 @@ test('目录更新过的模型可以换回更新前的版本，换回旧版后�
   await seedState(page, state);
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('tab', { name: '语音模型', exact: true }).click();
+  await page.getByRole('tab', { name: '模型', exact: true }).click(); await page.getByRole('tab', { name: '语音模型', exact: true }).click();
   const model = page.locator('[data-model-id="kokoro-82m-q8"]');
   const version = model.getByRole('combobox', { name: '模型版本', exact: true });
   await expect(version).toContainText('最新版');
@@ -605,4 +589,96 @@ test('长录音可试听并保存一分钟之后的选段，取消时不登记�
   const audio = page.locator('footer audio');
   await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.duration)).toBeCloseTo(5);
   expect(await audio.evaluate(hasSelectedAudio)).toBe(true);
+});
+
+/** 语音作品带一版 4 秒的生成音频，底部是带波形的播放器。 */
+async function openWithVersion(page: Page, seeded?: ReturnType<typeof emptyState>) {
+  const state = seeded ?? emptyState();
+  const draft = state.drafts[0];
+  if (!seeded) state.history = [{ id: '1'.repeat(32), title: draft.title, fileName: 'tone.wav', createdAt: '2026-09-15T10:00:00Z', duration: 4, settings: { ...draft } }];
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const rate = 8000, seconds = 4, bytes = new Uint8Array(44 + rate * seconds * 2); const view = new DataView(bytes.buffer);
+    const text = (offset: number, value: string) => bytes.set(new TextEncoder().encode(value), offset);
+    text(0, 'RIFF'); view.setUint32(4, bytes.length - 8, true); text(8, 'WAVEfmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+    view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); text(36, 'data'); view.setUint32(40, rate * seconds * 2, true);
+    for (let i = 0; i < rate * seconds; i++) view.setInt16(44 + i * 2, Math.round(Math.sin(i * 220 * Math.PI * 2 / rate) * 4000), true);
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('voice-workbench-audio', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('audio');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => { const db = request.result; const tx = db.transaction('audio', 'readwrite'); tx.objectStore('audio').put(new Blob([bytes], { type: 'audio/wav' }), 'tone.wav'); tx.oncomplete = () => { db.close(); resolve(); }; };
+    });
+  });
+  await seedState(page, state); await page.reload();
+  return page.locator('.player');
+}
+
+test('点过波形上的进度条（透明滑块）后，空格照常播放、M 静音', async ({ page }) => {
+  const player = await openWithVersion(page);
+  await player.getByRole('slider', { name: '播放进度' }).click();
+  await page.keyboard.press('Space');
+  await expect(player.getByRole('button', { name: '暂停', exact: true })).toBeVisible();
+  await page.keyboard.press('m');
+  await expect(player.getByRole('button', { name: '取消静音', exact: true })).toBeVisible();
+  await expect.poll(() => page.locator('footer audio').evaluate((element: HTMLAudioElement) => element.volume)).toBe(0);
+});
+
+test('鼠标点过的按钮留着焦点时，空格播放而不是再按一次那个按钮', async ({ page }) => {
+  const player = await openWithVersion(page);
+  // 鼠标点的按钮在 Windows / Linux 上会留着焦点，但不是用键盘移到的：空格交给播放，不再按一次静音。
+  await player.getByRole('button', { name: '静音', exact: true }).click();
+  await expect(player.getByRole('button', { name: '取消静音', exact: true })).toBeVisible();
+  await page.keyboard.press('Space');
+  await expect(player.getByRole('button', { name: '暂停', exact: true })).toBeVisible();
+  await expect(player.getByRole('button', { name: '取消静音', exact: true })).toBeVisible();
+});
+
+test('播放键两侧切换上一版、下一版，播放中切换会接着播放', async ({ page }) => {
+  const state = emptyState();
+  const draft = state.drafts[0];
+  state.history = [
+    { id: '2'.repeat(32), title: '第二版', fileName: 'tone.wav', createdAt: '2026-09-15T11:00:00Z', duration: 4, settings: { ...draft } },
+    { id: '1'.repeat(32), title: '第一版', fileName: 'tone.wav', createdAt: '2026-09-15T10:00:00Z', duration: 4, settings: { ...draft } },
+  ];
+  const player = await openWithVersion(page, state);
+  const previous = player.getByRole('button', { name: '上一版本' }), next = player.getByRole('button', { name: '下一版本' });
+  // 默认停在最新一版：没有更新的版本。
+  await expect(next).toBeDisabled();
+  await player.getByRole('button', { name: '播放', exact: true }).click();
+  await previous.click();
+  await expect(previous).toBeDisabled();
+  await expect(next).toBeEnabled();
+  await expect(player.getByRole('button', { name: '暂停', exact: true })).toBeVisible();
+  await next.click();
+  await expect(next).toBeDisabled();
+});
+
+test('鼠标点“生成语音”后按钮换成“取消生成”，再按空格或回车不会误取消', async ({ page }) => {
+  const state = emptyState();
+  state.drafts[0].text = '你好。';
+  await seedState(page, state);
+  await page.goto('/');
+  // 预览没有推理引擎：点“生成语音”时直接把任务标成进行中，模拟生成开始；之后被点到的按钮都记下来。
+  await page.evaluate(() => {
+    const clicks: string[] = [];
+    Object.assign(window, { clicks });
+    document.addEventListener('click', event => {
+      const button = (event.target as Element).closest('button');
+      if (!button) return;
+      clicks.push(button.textContent ?? '');
+      if (!button.textContent?.includes('生成语音')) return;
+      event.stopPropagation();
+      (window as unknown as { __previewActivity: (slot: string, value: unknown) => void }).__previewActivity('activity', {
+        kind: 'generate', code: '@yovoice.activity.generate', params: {}, status: 'running', received: 0, total: 0, startedAt: '2026-10-18T00:00:00Z', errorCode: null, errorParams: {}, modelId: null,
+      });
+    }, true);
+  });
+  const inspector = page.locator('.inspector');
+  await inspector.getByRole('button', { name: '生成语音', exact: true }).click();
+  await expect(inspector.getByRole('button', { name: '取消生成', exact: true })).toBeVisible();
+  await page.keyboard.press('Space');
+  await page.keyboard.press('Enter');
+  await expect(inspector.getByRole('button', { name: '取消生成', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { clicks: string[] }).clicks.filter(text => text.includes('取消生成')))).toEqual([]);
 });

@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } 
 import { call, saveText } from '../../shared/lib/client';
 import { noticeMessage } from '../../shared/lib/call-error';
 import type { Activity, AlignedWord, Generation } from '../../shared/workbench';
-import { alignLines, alignedTimeline, alignLyrics, withWords } from './lyric-align';
+import { alignedTimeline, alignLyrics, withWords } from './lyric-align';
 import { activeLyric, lyricRows, lyricTimeline, lyricsToLrc, type LyricLine } from './lyric-timing';
 import { editableLines } from './lyric-word-editor';
 import type { SongVoice } from './use-song-analysis';
@@ -49,7 +49,13 @@ export function useLyricTiming({ item, versions, title, voice, duration, time, a
   const running = activity?.status === 'running', aligning = running && activity.task === 'align' && activity.projectId === item.settings.id;
   const alignNow = () => {
     if (!aligner) { getAligner?.(); return; }
-    void call('generation.alignLyrics', { id: item.id, lines: alignLines(timeline, duration) }).catch(fail);
+    void call('generation.alignLyrics', { id: item.id }).catch(fail);
+  };
+  // 单键一键对齐（A）容易误按：没装对齐模型时只在页内提示，不离开播放页；已有校准或逐字时间时先确认再覆盖（confirmAlign）。
+  const [confirmAlign, setConfirmAlign] = useState(false);
+  const alignByKey = () => {
+    if (!aligner) { setNotice('@yovoice.music.alignNeedsModel'); return; }
+    if (times?.length || aligned?.length) setConfirmAlign(true); else alignNow();
   };
 
   // 保存校准时间：成功后才更新本地状态并收起提示；失败时在页内提示，调用方据返回值决定是否退出校准。
@@ -82,7 +88,7 @@ export function useLyricTiming({ item, versions, title, voice, duration, time, a
     setSync(sync.slice(0, -1)); seek(last - undoRewind);
   };
   // 切换版本：换成新版本已保存的时间，退出校准和逐字编辑。
-  const reset = (next: Generation) => { setTimes(next.lyricTimes); setAligned(next.lyricWords); setSync(null); setEdit(null); };
+  const reset = (next: Generation) => { setTimes(next.lyricTimes); setAligned(next.lyricWords); setSync(null); setEdit(null); setConfirmAlign(false); };
 
-  return { times, sync, setSync, edit, setEdit, editLine, setEditLine, lineClick, rows, auto, fromModel, timeline, lines, current, focus, running, aligning, alignNow, save, startEdit, saveWords, startSync, mark, exportLrc, undo, reset };
+  return { times, sync, setSync, edit, setEdit, editLine, setEditLine, lineClick, rows, auto, fromModel, timeline, lines, current, focus, running, aligning, alignNow, alignByKey, confirmAlign, setConfirmAlign, save, startEdit, saveWords, startSync, mark, exportLrc, undo, reset };
 }

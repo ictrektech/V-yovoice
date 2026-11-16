@@ -62,7 +62,7 @@ export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 export interface LogEntry { time: string; level: LogLevel; event: string; fields?: Record<string, unknown> }
 export interface LogFilter { level?: string; module?: string; text?: string; since?: string; offset?: number; limit?: number }
 export interface LogPage { entries: LogEntry[]; total: number; modules: string[] }
-export interface Generation { segment?: GenerationSegment; id: string; title: string; fileName: string; createdAt: string; duration: number; settings: Draft; lyricTimes?: number[]; lyricWords?: AlignedWord[]; textWords?: AlignedWord[]; check?: AudioCheck; seed?: number; stemOf?: string; stem?: StemName; patchOf?: string; patchBars?: number[] }
+export interface Generation { segment?: GenerationSegment; id: string; title: string; fileName: string; createdAt: string; duration: number; settings: Draft; lyricTimes?: number[]; gene?: string; lyricWords?: AlignedWord[]; textWords?: AlignedWord[]; check?: AudioCheck; seed?: number; stemOf?: string; stem?: StemName; patchOf?: string; patchBars?: number[] }
 /** HTDemucs 6-stem 的分轨名；分轨结果是同一作品里 stemOf 指向原版本的版本。 */
 export type StemName = 'drums' | 'bass' | 'other' | 'vocals' | 'guitar' | 'piano';
 /** 生成后的测量体检：整体响度（LUFS）、真峰值（dBTP）与发现的问题。 */
@@ -111,7 +111,9 @@ export interface CleanupReport {
   cleanedCount: number;
   freedBytes: number;
 }
-export interface Preferences { downloadSource: string; backend: string; performanceFirst?: boolean; modelDirectory: string | null; uiLocale: UiLocale; proxyURL?: string; proxyEnabled?: boolean; aiTimeout?: number; introSeen?: boolean; tourSeen?: boolean; assistantQuiet?: boolean; hiddenFeatures?: Feature[]; theme?: AppTheme; engine?: EngineSettings; transcribe?: TranscribeSettings }
+export interface Preferences { downloadSource: string; backend: string; performanceFirst?: boolean; modelDirectory: string | null; uiLocale: UiLocale; proxyURL?: string; proxyEnabled?: boolean; aiTimeout?: number; introSeen?: boolean; tourSeen?: boolean; assistantQuiet?: boolean; hiddenFeatures?: Feature[]; theme?: AppTheme; engine?: EngineSettings; transcribe?: TranscribeSettings; recognizeModel?: string; alignSeparator?: 'htdemucs'; hotkeys?: HotkeySettings }
+/** 改过的快捷键与快捷键开关，与 Go 的 schema.HotkeySettings 一致：bindings 只记与默认不同的命令，空字符串表示清除；off 是停用的功能区。 */
+export interface HotkeySettings { disabled?: boolean; off?: string[]; bindings?: Record<string, string> }
 // 可在设置中隐藏的功能入口：故事配音、音乐生成（含编曲与音效）与 Ocho 助手，默认全部显示。
 export const optionalFeatures = ['story', 'music', 'transcribe', 'assistant'] as const;
 export type Feature = typeof optionalFeatures[number];

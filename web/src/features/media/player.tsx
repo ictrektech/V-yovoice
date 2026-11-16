@@ -1,6 +1,6 @@
 import { liveAudioPlayer } from './live-audio-player';
-import { PlaybackToolbar, TrackZoom } from './playback-toolbar';
-import { lazy, Suspense, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { PlaybackToolbar } from './playback-toolbar';
+import { lazy, Suspense, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
@@ -10,16 +10,19 @@ import { noticeMessage } from '../../shared/lib/call-error';
 import { formatTime } from '../../shared/workbench';
 import { waveform as readWaveform } from './waveform';
 import type { Track } from '../../shared/workbench';
+import { useHotkey, useHotkeyAria, useHotkeyText, withHotkey } from '../../shared/hotkeys/hotkeys';
 
 // 头像素材仅在展示库列表时加载，避免进入创作首屏主包。
 const SeededAvatar = lazy(() => import('../../shared/ui/seeded-avatar').then(module => ({ default: module.SeededAvatar })));
 
+/** 正文播放器两侧的切换版本按钮：previous 是更早的一版，next 是更新的一版，没有时为 null；参数表示切换后是否接着播放。 */
+export type VersionSwitch = { previous: ((play: boolean) => void) | null; next: ((play: boolean) => void) | null };
+
 // reveal=false 时由调用方在自己的工具栏或菜单里提供“打开位置”，工具栏不再单独放文件夹按钮。
-export function Player({ track, onError, suspended, compact = false, actions, avatar, inline, onProgress, seekRequest, reveal = true }: { reveal?: boolean; onProgress?: (time: number, playing: boolean) => void; seekRequest?: { time: number; nonce: number }; inline?: { label: string; select: () => void }; avatar?: { seed: string; label: string; disabled?: boolean; select: () => void }; actions?: ReactNode; compact?: boolean; suspended: boolean; track: Track | null; onError: (message: string) => void }) {
+// versions 只在有多个版本的作品里传入，播放键两侧放上一版、下一版；其余页面只有播放键（回到开头、结尾仍可用快捷键）。
+export function Player({ track, onError, suspended, compact = false, actions, avatar, inline, onProgress, seekRequest, reveal = true, versions }: { versions?: VersionSwitch; reveal?: boolean; onProgress?: (time: number, playing: boolean) => void; seekRequest?: { time: number; nonce: number }; inline?: { label: string; select: () => void }; avatar?: { seed: string; label: string; disabled?: boolean; select: () => void }; actions?: ReactNode; compact?: boolean; suspended: boolean; track: Track | null; onError: (message: string) => void }) {
   const t = useTranslator();
   const audio = useRef<HTMLAudioElement>(null);
-  const lane = useRef<HTMLElement>(null);
-  const [zoom, setZoom] = useState(1);
   const [volume, setVolume] = useState(1);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0); const [duration, setDuration] = useState(0); const [peaks, setPeaks] = useState<number[]>([]);
@@ -43,8 +46,7 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   }, []);
   // 1. 加载只跟随音频本身变化：再次请求播放或切换页面都不会重新读取。
   useEffect(() => {
-    setTime(0); setDuration(0); setPeaks([]); setPlaying(false); setZoom(1); drawn.current = '';
-    if (lane.current) lane.current.scrollLeft = 0;
+    setTime(0); setDuration(0); setPeaks([]); setPlaying(false); drawn.current = '';
     if (!key || !kind || !fileName) return;
     let disposed = false; let resource = '';
     mediaUrl(kind, fileName).then(value => {
@@ -84,25 +86,8 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   useEffect(() => { pending.current = !!playRequest; }, [playRequest, key]);
   useEffect(() => startPending(), [playRequest, key, url, failure]);
   useEffect(() => { if (suspended) { pending.current = false; audio.current?.pause(); } }, [suspended]);
-  // 缩放后让播放位置保持在视口中央，播放进度变化本身不触发滚动。
-  const centerPlayhead = useEffectEvent(() => {
-    const viewport = lane.current;
-    if (!viewport || !duration) return;
-    const position = time / duration * viewport.scrollWidth;
-    viewport.scrollLeft = Math.max(0, position - viewport.clientWidth / 2);
-  });
-  useLayoutEffect(() => centerPlayhead(), [zoom]);
-  useEffect(() => {
-    const viewport = lane.current;
-    if (!viewport || !playing || !duration) return;
-    const position = time / duration * viewport.scrollWidth;
-    if (position < viewport.scrollLeft || position > viewport.scrollLeft + viewport.clientWidth) viewport.scrollLeft = position;
-  }, [time, playing, duration]);
-  // 放大时使用更密的峰值，缩小时取每组最大值，保留短促声音的轮廓。
-  const visiblePeaks = useMemo(() => {
-    const group = 8 / zoom;
-    return Array.from({ length: Math.ceil(peaks.length / group) }, (_, i) => Math.max(...peaks.slice(i * group, (i + 1) * group)));
-  }, [peaks, zoom]);
+  // 单轨波形铺满一屏，不缩放：每 8 个峰值取最大值，保留短促声音的轮廓。
+  const visiblePeaks = useMemo(() => Array.from({ length: Math.ceil(peaks.length / 8) }, (_, i) => Math.max(...peaks.slice(i * 8, (i + 1) * 8))), [peaks]);
   // 编曲视图跟随播放位置显示指针，也可以点标尺跳转。
   const reportProgress = useEffectEvent(() => onProgress?.(time, playing));
   useEffect(() => reportProgress(), [time, playing]);
@@ -123,9 +108,24 @@ export function Player({ track, onError, suspended, compact = false, actions, av
     if (audio.current) audio.current.currentTime = value;
     setTime(value);
   };
+  const setLevel = (next: number) => { setVolume(next); liveAudioPlayer.setVolume(next); if (audio.current) audio.current.volume = next; };
+  // 快捷键只给带波形的底部播放器，且只在它可见、有音频时响应；同时挂着的其他播放器（隐藏的页面、库里的试听）不抢按键。
+  // 快退快进按音频元素的实时位置算，按住不放时不受进度刷新频率影响。
+  const keyboard = waveform && !suspended && !!track;
+  const skip = (delta: number) => { const element = audio.current; if (element) seek(Math.max(0, Math.min(element.duration || duration, element.currentTime + delta))); };
+  useHotkey('player.play', toggle, { enabled: keyboard });
+  useHotkey('global.playPause', toggle, { enabled: keyboard, inInput: true });
+  useHotkey('player.back', () => skip(-5), { enabled: keyboard && !!url, repeat: true });
+  useHotkey('player.forward', () => skip(5), { enabled: keyboard && !!url, repeat: true });
+  useHotkey('player.start', () => seek(0), { enabled: keyboard && !!url });
+  useHotkey('player.end', () => seek(duration), { enabled: keyboard && !!duration });
+  useHotkey('player.mute', () => setLevel(volume === 0 ? 1 : 0), { enabled: keyboard });
+  const keys = { play: useHotkeyText('player.play'), mute: useHotkeyText('player.mute') };
+  const tip = (label: string, key: string) => withHotkey(label, key, undefined);
+  const playAria = useHotkeyAria('player.play'), muteAria = useHotkeyAria('player.mute');
   const scale = duration || 10;
-  const tickBase = 10 ** Math.floor(Math.log10(scale / zoom / 10));
-  const tickStep = [1, 2, 5, 10].map(n => n * tickBase).find(n => n >= scale / zoom / 10)!;
+  const tickBase = 10 ** Math.floor(Math.log10(scale / 10));
+  const tickStep = [1, 2, 5, 10].map(n => n * tickBase).find(n => n >= scale / 10)!;
   const ticks = Array.from({ length: Math.ceil(scale / tickStep) }, (_, i) => i * tickStep);
   // 只预读时长等元数据，整段音频在播放时再读取。
   const media = <audio hidden ref={audio} src={url || undefined} preload="metadata"
@@ -151,25 +151,24 @@ export function Player({ track, onError, suspended, compact = false, actions, av
     <small className="preview-time">{formatTime(time)}</small>
     <input className="preview-progress" aria-label={t('@yovoice.player.progress')} aria-valuetext={t('@yovoice.player.progressValue', { current: formatTime(time), total: formatTime(duration) })} type="range" min={0} max={duration || 1} step={0.01} value={time} disabled={!duration} onChange={e => seek(Number(e.target.value))} style={{ background: `linear-gradient(to right, var(--app-wave) ${duration ? time / duration * 100 : 0}%, var(--app-line) 0%)` }} />
     <small className="preview-time">{formatTime(duration)}</small>
-    <Button label={volume === 0 ? t('@yovoice.player.unmute') : t('@yovoice.player.mute')} isIconOnly icon={volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />} size="sm" variant="ghost" onClick={() => { const next = volume === 0 ? 1 : 0; setVolume(next); liveAudioPlayer.setVolume(next); if (audio.current) audio.current.volume = next; }} />
+    <Button label={volume === 0 ? t('@yovoice.player.unmute') : t('@yovoice.player.mute')} isIconOnly icon={volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />} size="sm" variant="ghost" onClick={() => setLevel(volume === 0 ? 1 : 0)} />
   </HStack>;
   return <VStack as="footer" className="player audio-panel player-single" gap={0}>
     {media}
-    <PlaybackToolbar time={time} duration={duration} playing={playing} disabled={!url || !!failure || suspended} toggle={toggle}
-      beforePlay={<Button label={t('@yovoice.player.skipStart')} isIconOnly icon={<SkipBack size={16} />} size="sm" variant="ghost" isDisabled={!url || !!failure} onClick={() => seek(0)} />}
-      afterPlay={<Button label={t('@yovoice.player.skipEnd')} isIconOnly icon={<SkipForward size={16} />} size="sm" variant="ghost" isDisabled={!duration} onClick={() => seek(duration)} />}>
+    <PlaybackToolbar time={time} duration={duration} playing={playing} disabled={!url || !!failure || suspended} toggle={toggle} keys={keys.play} aria={playAria}
+      beforePlay={versions ? <Button label={t('@yovoice.player.previousVersion')} tooltip={t('@yovoice.player.previousVersion')} isIconOnly icon={<SkipBack size={16} />} size="sm" variant="ghost" isDisabled={!versions.previous || suspended} onClick={() => versions.previous?.(playing)} /> : undefined}
+      afterPlay={versions ? <Button label={t('@yovoice.player.nextVersion')} tooltip={t('@yovoice.player.nextVersion')} isIconOnly icon={<SkipForward size={16} />} size="sm" variant="ghost" isDisabled={!versions.next || suspended} onClick={() => versions.next?.(playing)} /> : undefined}>
         <HStack className="volume-control" gap={2} vAlign="center">
-          <Button label={volume === 0 ? t('@yovoice.player.unmute') : t('@yovoice.player.mute')} isIconOnly icon={volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />} size="sm" variant="ghost" onClick={() => { const next = volume === 0 ? 1 : 0; setVolume(next); liveAudioPlayer.setVolume(next); if (audio.current) audio.current.volume = next; }} />
-          <input aria-label={t('@yovoice.player.volume')} type="range" min={0} max={1} step={0.01} value={volume} onChange={e => { const next = Number(e.target.value); setVolume(next); liveAudioPlayer.setVolume(next); if (audio.current) audio.current.volume = next; }} />
+          <Button label={volume === 0 ? t('@yovoice.player.unmute') : t('@yovoice.player.mute')} tooltip={tip(volume === 0 ? t('@yovoice.player.unmute') : t('@yovoice.player.mute'), keys.mute)} aria-keyshortcuts={muteAria} isIconOnly icon={volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />} size="sm" variant="ghost" onClick={() => setLevel(volume === 0 ? 1 : 0)} />
+          <input aria-label={t('@yovoice.player.volume')} type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setLevel(Number(e.target.value))} />
         </HStack>
-        <TrackZoom value={zoom} change={setZoom} disabled={!duration} />
         {actions}
         {isDesktop && reveal && track?.kind === 'outputs' ? <Button label={t('@yovoice.player.reveal')} isIconOnly icon={<FolderOpen size={17} />} size="sm" variant="ghost" onClick={() => { void call('media.reveal', { kind: track.kind, id: track.id }).catch(e => onError(noticeMessage(e))); }} /> : null}
 
     </PlaybackToolbar>
     <HStack className="timeline" gap={0}>
-      <VStack className="timeline-lane" ref={lane} gap={0}>
-        <VStack className="timeline-content" gap={0} style={{ width: `${zoom * 100}%` }}>
+      <VStack className="timeline-lane" gap={0}>
+        <VStack className="timeline-content" gap={0}>
         <HStack className="time-ruler" aria-hidden="true">{ticks.map(tick => <small key={tick} style={{ left: `${tick / scale * 100}%` }}>{Number(tick.toFixed(2))}s</small>)}</HStack>
         {failure ? <p className="waveform waveform-unavailable" role="status">{t('@yovoice.player.unavailable')}</p> : peaks.length ? <VStack className="waveform" gap={0}>
           <svg viewBox={`0 0 ${visiblePeaks.length * 2.5} 40`} preserveAspectRatio="none" aria-hidden="true">{visiblePeaks.map((p, i) => <line key={i} x1={i * 2.5 + 1.25} x2={i * 2.5 + 1.25} y1={20 - Math.max(1, p * 19)} y2={20 + Math.max(1, p * 19)} className={i / visiblePeaks.length < time / duration ? 'played' : ''} />)}</svg>
