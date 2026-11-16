@@ -2,6 +2,12 @@
 
 ### English
 
+### 简体中文
+
+## [0.0.37] - 2026-11-15
+
+### English
+
 - Share songs to the yovoice community from the player or version menu: sign in through your browser, add a title, tags and a license, and the version goes up for review with its aligned lyrics. Reference voices are never included. Ocho offers to share a song once it finishes, and Settings › Community lists what you have shared and its review status.
 - Song covers are drawn from the song's own loudness, the same as on the community page, and are embedded in exported FLAC and M4A files and used for library records.
 - Keyboard shortcuts: a new Settings › Keyboard shortcuts tab lists every shortcut by area. Change keys, see conflicts and system-reserved keys, restore defaults, turn areas off, and export or import with a preview. Press ⌘/ (Ctrl+/) to see the shortcuts for the current page. Shortcuts no longer fire behind dialogs, swallow ⌥ / AltGr characters or interfere with typing, and some defaults moved off system and input-method keys.

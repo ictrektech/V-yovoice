@@ -3,8 +3,8 @@
 Repository: https://github.com/leemysw/yovoice
 Git URL: https://github.com/leemysw/yovoice.git
 Branch: main
-Integration baseline: 374fb0661b59438c2eb02894bbacfb1ad722f4e8
-Integration checkpoint: post-v0.7.0 + audio.cpp v0.9.3 (full upstream merge through 2026-11-13); validation and retained behavior: docs/upstream-integration.md
+Integration baseline: effe4600ff1bd21e424279484940e8b00600fe6c
+Integration checkpoint: post-v0.8.0 + audio.cpp v0.9.3 (full upstream merge through 2026-11-15); validation and retained behavior: docs/upstream-integration.md
 Downstream: git@github.com:ictrektech/V-yovoice.git
 
 This fork hosts the next V-Voice: retain upstream voice-creation features while
