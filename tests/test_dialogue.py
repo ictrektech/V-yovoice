@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import contextlib
 import dataclasses
 import json
@@ -92,7 +93,7 @@ async def test_worker_loads_once_and_serves_sequential_sessions(tmp_path, monkey
 
 
 @pytest.mark.asyncio
-async def test_overload_monitor_waits_for_client_audio():
+async def test_overload_monitor_waits_for_worker_output():
     class Worker:
         async def send(self, value):
             return None
@@ -110,11 +111,15 @@ async def test_overload_monitor_waits_for_client_audio():
     session = DialogueSession(manager, "session", "en", "companion", 180)
     monitor = asyncio.create_task(session._monitor())
     try:
+        await session.push(b"\0" * 6400)
         await asyncio.sleep(1.2)
         assert session.events.empty()
         assert not failed
 
-        await session.push(b"\0" * 6400)
+        await session.on_chunk({"pcm": base64.b64encode(b"\0" * 6400).decode()})
+        await asyncio.sleep(1.2)
+        kind, value = await asyncio.wait_for(session.events.get(), 2)
+        assert kind == "audio"
         kind, value = await asyncio.wait_for(session.events.get(), 2)
         assert kind == "error"
         assert value[0] == "dialogue_overloaded"

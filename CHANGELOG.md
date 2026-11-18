@@ -9,13 +9,13 @@
 ### English
 
 - Real-time dialogue with Haru is available for the Jetson / L4T profile: choose Chinese or English, one of three preset characters, and talk hands-free through the browser microphone. The model is loaded on demand, stays warm for a configurable idle period, and runs only one conversation on the device at a time.
-- The microphone is prepared before a session starts, and generation latency is checked only after client audio begins. Slow first microphone startup no longer causes a false one-second delay error; failed sessions release their model residency immediately.
+- The microphone is prepared before a session starts, and generation latency is checked only after the model emits its first output frame. Time spent listening to or processing the first utterance no longer causes a false one-second delay error; failed sessions release their model residency immediately.
 - The first release is validated only on tc207. AMD CUDA and Thor 0.0.38 images are built for the remaining V-Voice changes but do not expose the realtime dialogue entry; AMD CPU, ARM CPU and generic ARM CUDA profiles continue to use the existing 0.0.37 images.
 
 ### 简体中文
 
 - 新增 Haru 实时对话：Jetson / L4T profile 可选择中文或英文及三种预设角色，通过浏览器麦克风进行免提对话。模型按需加载，会话结束后按设置热保留一段时间；同一设备同时只能进行一场对话。
-- 会话开始前先准备麦克风，收到客户端音频后才检查生成延迟。首次授权或音频设备启动较慢时，不再误报“落后超过一秒”；会话失败会立即释放模型驻留。
+- 会话开始前先准备麦克风，收到模型首帧输出后才检查生成延迟。首轮说话和模型思考时间不再误报“落后超过一秒”；会话失败会立即释放模型驻留。
 - 首版仅在 tc207 完成验证。AMD CUDA 和 Thor 的 0.0.38 镜像包含本次其他更新，但不显示实时对话入口；AMD CPU、ARM CPU 和通用 ARM CUDA profile 继续使用已有的 0.0.37 镜像。
 
 ## [0.0.37] - 2026-11-15

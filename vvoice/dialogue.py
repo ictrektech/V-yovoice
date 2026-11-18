@@ -495,7 +495,8 @@ class DialogueSession:
         self.sequence = 0
         self.frames = 0
         self.input_started: float | None = None
-        self.output_frames_since_input = 0
+        self.output_started: float | None = None
+        self.output_frames = 0
         self.last_activity = time.monotonic()
         self.hangup = False
         self.ended = False
@@ -543,9 +544,12 @@ class DialogueSession:
             await self.manager.worker.send({"type": "hang_up", "id": self.id})
 
     async def on_chunk(self, value: dict[str, Any]) -> None:
-        self.last_activity = time.monotonic()
-        if self.input_started is not None:
-            self.output_frames_since_input += 1
+        now = time.monotonic()
+        self.last_activity = now
+        if self.input_started is not None and self.output_started is None:
+            self.output_started = now
+        if self.output_started is not None:
+            self.output_frames += 1
         text = value.get("text")
         if isinstance(text, str) and text:
             await self.events.put(("text", text))
@@ -582,9 +586,9 @@ class DialogueSession:
                 await self.events.put(("end", {"reason": "idle"}))
                 await self.manager._session_finished(self)
                 return
-            if self.input_started is not None and not self.hangup:
-                expected = self.output_frames_since_input * FRAME_SECONDS
-                if now - self.input_started > expected + 1.0:
+            if self.output_started is not None and not self.hangup:
+                expected = self.output_frames * FRAME_SECONDS
+                if now - self.output_started > expected + 1.0:
                     self.ended = True
                     await self.events.put(
                         ("error", ("dialogue_overloaded", "Conversation fell more than one second behind"))
