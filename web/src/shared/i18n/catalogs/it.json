@@ -6697,5 +6697,77 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "Scarica"
+  },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "Dialogo in tempo reale"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "Dialogo in tempo reale"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "Un dialogo vocale full-duplex bilingue basato su Haru. Su questo dispositivo può essere attiva una sola conversazione alla volta."
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "Avvia conversazione"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "Riaggancia"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "Lingua"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "Personaggio"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "Chiacchierata"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "Pratica linguistica"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "Simulazione di colloquio"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "Un'altra conversazione sta usando questo dispositivo"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Il modello Haru non è installato. Chiedi a un amministratore di installarlo dalla gestione modelli."
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "Il dialogo in tempo reale non è disponibile per questo profilo del dispositivo."
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "Preparazione del modello vocale…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "Chiusura della conversazione…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "Pronto. L'audio del microfono viene usato solo per questa conversazione."
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "Usa le cuffie per evitare che il modello senta la propria voce. Questa conversazione non viene salvata."
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "Connessione in tempo reale non riuscita. Riprova."
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "Mantieni caricato il modello di dialogo (secondi)"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "Impostazione per l'intero dispositivo. 0 lo scarica subito; solo gli amministratori possono modificarla."
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "Salva"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "Salvato"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "Impossibile salvare questa impostazione."
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "Accesso amministratore richiesto."
   }
 }

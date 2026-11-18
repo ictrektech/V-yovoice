@@ -6697,5 +6697,77 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "Descargar"
+  },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "Diálogo en tiempo real"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "Diálogo en tiempo real"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "Un diálogo de voz bidireccional y bilingüe con Haru. Solo puede haber una conversación activa en este dispositivo."
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "Iniciar conversación"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "Colgar"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "Idioma"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "Personaje"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "Charla casual"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "Práctica de idiomas"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "Práctica de entrevista"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "Otra conversación está usando este dispositivo"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "El modelo Haru no está instalado. Pide a un administrador que lo instale desde la gestión de modelos."
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "El diálogo en tiempo real no está disponible en este perfil de dispositivo."
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "Preparando el modelo de voz…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "Finalizando la conversación…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "Listo. El audio del micrófono solo se usa para esta conversación."
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "Usa auriculares para que el modelo no oiga su propia voz. Esta conversación no se guarda."
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "Falló la conexión en tiempo real. Inténtalo de nuevo."
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "Mantener el modelo de diálogo listo (segundos)"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "Ajuste del dispositivo. 0 lo descarga de inmediato; solo los administradores pueden cambiarlo."
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "Guardar"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "Guardado"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "No se pudo guardar este ajuste."
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "Se requiere acceso de administrador."
   }
 }

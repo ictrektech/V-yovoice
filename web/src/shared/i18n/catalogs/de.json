@@ -6697,5 +6697,77 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "Herunterladen"
+  },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "Echtzeit-Dialog"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "Echtzeit-Dialog"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "Ein zweisprachiger Vollduplex-Sprachdialog von Haru. Auf diesem Gerät kann jeweils nur ein Gespräch laufen."
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "Gespräch starten"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "Auflegen"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "Sprache"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "Charakter"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "Plaudern"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "Sprachübung"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "Interviewtraining"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "Ein weiteres Gespräch verwendet dieses Gerät"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Das Haru-Modell ist nicht installiert. Bitten Sie eine Administration, es in der Modellverwaltung zu installieren."
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "Echtzeit-Dialog ist für dieses Geräteprofil nicht verfügbar."
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "Das Sprachmodell wird vorbereitet…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "Das Gespräch wird beendet…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "Bereit. Mikrofon-Audio wird nur für dieses Gespräch verwendet."
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "Verwenden Sie Kopfhörer, damit das Modell nicht seine eigene Stimme hört. Dieses Gespräch wird nicht gespeichert."
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "Die Echtzeitverbindung ist fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "Dialogmodell warmhalten (Sekunden)"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "Geräteweite Einstellung. 0 entlädt sofort; nur Administratoren können sie ändern."
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "Speichern"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "Gespeichert"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "Diese Einstellung konnte nicht gespeichert werden."
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "Administratorzugriff erforderlich."
   }
 }

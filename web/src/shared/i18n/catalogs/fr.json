@@ -6697,5 +6697,77 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "Télécharger"
+  },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "Dialogue en temps réel"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "Dialogue en temps réel"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "Un dialogue vocal bidirectionnel bilingue propulsé par Haru. Une seule conversation peut être active sur cet appareil."
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "Démarrer la conversation"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "Raccrocher"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "Langue"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "Personnage"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "Discussion libre"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "Entraînement linguistique"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "Entraînement à l'entretien"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "Une autre conversation utilise cet appareil"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Le modèle Haru n'est pas installé. Demandez à un administrateur de l'installer depuis la gestion des modèles."
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "Le dialogue en temps réel n'est pas disponible pour ce profil d'appareil."
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "Préparation du modèle vocal…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "Fin de la conversation…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "Prêt. L'audio du microphone ne sert qu'à cette conversation."
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "Utilisez un casque pour que le modèle n'entende pas sa propre voix. Cette conversation n'est pas enregistrée."
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "La connexion en temps réel a échoué. Veuillez réessayer."
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "Garder le modèle de dialogue chargé (secondes)"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "Réglage pour tout l'appareil. 0 le décharge immédiatement ; seuls les administrateurs peuvent le modifier."
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "Enregistrer"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "Enregistré"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "Impossible d'enregistrer ce réglage."
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "Accès administrateur requis."
   }
 }

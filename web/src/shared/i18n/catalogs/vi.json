@@ -6697,5 +6697,77 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "Tải xuống"
+  },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "Hội thoại thời gian thực"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "Hội thoại thời gian thực"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "Cuộc hội thoại thoại song hướng song ngữ do Haru cung cấp. Mỗi thiết bị chỉ có thể chạy một cuộc hội thoại tại một thời điểm."
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "Bắt đầu hội thoại"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "Kết thúc"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "Ngôn ngữ"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "Nhân vật"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "Trò chuyện thân mật"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "Luyện ngoại ngữ"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "Luyện phỏng vấn"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "Một cuộc hội thoại khác đang dùng thiết bị này"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Mô hình Haru chưa được cài đặt. Hãy yêu cầu quản trị viên cài đặt từ phần quản lý mô hình."
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "Hội thoại thời gian thực không khả dụng trên cấu hình thiết bị này."
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "Đang chuẩn bị mô hình giọng nói…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "Đang kết thúc hội thoại…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "Sẵn sàng. Âm thanh micrô chỉ được dùng cho hội thoại này."
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "Hãy dùng tai nghe để mô hình không nghe thấy giọng của chính nó. Hội thoại này không được lưu."
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "Kết nối thời gian thực thất bại. Vui lòng thử lại."
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "Giữ mô hình hội thoại trong bộ nhớ (giây)"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "Cài đặt cho toàn thiết bị. 0 sẽ tải xuống ngay; chỉ quản trị viên có thể thay đổi."
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "Lưu"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "Đã lưu"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "Không thể lưu cài đặt này."
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "Cần quyền quản trị viên."
   }
 }

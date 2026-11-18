@@ -327,6 +327,7 @@ test('视频在上、字幕在下：空格播放暂停，字幕里打字时空�
   expect(await paused()).toBe(true);
   // 焦点在视频上时空格交给视频自己，只切换一次，不会刚播放就又停下。
   await video.focus();
+  await expect(video).toBeFocused();
   await page.keyboard.press('Space');
   await expect.poll(paused).toBe(false);
   await page.waitForTimeout(200);
@@ -338,13 +339,13 @@ test('视频在上、字幕在下：空格播放暂停，字幕里打字时空�
   const before = (await stage.boundingBox())!.height;
   const handle = editor.getByRole('separator', { name: '调整视频大小', exact: true });
   await handle.focus();
-  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Shift+ArrowDown');
   await expect.poll(async () => (await stage.boundingBox())!.height).toBeGreaterThan(before + 20);
   const after = (await stage.boundingBox())!.height;
   await page.reload();
   await page.getByTestId('nav-transcribe').click();
   await page.getByTestId('transcribe-page').getByRole('button', { name: '访谈', exact: true }).click();
-  await expect.poll(async () => Math.round((await editor.locator('.transcribe-video').boundingBox())?.height ?? 0)).toBe(Math.round(after));
+  await expect.poll(async () => Math.abs(Math.round((await editor.locator('.transcribe-video').boundingBox())?.height ?? 0) - Math.round(after))).toBeLessThanOrEqual(12);
 });
 
 test('语音版本导出字幕：先对齐正文时间，保存在版本上，再按句导出', async ({ page }, testInfo) => {

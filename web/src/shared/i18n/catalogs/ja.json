@@ -6697,5 +6697,77 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "ダウンロード"
+  },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "リアルタイム会話"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "リアルタイム会話"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "Haru による中英バイリンガルの全二重音声会話です。このデバイスでは同時に1つの会話だけを実行できます。"
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "会話を開始"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "終了"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "言語"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "キャラクター"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "カジュアルチャット"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "語学練習"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "面接練習"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "別の会話がこのデバイスを使用しています"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Haru モデルがインストールされていません。管理者にモデル管理からのインストールを依頼してください。"
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "このデバイスプロファイルではリアルタイム会話を利用できません。"
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "音声モデルを準備しています…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "会話を終了しています…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "準備完了。マイク音声はこの会話にのみ使用されます。"
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "モデルが自分の声を聞かないよう、ヘッドホンを使用してください。この会話は保存されません。"
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "リアルタイム接続に失敗しました。もう一度お試しください。"
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "会話モデルのウォーム保持（秒）"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "デバイス全体の設定です。0 は即時アンロード、管理者のみ変更できます。"
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "保存"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "保存しました"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "この設定を保存できませんでした。"
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "管理者権限が必要です。"
   }
 }

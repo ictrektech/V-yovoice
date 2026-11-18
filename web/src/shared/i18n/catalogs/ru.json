@@ -6697,5 +6697,77 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "Скачать"
+  },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "Разговор в реальном времени"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "Разговор в реальном времени"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "Двуязычный дуплексный голосовой разговор на основе Haru. На этом устройстве одновременно может идти только один разговор."
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "Начать разговор"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "Завершить"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "Язык"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "Персонаж"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "Свободный разговор"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "Языковая практика"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "Подготовка к собеседованию"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "На этом устройстве уже идёт другой разговор"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Модель Haru не установлена. Попросите администратора установить её в управлении моделями."
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "Разговор в реальном времени недоступен для этого профиля устройства."
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "Подготовка голосовой модели…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "Завершение разговора…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "Готово. Звук микрофона используется только для этого разговора."
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "Используйте наушники, чтобы модель не слышала собственный голос. Этот разговор не сохраняется."
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "Не удалось установить соединение в реальном времени. Повторите попытку."
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "Держать модель диалога в памяти (секунды)"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "Настройка для всего устройства. 0 — немедленная выгрузка; изменять могут только администраторы."
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "Сохранить"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "Сохранено"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "Не удалось сохранить эту настройку."
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "Требуется доступ администратора."
   }
 }

@@ -464,7 +464,7 @@ function TranscriptVideo({ src, caption, height, label, mediaRef, onError, ...ev
   onPlay: (event: { currentTarget: HTMLMediaElement }) => void; onPause: () => void; onEnded: () => void;
 }) {
   return <VStack className="transcribe-video" gap={0} style={{ height }}>
-    <video ref={mediaRef} src={src || undefined} aria-label={label} controls playsInline preload="metadata" {...events} onError={src ? onError : undefined} />
+    <video ref={mediaRef} src={src || undefined} aria-label={label} controls playsInline preload="metadata" {...events} onKeyDown={event => { if (event.key === ' ' || event.code === 'Space') event.stopPropagation(); }} onError={src ? onError : undefined} />
     {caption ? <p className="transcribe-video-caption" aria-hidden="true">{caption}</p> : null}
   </VStack>;
 }

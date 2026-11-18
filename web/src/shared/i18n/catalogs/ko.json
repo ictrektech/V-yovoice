@@ -6697,5 +6697,77 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "내려받기"
+  },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "실시간 대화"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "실시간 대화"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "Haru가 제공하는 중영문 양방향 음성 대화입니다. 이 기기에서는 한 번에 하나의 대화만 실행할 수 있습니다."
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "대화 시작"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "종료"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "언어"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "역할"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "편안한 대화"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "언어 연습"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "면접 연습"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "다른 대화가 이 기기를 사용 중입니다"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Haru 모델이 설치되어 있지 않습니다. 관리자에게 모델 관리에서 설치하도록 요청하세요."
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "이 기기 프로필에서는 실시간 대화를 사용할 수 없습니다."
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "음성 모델을 준비하는 중…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "대화를 종료하는 중…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "준비 완료. 마이크 오디오는 이 대화에만 사용됩니다."
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "모델이 자신의 목소리를 듣지 않도록 헤드폰을 사용하세요. 이 대화는 저장되지 않습니다."
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "실시간 연결에 실패했습니다. 다시 시도하세요."
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "대화 모델 워밍 유지(초)"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "기기 전체 설정입니다. 0은 즉시 언로드하며 관리자만 변경할 수 있습니다."
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "저장"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "저장됨"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "이 설정을 저장하지 못했습니다."
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "관리자 권한이 필요합니다."
   }
 }
