@@ -48,7 +48,7 @@ func (s *Server) bindingStatus() map[string]any {
 	config, err := readSchedulerConfig(s.schedulerPath())
 	configured := err == nil && config.URL != "" && len(config.Token) >= 32 && len(config.ExecutorToken) >= 32
 	return map[string]any{"protocol_version": 1, "binding_revision": config.BindingRevision,
-		"configured": configured, "approved_model_count": len(config.Models)}
+		"configured": configured, "approved_model_count": len(config.Models) + len(config.DialogueModels)}
 }
 
 var bindingID = regexp.MustCompile(`^[A-Za-z0-9_.-]{1,128}$`)
@@ -65,7 +65,9 @@ func validateBinding(config SchedulerConfig) error {
 	if config.ProtocolVersion != 1 || config.BindingRevision < 1 || config.AppID != voiceAppID ||
 		config.URL != expectedURL || config.UpstreamURL != upstream ||
 		len(config.Token) < 32 || len(config.Token) > 4096 || len(config.ExecutorToken) < 32 || len(config.ExecutorToken) > 4096 ||
-		strings.ContainsAny(config.Token+config.ExecutorToken, "\r\n\t ") || len(config.Models) == 0 || len(config.Models) > 512 {
+		strings.ContainsAny(config.Token+config.ExecutorToken, "\r\n\t ") ||
+		len(config.Models)+len(config.DialogueModels) == 0 ||
+		len(config.Models) > 512 || len(config.DialogueModels) > 512 {
 		return fmt.Errorf("invalid application binding")
 	}
 	for _, models := range []map[string]string{config.Models, config.GatewayExecutors} {
@@ -77,6 +79,23 @@ func validateBinding(config SchedulerConfig) error {
 				return fmt.Errorf("invalid model binding")
 			}
 		}
+	}
+	for model, executor := range config.DialogueModels {
+		if !bindingID.MatchString(model) || !bindingID.MatchString(executor) ||
+			config.Models[model] != "" || config.GatewayExecutors[model] != "" {
+			return fmt.Errorf("invalid dialogue model binding")
+		}
+		limits := config.DialogueLimits[model]
+		inputBytes, hasInput := limits["input_bytes"]
+		maxSeconds, hasMax := limits["max_seconds"]
+		sampleRate, hasRate := limits["sample_rate"]
+		if !hasInput || !hasMax || !hasRate || inputBytes <= 0 || inputBytes > 32<<20 ||
+			maxSeconds < 1 || maxSeconds > 3600 || sampleRate != 24000 {
+			return fmt.Errorf("invalid dialogue model limits")
+		}
+	}
+	if len(config.DialogueLimits) != len(config.DialogueModels) {
+		return fmt.Errorf("dialogue limits must cover every dialogue model")
 	}
 	if len(config.SecondaryModels) > 512 {
 		return fmt.Errorf("too many combined bindings")
@@ -182,7 +201,7 @@ func (s *Server) verifyBinding(r *http.Request, config SchedulerConfig) error {
 		if executor.TaskType == "voice.generate" {
 			approved[executor.ID] = executor.TaskType
 		}
-		if executor.TaskType == "model.infer" {
+		if executor.TaskType == "model.infer" || executor.TaskType == "model.dialogue" {
 			for _, upstream := range executor.Upstreams {
 				if upstream == config.UpstreamURL {
 					approved[executor.ID] = executor.TaskType
@@ -197,6 +216,11 @@ func (s *Server) verifyBinding(r *http.Request, config SchedulerConfig) error {
 		}
 		if approved[executor] != taskType {
 			return fmt.Errorf("executor not approved for V-Voice")
+		}
+	}
+	for _, executor := range config.DialogueModels {
+		if approved[executor] != "model.dialogue" {
+			return fmt.Errorf("dialogue executor not approved for V-Voice")
 		}
 	}
 	return nil

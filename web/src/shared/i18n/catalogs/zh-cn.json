@@ -4430,6 +4430,78 @@
   "@vvoice.nav.api": {
     "defaultMessage": "API 文档"
   },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "实时对话"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "实时对话"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "由 Haru 提供的中英文全双工语音对话。同一设备同时只能进行一场对话。"
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "开始对话"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "挂断"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "语言"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "角色"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "轻松聊天"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "语言练习"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "面试练习"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "另一场对话正在使用此设备"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Haru 模型尚未安装，请联系管理员在模型管理中安装。"
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "当前设备 profile 不支持实时对话。"
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "正在准备语音模型…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "正在结束对话…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "已就绪。麦克风音频只用于当前对话。"
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "请使用耳机，避免模型听到自己的声音。本次对话不会保存。"
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "实时连接失败，请重试。"
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "对话模型热保留（秒）"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "设备级设置；0 表示会话结束立即卸载，仅管理员可修改。"
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "保存"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "已保存"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "设置保存失败。"
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "需要管理员权限。"
+  },
   "@vvoice.models.prepare": {
     "defaultMessage": "准备模型"
   },

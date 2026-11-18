@@ -4436,6 +4436,78 @@
   "@vvoice.nav.api": {
     "defaultMessage": "API 文件"
   },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "即時對話"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "即時對話"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "由 Haru 提供的中英文全雙工語音對話。同一裝置同時只能進行一場對話。"
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "開始對話"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "掛斷"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "語言"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "角色"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "輕鬆聊天"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "語言練習"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "面試練習"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "另一場對話正在使用此裝置"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "Haru 模型尚未安裝，請聯絡管理員在模型管理中安裝。"
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "目前裝置 profile 不支援即時對話。"
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "正在準備語音模型…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "正在結束對話…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "已就緒。麥克風音訊只用於目前對話。"
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "請使用耳機，避免模型聽到自己的聲音。本次對話不會儲存。"
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "即時連線失敗，請重試。"
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "對話模型熱保留（秒）"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "裝置級設定；0 表示工作階段結束立即卸載，僅管理員可修改。"
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "儲存"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "已儲存"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "設定儲存失敗。"
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "需要管理員權限。"
+  },
   "@vvoice.api.hint": {
     "defaultMessage": "標準語音 API、創作擴充、模型發現與調度接入。文件內可獨立切換語言。"
   },

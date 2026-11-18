@@ -62,6 +62,7 @@ const ScoreDock = lazy(() => import('../features/score/score-arrangement').then(
 const TimelineEditor = lazy(() => import('../features/media/timeline-editor').then(module => ({ default: module.TimelineEditor })));
 // 语音转写页带字幕编辑，打开时再加载。
 const TranscribePage = lazy(() => import('../features/transcribe/transcribe-page').then(module => ({ default: module.TranscribePage })));
+const DialoguePage = lazy(() => import('../features/dialogue/dialogue-page').then(module => ({ default: module.DialoguePage })));
 // 分轨工作台（分轨与转 MIDI 的结果）按需加载。
 const StemStudio = lazy(() => import('../features/music/stem-studio').then(module => ({ default: module.StemStudio })));
 const BookImport = lazy(() => import('../features/library/book-import').then(module => ({ default: module.BookImport })));
@@ -360,6 +361,7 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
           {isVos && (page === 'models' || page === 'models-creative') ? <VStack className="page-panel" gap={0}><PageBoundary name="models"><ModelManagement category={page === 'models' ? 'speech' : 'creative'} state={state} catalog={catalog} draft={draft} run={run} /></PageBoundary></VStack> : null}
           {isVos && (['asr', 'tts', 'speaker', 'hotwords'] as string[]).includes(page) ? <VStack className="page-panel" gap={0}><PageBoundary name={page}><SpeechService page={page as SpeechPage} /></PageBoundary></VStack> : null}
           {isVos && page === 'api-docs' ? <VStack className="page-panel" gap={0}><PageBoundary name="api-docs"><Suspense fallback={<p role="status">{t('@yovoice.app.loading')}</p>}><ApiDocumentation /></Suspense></PageBoundary></VStack> : null}
+          {isVos && page === 'dialogue' ? <VStack className="page-panel" gap={0}><PageBoundary name="dialogue"><Suspense fallback={<p className="loading" role="status">{t('@yovoice.app.loading')}</p>}><DialoguePage /></Suspense></PageBoundary></VStack> : null}
           {visited.has('settings') ? <VStack className="page-panel" gap={0} style={{ display: page === 'settings' ? 'flex' : 'none' }}>
             <PageBoundary name="settings"><Suspense fallback={<p role="status">{t('@yovoice.app.loadingSettings')}</p>}><Settings openModels={() => setPage('models')} focus={settingsFocus} state={state} catalog={catalog} engine={engine} draft={draft} run={run} active={page === 'settings'} onError={onError}
               openProject={id => { const item = state.drafts.find(d => d.id === id); if (item) selectDraft(item); }} /></Suspense></PageBoundary>

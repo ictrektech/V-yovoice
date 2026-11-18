@@ -3,8 +3,8 @@ name:
   zh-CN: V-Voice
   en: V-Voice
 description:
-  zh-CN: 语音与音乐创作工作台，提供 ASR、声纹、声音克隆、TTS、歌曲与配乐生成、编曲、共享模型管理和标准 API。
-  en: Speech and music studio with ASR, speaker recognition, voice cloning, TTS, songs, background music, scores, shared models and standard APIs.
+  zh-CN: 语音与音乐创作工作台，提供 ASR、声纹、声音克隆、TTS、歌曲与配乐生成、编曲、共享模型管理和标准 API；实时对话首版仅支持 l4t/tc207。
+  en: Speech and music studio with ASR, speaker recognition, voice cloning, TTS, songs, background music, scores, shared models and standard APIs; realtime dialogue is currently limited to l4t/tc207.
 version: __APP_VERSION__
 author: ictrek
 oauth2:

@@ -296,6 +296,33 @@
         "speaker_6": {"sid": 6, "language": "en"}, "speaker_7": {"sid": 7, "language": "en"},
         "speaker_8": {"sid": 8, "language": "en"}, "speaker_9": {"sid": 9, "language": "en"}
       }
+    },
+    {
+      "key": "haru-4b-q8",
+      "name": "Haru-4B Q8_0",
+      "kind": "dialogue",
+      "family": "Haru",
+      "source": "hf",
+      "remote_repo": "sakasegawa/Haru-4B-GGUF",
+      "revision": "fc026182f7bbfaa0400b2d44358a5e9e327b957f",
+      "description": "Bilingual full-duplex spoken dialogue on the VOS L4T CUDA runtime.",
+      "languages": ["zh", "en"],
+      "license": "Apache-2.0",
+      "shared_files": [
+        {
+          "path": "Haru-4B-Q8_0.gguf",
+          "size": 6623102720,
+          "sha256": "c372a527e63ca4251429a48863535b8bca03ebd6f414bbf31f28a9d175349934"
+        }
+      ],
+      "runtime": {
+        "engine": "speech.cpp",
+        "version": "0.11.0",
+        "device": "CUDA0",
+        "sample_rate": 24000,
+        "frame_samples": 3200,
+        "files": {"model": "Haru-4B-Q8_0.gguf"}
+      }
     }
   ]
 }

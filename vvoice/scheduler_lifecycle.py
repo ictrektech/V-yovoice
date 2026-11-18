@@ -57,7 +57,11 @@ class Lifecycle:
             temporary.unlink(missing_ok=True)
 
     def ensure(self, config):
-        ids = sorted(set(config.get('models', {}).values()) | set(config.get('gateway_executors', {}).values()))
+        ids = sorted(
+            set(config.get('models', {}).values())
+            | set(config.get('gateway_executors', {}).values())
+            | set(config.get('dialogue_models', {}).values())
+        )
         if not ids:
             raise LifecycleError('Approved executors required')
         key = hashlib.sha256(json.dumps([config['url'], config['token'], ids]).encode()).hexdigest()

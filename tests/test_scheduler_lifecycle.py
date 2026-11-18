@@ -18,7 +18,8 @@ class LifecycleTests(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.config = {'app_id':'application', 'url':'http://scheduler/scheduler/api/v1',
-            'token':'a'*64, 'models':{'model':'approved'}, 'gateway_executors':{'model':'gateway'}, 'lifecycle_protocol_version':1}
+            'token':'a'*64, 'models':{'model':'approved'}, 'gateway_executors':{'model':'gateway'},
+            'dialogue_models':{'dialogue':'dialogue-executor'}, 'lifecycle_protocol_version':1}
         self.commands, self.acks, self.registrations, self.cancelled = [], [], [], []
         self.snapshot = [{'permit_id':'permit'}]
         self.file = pathlib.Path(self.directory.name)/'receipt.json'
@@ -40,10 +41,10 @@ class LifecycleTests(unittest.TestCase):
         self.client.claimed('permit','execution')
         self.commands = [{'permit_id':'permit','execution_id':'execution','nonce':'challenge'}]
 
-    def test_registers_approved_direct_and_gateway_executors_only(self):
+    def test_registers_direct_gateway_and_dialogue_executors_only(self):
         self.client.tick();self.client.tick()
         self.assertEqual(len(self.registrations),1)
-        self.assertEqual(self.registrations[0]['executors'],['approved','gateway'])
+        self.assertEqual(self.registrations[0]['executors'],['approved','dialogue-executor','gateway'])
         self.assertNotIn('resources',self.registrations[0])
         self.assertNotIn('token',json.dumps(self.registrations))
 

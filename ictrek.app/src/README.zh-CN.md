@@ -8,6 +8,12 @@
 
 V-Voice 保留基于 ONNX 的公共 ASR / 流式 ASR / TTS / 声纹服务。模型由 V-Scheduler 内置模型仓库安装并由所有用户共享；其统一网关通过发现接口接入公共能力，无需独立安装 Model Hub 或 V-Router。
 
+## 实时对话
+
+Jetson / L4T profile 提供 Haru 中英文全双工实时对话。可选择“轻松聊天”“语言练习”“面试练习”三种固定角色；模型首次使用时由 V-Scheduler 下载并按需加载，同一设备同时只能进行一场对话。默认通话上限 180 秒，挂断后模型按设置热保留，空闲到期自动卸载并释放许可。
+
+首次会话需要麦克风授权。请使用耳机，避免模型听到自己的扬声器输出而形成自问自答。实时对话暂只在 tc207 完成适配和验证；AMD CUDA 与 Thor 的 0.0.38 镜像不显示该入口，AMD CPU、ARM CPU 和通用 ARM CUDA 继续使用已有的 0.0.37 镜像。
+
 新增 `seaco-paraformer-zh`，模型源为 `vivibit/v-voice-seaco-paraformer-zh-int8`。
 SeACo 在所有 profile 上使用 CPU ONNX Runtime，支持中文整句转写与神经热词，
 复用请求热词、UTF-8 文件和已保存热词集；每条热词去除空格后最多 10 字符。

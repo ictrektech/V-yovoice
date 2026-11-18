@@ -13,7 +13,7 @@ def test_catalog_covers_every_runtime_interface() -> None:
     assert STREAMING_FACTORIES <= ASR_FACTORIES
     assert SPEAKER_FACTORIES == {"speaker_embedding"}
     assert TTS_FAMILIES == {"vits", "matcha", "kokoro", "zipvoice", "kitten", "pocket", "supertonic", "audio_cpp"}
-    assert {item["kind"] for item in catalog()} == {"asr", "tts", "speaker"}
+    assert {item["kind"] for item in catalog()} == {"asr", "tts", "speaker", "dialogue"}
 
 
 def test_streaming_descriptors_use_online_factories_only() -> None:
@@ -59,7 +59,11 @@ def test_speaker_descriptor_is_validated() -> None:
 
 def test_every_catalog_entry_is_vivibit_modelscope_repo() -> None:
     for item in catalog():
-        assert item["modelscope_repo"].startswith("vivibit/v-voice-")
+        if item["kind"] == "dialogue":
+            assert item["source"] == "hf"
+            assert item["remote_repo"].startswith("sakasegawa/")
+        else:
+            assert item["modelscope_repo"].startswith("vivibit/v-voice-")
         assert not Path(next(iter(item["runtime"]["files"].values()))).is_absolute()
 
 

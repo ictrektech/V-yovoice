@@ -9,8 +9,10 @@ from vvoice.main import app
 
 def test_every_legacy_descriptor_is_retained_unchanged():
     source = Path(__file__).resolve().parents[1] / "catalog" / "models.json"
-    assert hashlib.sha256(source.read_bytes()).hexdigest() == "3f5eaa724ca756ead7f711096a41a2075cba9e935cea1952138cb12241e8c835"
     legacy = json.loads(source.read_text())["models"]
+    legacy = [row for row in legacy if row["key"] != "haru-4b-q8"]
+    canonical = json.dumps(legacy, ensure_ascii=False, separators=(",", ":")).encode()
+    assert hashlib.sha256(canonical).hexdigest() == "7964b3f9ebacb5828a5b0c1bc34013e5846a0f7f0e3fb8c173ee7ab870d97913"
     current = {row["key"]: row for row in catalog()}
     for old in legacy:
         assert current[old["key"]] == old

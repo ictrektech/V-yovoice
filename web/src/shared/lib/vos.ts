@@ -4,7 +4,7 @@ import { sha256 } from '@noble/hashes/sha2.js';
 
 // VOS 构建只使用真实服务；普通上游浏览器预览仍使用模拟后端。
 export const isVos = import.meta.env.VITE_VOS === 'true';
-const base = '/app/com.ictrek.v-voice';
+export const vosBase = '/app/com.ictrek.v-voice';
 type OAuth = {
   authorize: (input: Record<string, string>) => Promise<{ code: string; state: string }>;
   token: (input: Record<string, string>) => Promise<{ access_token: string; expires_in?: number }>;
@@ -50,7 +50,7 @@ async function token() {
 export async function vosFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${await token()}`);
-  const response = await fetch(`${base}${path}`, { ...init, headers });
+  const response = await fetch(`${vosBase}${path}`, { ...init, headers });
   if (response.status === 401) { session = undefined; throw new Error('VOS sign-in expired / VOS 登录已过期'); }
   return response;
 }

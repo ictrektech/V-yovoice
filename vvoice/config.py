@@ -16,6 +16,29 @@ class Settings:
     model_hub_api_url: str = os.getenv("MODEL_HUB_API_URL", "http://v-scheduler-model-hub:6005").rstrip("/")
     catalog_path: Path = Path(os.getenv("VVOICE_CATALOG_PATH", str(Path(__file__).resolve().parents[1] / "catalog" / "models.json")))
     data_dir: Path = Path(os.getenv("VVOICE_DATA_DIR", "/data"))
+    vos_userinfo_url: str = os.getenv("VOS_USERINFO_URL", "")
+    haru_worker_path: Path = Path(os.getenv("VVOICE_HARU_WORKER", "/opt/vvoice/speechcpp/speech"))
+    haru_model_path: Path = Path(
+        os.getenv(
+            "VVOICE_HARU_MODEL_PATH",
+            "/modelhub/export/hf/sakasegawa/Haru-4B-GGUF/current/Haru-4B-Q8_0.gguf",
+        )
+    )
+    dialogue_idle_unload_seconds: int = max(
+        0, min(600, int(os.getenv("VVOICE_HARU_IDLE_UNLOAD_SECONDS", "120")))
+    )
+    dialogue_default_seconds: int = max(
+        1, min(300, int(os.getenv("VVOICE_HARU_DEFAULT_SECONDS", "180")))
+    )
+    dialogue_max_seconds: int = max(
+        1, min(300, int(os.getenv("VVOICE_HARU_MAX_SECONDS", "300")))
+    )
+    dialogue_idle_session_seconds: int = max(
+        5, min(120, int(os.getenv("VVOICE_HARU_SESSION_IDLE_SECONDS", "15")))
+    )
+    dialogue_max_input_bytes: int = max(
+        1, min(32 << 20, int(os.getenv("VVOICE_HARU_MAX_INPUT_BYTES", str(16 << 20))))
+    )
     provider: str = os.getenv("VVOICE_PROVIDER", "auto").lower()
     num_threads: int = max(1, int(os.getenv("VVOICE_NUM_THREADS", str(os.cpu_count() or 2))))
     max_loaded_models: int = max(1, int(os.getenv("VVOICE_MAX_LOADED_MODELS", "2")))

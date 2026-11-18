@@ -3,12 +3,12 @@ import { ResizeHandle, type ResizableProps } from '@astryxdesign/core/Resizable'
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, StackItem, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { AudioLines, Captions, BookOpen, ChevronRight, Fingerprint, Library, ListFilter, Mic, Music, Pencil, ScanText, Settings2, Speech, Trash2 } from 'lucide-react';
+import { AudioLines, BookOpen, Captions, ChevronRight, Fingerprint, Library, ListFilter, Mic, Music, Pencil, Radio, ScanText, Settings2, Speech, Trash2 } from 'lucide-react';
 import { featureHidden, projectKind, type Draft, type ModelPackage, type State } from '../shared/workbench';
 import { overflowTitle } from '../shared/ui/overflow-title';
 import { UpdateSidebarCard } from '../features/update/update-notice';
 import { ModelUpdateSidebarCard } from '../features/settings/model-update-card';
-import { isVos } from '../shared/lib/vos';
+import { isVos, vosFetch } from '../shared/lib/vos';
 import { readLocal, writeLocal } from '../shared/lib/local-store';
 
 // 侧栏：新建入口、语音生成、语音转写、故事配音、音乐生成、我的声音、最近作品、创作助手与设置。
@@ -29,7 +29,17 @@ export function SidebarNav(props: {
   const { page, setPage, newDraft, state, catalog, catalogRevision, openSettings, draft, selectDraft, removeDraft, resizable } = props;
   const [recentOpen, setRecentOpen] = useState(() => readLocal('yovoice-recent-open') !== 'false');
   const [modelsOpen, setModelsOpen] = useState(true);
+  const [dialogueAvailable, setDialogueAvailable] = useState(false);
   const modelsActive = page === 'models' || page === 'models-creative';
+  useEffect(() => {
+    if (!isVos) return;
+    let live = true;
+    void vosFetch('/api/v1/dialogue/status')
+      .then(response => response.ok ? response.json() : null)
+      .then(value => { if (live) setDialogueAvailable(Boolean(value?.supported)); })
+      .catch(() => { if (live) setDialogueAvailable(false); });
+    return () => { live = false; };
+  }, []);
   // shortcut: VOS 新识别、转写和字幕工具尚未接入调度确认，接入后再统一开放。
   const projectActive = page === 'create' || page === 'history';
   // 选中底块：一个独立的块放到当前入口下面，换页时从上一个入口滑过去（样式见 app/motion.css）。
@@ -69,6 +79,7 @@ export function SidebarNav(props: {
         </VStack> : null}
       </VStack> : null}
       {isVos ? ([['asr', ScanText], ['tts', Speech], ['speaker', Fingerprint], ['hotwords', ListFilter]] as const).map(([destination, Icon]) => <Button key={destination} data-testid={`nav-${destination}`} label={t(`@vvoice.nav.${destination}`)} variant="ghost" icon={<Icon />} className={`nav-item ${page === destination ? 'selected' : ''}`} aria-current={page === destination ? 'page' : undefined} onClick={() => setPage(destination)} />) : null}
+      {isVos && dialogueAvailable ? <Button data-testid="nav-dialogue" label={t('@vvoice.nav.dialogue')} variant="ghost" icon={<Radio />} className={`nav-item ${page === 'dialogue' ? 'selected' : ''}`} aria-current={page === 'dialogue' ? 'page' : undefined} onClick={() => setPage('dialogue')} /> : null}
       {/* 顺序：语音生成、语音转写（同属语音）、故事配音、音乐生成，最后是我的声音。 */}
       {(['text', 'transcribe', 'story', 'music'] as const).filter(kind => kind === 'text' || !featureHidden(state.preferences, kind)).map(kind => {
         if (kind === 'transcribe') return isVos ? null : <Button key={kind} data-testid="nav-transcribe" label={t('@yovoice.nav.transcribe')} variant="ghost" icon={<Captions />} className={`nav-item ${page === 'transcribe' ? 'selected' : ''}`} aria-current={page === 'transcribe' ? 'page' : undefined} onClick={() => setPage('transcribe')} />;

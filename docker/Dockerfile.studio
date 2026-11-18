@@ -16,6 +16,25 @@ RUN mkdir /src && tar xzf /tmp/audio.tar.gz -C /src --strip-components=1 \
     && mkdir /opt/audiocpp && cp -a /build/bin/. /opt/audiocpp/ \
     && cp /src/LICENSE /opt/audiocpp/LICENSE
 
+FROM ${AUDIOCPP_BUILD_BASE_IMAGE} AS speechcpp
+ARG SPEECCPP_CUDA=OFF
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends cmake build-essential pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=speechcpp_source /speech.cpp-0.11.0.tar.gz /tmp/speech.cpp.tar.gz
+COPY --from=speechcpp_source /ggml-79b50d2.tar.gz /tmp/ggml.tar.gz
+RUN mkdir -p /src && tar xzf /tmp/speech.cpp.tar.gz -C /src --strip-components=1 \
+    && rm -rf /src/ggml && mkdir -p /src/ggml \
+    && tar xzf /tmp/ggml.tar.gz -C /src/ggml --strip-components=1 \
+    && cmake -S /src -B /build -DCMAKE_BUILD_TYPE=Release \
+       -DGGML_CUDA=${SPEECCPP_CUDA} -DGGML_VULKAN=OFF -DGGML_NATIVE=ON \
+       -DGGML_BUILD_TESTS=OFF -DGGML_BUILD_EXAMPLES=OFF \
+       ${SPEECCPP_CUDA:+-DCMAKE_CUDA_ARCHITECTURES=87-real} \
+    && cmake --build /build --target speech-cli -j 8 \
+    && mkdir -p /opt/vvoice/speechcpp \
+    && cp /build/speech /opt/vvoice/speechcpp/speech \
+    && cp /src/LICENSE /opt/vvoice/speechcpp/LICENSE
+
 FROM ${VVOICE_BASE_IMAGE}
 ENV VVOICE_STUDIO_ENABLED=true VVOICE_SHARED_MODELS=true VVOICE_SCHEDULER_REQUIRED=true \
     VVOICE_STUDIO_ASSETS=/opt/vvoice/web \
@@ -26,6 +45,7 @@ ARG AUDIOCPP_BACKEND=cpu
 COPY --from=studio_artifacts /linux-${TARGETARCH}/vvoice-studio /opt/vvoice/vvoice-studio
 COPY --from=studio_artifacts /web/ /opt/vvoice/web/
 COPY --from=audio /opt/audiocpp/ /opt/vvoice/audiocpp/
+COPY --from=speechcpp /opt/vvoice/speechcpp/ /opt/vvoice/speechcpp/
 RUN apt-get update && apt-get install -y --no-install-recommends libespeak-ng1 libmecab2 mecab-ipadic-utf8 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /opt/vvoice/tools/kokoro \

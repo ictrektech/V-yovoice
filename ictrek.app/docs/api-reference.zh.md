@@ -34,6 +34,14 @@ HTTP `/v1/audio/streaming/transcriptions` 的 body 是原始音频分块，参�
 
 WebSocket `/v1/audio/streaming/ws?model=...` 接收二进制 PCM/WAV 帧，返回 `{type:"partial",text,is_endpoint}`；发送文本 `{"type":"finish"}` 请求最终 `{type:"final",...原生结果}`。关闭连接主要用于取消，不能保证断开后仍能读到 final；请明确发送 finish 并等 final。错误为 `{type:"error",detail}` 后关闭，常见4404/4409/4422/4500，调度错误可能映射其他44xx。WebSocket 未包含在 OpenAPI HTTP 路由表中，本节是其协议说明。
 
+## 实时对话（l4t/tc207）
+
+实时对话只在 L4T profile 开放，目前只在 tc207 完成验证，不替代 OpenAI 兼容语音接口。
+
+`GET /api/v1/dialogue/status` 返回是否支持、模型是否安装、管理器状态、忙碌状态和空闲卸载秒数。`POST /api/v1/dialogue/tickets` 需要 VOS 用户 Bearer token，接受 `language`（`zh`/`en`）、`persona_id`（`companion`/`study`/`interview`）和 `max_seconds`（1–300），返回一次性 ticket 与 `/api/v1/dialogue/ws` 路径。连接 `WS /api/v1/dialogue/ws?ticket=...` 后发送 `{"type":"start","protocol":1}`，随后发送 24 kHz、16-bit little-endian、单声道 PCM；发送 `{"type":"hang_up"}` 结束。服务端事件包含 `loading`、`started`、`text`、3200 samples 的二进制音频帧、`end` 和 `error`。ticket 5 分钟过期并绑定 VOS 用户。登录用户可读取 `GET /api/v1/dialogue/settings`；`PUT /api/v1/dialogue/settings` 仅管理员可用，设置 `idle_unload_seconds`（0–600）。同一设备只能有一场对话。
+
+错误包括 `dialogue_busy`（409）、`dialogue_capacity_unavailable`（429）、`model_unavailable` 或 `model_start_failed`（503），以及 WebSocket 协议/认证关闭码。模型在空闲期后卸载；客户端断开本身不能证明 worker 已停止。
+
 ## 私有工作台 RPC 与任务
 
 POST `/studio-api/call` JSON 包含 method、data、requestId。requestId 为32位小写十六进制稳定 ID；生成重试复用相同 ID 和相同参数，冲突不可当成新任务重放。响应始终检查 error，即使 HTTP200；result 是该方法原生返回值。generation.start/cue、character.preview、generation.alignLyrics、melody.plan/cover/listen 经 Scheduler 排队，返回任务并不表示生成完成。通过 state.get 轮询 result.state.activity/history；只有 Scheduler 确认完成后才能通过 `/studio-api/media/outputs/{fileName}` 下载，未批准或跨用户结果404。音色使用 voices 路径。

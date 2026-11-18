@@ -30,6 +30,8 @@ type SchedulerConfig struct {
 	Token                    string                        `json:"token"`
 	ExecutorToken            string                        `json:"executor_token"`
 	Models                   map[string]string             `json:"models"`
+	DialogueModels           map[string]string             `json:"dialogue_models,omitempty"`
+	DialogueLimits           map[string]map[string]float64 `json:"dialogue_limits,omitempty"`
 	UpstreamURL              string                        `json:"upstream_url,omitempty"`
 	GatewayExecutors         map[string]string             `json:"gateway_executors,omitempty"`
 	SecondaryModels          map[string][]string           `json:"secondary_models,omitempty"`

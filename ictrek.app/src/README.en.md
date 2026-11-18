@@ -20,6 +20,19 @@ by ONNX runtimes. Models are installed through V-Scheduler's built-in model repo
 and shared globally. Its gateway discovers public capabilities through the discovery endpoint.
 No separate Model Hub or V-Router installation is required.
 
+## Realtime dialogue
+
+The Jetson / L4T profile provides full-duplex Chinese and English conversations with
+Haru. Choose one of the three preset characters: casual chat, language practice or an
+interview. V-Scheduler downloads the model on demand, and only one conversation can run
+on a device at a time. Calls default to 180 seconds; after hang-up the model stays warm
+for the configured idle period, then unloads and releases its permit.
+
+Microphone permission is requested on the first session. Use headphones so the model
+does not hear its own speaker output and start talking to itself. Realtime dialogue has
+so far been validated only on tc207. AMD CUDA and Thor 0.0.38 images hide this entry;
+AMD CPU, ARM CPU and generic ARM CUDA profiles continue to use the existing 0.0.37 images.
+
 Host OpenAI-compatible endpoint: `http://<VOS-IP>:22700/v1`.
 
 Models are hot-loaded on their first inference request, with up to two resident

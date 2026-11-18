@@ -51,6 +51,8 @@ from .admission import (
 from .audio import StreamingPcmDecoder, decode_audio, decode_calibrated_audio, encode_audio
 from .catalog import catalog, find_model
 from .config import settings
+from .dialogue import manager as dialogue_manager
+from .dialogue import router as dialogue_router
 from .full_transcription import (
     RESPONSE_FORMATS,
     FullTranscriptionError,
@@ -84,6 +86,7 @@ from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore
 from .transcript import normalize_transcript, subtitle
 
 app = FastAPI(docs_url=None, title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
+app.include_router(dialogue_router)
 if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
     app.add_middleware(AdmissionMiddleware)
 
@@ -154,6 +157,8 @@ class SchedulerBindingDocument(BaseModel):
     executor_token: str = Field(min_length=32, max_length=4096, json_schema_extra={"writeOnly": True})
     upstream_url: str = Field(description="Must match V-Voice's advertised native upstream URL")
     models: dict[str, str]
+    dialogue_models: dict[str, str] = Field(default_factory=dict)
+    dialogue_limits: dict[str, dict[str, float]] = Field(default_factory=dict)
     gateway_executors: dict[str, str] = Field(default_factory=dict)
     secondary_models: dict[str, list[str]] = Field(default_factory=dict)
     input_limits_version: Literal[1] | None = None
@@ -266,6 +271,12 @@ async def discovery():
             ),
         }
         models.append(model)
+    contract = scheduler_contract()
+    contract["dialogue_models"] = [
+        {"id": row["key"], "task_type": "model.dialogue"}
+        for row in rows
+        if row["kind"] == "dialogue" and row["status"] == "ready"
+    ]
     return {
         "service_id": "v-voice",
         "name": "V-Voice",
@@ -276,7 +287,7 @@ async def discovery():
         "base_url": "http://v-voice-backend:7070/v1",
         "health_path": "/health",
         "models": models,
-        "scheduler": scheduler_contract(),
+        "scheduler": contract,
     }
 
 
@@ -297,7 +308,9 @@ def scheduler_contract() -> dict:
         "executor_base_url": "http://v-voice-backend:7070",
         "upstream_url": "http://v-voice-backend:7070/v1",
         "sync_models": [{"id": row["key"], "kind": row["kind"], "task_type": "model.infer"}
-                        for row in catalog()],
+                        for row in catalog() if row["kind"] in {"asr", "tts", "speaker"}],
+        "dialogue_models": [{"id": row["key"], "task_type": "model.dialogue"}
+                            for row in catalog() if row["kind"] == "dialogue"],
         "async_models": [{"id": row["id"], "family": row["family"], "task_type": "voice.generate",
                           "weight_bytes": row["size"]} for row in asynchronous],
         "num_threads": settings.num_threads,
@@ -1591,6 +1604,7 @@ elif frontend.is_dir():
 
 @app.on_event("startup")
 async def start_application_lifecycle():
+    await dialogue_manager.recover()
     if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
         from .admission import lifecycle
         lifecycle().start()
@@ -1598,6 +1612,7 @@ async def start_application_lifecycle():
 
 @app.on_event("shutdown")
 async def stop_application_lifecycle():
+    await dialogue_manager.close()
     from . import admission
     if admission._lifecycle is not None:
         await asyncio.to_thread(admission._lifecycle.close)

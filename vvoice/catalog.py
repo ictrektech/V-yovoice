@@ -43,8 +43,8 @@ def validate_descriptor(value: dict[str, Any], source: str = "descriptor") -> di
     key = str(value.get("key") or "").strip()
     kind = str(value.get("kind") or "").strip().lower()
     runtime = value.get("runtime")
-    if not key or kind not in {"asr", "tts", "speaker", "music", "soundfont"} or not isinstance(runtime, dict):
-        raise ValueError(f"{source}: key, kind(asr|tts|speaker|music|soundfont), and runtime are required")
+    if not key or kind not in {"asr", "tts", "speaker", "music", "soundfont", "dialogue"} or not isinstance(runtime, dict):
+        raise ValueError(f"{source}: key, kind(asr|tts|speaker|music|soundfont|dialogue), and runtime are required")
     if kind in {"music", "soundfont"} and runtime.get("family") != "audio_cpp":
         raise ValueError(f"{source}: music and soundfont descriptors require audio.cpp")
     streaming = bool(value.get("streaming", False))
@@ -65,6 +65,8 @@ def validate_descriptor(value: dict[str, Any], source: str = "descriptor") -> di
             raise ValueError(f"{source}: streaming is only valid for ASR models")
         if runtime.get("factory") not in SPEAKER_FACTORIES:
             raise ValueError(f"{source}: unsupported speaker factory {runtime.get('factory')!r}")
+    if kind == "dialogue" and runtime.get("engine") != "speech.cpp":
+        raise ValueError(f"{source}: dialogue descriptors require speech.cpp")
     files = runtime.get("files")
     if not isinstance(files, dict) or not files:
         raise ValueError(f"{source}: runtime.files must be a non-empty object")
@@ -91,8 +93,9 @@ def catalog() -> list[dict[str, Any]]:
 
 
 def model_root(item: dict[str, Any]) -> Path:
-    repo = str(item["modelscope_repo"])
-    return settings.modelhub_root / "export" / "ms" / repo / "current"
+    source = str(item.get("source") or "ms")
+    repo = str(item.get("remote_repo") or item["modelscope_repo"])
+    return settings.modelhub_root / "export" / source / repo / "current"
 
 
 def descriptor_for(item: dict[str, Any]) -> dict[str, Any]:

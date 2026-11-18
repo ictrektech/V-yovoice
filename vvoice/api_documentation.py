@@ -20,7 +20,7 @@ def build_openapi(app):
     speaker=obj({"id":S,"name":S,"model":S,"created_at":S,"dimension":I})
     ranked=obj({"id":S,"name":S,"score":N})
     transcript=obj({"text":S,"language":S,"duration":N,"words":arr(obj({"word":S,"start":N,"end":N})),"segments":arr(obj({"id":I,"text":S,"start":N,"end":N},["text","start","end"])),"tokens":arr(S),"timestamps":arr(N),"emotion":S,"event":S,"streaming":B,"hotwords":obj({"requested":B,"supported":B,"applied":B,"sets":arr(obj({"id":S,"name":S})),"score_applied":null(N),"ignored":B}),"speaker":obj({"model":S,"threshold":N,"identified":B,"speaker":null(ranked),"score":N,"ranked":arr(ranked)},[])},["text"])
-    scheduler=obj({"protocol_version":I,"input_limits_version":I,"mixed_input_limits_version":I,"app_id":S,"binding_endpoint":S,"lifecycle_protocol_version":I,"executor_base_url":S,"upstream_url":S,"sync_models":arr(obj({"id":S,"kind":S,"task_type":S})),"async_models":arr(obj({"id":S,"family":S,"task_type":S,"weight_bytes":I})),"num_threads":I,"max_concurrent_inference":I,"cpu_models":arr(S),"provider":S})
+    scheduler=obj({"protocol_version":I,"input_limits_version":I,"mixed_input_limits_version":I,"app_id":S,"binding_endpoint":S,"lifecycle_protocol_version":I,"executor_base_url":S,"upstream_url":S,"sync_models":arr(obj({"id":S,"kind":S,"task_type":S})),"async_models":arr(obj({"id":S,"family":S,"task_type":S,"weight_bytes":I})),"dialogue_models":arr(obj({"id":S,"task_type":S})),"dialogue_limits":obj({},[]),"num_threads":I,"max_concurrent_inference":I,"cpu_models":arr(S),"provider":S})
     schemas.update(VoiceManagedModel=model,VoicePublicModel=public,VoiceHotwordSet=hotword,VoiceSpeaker=speaker,VoiceTranscript=transcript,VoiceSchedulerContract=scheduler)
     discovery=obj({"service_id":S,"name":S,"protocol":S,"visibility":S,"multi_tenant":B,"authentication":S,"base_url":S,"health_path":S,"models":arr(ref('VoicePublicModel')),"scheduler":ref('VoiceSchedulerContract')})
     shapes={
@@ -39,6 +39,9 @@ def build_openapi(app):
       'speakers_identify':obj({"object":S,"model":S,"threshold":N,"identified":B,"speaker":null(ranked),"score":N,"ranked":arr(ranked)}),
       'speakers_verify':obj({"object":S,"model":S,"speaker":ref('VoiceSpeaker'),"threshold":N,"score":N,"verified":B}),
       'voices':obj({"object":S,"model":S,"default_voice":S,"voices":arr(obj({"id":S,"name":S,"sid":I,"language":S},["id","name"])),"data":arr(obj({"id":S,"name":S,"sid":I,"language":S},["id","name"]))}),
+      'dialogue_status':obj({"supported":B,"model_installed":B,"state":S,"busy":B,"idle_unload_seconds":I,"model":obj({"key":S,"name":S,"languages":arr(S)})}),
+      'dialogue_ticket':obj({"ticket":S,"expires_at":N,"ws_path":S}),
+      'dialogue_settings':obj({"idle_unload_seconds":I}),
     }
     for route in app.routes:
         if not isinstance(route,APIRoute) or not route.include_in_schema:continue

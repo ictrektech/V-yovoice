@@ -1,0 +1,48 @@
+@layer app {
+  .dialogue-page {
+    height: 100%;
+    overflow-y: auto;
+    padding: var(--spacing-8);
+    max-width: calc(var(--spacing-10) * 10);
+    margin-inline: auto;
+  }
+
+  .dialogue-page h1 {
+    margin: 0;
+    font-size: var(--font-size-xl);
+  }
+
+  .dialogue-panel {
+    min-height: calc(var(--spacing-10) * 4);
+    padding: var(--spacing-6);
+    border: var(--border-width) solid var(--app-line);
+    border-radius: var(--radius-container);
+    background: var(--app-white);
+  }
+
+  .dialogue-transcript {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .dialogue-hint {
+    margin: 0;
+    color: var(--app-muted);
+  }
+
+  .dialogue-error {
+    margin: 0;
+    color: var(--color-text-red);
+  }
+
+  .dialogue-idle-input {
+    width: calc(var(--spacing-10) * 2);
+    padding: var(--spacing-1) var(--spacing-2);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-element);
+    background: var(--color-background-surface);
+    color: var(--color-text-primary);
+  }
+}

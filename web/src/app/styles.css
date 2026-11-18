@@ -13,6 +13,7 @@
 @import '../features/assistant/assistant.css';
 @import '../features/settings/settings.css';
 @import '../features/transcribe/transcribe.css';
+@import '../features/dialogue/dialogue.css';
 @import '../features/update/update.css';
 @import './motion.css';
 @import './polish.css';

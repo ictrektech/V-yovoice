@@ -72,6 +72,10 @@ def _clean_id(value: Any) -> str:
     return str(value or "").removeprefix("ms://").removeprefix("hf://")
 
 
+def _remote(item: dict[str, Any]) -> tuple[str, str]:
+    return str(item.get("source") or "ms"), str(item.get("remote_repo") or item["modelscope_repo"])
+
+
 def _error_detail(response) -> str:
     try:
         body = response.json() or {}
@@ -120,11 +124,13 @@ async def list_models(items: list[dict[str, Any]] | None = None) -> list[dict[st
         (row for row in items if row.get("backend") == "audio.cpp"),
         key=lambda row: sum(file["size"] for file in row["shared_files"]))}
     for item in items:
-        repo = item["modelscope_repo"]
+        _, repo = _remote(item)
         root = model_root(item)
         state = hub.get(repo, {})
         descriptor_installed = (root / "vvoice-model.json").is_file() or (
             item.get("backend") == "audio.cpp" and any((root / f["path"]).is_file() for f in item.get("shared_files", []))
+        ) or (
+            item.get("kind") == "dialogue" and any((root / f["path"]).is_file() for f in item.get("shared_files", []))
         )
         ready, validation_error = (checks[item["key"]] if item.get("backend") == "audio.cpp"
                                    else await asyncio.to_thread(model_files_ready, item)) if descriptor_installed else (False, "")
@@ -182,14 +188,18 @@ async def pull_model(key: str, force: bool = False) -> dict[str, Any]:
     if not force and (root / "vvoice-model.json").is_file():
         ready, _ = await asyncio.to_thread(model_files_ready, item)
         force = not ready
-    payload = {"source": "ms", "model_id": item["modelscope_repo"], "name": item["name"], "force": force}
+    source, repo = _remote(item)
+    payload = {"source": source, "model_id": repo, "name": item["name"], "force": force}
     if item.get("shared_files"):
         payload.update(files=[file["path"] for file in item["shared_files"]], append=True, force=False)
     async with httpx.AsyncClient(timeout=30) as client:
         pull_url = f"{settings.model_hub_api_url}/api/v1/models/pull"
         if item.get("shared_files") and force:
             # 更新保留整个仓库已下载的文件范围，不以一个精度替换其他已安装模型。
-            response = await client.post(f"{settings.model_hub_api_url}/api/v1/models/update", params={"model_id": f"ms://{item['modelscope_repo']}"})
+            response = await client.post(
+                f"{settings.model_hub_api_url}/api/v1/models/update",
+                params={"model_id": f"{source}://{repo}"},
+            )
             if response.status_code == 400 and "only ready models can be updated" in _error_detail(response):
                 # 上次失败后整个仓库不是 ready，无法更新；改为只补下载当前模型文件。
                 response = await client.post(pull_url, json={key: value for key, value in payload.items() if key != "append"})
@@ -212,7 +222,8 @@ async def cancel_model(key: str) -> dict[str, Any]:
         _, tasks = await _modelhub_lists(client)
         cancelled = []
         for task in tasks:
-            if _clean_id(task.get("model_id")) != item["modelscope_repo"]:
+            _, repo = _remote(item)
+            if _clean_id(task.get("model_id")) != repo:
                 continue
             if str(task.get("phase") or "").upper() not in {"PENDING", "DOWNLOADING", "VERIFYING"}:
                 continue

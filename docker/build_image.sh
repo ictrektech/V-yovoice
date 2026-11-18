@@ -91,7 +91,7 @@ if [[ "$mode" == assets || "$mode" == application ]]; then
 fi
 if [[ "$prepare" == true && ( "$mode" == prepare || "$mode" == full || "$mode" == build ) ]]; then
   mkdir -p "$build_root/source" "$artifacts/linux-${arch}" "$build_root/sources"
-  rsync -a --exclude=.git --exclude=node_modules --exclude=dist --exclude=__pycache__ "$root/" "$build_root/source/"
+  rsync -a --delete --exclude=.git --exclude=node_modules --exclude=dist --exclude=__pycache__ --exclude=.pytest_cache "$root/" "$build_root/source/"
   cd "$build_root/source"
   GOCACHE="$build_root/go-cache" GOPROXY="${GOPROXY:-https://goproxy.cn,direct}" CGO_ENABLED=0 \
     go build -trimpath -o "$artifacts/linux-${arch}/vvoice-studio" ./cmd/vvoice-studio
@@ -110,6 +110,20 @@ if [[ "$prepare" == true && ( "$mode" == prepare || "$mode" == full || "$mode" =
     mv "$archive.partial" "$archive"
   fi
   echo "2a8e0927bf79360b56da84f116bae85bfa0c844da2e16d787f5b1ade0743bce1  $archive" | sha256sum -c -
+  speech_archive="$build_root/sources/speech.cpp-0.11.0.tar.gz"
+  ggml_archive="$build_root/sources/ggml-79b50d2.tar.gz"
+  if [ ! -f "$speech_archive" ]; then
+    curl -fL --retry 4 --connect-timeout 15 --max-time 900 \
+      https://codeload.github.com/nyosegawa/speech.cpp/tar.gz/8d18924cd238b87c0297df112f7ff40783a6414f -o "$speech_archive.partial"
+    mv "$speech_archive.partial" "$speech_archive"
+  fi
+  if [ ! -f "$ggml_archive" ]; then
+    curl -fL --retry 4 --connect-timeout 15 --max-time 900 \
+      https://codeload.github.com/nyosegawa/ggml/tar.gz/79b50d239d0b88852814c873db0d85d43ed66d9b -o "$ggml_archive.partial"
+    mv "$ggml_archive.partial" "$ggml_archive"
+  fi
+  echo "071aa848c76096bd8124984dbf31ea2dd61791d6f9f5b2baeca1244f62b193d8  $speech_archive" | sha256sum -c -
+  echo "a2fc9434ab5455f313fd282129a66200b496b61cef12faa7f6d66102db33869b  $ggml_archive" | sha256sum -c -
 fi
 if [[ "$mode" == prepare ]]; then exit 0; fi
 if [[ "$mode" == full || "$mode" == build ]]; then
@@ -117,8 +131,10 @@ if [[ "$mode" == full || "$mode" == build ]]; then
   test -s "$artifacts/web/index.html"
   test -s "$artifacts/frontend/index.html"
   echo "2a8e0927bf79360b56da84f116bae85bfa0c844da2e16d787f5b1ade0743bce1  $build_root/sources/audio.cpp-v0.9.3.tar.gz" | sha256sum -c -
+  echo "071aa848c76096bd8124984dbf31ea2dd61791d6f9f5b2baeca1244f62b193d8  $build_root/sources/speech.cpp-0.11.0.tar.gz" | sha256sum -c -
+  echo "a2fc9434ab5455f313fd282129a66200b496b61cef12faa7f6d66102db33869b  $build_root/sources/ggml-79b50d2.tar.gz" | sha256sum -c -
   mkdir -p "$build_root/source"
-  rsync -a --exclude=.git --exclude=node_modules --exclude=dist --exclude=__pycache__ "$root/" "$build_root/source/"
+  rsync -a --delete --exclude=.git --exclude=node_modules --exclude=dist --exclude=__pycache__ --exclude=.pytest_cache "$root/" "$build_root/source/"
   if [[ "$cuda" == ON ]]; then backend=cuda; fi
   # 原 V-Voice 的六套构建配置继续从当前源码生成基础服务，不依赖历史成品镜像。
   cd "$build_root/source"
@@ -136,8 +152,10 @@ if [[ "$mode" == full || "$mode" == build ]]; then
   compiler="${VVOICE_AUDIOCPP_BUILD_BASE_IMAGE:-$platform_base}"
   docker buildx build --builder default --load --provenance=false --sbom=false \
     --build-context "studio_artifacts=${artifacts}" --build-context "audiocpp_source=${build_root}/sources" \
+    --build-context "speechcpp_source=${build_root}/sources" \
     --build-arg "VVOICE_BASE_IMAGE=${base}" --build-arg "AUDIOCPP_BUILD_BASE_IMAGE=${compiler}" \
     --build-arg "AUDIOCPP_CUDA=${cuda}" --build-arg "AUDIOCPP_BACKEND=${backend}" --build-arg "TARGETARCH=${arch}" \
+    --build-arg "SPEECCPP_CUDA=$([[ "$sheet" == l4t ]] && echo ON || echo OFF)" \
     -f docker/Dockerfile.studio -t "$image" .
 fi
 if [[ "$mode" == full || "$mode" == publish ]]; then

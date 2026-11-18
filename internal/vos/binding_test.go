@@ -24,6 +24,7 @@ func bindingFixture(t *testing.T) (*Server, SchedulerConfig) {
 			map[string]any{"id": "voice.infer", "app_id": voiceAppID, "contract_version": "1", "task_type": "model.infer", "upstream_urls": []string{"http://v-voice-backend:7070/v1"}},
 			map[string]any{"id": "voice.speaker", "app_id": voiceAppID, "contract_version": "1", "task_type": "model.infer", "upstream_urls": []string{"http://v-voice-backend:7070/v1"}},
 			map[string]any{"id": "voice.generate", "app_id": voiceAppID, "contract_version": "1", "task_type": "voice.generate"},
+			map[string]any{"id": "voice.dialogue", "app_id": voiceAppID, "contract_version": "1", "task_type": "model.dialogue", "upstream_urls": []string{"http://v-voice-backend:7070/v1"}},
 			map[string]any{"id": "foreign.infer", "app_id": "other-app", "contract_version": "1", "task_type": "model.infer", "upstream_urls": []string{"http://v-voice-backend:7070/v1"}},
 			map[string]any{"id": "wrong-origin.infer", "app_id": voiceAppID, "contract_version": "1", "task_type": "model.infer", "upstream_urls": []string{"http://other.invalid/v1"}},
 		}})
@@ -35,6 +36,27 @@ func bindingFixture(t *testing.T) (*Server, SchedulerConfig) {
 		UpstreamURL: "http://v-voice-backend:7070/v1", Models: map[string]string{"sensevoice-int8": "voice.infer", "kokoro-82m-q8": "voice.generate"},
 		GatewayExecutors: map[string]string{"sensevoice-int8": "router.voice"}}
 	return s, config
+}
+
+func TestDialogueBindingRequiresMeasuredLimits(t *testing.T) {
+	server, config := bindingFixture(t)
+	config.DialogueModels = map[string]string{"haru-4b-q8": "voice.dialogue"}
+	config.DialogueLimits = map[string]map[string]float64{
+		"haru-4b-q8": {"input_bytes": 16777216, "max_seconds": 300, "sample_rate": 24000},
+	}
+	if response := bindRequest(server, schedulerAppID, config); response.Code != 200 {
+		t.Fatalf("dialogue binding rejected: %d %s", response.Code, response.Body.String())
+	}
+	stored, err := readSchedulerConfig(server.SchedulerPath)
+	if err != nil || stored.DialogueModels["haru-4b-q8"] != "voice.dialogue" ||
+		stored.DialogueLimits["haru-4b-q8"]["max_seconds"] != 300 {
+		t.Fatal("dialogue binding was not preserved")
+	}
+	config.BindingRevision++
+	config.DialogueLimits["haru-4b-q8"]["sample_rate"] = 16000
+	if response := bindRequest(server, schedulerAppID, config); response.Code != 422 {
+		t.Fatalf("invalid dialogue limits accepted: %d", response.Code)
+	}
 }
 
 func bindRequest(s *Server, subject string, config SchedulerConfig) *httptest.ResponseRecorder {

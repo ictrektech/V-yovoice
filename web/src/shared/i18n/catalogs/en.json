@@ -4430,6 +4430,78 @@
   "@vvoice.nav.api": {
     "defaultMessage": "API documentation"
   },
+  "@vvoice.nav.dialogue": {
+    "defaultMessage": "Realtime dialogue"
+  },
+  "@vvoice.dialogue.title": {
+    "defaultMessage": "Realtime dialogue"
+  },
+  "@vvoice.dialogue.description": {
+    "defaultMessage": "A bilingual, full-duplex voice conversation powered by Haru. Only one conversation can run on this device at a time."
+  },
+  "@vvoice.dialogue.start": {
+    "defaultMessage": "Start conversation"
+  },
+  "@vvoice.dialogue.hangup": {
+    "defaultMessage": "Hang up"
+  },
+  "@vvoice.dialogue.language": {
+    "defaultMessage": "Language"
+  },
+  "@vvoice.dialogue.persona": {
+    "defaultMessage": "Character"
+  },
+  "@vvoice.dialogue.personaCompanion": {
+    "defaultMessage": "Companion chat"
+  },
+  "@vvoice.dialogue.personaStudy": {
+    "defaultMessage": "Language practice"
+  },
+  "@vvoice.dialogue.personaInterview": {
+    "defaultMessage": "Interview practice"
+  },
+  "@vvoice.dialogue.busy": {
+    "defaultMessage": "Another conversation is using this device"
+  },
+  "@vvoice.dialogue.modelMissing": {
+    "defaultMessage": "The Haru model is not installed. Ask an administrator to install it from model management."
+  },
+  "@vvoice.dialogue.unsupported": {
+    "defaultMessage": "Realtime dialogue is not available on this device profile."
+  },
+  "@vvoice.dialogue.loading": {
+    "defaultMessage": "Preparing the voice model…"
+  },
+  "@vvoice.dialogue.ending": {
+    "defaultMessage": "Ending the conversation…"
+  },
+  "@vvoice.dialogue.ready": {
+    "defaultMessage": "Ready. Microphone audio is used only for this conversation."
+  },
+  "@vvoice.dialogue.hint": {
+    "defaultMessage": "Use headphones so the model does not hear its own voice. This conversation is not saved."
+  },
+  "@vvoice.dialogue.connectionFailed": {
+    "defaultMessage": "The realtime connection failed. Please try again."
+  },
+  "@vvoice.dialogue.idleSetting": {
+    "defaultMessage": "Keep the dialogue model warm (seconds)"
+  },
+  "@vvoice.dialogue.idleSettingHint": {
+    "defaultMessage": "Device-wide setting. 0 unloads immediately; administrators can change it."
+  },
+  "@vvoice.dialogue.save": {
+    "defaultMessage": "Save"
+  },
+  "@vvoice.dialogue.saved": {
+    "defaultMessage": "Saved"
+  },
+  "@vvoice.dialogue.saveFailed": {
+    "defaultMessage": "Could not save this setting."
+  },
+  "@vvoice.dialogue.adminOnly": {
+    "defaultMessage": "Administrator access is required."
+  },
   "@vvoice.models.prepare": {
     "defaultMessage": "Prepare models"
   },
