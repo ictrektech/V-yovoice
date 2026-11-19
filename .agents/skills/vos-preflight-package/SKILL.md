@@ -15,10 +15,13 @@ For V-yovoice image checks and device mappings, read [references/v-voice.md](ref
 
 Get these from the application's AGENTS.md or release runbook:
 
+- One explicit candidate version for the entire preflight cycle.
 - The generated candidate package path.
 - The application ID.
 - The mapping from VOS profile to SSH device.
 - The application-specific image smoke command and target image references.
+
+Keep the candidate version fixed across image rebuilds, package rebuilds, retries, and device reinstalls. Rebuilds must overwrite the same candidate image tags and package path; do not increment the version between preflight attempts. Persist or publish that version only after final validation and the user's release decision.
 
 Build each target image on its matching host and run the application-specific smoke check before any push. The candidate image references must be pullable before the VOS devices are changed. Push candidates without recording them in Feishu; formal publication remains a separate user decision.
 

@@ -42,7 +42,7 @@ RELEASE_VERSION="${VOS_MAJOR}.${VOS_MINOR}.${VOS_PATCH}"
 printf '%s\n' "$RELEASE_VERSION"
 ```
 
-后续在同一 shell 使用这些变量；换终端时按当前 VERSION 重新计算。
+同一任务只确定一次候选版本。后续所有镜像重建、冒烟、候选包重建、VOS 重装和重试都显式复用 `RELEASE_VERSION`，用同名镜像标签和同名安装包覆盖上一轮预检产物，不因重试递增版本。只有最终验证通过并由用户决定正式发布后，才由 `update_version.sh` 将同一个版本写入 `ictrek.app/VERSION`。
 
 ## 3. 构建、冒烟并推送候选镜像
 
@@ -165,20 +165,20 @@ bash docker/build_image.sh --sheet thor_spark --version "$RELEASE_VERSION" --pub
 
 `--publish-only` 会重新确认本地候选标签存在、推送一次并写入对应飞书 sheet。任一步失败都停在正式发版前；三个标签回读一致后继续。
 
-沿用第 2 节确定的版本，先检查发布说明：
+沿用第 2 节确定的同一候选版本，先检查发布说明：
 
 ```bash
 python3 scripts/release-notes.py "v${RELEASE_VERSION}"
 git diff --check
 ```
 
-这两条命令仅在本地检查发布说明和改动格式。确认后提交代码和 CHANGELOG，保持工作区干净。确认发布分支、`origin` 正确，GitHub Actions 已配置 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`APPSTORE_IP`、`APPSTORE_TOKEN`，再执行：
+这两条命令仅在本地检查发布说明和改动格式。确认后提交代码和 CHANGELOG，保持工作区干净。确认发布分支、`origin` 正确，GitHub Actions 已配置 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`APPSTORE_IP`、`APPSTORE_TOKEN`，再显式传入已验收的候选版本：
 
 ```bash
-bash ictrek.app/scripts/update_version.sh "$RELEASE_PART"
+bash ictrek.app/scripts/update_version.sh "$RELEASE_VERSION"
 ```
 
-递增类型与第 2 节保持一致，当前 VERSION 应仍为第 2 节记录的基线。若已验收的候选版本跳过了未发布版本，可改传明确的较新版本号，例如 `bash ictrek.app/scripts/update_version.sh 0.0.35`。
+不要再次传入 `patch`、`minor` 或 `major` 让脚本重新计算版本；当前 VERSION 应仍为第 2 节记录的基线，脚本会把已验收的 `RELEASE_VERSION` 原样写入并发布。
 
 脚本更新并提交 `ictrek.app/VERSION`，创建 `vos-v-voice-vX.Y.Z`，原子推送当前分支和触发标签。GitHub Actions 随后执行检查、读取飞书镜像和已发布的 V-Scheduler 依赖、重新生成正式安装包，创建公开 `vX.Y.Z` Release，并发布到 VOS App Store。正式打包前保持测试通过的镜像引用不变，并核对 CI 解析的依赖与测试包一致；镜像或依赖变化时重新测试。
 
