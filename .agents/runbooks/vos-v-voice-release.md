@@ -65,7 +65,7 @@ bash docker/build_image.sh --sheet l4t --dry-run
 | `l4t` | `l4t` | `l4t_X.Y.Z` | Jetson L4T | 是 |
 | `thor` | `thor_spark` | `thor_X.Y.Z` | Thor / Spark | 是 |
 
-当前只构建和验证 `AMD_with_cuda`、`l4t`、`thor_spark`。其他 profile 暂时沿用已有镜像，不为本次发布重新构建；未获用户明确授权，不运行对应的 `build_image.sh`。manifest 和 compose 仍保留六个 profile 以维持安装兼容和现有包结构，这不代表每次发布都要重建六个镜像。
+当前阶段默认只构建和验证 `AMD_with_cuda`、`l4t`、`thor_spark`，每条命令仍用 `--sheet` 明确指定一个平台。只有用户明确要求本次构建全部 6 个 profile 时，才运行 AMD CPU、ARM CPU 和 ARM CUDA 对应的 `--sheet`；`build_image.sh` 继续保持通用，不增加额外门控。manifest 和 compose 仍保留六个 profile 以维持安装兼容和现有包结构，这不代表默认重建范围。
 
 例如 AMD CUDA：
 
@@ -84,7 +84,7 @@ bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --
 bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --publish-only
 ```
 
-本次上游合并包含 Go 和前端改动，使用完整构建，但重建范围只包括 `AMD_with_cuda`、`l4t` 和 `thor_spark`。其余 profile 在打包时只读取飞书已有的镜像标签，不重新构建或做本次设备验证；打包器不会代为构建镜像。
+当前阶段的完整构建范围只包括 `AMD_with_cuda`、`l4t` 和 `thor_spark`。其余 profile 在打包时只读取飞书已有的镜像标签，不重新构建或做设备验证；打包器不会代为构建镜像。
 
 推送镜像并更新飞书是为了让 pull 测试包能够引用和拉取镜像，此时尚未创建 GitHub Release 或发布应用商店版本。
 
