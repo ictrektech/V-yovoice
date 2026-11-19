@@ -107,6 +107,32 @@ bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --
 
 外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、镜像引用和依赖，并确认三个本次目标 profile 指向新候选标签；其余 profile 只确认保留了已有标签。产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。
 
+### 候选包安装预检
+
+“构建预检包”使用 `$vos-preflight-package`。该流程只验证候选包能在 VOS 正常升级，不执行页面或业务功能验收。先运行只读计划：
+
+```bash
+: "${VOS_ADMIN_PASSWORD:?load this from the approved credential source}"
+python3 .agents/skills/vos-preflight-package/scripts/vos_preflight.py plan \
+  --package ictrek.app/dist/v_voice_X.Y.Z_pull.tar \
+  --target czy@10.144.144.232=amd-cuda \
+  --target czy@192.168.1.207=l4t \
+  --target czy@192.168.1.229=thor
+```
+
+向用户展示设备、当前版本、候选版本、当前 profile 和依赖检查结果，取得明确确认后才能执行：
+
+```bash
+python3 .agents/skills/vos-preflight-package/scripts/vos_preflight.py apply \
+  --package ictrek.app/dist/v_voice_X.Y.Z_pull.tar \
+  --target czy@10.144.144.232=amd-cuda \
+  --target czy@192.168.1.207=l4t \
+  --target czy@192.168.1.229=thor \
+  --confirmed
+```
+
+安装按设备顺序执行；任一设备失败即停止，并报告成功、失败和未执行设备。成功标准是 VOS 任务 `Completed`、版本和 profile 匹配、状态 `installed`、`runtime_ready=true`。流程不更新飞书，也不执行 UI、API 或推理功能测试；正式发布仍由用户另行决定。
+
 将测试包用于现有 VOS 测试流程，测试发现问题则修复代码、重建三个目标平台中的受影响镜像并重新打包。这里先停下，由测试结果决定是否进入第 5 节；本手册不自动执行应用安装或升级。
 
 ## 5. 整理 CHANGELOG 并触发正式发布
