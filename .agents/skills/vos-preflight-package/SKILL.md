@@ -5,9 +5,11 @@ description: Build and install a VOS candidate package on explicitly confirmed d
 
 # Vos Preflight Package
 
-Build or reuse the application's candidate package, then install it through the normal VOS upgrade path. The workflow ends when installation succeeds. Do not run UI, API, inference, or other functional verification.
+Build or reuse the application's candidate images and package, run a lightweight image smoke check, then install the package through the normal VOS upgrade path. The workflow ends when installation succeeds. Do not run UI, API, inference, or other functional verification.
 
 The skill currently belongs to V-yovoice. Other VAI applications can copy it into their own `.agents/skills` directory when they add a compatible package and device mapping.
+
+For V-yovoice image checks and device mappings, read [references/v-voice.md](references/v-voice.md).
 
 ## Inputs
 
@@ -16,8 +18,15 @@ Get these from the application's AGENTS.md or release runbook:
 - The generated candidate package path.
 - The application ID.
 - The mapping from VOS profile to SSH device.
+- The application-specific image smoke command and target image references.
 
-The candidate image references must already be pullable by the target devices. Push candidate images without recording them in Feishu; formal publication remains a separate user decision.
+Build each target image on its matching host and run the application-specific smoke check before any push. The candidate image references must be pullable before the VOS devices are changed. Push candidates without recording them in Feishu; formal publication remains a separate user decision.
+
+## Image smoke
+
+Follow the application-specific reference, such as [references/v-voice.md](references/v-voice.md), immediately after the image build and before `publish-only` or a direct push. Every applicable profile must pass. Treat a missing local image, wrong architecture, failed runtime import, or failed catalog/source check as a build failure.
+
+The smoke may start a temporary container, but it must use `docker run --rm` and must not mount persistent data, publish ports, execute inference, or leave a container behind. Verify no temporary container remains after the check.
 
 ## Plan first
 

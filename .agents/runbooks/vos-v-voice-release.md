@@ -1,8 +1,8 @@
 # VOS V-Voice 打包与发布
 
 ```text
-检查并提交代码 -> 确定候选版本 -> 构建推送镜像、更新飞书 -> 打包预检与测试
-  -> 决定正式发版 -> 整理 CHANGELOG -> update_version.sh
+检查并提交代码 -> 确定候选版本 -> 构建、冒烟并推送候选镜像 -> 打包预检与测试
+  -> 决定正式发版 -> 更新飞书镜像标签 -> 整理 CHANGELOG -> update_version.sh
   -> GitHub Actions 检查并打包 -> GitHub Release -> VOS App Store
 ```
 
@@ -44,7 +44,7 @@ printf '%s\n' "$RELEASE_VERSION"
 
 后续在同一 shell 使用这些变量；换终端时按当前 VERSION 重新计算。
 
-## 3. 构建并推送镜像
+## 3. 构建、冒烟并推送候选镜像
 
 可先预览计划，例如本机 L4T：
 
@@ -67,26 +67,32 @@ bash docker/build_image.sh --sheet l4t --dry-run
 
 当前阶段默认只构建和验证 `AMD_with_cuda`、`l4t`、`thor_spark`，每条命令仍用 `--sheet` 明确指定一个平台。只有用户明确要求本次构建全部 6 个 profile 时，才运行 AMD CPU、ARM CPU 和 ARM CUDA 对应的 `--sheet`；`build_image.sh` 继续保持通用，不增加额外门控。manifest 和 compose 仍保留六个 profile 以维持安装兼容和现有包结构，这不代表默认重建范围。
 
+候选流程必须先构建，再冒烟，最后推送。不要使用默认的“构建并发布”组合命令，否则镜像会在冒烟前进入仓库和飞书。
+
 例如 AMD CUDA：
 
 ```bash
-bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION"
-```
-
-默认命令会完成构建、推送到 `swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice`，并更新飞书对应 sheet 的 `v-voice` 列。`ARM_without_cuda` 会同时更新 `SOPHON_bm1688`。
-
-默认版本为 `ictrek.app/VERSION` 的下一个 patch；发布时建议明确传入候选版本。已推送的标签不能用不同镜像覆盖；需要修改时使用新版本。未受影响的平台可以沿用旧镜像，包括日期标签。
-
-如需分开构建和推送，使用相同的明确版本：
-
-```bash
 bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --build-only
-bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --publish-only
+
+EXPECTED_CATALOG_SHA256="$(
+  python3 -c 'import hashlib, pathlib; print(hashlib.sha256(pathlib.Path("internal/catalog/catalog.json").read_bytes()).hexdigest())'
+)"
+python3 .agents/skills/vos-preflight-package/scripts/vos_image_smoke.py \
+  --ssh czy@10.144.144.232 \
+  --profile amd-cuda \
+  --image "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_cu128_${RELEASE_VERSION}" \
+  --expected-catalog-sha256 "$EXPECTED_CATALOG_SHA256"
+
+docker push "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_cu128_${RELEASE_VERSION}"
 ```
+
+L4T 和 Thor 使用相同顺序，在各自构建机执行 `--build-only`、冒烟脚本（映射见 `$vos-preflight-package/references/v-voice.md`）和 `docker push`。三个镜像全部通过后才能开始打包。
+
+默认版本为 `ictrek.app/VERSION` 的下一个 patch；发布时建议明确传入候选版本。预检阶段发现问题时，修复后可用同一候选版本重新构建、冒烟和推送覆盖；尚未写入飞书的候选标签不视为正式发布。未受影响的平台可以沿用旧镜像，包括日期标签。
 
 当前阶段的完整构建范围只包括 `AMD_with_cuda`、`l4t` 和 `thor_spark`。其余 profile 在打包时只读取飞书已有的镜像标签，不重新构建或做设备验证；打包器不会代为构建镜像。
 
-推送镜像并更新飞书是为了让 pull 测试包能够引用和拉取镜像，此时尚未创建 GitHub Release 或发布应用商店版本。
+本阶段只推送候选镜像，不更新飞书。候选包通过 `package.sh --image` 显式引用这些标签；用户确认正式发布后，才在各自构建机运行 `--publish-only`，将同一标签推送到仓库并登记到飞书。
 
 ## 4. 本地打包预检与测试
 
@@ -96,14 +102,19 @@ bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --
 (
   set -eo pipefail
   : "${RELEASE_VERSION:?请先执行第 2 节计算候选版本}"
-  bash ictrek.app/scripts/package.sh --version "$RELEASE_VERSION"
+  CANDIDATE_REGISTRY=swr.cn-southwest-2.myhuaweicloud.com/ictrek
+  bash ictrek.app/scripts/package.sh \
+    --version "$RELEASE_VERSION" \
+    --image "VVOICE_AMD_CUDA_IMAGE=${CANDIDATE_REGISTRY}/v-voice:amd_cu128_${RELEASE_VERSION}" \
+    --image "VVOICE_L4T_IMAGE=${CANDIDATE_REGISTRY}/v-voice:l4t_${RELEASE_VERSION}" \
+    --image "VVOICE_THOR_IMAGE=${CANDIDATE_REGISTRY}/v-voice:thor_${RELEASE_VERSION}"
   test -f "ictrek.app/dist/v_voice_${RELEASE_VERSION}_pull.tar"
   tar tf "ictrek.app/dist/v_voice_${RELEASE_VERSION}_pull.tar"
   tar xOf "ictrek.app/dist/v_voice_${RELEASE_VERSION}_pull.tar" app.tar.gz | tar tzf -
 )
 ```
 
-打包使用现有飞书读凭据（优先 `~/.feishu.components.json`，其次 `~/.feishu.json`，或由 `FEISHU_CONFIG_FILE` 指定）。V-Scheduler 依赖从已发布的 GitHub 包查询，依次使用 `GH_TOKEN`、`GITHUB_TOKEN` 或本机 `gh auth login` 已保存的登录，避免匿名 API 限流；无需手动导出 CLI 令牌。私有仓库无法读取时，可通过已授权的本机隧道设置 `VVOICE_APPSTORE_API_URL` 查询商店记录。依赖查询失败时先解决凭据或通道问题，不提前触发正式发布。
+三个目标 profile 通过 `--image` 使用候选标签，其余 profile 仍使用现有飞书读凭据（优先 `~/.feishu.components.json`，其次 `~/.feishu.json`，或由 `FEISHU_CONFIG_FILE` 指定）。本步骤只读取飞书，不写入。V-Scheduler 依赖从已发布的 GitHub 包查询，依次使用 `GH_TOKEN`、`GITHUB_TOKEN` 或本机 `gh auth login` 已保存的登录，避免匿名 API 限流；无需手动导出 CLI 令牌。私有仓库无法读取时，可通过已授权的本机隧道设置 `VVOICE_APPSTORE_API_URL` 查询商店记录。依赖查询失败时先解决凭据或通道问题，不提前触发正式发布。
 
 外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、镜像引用和依赖，并确认三个本次目标 profile 指向新候选标签；其余 profile 只确认保留了已有标签。产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。
 
@@ -138,6 +149,21 @@ python3 .agents/skills/vos-preflight-package/scripts/vos_preflight.py apply \
 ## 5. 整理 CHANGELOG 并触发正式发布
 
 仅在测试正常且已决定正式发版后执行本节。将根目录 CHANGELOG 的待发布内容归档到目标版本 `## [X.Y.Z] - YYYY-MM-DD`，保留 `Unreleased`，并包含内容对应的 `### English` 和 `### 简体中文`。
+
+先在各自构建机将已通过预检的三个候选镜像登记到飞书：
+
+```bash
+# AMD CUDA 构建机
+bash docker/build_image.sh --sheet AMD_with_cuda --version "$RELEASE_VERSION" --publish-only
+
+# L4T 构建机
+bash docker/build_image.sh --sheet l4t --version "$RELEASE_VERSION" --publish-only
+
+# Thor 构建机
+bash docker/build_image.sh --sheet thor_spark --version "$RELEASE_VERSION" --publish-only
+```
+
+`--publish-only` 会重新确认本地候选标签存在、推送一次并写入对应飞书 sheet。任一步失败都停在正式发版前；三个标签回读一致后继续。
 
 沿用第 2 节确定的版本，先检查发布说明：
 
