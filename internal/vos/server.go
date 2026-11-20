@@ -108,7 +108,7 @@ var allowed = map[string]bool{
 	"draft.save": true, "draft.delete": true, "generation.start": true, "generation.cue": true,
 	"character.save": true, "character.preview": true, "character.delete": true, "character.discardPreview": true,
 	"voice.fromGeneration": true, "voice.suggest": true, "voice.update": true, "voice.record": true, "timeline.import": true,
-	"media.rename": true, "media.delete": true, "generation.lyricTimes": true, "generation.lyricWords": true, "melody.inspect": true, "melody.transform": true, "melody.dismiss": true, "operation.cancel": true, "diag.client": true,
+	"captions.format": true, "media.rename": true, "media.delete": true, "generation.lyricTimes": true, "generation.lyricWords": true, "melody.inspect": true, "melody.transform": true, "melody.dismiss": true, "operation.cancel": true, "diag.client": true,
 }
 
 func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {

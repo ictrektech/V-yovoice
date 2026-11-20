@@ -57,6 +57,7 @@ export class Timeline {
     const pending = history.filter(g => g.segment && g.settings.id === draft.id && !accepted.has(g.id)).slice().reverse();
     if (!pending.length) return draft;
     const timeline = structuredClone(draft.timeline ?? { tracks: [] });
+    const timedCues = new Map(draft.matchCueTiming ? draft.subtitles?.cues.map(cue => [cue.id, cue.start / 1000] as const) : []);
     let changed = false;
     for (const g of pending) {
       const segment = g.segment!;
@@ -66,7 +67,7 @@ export class Timeline {
         if (lane && clip) {
           if (lane.locked) continue;
           const end = clip.start + clip.duration;
-          const delta = g.duration - clip.duration;
+          const delta = draft.matchCueTiming ? 0 : g.duration - clip.duration;
           if (lane.clips.some(c => (c.id === clip.id ? c.start + g.duration : c.start + c.duration + (c.start >= end ? delta : 0)) > 86400)) continue;
           lane.clips = lane.clips.map(c => c.id === clip.id ? { ...c, generationId: g.id, assetId: undefined, offset: 0, duration: g.duration } : c.start >= end ? { ...c, start: c.start + delta } : c);
         }
@@ -78,7 +79,7 @@ export class Timeline {
           lane = { id: segment.batchId, name: draft.title, muted: timeline.tracks.some(t => !t.muted && t.clips.length > 0), clips: [] };
           timeline.tracks.push(lane);
         }
-        const start = Math.max(0, ...lane.clips.map(c => c.start + c.duration));
+        const start = timedCues.get(segment.cueId) ?? Math.max(0, ...lane.clips.map(c => c.start + c.duration));
         if (start + g.duration > 86400 || timeline.tracks.reduce((sum, t) => sum + t.clips.length, 0) >= 2000) continue;
         lane.clips.push({ id: g.id, generationId: g.id, start, offset: 0, duration: g.duration });
       }

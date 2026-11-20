@@ -231,13 +231,17 @@ export function SubtitleEditor({ draft, characters, change, renderFooter, select
         // 说话人被删掉或数据不一致时退回第一位说话人，头像按台词自己的说话人 id 取种子。
         const speaker = document.speakers.find(s => s.id === cue.speakerId) ?? document.speakers[0];
         const status = statuses[index];
+        const generated = status === 'ready' ? cueGeneration(draft, history, cue) : undefined;
+        const duration = generated?.duration ?? 0;
+        const slot = (cue.end - cue.start) / 1000;
         return <HStack key={cue.id ?? index} data-cue-index={index} className="subtitle-cue" data-selected={selectedCue === index} data-playing={playingCue === index} onFocusCapture={() => selectCue(index)} onClick={() => selectCue(index)} gap={3} vAlign="start">
           <DropdownMenu presentation="popover" hasChevron={false} menuWidth="max-content" isMenuOpen={speakerMenu === index} onOpenChange={open => setSpeakerMenu(open ? index : current => current === index ? -1 : current)}
             button={{ size: 'sm', variant: 'ghost', isIconOnly: true, className: 'subtitle-speaker-trigger', label: t('@yovoice.subtitle.lineSpeaker', { n: index + 1 }), tooltip: withHotkey(t('@yovoice.subtitle.lineSpeaker', { n: index + 1 }), speakerMenuKeys), 'aria-keyshortcuts': selectedCue === index ? speakerMenuAria : undefined, icon: <SpeakerAvatar seed={speaker?.characterId ?? `${draft.id}:${speaker?.id ?? cue.speakerId}`} /> }}
             items={document.speakers.map((s, i) => ({ id: s.id, label: label(i), description: s.sourceName || undefined, endContent: speakerKeys(i), icon: <SpeakerAvatar seed={s.characterId ?? `${draft.id}:${s.id}`} />, onClick: () => setSpeaker(index, s.id) }))} />
           {cue.text.trim() && status !== 'ready' ? <i className="cue-audio-status" data-status={status} role="img" aria-label={t(`@yovoice.timeline.${status}Cue`)} title={t(`@yovoice.timeline.${status}Cue`)} /> : null}
-          {status === 'ready' ? <AudioCheckBadge className="cue-audio-check" check={cueGeneration(draft, history, cue)?.check} /> : null}
+          {status === 'ready' ? <AudioCheckBadge className="cue-audio-check" check={generated?.check} /> : null}
           <VStack gap={0} className="grow">
+            {draft.matchCueTiming && duration > slot + 0.01 ? <small role="status">{t('@vvoice.dub.overrun', { duration: duration.toFixed(2), slot: slot.toFixed(2) })}</small> : null}
             {showTimes ? <small className="subtitle-time">{timestamp(cue.start)} – {timestamp(cue.end)}</small> : null}
             <CueText onSplit={(start, end) => {
               if (full) return;

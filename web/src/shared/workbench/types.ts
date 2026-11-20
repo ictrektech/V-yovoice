@@ -42,7 +42,7 @@ export interface ScoreTrack { id: string; name: string; role?: ScoreRole; progra
 export interface ScoreSection { name: string; start: number; end: number; tempo?: number }
 export interface Score { tempo: number; timeSignature: number[]; key?: string; sections?: ScoreSection[]; tracks: ScoreTrack[] }
 export type ProjectKind = 'text' | 'story' | 'subtitle' | 'music' | 'score' | 'sfx';
-export interface Draft extends SynthesisSettings { performance?: CharacterPerformance; id: string; title: string; text: string; kind?: ProjectKind; characterId?: string; createdAt?: string; updatedAt?: string; subtitles?: SubtitleDocument; timeline?: AudioTimeline; score?: Score }
+export interface Draft extends SynthesisSettings { performance?: CharacterPerformance; id: string; title: string; text: string; kind?: ProjectKind; characterId?: string; createdAt?: string; updatedAt?: string; subtitles?: SubtitleDocument; matchCueTiming?: boolean; timeline?: AudioTimeline; score?: Score }
 export type ProjectPage = 'text' | 'story' | 'music' | 'score' | 'sfx';
 export interface CharacterPreview { id: string; fileName: string; duration: number; settings: SynthesisSettings; text: string }
 export interface Character { performances?: CharacterPerformance[]; id: string; name: string; settings: SynthesisSettings; demoText: string; preview?: CharacterPreview; createdAt?: string; updatedAt?: string }

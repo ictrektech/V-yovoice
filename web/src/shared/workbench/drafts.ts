@@ -6,7 +6,7 @@ import type { Character, CharacterPerformance, Draft, Generation, ProjectPage, S
 
 // 旧字幕作品沿用原始数据，统一归入故事。
 export const projectKind = (draft: Draft): ProjectPage => draft.kind === 'music' || draft.kind === 'score' || draft.kind === 'sfx' ? draft.kind : draft.subtitles || draft.kind === 'story' || draft.kind === 'subtitle' ? 'story' : 'text';
-export const synthesisSettings = ({ performance: _performance, id: _id, title: _title, text: _text, kind: _kind, characterId: _characterId, createdAt: _createdAt, updatedAt: _updatedAt, subtitles: _subtitles, timeline: _timeline, score: _score, ...settings }: Draft): SynthesisSettings => structuredClone(settings);
+export const synthesisSettings = ({ performance: _performance, id: _id, title: _title, text: _text, kind: _kind, characterId: _characterId, createdAt: _createdAt, updatedAt: _updatedAt, subtitles: _subtitles, matchCueTiming: _timing, timeline: _timeline, score: _score, ...settings }: Draft): SynthesisSettings => structuredClone(settings);
 // 与 Go 的可选字段默认值对齐，保留 seed=0 与自动随机种子的区别。
 const comparableSettings = (settings: SynthesisSettings) => ({ speaker: '', synthesisLanguage: '', omniSpeed: 0, voiceMode: '', voxMode: '', voiceDescription: '', referenceText: '', guidanceScale: 0, inferenceSteps: 0, modelOptions: {}, ...Object.fromEntries(Object.entries(settings).filter(([, value]) => value !== undefined)) });
 export const previewStale = (c: Character) => !!c.preview && (c.demoText !== c.preview.text || stableJSON(comparableSettings(c.settings)) !== stableJSON(comparableSettings(c.preview.settings)));

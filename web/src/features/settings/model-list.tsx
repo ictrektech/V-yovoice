@@ -66,6 +66,12 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
   const legacyDownload = activity?.kind === 'download' && activity.status !== 'completed' && activity.modelId && !state.modelDownloads?.[activity.modelId] ? activity : null;
   const downloadOf = (model: ModelPackage) => {
     const hub = shared?.[model.id];
+    const task = hub?.task;
+    if (task) {
+      const status = ['pending', 'downloading'].includes(task.phase) ? 'running' : task.phase;
+      const total = hub.total_bytes || model.size;
+      return { received: total * task.progress, total, status };
+    }
     return hub ? (['downloading', 'verifying', 'failed'].includes(hub.status) ? { received: hub.downloaded_bytes ?? 0, total: hub.total_bytes || model.size, status: hub.status === 'downloading' ? 'running' : hub.status } : null)
       : state.modelDownloads?.[model.id] ? (activity?.kind === 'download' && activity.modelId === model.id && activity.status === 'running' ? activity : state.modelDownloads[model.id])
       : activity?.kind === 'download' && activity.modelId === model.id && activity.status !== 'completed' ? activity : null;
@@ -83,6 +89,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
     const hub = shared?.[model.id];
     const download = downloadOf(model);
     const downloading = download?.status === 'running';
+    const verifying = download?.status === 'verifying';
     const removeBlocked = busy || (!isVos && !!state.modelDownloads?.[model.id]) || (modelBusy && !(activity?.kind === 'download' && activity.modelId && activity.modelId !== model.id));
     const inUse = draft.modelId === model.id;
     const owned = group.filter(isInstalled);
@@ -115,7 +122,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
           : ready ? <HStack gap={1} vAlign="center">
             {!isVos && currentVersion ? <Selector size="sm" className="model-version" label={t('@yovoice.settings.modelVersion')} isLabelHidden value={currentVersion} options={versions} isDisabled={busy || modelBusy}
               onChange={version => { if (version !== currentVersion) run(() => call('model.download', { id: model.id, version: version === latest ? undefined : version })); }} width="calc(var(--spacing-10) * 4)" /> : null}
-            {update && !model.importRequired ? <Button size="sm" variant="secondary" label={t('@yovoice.settings.updateModel')} icon={<RefreshCw size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(async () => {
+            {update && !model.importRequired ? <Button size="sm" variant="secondary" label={t('@yovoice.settings.updateModel')} icon={<RefreshCw size={16} />} isDisabled={modelBusy || verifying} onClick={() => run(async () => {
               if (!isVos) return call('model.download', { id: model.id });
               const response = await vosFetch(`/api/v1/models/audiocpp-${encodeURIComponent(model.id)}/pull?force=true`, { method: 'POST' });
               if (!response.ok) throw new Error((await response.text()).slice(0, 300));
@@ -124,7 +131,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
           </HStack>
           : isVos && model.importRequired ? <small>{t('@vvoice.models.importRequired')}</small>
           : !model.remotePath ? <Button size="sm" label={t('@yovoice.settings.importGguf')} icon={<FilePlus size={16} />} isDisabled={modelBusy} onClick={() => run(() => call('model.import'))} />
-          : <Button size="sm" label={download ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={16} />} isDisabled={modelBusy || hub?.status === 'verifying'} onClick={() => run(() => call('model.download', { id: model.id }))} />}
+          : <Button size="sm" label={download ? t('@yovoice.settings.resumeDownload') : t('@yovoice.settings.downloadModel')} icon={<Download size={16} />} isDisabled={modelBusy || verifying} onClick={() => run(() => call('model.download', { id: model.id }))} />}
         </HStack>
       </HStack>
       {ready && (!managed || record?.converted) && !isVos ? <small className="model-path" title={state.models.find(m => m.id === model.id)?.path}>{state.models.find(m => m.id === model.id)?.path}</small> : null}
@@ -138,7 +145,7 @@ export function ModelGroups({ models, state, draft, run, focus, shared }: { mode
         <HStack hAlign="between" gap={3}><small>{downloadStatusLabel(t, !!downloading, download.received, download.total, download.status)}</small><small className="model-size">{formatBytes(download.received)} / {formatBytes(download.total)}</small></HStack>
         <progress aria-label={t('@yovoice.settings.downloadProgress', { name: model.name, precision: model.precision })} value={download.received} max={download.total} />
       </VStack> : null}
-      {hub?.error && hub.status === 'failed' ? <p role="alert">{hub.error}</p> : null}
+      {download?.status === 'failed' && (hub?.task?.error || hub?.error) ? <p role="alert">{hub?.task?.error || hub?.error}</p> : null}
     </VStack>;
   };
   return <>

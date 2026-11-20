@@ -66,6 +66,18 @@ test('分段接收幂等、删除不复活、重生成只替换指定片段并�
   expect(Timeline.accept(replaced, [retry, b, a])).toBe(replaced);
   const late = Timeline.accept(replaced, [make('late', 0, 1, 'a'), retry, b, a]);
   expect(late.timeline!.tracks[0].clips).toHaveLength(0);
+
+  const timed = { ...draft, matchCueTiming: true, subtitles: {
+    speakers: [{ id: 'speaker-0', sourceName: '旁白' }],
+    cues: [
+      { id: 'cue-0', speakerId: 'speaker-0', start: 1500, end: 3500, text: '第一句' },
+      { id: 'cue-1', speakerId: 'speaker-0', start: 6000, end: 9000, text: '第二句' },
+    ],
+  } };
+  const placed = Timeline.accept(timed, [b, a]);
+  expect(placed.timeline!.tracks[0].clips.map(c => c.start)).toEqual([1.5, 6]);
+  const revised = Timeline.accept(placed, [retry, b, a]);
+  expect(revised.timeline!.tracks[0].clips.map(c => [c.start, c.duration])).toEqual([[1.5, 4], [6, 3]]);
 });
 
 test('多选保持相对位置，锁轨保护，波纹删除不影响其他轨', () => {

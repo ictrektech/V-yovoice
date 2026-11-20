@@ -6769,5 +6769,68 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "Download"
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "Translate dubbing lines"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "Translate with V-Scheduler, review each translation against its original time slot, then create a project with the same characters and timecodes."
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "Target language"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "No chat models are available to this VOS account."
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "Could not load the V-Scheduler model list."
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "The V-Scheduler request failed or returned incomplete translations. Retry or choose another model."
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "Could not save the dubbed project. Retry to save it."
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "Create dubbed project"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "Translate lines"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "Translation for line {n}"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "Translation page"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "The translation exceeds 12,000 characters. Shorten it or split the source into smaller projects."
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "Dub runs {duration} s in a {slot} s subtitle slot"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "MP4 with multiple audio tracks"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "Keep the source video and audio, and add the timeline dub and subtitles. Maximum video length is one hour and combined input size is 200 MiB."
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "Source video (MP4)"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "Isolated background audio (optional WAV)"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "Default audio track"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "Dub"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "Original"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "Combined export inputs exceed 200 MiB."
   }
 }

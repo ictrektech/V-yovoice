@@ -1560,6 +1560,27 @@ if os.getenv("VVOICE_STUDIO_ENABLED") == "true":
         """
         return await studio_proxy(request, "studio-api/call")
 
+    @app.post("/studio-api/video-export", tags=["Private workbench"], response_class=FileResponse,
+              responses={200: {"content": {"video/mp4": {"schema": {"type": "string", "format": "binary"}}}},
+                         401: {"description": "VOS sign-in required"}, 413: {"description": "Combined inputs exceed 200 MiB"},
+                         422: {"description": "Invalid form or unsupported media"}, 429: {"description": "Export already in progress"},
+                         503: {"description": "VOS identity service unavailable"}, 504: {"description": "Video export timed out"}})
+    async def workbench_video_export(
+        request: Request,
+        video: UploadFile = File(description="Source MP4 video, up to one hour"),
+        dub: UploadFile = File(description="Timed WAV dialogue mix"),
+        captions: UploadFile | None = File(default=None, description="Optional UTF-8 SRT captions"),
+        background: UploadFile | None = File(default=None, description="Optional separated background WAV, mixed at 25% gain"),
+        default_track: Literal["dub", "original"] = Form(default="dub"),
+        _identity: HTTPAuthorizationCredentials | None = Security(HTTPBearer(auto_error=False, scheme_name="VOSUserBearer")),
+    ):
+        """Mux source video, original audio, a dubbed audio track and optional subtitles."""
+        from .dialogue import _verify_user
+        from .video_export import export_video
+
+        await _verify_user(request)
+        return await export_video(video, dub, captions, background, default_track)
+
     @app.get("/studio-api/media/{kind}/{file_name}", tags=["Private workbench"], responses={
         200: {"description": "User-owned audio file", "content": {"audio/wav": {"schema": {"type": "string", "format": "binary"}}}},
         401: {"description": "VOS user authentication required"},

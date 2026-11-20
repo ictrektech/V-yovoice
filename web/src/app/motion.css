@@ -76,14 +76,6 @@
   :root[data-transition="notice"]::view-transition-new(notifications) { animation: none; }
   @keyframes notice-out { to { opacity: 0; transform: translateY(calc(-1 * var(--spacing-2))); } }
 
-  /* ===== 侧栏选中块：一个独立的底块在入口之间滑动，选中项只加粗文字。 ===== */
-  .sidebar-indicator { position: absolute; top: 0; left: 0; z-index: 0; border-radius: var(--radius-element); background: var(--app-white); box-shadow: var(--shadow-low); pointer-events: none; opacity: 1; }
-  .sidebar-indicator[data-ready] { transition: transform var(--duration-medium-min) var(--ease-standard), height var(--duration-medium-min) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard); }
-  .sidebar-indicator[data-hidden] { opacity: 0; }
-  /* 换页的视图过渡里，侧栏的新画面是实时的：底块照常用自身的过渡滑到新入口。 */
-  .sidebar .nav-item { position: relative; z-index: 1; }
-  .sidebar .nav-item.selected { background: transparent; box-shadow: none; }
-
   /* ===== 折叠区（高级设置、更多参数等）：高度平滑展开收起，下方内容随之推移，而不是瞬间跳动。 ===== */
   :root { interpolate-size: allow-keywords; }
   @supports selector(::details-content) {
@@ -92,7 +84,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .sidebar-indicator[data-ready] { transition: none; }
     @supports selector(::details-content) { details::details-content { transition: none; } }
   }
 }

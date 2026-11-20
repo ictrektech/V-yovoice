@@ -141,15 +141,16 @@ type AudioTimeline struct {
 type Draft struct {
 	Performance *CharacterPerformance `json:"performance,omitempty"`
 	SynthesisSettings
-	Kind        string            `json:"kind,omitempty"`
-	CharacterID string            `json:"characterId,omitempty"`
-	CreatedAt   *time.Time        `json:"createdAt,omitempty"`
-	UpdatedAt   *time.Time        `json:"updatedAt,omitempty"`
-	ID          string            `json:"id"`
-	Title       string            `json:"title"`
-	Text        string            `json:"text"`
-	Subtitles   *SubtitleDocument `json:"subtitles,omitempty"`
-	Timeline    *AudioTimeline    `json:"timeline,omitempty"`
+	Kind           string            `json:"kind,omitempty"`
+	CharacterID    string            `json:"characterId,omitempty"`
+	CreatedAt      *time.Time        `json:"createdAt,omitempty"`
+	UpdatedAt      *time.Time        `json:"updatedAt,omitempty"`
+	ID             string            `json:"id"`
+	Title          string            `json:"title"`
+	Text           string            `json:"text"`
+	Subtitles      *SubtitleDocument `json:"subtitles,omitempty"`
+	MatchCueTiming bool              `json:"matchCueTiming,omitempty"`
+	Timeline       *AudioTimeline    `json:"timeline,omitempty"`
 	// Score 仅编曲作品使用，ModelID 指向渲染所用的音色库。
 	Score *Score `json:"score,omitempty"`
 }

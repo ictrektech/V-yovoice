@@ -6769,5 +6769,68 @@
   },
   "@yovoice.settings.defaultModelGet": {
     "defaultMessage": "去下载"
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "翻译配音台词"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "用 V-Scheduler 翻译台词，按原时间窗检查和编辑译文，再创建保留角色与时间码的新作品。"
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "目标语言"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "当前 VOS 账号没有可见的对话模型。"
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "无法读取 V-Scheduler 的模型列表。"
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "V-Scheduler 请求失败，或模型未返回完整译文。请重试或换一个模型。"
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "无法保存译制作品，请重试。"
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "创建译制作品"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "翻译台词"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "第 {n} 句译文"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "译文页"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "译文总长超过 12,000 字，请缩短译文或分批创建作品。"
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "配音 {duration} 秒，超过 {slot} 秒的字幕时间窗"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "MP4 多音轨视频"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "保留原视频和原声音轨，加入时间线配音与字幕。原视频最长 1 小时，所有输入合计最多 200 MiB。"
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "原视频（MP4）"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "已分离的背景音（可选 WAV）"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "默认音轨"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "配音"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "原声"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "所有导出输入合计超过 200 MiB。"
   }
 }

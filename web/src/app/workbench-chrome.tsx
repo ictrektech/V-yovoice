@@ -10,6 +10,7 @@ import { NewProject, Projects, useNewProject } from '../features/library/project
 import { MediaLibrary } from '../features/library/media-library';
 import { CharacterEditor, CharacterLibrary } from '../features/library/characters';
 import { Studio } from '../features/create/studio';
+import { DubTranslation } from '../features/create/dub-translation';
 import { SubtitleImport, SubtitleEditor } from '../features/create/subtitles';
 import { musicModelId } from '../features/music/music-draft';
 import { soundFontId } from '../features/score/score-draft';
@@ -248,7 +249,15 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
     if (page === 'create') setTrack({ ...value, playRequest: performance.now() });
     else setPreviewTrack(current => current?.id === value.id ? null : { ...value, playRequest: performance.now() });
   };
-  const editorFooter = (controls?: ReactNode) => <HStack className="editor-status" hAlign="between" vAlign="center" gap={2} wrap="wrap"><HStack gap={1} vAlign="center">{projectKind(draft) === 'story' ? <SubtitleImport onError={onError} onImport={async (title, subtitles) => { await newDraft({ ...createDraft(false, uiLocale), ...synthesisSettings(draft), kind: 'story', title, text: subtitles.cues.map(c => c.text).join('\n'), subtitles }); }} /> : null}{controls}</HStack><HStack vAlign="center" gap={4}><small className="saved"><Check size={14} />{saveFailed ? <Button size="sm" label={t('@yovoice.app.saveFailed')} onClick={() => run(() => persistDraft(draft))} /> : saving ? t('@yovoice.app.saving') : t('@yovoice.app.saved')}</small>{projectKind(draft) === 'score' ? null : <small>{t('@yovoice.app.charCount', { count: Array.from(draft.text).length })}</small>}</HStack></HStack>;
+  const [translateProject, setTranslateProject] = useState<string>();
+  const translatedSubtitleDialog = translateProject === draft.id && draft.subtitles ? <DubTranslation subtitles={draft.subtitles} onClose={() => setTranslateProject(undefined)} create={async (subtitles, language) => {
+    await newDraft({
+      ...createDraft(false, uiLocale), ...synthesisSettings(draft), kind: 'story', language, synthesisLanguage: 'auto',
+      title: `${draft.title.slice(0, 112)} (${language})`,
+      text: subtitles.cues.map(cue => cue.text).join('\n'), subtitles, matchCueTiming: true,
+    });
+  }} /> : null;
+  const editorFooter = (controls?: ReactNode) => <HStack className="editor-status" hAlign="between" vAlign="center" gap={2} wrap="wrap"><HStack gap={1} vAlign="center">{projectKind(draft) === 'story' ? <SubtitleImport onError={onError} onImport={async (title, subtitles) => { await newDraft({ ...createDraft(false, uiLocale), ...synthesisSettings(draft), kind: 'story', title, text: subtitles.cues.map(c => c.text).join('\n'), subtitles }); }} /> : null}{isVos && draft.subtitles?.cues.some(cue => cue.text.trim()) ? <Button size="sm" label={t('@vvoice.dub.title')} isDisabled={busy} onClick={() => setTranslateProject(draft.id)} /> : null}{controls}</HStack><HStack vAlign="center" gap={4}><small className="saved"><Check size={14} />{saveFailed ? <Button size="sm" label={t('@yovoice.app.saveFailed')} onClick={() => run(() => persistDraft(draft))} /> : saving ? t('@yovoice.app.saving') : t('@yovoice.app.saved')}</small>{projectKind(draft) === 'score' ? null : <small>{t('@yovoice.app.charCount', { count: Array.from(draft.text).length })}</small>}</HStack></HStack>;
   const defaultModelId = preferredModel(state, 'text', 'index-2.5-q8');
   // 新建作品默认用已下载的模型，并沿用上一次同类作品的选择。
   const modelFor = (kind: 'text' | 'story' | 'music' | 'score' | 'sfx') => preferredModel(state, kind, kind === 'music' ? musicModelId : kind === 'score' ? soundFontId : kind === 'sfx' ? sfxModelId : defaultModelId);
@@ -381,6 +390,7 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
     </VStack></AppShell>
     {ready && !assistantHidden ? <PageBoundary name="assistant"><Suspense fallback={null}><AssistantDock state={state} open={assistantOpen} setOpen={setAssistantOpen} context={{ ...assistantContext, page: assistantContext.page === 'create' ? 'text' : assistantContext.page }} expanded={assistantExpanded} quickActions={quickActions(t, assistantPage === 'create' ? 'text' : assistantPage)} onToggleExpand={() => setAssistantExpanded(expanded => !expanded)} actions={askAssistantPanel} launcherHidden={launcherHidden} showLauncher={showLauncher} nudge={nudge} onNudge={actOnNudge} dismissNudge={dismissNudge} /></Suspense></PageBoundary> : null}
     {shareTarget ? <PageBoundary name="community-share"><ShareDialog generation={shareTarget} name={shareTarget.settings.title.trim() || versionName(shareTarget)} community={state.community} onClose={() => setShareTarget(null)} /></PageBoundary> : null}
+    {translatedSubtitleDialog}
     {exportTarget ? <PageBoundary name="version-export"><VersionExportDialog generation={exportTarget} name={versionName(exportTarget)} tags={exportTags(exportTarget)} onClose={() => setExportTarget(null)} /></PageBoundary> : null}
     {studio ? <PageBoundary name="stem-studio"><Suspense fallback={null}><StemStudio target={studio} history={state.history} project={studio.kind === 'midi' ? (studio.projectId === draft.id ? draft : state.drafts.find(item => item.id === studio.projectId)) : undefined}
       onClose={() => setStudio(null)} onExport={exportStems} onResplit={source => separateStems(source, true)} onDeleteStems={deleteStems} busy={busy} openSoundFonts={() => { setStudio(null); openSettings('musescore-general-sf2'); }} /></Suspense></PageBoundary> : null}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isVos } from './vos';
 
-export type SharedModelStatus = { status: string; downloaded_bytes?: number; total_bytes?: number; error?: string };
+export type SharedModelStatus = { status: string; downloaded_bytes?: number; total_bytes?: number; error?: string; task?: { phase: string; progress: number; error: string } | null };
 type InventoryRow = SharedModelStatus & { key: string };
 
 // VOS 的共享模型由 Model Hub 下载，本地状态没有下载活动；进度只能从服务端目录拉取。

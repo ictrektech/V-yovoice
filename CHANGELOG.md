@@ -2,7 +2,13 @@
 
 ### English
 
+- Translate timed story subtitles with a V-Scheduler chat model, review each line, generate at the original timecodes, and export an MP4 with original and dubbed audio tracks plus subtitles.
+- Keep the selected sidebar item aligned when scrolling and show shared model update progress while the installed weights remain available.
+
 ### 简体中文
+
+- 故事配音可通过 V-Scheduler 翻译带时间码的字幕，逐句校对后按原时间码生成配音，并导出带原声、配音与字幕的 MP4。
+- 修复侧栏滚动后选中高亮错位，共享模型更新期间显示下载与校验进度。
 
 ## [0.0.38] - 2026-11-18
 

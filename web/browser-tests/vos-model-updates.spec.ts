@@ -20,7 +20,7 @@ test('VOS 旧模型更新使用管理员共享更新接口，时间轴导入走�
   let updated = false;
   let imported = false;
   await page.route('**/api/v1/scheduler/binding', route => route.fulfill({ json: { configured: true, approved_model_count: 1 } }));
-  await page.route('**/api/v1/creative-models', route => route.fulfill({ json: [{ key: `audiocpp-${id}`, status: 'ready' }] }));
+  await page.route('**/api/v1/creative-models', route => route.fulfill({ json: [{ key: `audiocpp-${id}`, status: 'ready', ...(updated ? { task: { phase: 'downloading', progress: 0.5, error: '' } } : {}) }] }));
   await page.route('**/api/v1/models/audiocpp-index-2.5-q8/pull?force=true', route => {
     expect(route.request().headers().authorization).toBe('Bearer fixture-token');
     updated = true;
@@ -39,6 +39,9 @@ test('VOS 旧模型更新使用管理员共享更新接口，时间轴导入走�
   await page.getByTestId('nav-models-creative-category').click();
   await page.locator(`[data-model-id="${id}"]`).getByRole('button', { name: '更新', exact: true }).click();
   await expect.poll(() => updated).toBeTruthy();
+  const progress = page.locator(`[data-model-id="${id}"] progress`);
+  await expect(progress).toBeVisible();
+  await expect.poll(() => progress.evaluate(bar => (bar as HTMLProgressElement).position)).toBe(0.5);
   const asset = await page.evaluate(async () => {
     const clientPath = '/src/shared/lib/client.ts';
     const { importTimelineGeneration } = await import(/* @vite-ignore */ clientPath);

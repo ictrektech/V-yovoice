@@ -1,4 +1,5 @@
 import { useState, type RefObject } from 'react';
+import { VStack } from '@astryxdesign/core/Layout';
 import { Button } from '@astryxdesign/core/Button';
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
 import { TextInput } from '@astryxdesign/core/TextInput';
@@ -7,7 +8,8 @@ import { Selector } from '../../shared/selector';
 import { AppDialog } from '../../shared/ui/app-dialog';
 import { formatNotice } from '../../shared/i18n/format';
 import { encodeWav } from '../../shared/lib/sound';
-import { isDesktop, saveAudio, type AudioExportFormat } from '../../shared/lib/client';
+import { call, download, exportName, isDesktop, saveAudio, type AudioExportFormat } from '../../shared/lib/client';
+import { isVos, vosFetch } from '../../shared/lib/vos';
 import { noticeMessage } from '../../shared/lib/call-error';
 import { readLocal, writeLocal } from '../../shared/lib/local-store';
 import type { AudioTimeline, Draft, Generation } from '../../shared/workbench';
@@ -16,7 +18,7 @@ import { timelineCaptions } from './caption-export';
 import { saveCaptions } from './caption-dialog';
 
 // 导出格式：音频（WAV，桌面端另有 FLAC / M4A），或按片段实际位置生成的 SRT / WebVTT 字幕。
-type ExportFormat = AudioExportFormat | 'srt' | 'vtt';
+type ExportFormat = AudioExportFormat | 'srt' | 'vtt' | 'mp4';
 const isAudio = (format: ExportFormat): format is AudioExportFormat => format === 'wav' || format === 'flac' || format === 'm4a';
 // 对话框关闭后仍保留的导出偏好。
 type ExportPrefs = { format: ExportFormat; captionSpeaker: boolean; preventClipping: boolean; loudness: string; balance: boolean };
@@ -40,6 +42,10 @@ function ExportDialog({ value, history, draft, range, context, load, exporting, 
   const { format, captionSpeaker, preventClipping, loudness, balance } = prefs;
   // 两个以上角色才需要统一音量；只调整这次导出的混音，不改时间线。
   const roles = (draft.subtitles?.speakers.length ?? 0) > 1;
+  const [video, setVideo] = useState<File>();
+  const [background, setBackground] = useState<File>();
+  const [defaultTrack, setDefaultTrack] = useState('dub');
+  const videoExport = format === 'mp4';
   const [scope, setScope] = useState('all');
   const [name, setName] = useState(draft.title);
   const [error, setError] = useState('');
@@ -47,9 +53,10 @@ function ExportDialog({ value, history, draft, range, context, load, exporting, 
   const run = async () => {
     setExporting(true); setError('');
     try {
-      let snapshot = Timeline.scoped(structuredClone(value), scope, history);
-      if (!isAudio(format)) {
-        const captions = timelineCaptions(snapshot, history, draft.subtitles?.speakers, scope === 'range' ? range : undefined);
+      const exportRange = !videoExport && scope === 'range' ? range : undefined;
+      let snapshot = Timeline.scoped(structuredClone(value), videoExport ? 'all' : scope, history);
+      if (format === 'srt' || format === 'vtt') {
+        const captions = timelineCaptions(snapshot, history, draft.subtitles?.speakers, exportRange);
         if (!captions.length) { setError('@yovoice.timeline.noCaptions'); return; }
         if (await saveCaptions(captions, name, format, captionSpeaker)) onClose();
         return;
@@ -60,19 +67,48 @@ function ExportDialog({ value, history, draft, range, context, load, exporting, 
         for (const key of new Set(snapshot.tracks.flatMap(t => t.clips.map(c => Timeline.sourceKey(c))))) buffers.set(key, await load(key, audio));
         snapshot = Timeline.balance(snapshot, history, buffers);
       }
-      const result = await Timeline.render(snapshot, id => load(id, audio), scope === 'range' ? range : undefined);
+      const result = await Timeline.render(snapshot, id => load(id, audio), exportRange);
       const peak = Timeline.peak(result); setPeakDb(peak ? 20 * Math.log10(peak) : -Infinity);
       // 选了目标响度时先压到满幅以内再交给本地服务调整，避免 16 位编码时先削掉峰值。
       if (peak > 1 && (preventClipping || loudness)) for (let channel = 0; channel < result.numberOfChannels; channel++) { const samples = result.getChannelData(channel); for (let i = 0; i < samples.length; i++) samples[i] *= 0.99 / peak; }
       if (peak > 1 && !preventClipping && !loudness && peakDb === undefined) { setError(t('@yovoice.timeline.clipping')); return; }
-      if (await saveAudio(encodeWav(result), name, loudness ? Number(loudness) : undefined, format)) onClose();
+      if (videoExport && video) {
+        const form = new FormData();
+        form.set('video', video);
+        const wav = encodeWav(result);
+        form.set('dub', wav, 'dub.wav');
+        form.set('default_track', defaultTrack);
+        if (background) form.set('background', background);
+        const captions = timelineCaptions(snapshot, history, draft.subtitles?.speakers);
+        if (captions.length) {
+          const srt = await call<string>('captions.format', { captions, format: 'srt', speaker: false });
+          form.set('captions', new Blob([srt], { type: 'application/x-subrip' }), 'captions.srt');
+        }
+        const inputBytes = [...form.values()].reduce((size, value) => size + (value instanceof File ? value.size : 0), 0);
+        if (inputBytes > 200 * 1024 * 1024) throw new Error('@vvoice.dub.videoSize');
+        const response = await vosFetch('/studio-api/video-export', { method: 'POST', body: form });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(typeof body?.detail === 'string' ? body.detail : `HTTP ${response.status}`);
+        }
+        download(await response.blob(), `${exportName(name)}.mp4`);
+        onClose();
+        return;
+      }
+      if (isAudio(format) && await saveAudio(encodeWav(result), name, loudness ? Number(loudness) : undefined, format)) onClose();
     } catch (error) { setError(noticeMessage(error)); } finally { setExporting(false); }
   };
-  return <AppDialog title={t('@yovoice.timeline.export')} busy={exporting} error={formatNotice(t, error)} onClose={onClose} actions={<Button label={t(isAudio(format) ? '@yovoice.timeline.exportConfirm' : '@yovoice.timeline.exportCaptions')} variant="primary" isLoading={exporting} isDisabled={!name.trim()} onClick={() => void run()} />}>
+  return <AppDialog title={t('@yovoice.timeline.export')} busy={exporting} error={formatNotice(t, error)} onClose={onClose} actions={<Button label={t(isAudio(format) || videoExport ? '@yovoice.timeline.exportConfirm' : '@yovoice.timeline.exportCaptions')} variant="primary" isLoading={exporting} isDisabled={!name.trim() || (videoExport && !video)} onClick={() => void run()} />}>
     <TextInput label={t('@yovoice.timeline.exportName')} value={name} onChange={setName} />
-    <Selector label={t('@yovoice.timeline.exportType')} value={format} onChange={v => { update({ format: v as ExportFormat }); setError(''); setPeakDb(undefined); }} options={[{ value: 'wav', label: t('@yovoice.timeline.formatWav') }, ...(isDesktop ? [{ value: 'flac', label: t('@yovoice.export.formatFlac') }, { value: 'm4a', label: t('@yovoice.export.formatM4a') }] : []), { value: 'srt', label: t('@yovoice.timeline.formatSrt') }, { value: 'vtt', label: t('@yovoice.timeline.formatVtt') }]} />
-    <Selector label={t('@yovoice.timeline.exportScope')} value={scope} onChange={v => { setScope(v); setError(''); setPeakDb(undefined); }} options={[{ value: 'all', label: t('@yovoice.timeline.all') }, ...(range ? [{ value: 'range', label: t('@yovoice.timeline.range') }] : []), ...value.tracks.map(t => ({ value: `track:${t.id}`, label: t.name })), ...(draft.subtitles?.speakers ?? []).map((s, i) => ({ value: `role:${s.id}`, label: s.sourceName || t('@yovoice.subtitle.speaker', { n: i + 1 }) }))]} />
-    {isAudio(format) ? <>
+    <Selector label={t('@yovoice.timeline.exportType')} value={format} onChange={v => { update({ format: v as ExportFormat }); setError(''); setPeakDb(undefined); }} options={[{ value: 'wav', label: t('@yovoice.timeline.formatWav') }, ...(isDesktop ? [{ value: 'flac', label: t('@yovoice.export.formatFlac') }, { value: 'm4a', label: t('@yovoice.export.formatM4a') }] : []), { value: 'srt', label: t('@yovoice.timeline.formatSrt') }, { value: 'vtt', label: t('@yovoice.timeline.formatVtt') }, ...(isVos ? [{ value: 'mp4', label: t('@vvoice.dub.videoFormat') }] : [])]} />
+    {videoExport ? <VStack gap={3}>
+      <p>{t('@vvoice.dub.videoHelp')}</p>
+      <VStack as="label" gap={1}>{t('@vvoice.dub.videoSource')}<input type="file" accept=".mp4,video/mp4" disabled={exporting} onChange={event => setVideo(event.target.files?.[0])} /></VStack>
+      <VStack as="label" gap={1}>{t('@vvoice.dub.background')}<input type="file" accept=".wav,audio/wav" disabled={exporting} onChange={event => setBackground(event.target.files?.[0])} /></VStack>
+      <Selector label={t('@vvoice.dub.defaultTrack')} value={defaultTrack} isDisabled={exporting} onChange={setDefaultTrack}
+        options={[{ value: 'dub', label: t('@vvoice.dub.audioDub') }, { value: 'original', label: t('@vvoice.dub.audioOriginal') }]} />
+    </VStack> : <Selector label={t('@yovoice.timeline.exportScope')} value={scope} onChange={v => { setScope(v); setError(''); setPeakDb(undefined); }} options={[{ value: 'all', label: t('@yovoice.timeline.all') }, ...(range ? [{ value: 'range', label: t('@yovoice.timeline.range') }] : []), ...value.tracks.map(t => ({ value: `track:${t.id}`, label: t.name })), ...(draft.subtitles?.speakers ?? []).map((s, i) => ({ value: `role:${s.id}`, label: s.sourceName || t('@yovoice.subtitle.speaker', { n: i + 1 }) }))]} />}
+    {isAudio(format) || videoExport ? <>
       {isDesktop ? <Selector label={t('@yovoice.timeline.loudness')} value={loudness} onChange={value => { update({ loudness: value }); writeLocal('yovoice.exportLoudness', value); setError(''); setPeakDb(undefined); }} description={loudness ? t('@yovoice.timeline.loudnessHint') : undefined}
         options={[{ value: '', label: t('@yovoice.timeline.loudnessOff') }, { value: '-18', label: t('@yovoice.timeline.loudnessAudiobook') }, { value: '-16', label: t('@yovoice.timeline.loudnessPodcast') }, { value: '-14', label: t('@yovoice.timeline.loudnessVideo') }]} /> : null}
       {roles ? <CheckboxInput label={t('@yovoice.timeline.exportBalance')} description={t('@yovoice.timeline.exportBalanceHint')} value={balance} onChange={checked => { update({ balance: checked }); writeLocal('yovoice.exportBalance', checked ? 'on' : ''); setPeakDb(undefined); }} /> : null}

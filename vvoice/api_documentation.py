@@ -14,7 +14,12 @@ def build_openapi(app):
     if app.openapi_schema:return app.openapi_schema
     spec=get_openapi(title=app.title,version=app.version,routes=app.routes,servers=[{"url":"."}],description="VOS speech, shared model management and private workbench. See api-guide#en or api-guide#zh for identity, scheduling, errors, WebSocket and full workflows. Desktop/CLI APIs have a separate contract.")
     schemas=spec.setdefault('components',{}).setdefault('schemas',{})
-    model=obj({"key":S,"name":S,"kind":S,"status":S,"family":S,"backend":S,"modelscope_repo":S,"languages":arr(S),"description":S,"streaming":B,"translation":B,"loaded":B,"inference_ready":B,"inference_error":S,"error":S,"progress":null(N),"downloaded_bytes":null(I),"total_bytes":null(I),"import_required":B,"voices":{"type":"object","additionalProperties":obj({"sid":I,"language":S})},"hotwords":obj({"supported":B,"formats":arr(S),"score":B,"default_score":N},["supported"]),"timestamps":obj({"word":B,"segment":B,"source":S})},["key","name","kind","status"])
+    download_task = obj({
+        "phase": {"type": "string", "enum": ["pending", "downloading", "verifying", "failed"]},
+        "progress": {"type": "number", "minimum": 0, "maximum": 1},
+        "error": S,
+    })
+    model=obj({"key":S,"name":S,"kind":S,"status":S,"family":S,"backend":S,"modelscope_repo":S,"languages":arr(S),"description":S,"streaming":B,"translation":B,"loaded":B,"inference_ready":B,"inference_error":S,"error":S,"progress":null(N),"downloaded_bytes":null(I),"total_bytes":null(I),"import_required":B,"task":null(download_task),"voices":{"type":"object","additionalProperties":obj({"sid":I,"language":S})},"hotwords":obj({"supported":B,"formats":arr(S),"score":B,"default_score":N},["supported"]),"timestamps":obj({"word":B,"segment":B,"source":S})},["key","name","kind","status"])
     public=obj({"id":S,"object":S,"owned_by":S,"kind":S,"capabilities":arr(S),"endpoints":arr(S),"languages":arr(S),"hotwords":model['properties']['hotwords'],"timestamps":model['properties']['timestamps'],"streaming":obj({"supported":B,"transports":arr(S),"hotwords":B}),"voices":obj({"endpoint":S,"default":S,"count":I})},["id","object","owned_by","kind","capabilities","endpoints","languages"])
     hotword=obj({"id":S,"name":S,"phrases":arr(S),"phrase_count":I,"created_at":S,"updated_at":S,"formats":arr(obj({"format":S,"file":S,"bytes":I}))})
     speaker=obj({"id":S,"name":S,"model":S,"created_at":S,"dimension":I})

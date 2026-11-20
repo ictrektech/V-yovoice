@@ -1,7 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ResizeHandle, type ResizableProps } from '@astryxdesign/core/Resizable';
 import { Button } from '@astryxdesign/core/Button';
-import { HStack, StackItem, VStack } from '@astryxdesign/core/Layout';
+import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { AudioLines, BookOpen, Captions, ChevronRight, Fingerprint, Library, ListFilter, Mic, Music, Pencil, Radio, ScanText, Settings2, Speech, Trash2 } from 'lucide-react';
 import { featureHidden, projectKind, type Draft, type ModelPackage, type State } from '../shared/workbench';
@@ -42,34 +42,7 @@ export function SidebarNav(props: {
   }, []);
   // shortcut: VOS 新识别、转写和字幕工具尚未接入调度确认，接入后再统一开放。
   const projectActive = page === 'create' || page === 'history';
-  // 选中底块：一个独立的块放到当前入口下面，换页时从上一个入口滑过去（样式见 app/motion.css）。
-  // 位置每次渲染后测量；侧栏宽度或窗口变化时也重新测量。没有选中入口（如我的声音的参考音频页）时淡出。
-  const nav = useRef<HTMLElement>(null);
-  const indicator = useRef<HTMLElement>(null);
-  const place = useRef(() => {});
-  place.current = () => {
-    const root = nav.current, mark = indicator.current;
-    if (!root || !mark) return;
-    const selected = root.querySelector<HTMLElement>('.nav-item.selected');
-    if (!selected) { mark.dataset.hidden = ''; return; }
-    const outer = root.getBoundingClientRect(), box = selected.getBoundingClientRect();
-    mark.style.transform = `translate(${box.left - outer.left}px, ${box.top - outer.top}px)`;
-    mark.style.width = `${box.width}px`;
-    mark.style.height = `${box.height}px`;
-    delete mark.dataset.hidden;
-    // 第一次定位不做动画，之后的位置变化才滑动。
-    if (!('ready' in mark.dataset)) requestAnimationFrame(() => { mark.dataset.ready = ''; });
-  };
-  useLayoutEffect(() => place.current());
-  useEffect(() => {
-    const root = nav.current;
-    if (!root) return;
-    const observer = new ResizeObserver(() => place.current());
-    observer.observe(root);
-    return () => observer.disconnect();
-  }, []);
-  return <VStack ref={nav} as="nav" className="sidebar" aria-label={t('@yovoice.nav.main')} gap={6} data-testid="sidebar" style={isVos ? { overflowY: 'auto' } : undefined}>
-    <StackItem ref={indicator} as="span" className="sidebar-indicator" aria-hidden />
+  return <VStack as="nav" className="sidebar" aria-label={t('@yovoice.nav.main')} gap={6} data-testid="sidebar" style={isVos ? { overflowY: 'auto' } : undefined}>
     {newDraft}
     <VStack className="sidebar-destinations" gap={2}>
       {isVos ? <VStack gap={1}>
@@ -99,7 +72,7 @@ export function SidebarNav(props: {
       </HStack>)}</VStack>
     </details>
     <VStack className="sidebar-bottom" gap={3}><ModelUpdateSidebarCard state={state} catalog={catalog} revision={catalogRevision} openSettings={openSettings} /><UpdateSidebarCard />
-      <Button data-testid="nav-settings" label={t('@yovoice.nav.settings')} icon={<Settings2 size={18} />} variant="ghost" className={`nav-item ${page === 'settings' ? 'selected' : ''}`} onClick={() => setPage('settings')} /></VStack>
+      <Button data-testid="nav-settings" label={t('@yovoice.nav.settings')} icon={<Settings2 size={18} />} variant="ghost" className={`nav-item ${page === 'settings' ? 'selected' : ''}`} aria-current={page === 'settings' ? 'page' : undefined} onClick={() => setPage('settings')} /></VStack>
     <ResizeHandle label={t('@yovoice.nav.resize')} direction="horizontal" position="overlay" pillPlacement="center" resizable={resizable} isAlwaysVisible={false} />
   </VStack>;
 }

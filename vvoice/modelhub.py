@@ -103,6 +103,7 @@ async def states() -> dict[str, dict[str, Any]]:
         phase = str(task.get("phase") or "").upper()
         if phase in {"PENDING", "DOWNLOADING", "VERIFYING", "FAILED"}:
             current.update(task)
+            current["task"] = task
             current["status"] = "failed" if phase == "FAILED" else "downloading"
     return result
 
@@ -152,9 +153,18 @@ async def list_models(items: list[dict[str, Any]] | None = None) -> list[dict[st
             status = "failed"
         else:
             status = "not_installed"
+        task = state.get("task")
+        task_progress = None
+        if task and active_task and (hub_status != "failed" or failed_task):
+            task_progress = {
+                "phase": str(task.get("phase", "")).lower(),
+                "progress": task.get("progress") or 0,
+                "error": task.get("error_msg") or "",
+            }
         result.append({
             **{key: value for key, value in item.items() if key != "runtime"},
             "status": status,
+            "task": task_progress,
             "progress": state.get("progress"),
             "downloaded_bytes": state.get("downloaded_bytes"),
             "total_bytes": state.get("total_bytes") or state.get("size"),

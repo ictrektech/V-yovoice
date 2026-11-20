@@ -393,3 +393,11 @@ VOS retains Kokoro 1.0 multilingual and 1.1-zh as administrator-provided import-
 ## Complete VOS API reference
 
 The in-app API page links to `/api-guide` (Chinese/English workflows and native fields), `/docs` and the active `/openapi.json`. VOS speech/shared management, private user workbench and Scheduler application binding use distinct identity contracts. The independent desktop/CLI HTTP and MCP guide remains in [docs/api.md](docs/api.md). Documentation source changes ship with the next app release; no new app/image is published in this documentation task.
+
+## VOS video dubbing
+
+Import timed subtitles into **Story dubbing**, then choose **Translate dubbing lines**. Pick a target language and a chat model visible to your VOS account in V-Scheduler. Review the source and translations side by side, edit the lines and save a new dubbed project. The project keeps the source timecodes and speaker assignments. Choose voice models that support the target language in **Speaker settings**. Generation runs through V-Scheduler and places each line at its subtitle start time. Shorten a line marked as overlong and regenerate its clip from the timeline.
+
+In **Timeline → Export → MP4 with multiple audio tracks**, supply the original MP4 and pick the default audio track. The export preserves the video and original audio when present, adds the rendered dub and timed subtitles, and can mix an optional isolated background WAV under the dub. The source video can be up to one hour and all inputs combined can be up to 200 MiB. See **API documentation → Video dubbing and model updates** for the VOS contracts.
+
+When an installed shared model is updating, **Prepare models** shows the download or verification progress while the current weights are still available.

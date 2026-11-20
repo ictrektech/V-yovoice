@@ -47,10 +47,18 @@ async function token() {
   return signingIn;
 }
 
-export async function vosFetch(path: string, init: RequestInit = {}): Promise<Response> {
+export function vosFetch(path: string, init?: RequestInit) {
+  return authenticatedFetch(`${vosBase}${path}`, init);
+}
+
+export function schedulerFetch(path: string, init?: RequestInit) {
+  return authenticatedFetch(`/api/com.ictrek.v-scheduler${path}`, init);
+}
+
+async function authenticatedFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${await token()}`);
-  const response = await fetch(`${vosBase}${path}`, { ...init, headers });
+  const response = await fetch(url, { ...init, headers });
   if (response.status === 401) { session = undefined; throw new Error('VOS sign-in expired / VOS 登录已过期'); }
   return response;
 }
