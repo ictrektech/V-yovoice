@@ -10,6 +10,7 @@ import type { audioForm } from './form.ts'
 import type { NS } from './locales.ts'
 import { audioPlaybackUrl } from '../core/playback-route.ts'
 import type { AudioTurnItem } from './turn.ts'
+import type { SpeechTurnItem } from './speech-turn.ts'
 import { AudioPlayer } from './player.tsx'
 import css from './style.module.css'
 
@@ -47,20 +48,37 @@ export function AudioSettingsView(props: PropsRuntime<'plugins.bundle.config'> &
     }).finally(() => { if (!controller.signal.aborted) setChecking(false) })
   }
   if (props.view === 'summary') return t('description')
+  const textFields = new Set(['baseUrl', 'model', 'speechModel', 'speechVoice'])
+  const selectedSpeech = catalog?.speech.models.find(model => model.key === state.fields.speechModel.text)
   return <section className={css.config}>
     <p>{t('description')}</p>
     <SettingsForm labels={{ unavailable: t('configUnavailable'), readOnly: t('readOnly'), saveFailed: t('saveFailed'), save: t('save'), saving: t('saving') }} state={state} onSave={props.save} onDiscard={props.discard}>
-      {(['baseUrl', 'model', 'requestTimeoutMs', 'maxUploadBytes', 'maxResponseBytes', 'pageCharacters'] as const).map(field => <SettingsValueField key={field}
+      {(['baseUrl', 'model', 'speechModel', 'speechVoice', 'requestTimeoutMs', 'maxUploadBytes', 'maxResponseBytes', 'maxSpeechBytes', 'pageCharacters'] as const).map(field => <SettingsValueField key={field}
         id={`audio-${field}`} label={t(field)} overriddenLabel={t('overridden')} resetLabel={t('reset')} invalidLabel={t('invalid')}
-        numeric={field !== 'baseUrl' && field !== 'model'} disabled={!state.writable}
+        numeric={!textFields.has(field)} disabled={!state.writable}
         {...state.fields[field]} onEdit={(text) => { props.edit(field, text) }} onReset={() => { props.resetField(field) }} />)}
     </SettingsForm>
     <button type="button" onClick={check} disabled={checking || state.dirty || state.saving}>{t(checking ? 'checking' : 'check')}</button>
     {error ? <p role="alert">{error}</p> : null}
-    {catalog ? <label>{t('choose')} <select value={state.fields.model.text} disabled={!state.writable} onChange={(event) => { props.edit('model', event.target.value) }}>
-      <option value="">{t('choose')}</option>
-      {catalog.models.map(model => <option key={model.key} value={model.key} disabled={!model.ready}>{model.name} — {t(model.ready ? 'ready' : 'notReady')}</option>)}
-    </select></label> : null}
+    {catalog ? <>
+      <label>{t('choose')} <select value={state.fields.model.text} disabled={!state.writable} onChange={(event) => { props.edit('model', event.target.value) }}>
+        <option value="">{t('choose')}</option>
+        {catalog.models.map(model => <option key={model.key} value={model.key} disabled={!model.ready}>{model.name} — {t(model.ready ? 'ready' : 'notReady')}</option>)}
+      </select></label>
+      <label>{t('chooseSpeechModel')} <select value={state.fields.speechModel.text} disabled={!state.writable} onChange={(event) => {
+        const next = catalog.speech.models.find(model => model.key === event.target.value)
+        props.edit('speechModel', event.target.value)
+        props.edit('speechVoice', next?.voices[0]?.id ?? '')
+      }}>
+        <option value="">{t('chooseSpeechModel')}</option>
+        {catalog.speech.models.map(model => <option key={model.key} value={model.key} disabled={!model.ready}>{model.name} — {t(model.ready ? 'ready' : 'notReady')}</option>)}
+      </select></label>
+      <label>{t('chooseSpeechVoice')} <select value={state.fields.speechVoice.text} disabled={!state.writable || selectedSpeech === undefined}
+        onChange={(event) => { props.edit('speechVoice', event.target.value) }}>
+        <option value="">{t('chooseSpeechVoice')}</option>
+        {(selectedSpeech?.voices ?? []).map(voice => <option key={voice.id} value={voice.id}>{voice.name}{voice.language ? ` · ${voice.language}` : ''}</option>)}
+      </select></label>
+    </> : null}
   </section>
 }
 
@@ -179,6 +197,71 @@ export function AudioTurnOriginals(props: PropsRuntime<'conversation.chat.turnTa
     item={item}
     sessionId={props.sessionId}
     savedTranscript={props.savedTranscript}
+    t={props.t}
+  />)}</div>
+}
+
+/** Compact tool-process state; the playback card remains in the turn tail. */
+export function SpeechToolView(props: ToolCallViewProps & PropsLocale<typeof NS>) {
+  if (props.phase !== 'result') return <p>{props.t('speechGenerating')}</p>
+  if (props.block.isError) return <p role="alert">{props.t('speechFailed')} {props.block.content.flatMap(part => part.type === 'text' ? [part.text] : []).join('\n')}</p>
+  return <p>{props.t('speechGenerated')}</p>
+}
+
+/** Render one generated speech result with persistent playback and requested text. */
+export function AudioSpeechCard(props: {
+  readonly item: SpeechTurnItem
+  readonly sessionId: SessionId
+  readonly t: PropsLocale<typeof NS>['t']
+}) {
+  const { item, sessionId, t } = props
+  const [playbackFailed, setPlaybackFailed] = useState(false)
+  const [copied, setCopied] = useState(false)
+  useEffect(() => { setPlaybackFailed(false); setCopied(false) }, [item.attachmentId, item.callId])
+  const sourceUrl = item.attachmentId === undefined ? undefined : audioPlaybackUrl(String(sessionId), item.attachmentId)
+  const downloadUrl = sourceUrl === undefined ? undefined : `${sourceUrl}&download=1`
+  const copy = () => {
+    void navigator.clipboard.writeText(item.text).then(() => { setCopied(true) })
+  }
+  return <article className={css.result} data-audio-speech>
+    <header className={css.cardHeader}>
+      <strong>{item.file || t('generatedSpeech')}</strong>
+      {item.model === undefined ? null : <span>{item.model}{item.voice === undefined ? '' : ` · ${item.voice}`}</span>}
+    </header>
+    {item.state === 'running' ? <p role="status">{t('speechGenerating')}</p> : null}
+    {item.state === 'error' ? <p role="alert"><strong>{t('speechFailed')}</strong>{item.error === undefined || item.error === '' ? null : ` ${item.error}`}</p> : null}
+    {sourceUrl === undefined ? null : <>
+      <AudioPlayer
+        src={sourceUrl}
+        label={t('generatedSpeech')}
+        playLabel={t('play')}
+        pauseLabel={t('pause')}
+        seekLabel={t('seek')}
+        onError={() => { setPlaybackFailed(true) }}
+      />
+      {downloadUrl === undefined ? null : <p><a href={downloadUrl}>{t('downloadSpeech')}</a></p>}
+    </>}
+    {playbackFailed && downloadUrl !== undefined ? <p role="alert">{t('playbackFailed')} <a href={downloadUrl}>{t('downloadSpeech')}</a></p> : null}
+    {item.text === '' ? null : <section aria-label={t('speechText')}>
+      {item.text.length <= 600 && item.text.split('\n').length <= 8
+        ? <pre className={css.transcript}>{item.text}</pre>
+        : <details className={css.longTranscript}>
+          <summary>{preview(item.text)}</summary>
+          <pre className={css.transcript}>{item.text}</pre>
+        </details>}
+      <button type="button" onClick={copy}>{t(copied ? 'copied' : 'copy')}</button>
+    </section>}
+  </article>
+}
+
+/** Show speech generated within the closing turn outside the collapsed tool process. */
+export function AudioSpeechCards(props: PropsRuntime<'conversation.chat.turnTail'> & PropsLocale<typeof NS>) {
+  const items = props.turn.data.get('audio-speech')?.items ?? []
+  const end = props.turn.end?.seq ?? props.seq
+  return <div className={css.list}>{items.filter(item => item.seq <= end).map(item => <AudioSpeechCard
+    key={item.callId}
+    item={item}
+    sessionId={props.sessionId}
     t={props.t}
   />)}</div>
 }

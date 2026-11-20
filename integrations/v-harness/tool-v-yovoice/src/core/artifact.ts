@@ -7,6 +7,7 @@ type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
 export interface ArtifactProvenance extends Record<string, Json> {
   capability: CapabilityId
   model?: string
+  voice?: string
 }
 
 /** One result that can be restored, played, copied or downloaded. */
@@ -37,6 +38,25 @@ export function transcriptArtifact(input: {
     provenance: {
       capability: 'transcription',
       model: input.model,
+    },
+  }
+}
+
+/** Describe one generated audio result without embedding its bytes. */
+export function speechArtifact(input: {
+  source: string
+  model: string
+  voice: string
+}): ArtifactRef {
+  return {
+    id: `speech:${input.source}`,
+    kind: 'audio',
+    mimeType: 'audio/wav',
+    source: input.source,
+    provenance: {
+      capability: 'speech',
+      model: input.model,
+      voice: input.voice,
     },
   }
 }

@@ -4,8 +4,9 @@ import type {} from '@deepseek-ai/dsh-settings'
 import z from '@deepseek-ai/schemastery'
 import { AudioController } from './features/transcription/controller.ts'
 import { registerTranscription } from './features/transcription/index.ts'
+import { registerSpeech } from './features/speech/index.ts'
 import { CapabilityRegistry } from './core/capability.ts'
-import { resolveConfig } from './core/config.ts'
+import { resolveConfig, resolveSpeechConfig } from './core/config.ts'
 import { registerAudioProjection } from './core/projection.ts'
 import { serveNodeAudio } from './core/playback.ts'
 import { AUDIO_PLAYBACK_PATH } from './core/playback-route.ts'
@@ -28,12 +29,18 @@ export interface Config {
   baseUrl: Volatile<string>
   /** Explicit ASR model key, empty until selected. */
   model: Volatile<string>
+  /** Explicit TTS model key, empty until selected. */
+  speechModel: Volatile<string>
+  /** Default voice ID for the selected TTS model. */
+  speechVoice: Volatile<string>
   /** Complete request deadline in milliseconds. */
   requestTimeoutMs: Volatile<number>
   /** Maximum acquired audio bytes before service limits apply. */
   maxUploadBytes: Volatile<number>
   /** Maximum bytes in a service JSON response. */
   maxResponseBytes: Volatile<number>
+  /** Maximum bytes in one generated speech file. */
+  maxSpeechBytes: Volatile<number>
   /** UTF-16 characters in one model-visible transcript window. */
   pageCharacters: Volatile<number>
 }
@@ -42,9 +49,12 @@ export interface Config {
 export const Config = z.object({
   baseUrl: z.string().pattern(/^(?:https?:\/\/[^/?#@\s]+(?:\/[^?#\s]*)?)?$/u).default('').volatile(),
   model: z.string().default('').volatile(),
+  speechModel: z.string().default('').volatile(),
+  speechVoice: z.string().default('').volatile(),
   requestTimeoutMs: z.natural().min(1).max(2_147_483_647).default(1_860_000).volatile(),
   maxUploadBytes: z.natural().min(1).max(2_147_483_647).default(209_715_200).volatile(),
   maxResponseBytes: z.natural().min(1).max(2_147_483_647).default(16_777_216).volatile(),
+  maxSpeechBytes: z.natural().min(1).max(2_147_483_647).default(268_435_456).volatile(),
   pageCharacters: z.natural().min(1).max(2_147_483_647).default(12_000).volatile(),
 })
 
@@ -60,17 +70,22 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const options = () => ({
     baseUrl: config.baseUrl.get(),
     model: config.model.get(),
+    speechModel: config.speechModel.get(),
+    speechVoice: config.speechVoice.get(),
     requestTimeoutMs: config.requestTimeoutMs.get(),
     maxUploadBytes: config.maxUploadBytes.get(),
     maxResponseBytes: config.maxResponseBytes.get(),
+    maxSpeechBytes: config.maxSpeechBytes.get(),
     pageCharacters: config.pageCharacters.get(),
   })
   const current = () => resolveConfig(options())
   const catalog = () => resolveConfig(options(), false)
+  const speech = () => resolveSpeechConfig(options())
 
   const projection = await registerAudioProjection(ctx)
   const capabilities = new CapabilityRegistry()
   capabilities.register({ id: 'transcription', available: true })
+  capabilities.register({ id: 'speech', available: true })
 
   ctx.inject(['typert'], (child) => {
     new AudioController(child, catalog, lifetime.signal, projection)
@@ -87,6 +102,15 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   if (capabilities.list().some(item => item.id === 'transcription' && item.available)) {
     registerTranscription(ctx, projection, {
       current,
+      catalog,
+      pageCharacters: () => config.pageCharacters.get(),
+      requestTimeoutMs: () => config.requestTimeoutMs.get(),
+      signal: lifetime.signal,
+    })
+  }
+  if (capabilities.list().some(item => item.id === 'speech' && item.available)) {
+    registerSpeech(ctx, {
+      speech,
       catalog,
       pageCharacters: () => config.pageCharacters.get(),
       requestTimeoutMs: () => config.requestTimeoutMs.get(),

@@ -7,10 +7,16 @@ export interface VoiceConfig {
   baseUrl: string
   /** Selected ASR model key for the transcription capability. */
   model: string
+  /** Selected TTS model key for the speech capability. */
+  speechModel: string
+  /** Default voice ID for the selected TTS model. */
+  speechVoice: string
   /** Maximum time in milliseconds for each request. */
   requestTimeoutMs: number
   /** Deployment cap on acquired audio bytes. */
   maxUploadBytes: number
+  /** Deployment cap on one generated speech file. */
+  maxSpeechBytes: number
   /** Maximum UTF-16 characters in one model-visible result window. */
   pageCharacters: number
   /** Maximum bytes in a complete service JSON response. */
@@ -35,8 +41,35 @@ export interface ConfigInput extends Partial<VoiceConfig> {
  * @returns validated settings with defaults resolved.
  */
 export function resolveConfig(config: ConfigInput, requireModel = true): VoiceConfig {
+  const resolved = resolveBaseConfig(config)
+  const model = config.model?.trim() ? config.model : config.defaults?.transcription?.model ?? ''
+  if (requireModel && !model.trim()) {
+    throw new HarnessError('Select an ASR model in the plugin page.', 'AUDIO_NOT_CONFIGURED')
+  }
+  return { ...resolved, model }
+}
+
+/**
+ * Resolve the selected TTS model and voice without requiring an ASR model.
+ * @param config - explicit speech defaults plus optional deployment bounds.
+ * @returns validated settings for speech synthesis.
+ */
+export function resolveSpeechConfig(config: ConfigInput): VoiceConfig {
+  const resolved = resolveBaseConfig(config)
+  const speechModel = config.speechModel?.trim() ? config.speechModel : config.defaults?.speech?.model ?? ''
+  const speechVoice = config.speechVoice?.trim() ? config.speechVoice : config.defaults?.speech?.voice ?? ''
+  if (!speechModel.trim()) {
+    throw new HarnessError('Select a TTS model in the plugin page.', 'AUDIO_NOT_CONFIGURED')
+  }
+  if (!speechVoice.trim()) {
+    throw new HarnessError('Select a default TTS voice in the plugin page.', 'AUDIO_NOT_CONFIGURED')
+  }
+  return { ...resolved, model: '', speechModel, speechVoice }
+}
+
+function resolveBaseConfig(config: ConfigInput): VoiceConfig {
   if (!config.baseUrl?.trim()) {
-    throw new HarnessError('Configure the V-yovoice service address and ASR model in the plugin page.', 'AUDIO_NOT_CONFIGURED')
+    throw new HarnessError('Configure the V-yovoice service address in the plugin page.', 'AUDIO_NOT_CONFIGURED')
   }
   let baseUrl: URL
   try {
@@ -47,15 +80,14 @@ export function resolveConfig(config: ConfigInput, requireModel = true): VoiceCo
   if (!['http:', 'https:'].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password || baseUrl.search || baseUrl.hash) {
     throw new Error('audio-transcription: baseUrl must be an HTTP(S) service root without credentials, query or fragment')
   }
-  const model = config.model?.trim() ? config.model : config.defaults?.transcription?.model ?? ''
-  if (requireModel && !model.trim()) {
-    throw new HarnessError('Select an ASR model in the plugin page.', 'AUDIO_NOT_CONFIGURED')
-  }
   const resolved = {
     baseUrl: baseUrl.href.replace(/\/+$/u, ''),
-    model,
+    model: '',
+    speechModel: config.speechModel?.trim() ?? '',
+    speechVoice: config.speechVoice?.trim() ?? '',
     requestTimeoutMs: config.requestTimeoutMs ?? 1_860_000,
     maxUploadBytes: config.maxUploadBytes ?? 200 * 1024 * 1024,
+    maxSpeechBytes: config.maxSpeechBytes ?? 256 * 1024 * 1024,
     pageCharacters: config.pageCharacters ?? 12_000,
     maxResponseBytes: config.maxResponseBytes ?? 16 * 1024 * 1024,
   }

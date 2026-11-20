@@ -55,7 +55,7 @@ async function checkHostBaseline() {
     throw new Error('Host aggregate checks failed beyond the verified baseline')
   }
   hostCheckBaselineUsed = true
-  process.stdout.write('Host aggregate checks match the seven documented pre-existing TypeScript errors.\n')
+  process.stdout.write('Host aggregate checks match the documented pre-existing TypeScript errors.\n')
 }
 
 async function exists(path) {

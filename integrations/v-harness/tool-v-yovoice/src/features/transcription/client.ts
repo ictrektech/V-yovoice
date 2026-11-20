@@ -25,24 +25,24 @@ export async function voiceJson(config: VoiceConfig, path: string, signal: Abort
         : cause.options.detail ?? ''
       if (cause.options.status === 429) {
         const status = `HTTP 429${cause.options.serviceCode ? `; ${cause.options.serviceCode}` : ''}`
-        throw new HarnessError(`V-yovoice is busy: the compute scheduler refused admission (${status})${detail ? ': ' + detail : ''}. No complete transcript was saved; retry only when resources are available.`, 'AUDIO_SERVICE_BUSY', { cause })
+        throw new HarnessError(`V-yovoice is busy: the compute scheduler refused admission (${status})${detail ? ': ' + detail : ''}. No result was saved; retry only when resources are available.`, 'AUDIO_SERVICE_BUSY', { cause })
       }
       if (cause.options.status === 413) {
         const status = `HTTP 413${cause.options.serviceCode ? `; ${cause.options.serviceCode}` : ''}`
-        throw new HarnessError(`V-yovoice rejected the audio (${status})${detail ? ': ' + detail : ''}. Check file size, duration and part limits; no complete transcript was saved.`, 'AUDIO_TOO_LARGE', { cause })
+        throw new HarnessError(`V-yovoice rejected the input (${status})${detail ? ': ' + detail : ''}. Check the applicable size, duration and part limits; no result was saved.`, 'AUDIO_TOO_LARGE', { cause })
       }
       if (cause.options.status !== undefined) {
         const status = `HTTP ${cause.options.status}${cause.options.serviceCode ? `; ${cause.options.serviceCode}` : ''}`
-        throw new HarnessError(`V-yovoice request failed (${status})${detail ? ': ' + detail : ''}; no new transcript was saved. Check audio format and model limits.`, 'AUDIO_SERVICE_ERROR', { cause })
+        throw new HarnessError(`V-yovoice request failed (${status})${detail ? ': ' + detail : ''}; no new result was saved. Check the configured model and input limits.`, 'AUDIO_SERVICE_ERROR', { cause })
       }
       if (cause.code === 'response_too_large') {
-        throw new HarnessError('V-yovoice response exceeds maxResponseBytes; no partial transcript was saved', 'AUDIO_RESPONSE_TOO_LARGE', { cause })
+        throw new HarnessError('V-yovoice response exceeds maxResponseBytes; no partial result was saved', 'AUDIO_RESPONSE_TOO_LARGE', { cause })
       }
       if (cause.code === 'invalid_response') {
-        throw new HarnessError('V-yovoice returned invalid JSON; no transcript was saved.', 'AUDIO_INVALID_RESPONSE', { cause })
+        throw new HarnessError('V-yovoice returned invalid JSON; no result was saved.', 'AUDIO_INVALID_RESPONSE', { cause })
       }
       throw new HarnessError(cause.options.outcomeUnknown
-        ? 'V-yovoice is unreachable or the request timed out. The remote execution outcome is unknown; no new transcript was saved. Report the error; do not retry automatically.'
+        ? 'V-yovoice is unreachable or the request timed out. The remote execution outcome is unknown; no new result was saved. Report the error; do not retry automatically.'
         : 'V-yovoice is unreachable or the request timed out. No audio was submitted by this request. Report the connection error; do not retry automatically.', 'AUDIO_SERVICE_UNAVAILABLE', { cause })
     }
     throw cause

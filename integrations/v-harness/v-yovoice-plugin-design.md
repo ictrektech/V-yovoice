@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：底座已实现，待发布安装验收。
+- 状态：转写底座与公开文本转语音已实现，待候选包安装验收。
 - 首发环境：VOS 上的 v-harness。
 - 首发能力：沿用现有音频转写，不新增用户可见功能。
 - 目标插件包：`@ictrek/dsh-tool-v-yovoice`。
@@ -14,12 +14,13 @@ V-yovoice 对 DSH 只提供一个用户入口、一个安装包和一套配置�
 v-harness 会话中使用 V-yovoice 的转写、语音、编曲、音乐和音效能力，不需要分别寻找
 多个插件。
 
-首个版本先建立稳定的底座，不直接扩张功能：
+首个版本先建立稳定的底座，再按模块增加能力：
 
 1. 将已跑通的音频转写迁移到新包。
 2. 保留现有工具名、配置和会话恢复行为。
 3. 抽出所有后续能力共用的服务接入、任务、产物、会话投影、播放和卡片边界。
 4. 后续能力按模块追加，不再次拆分插件包。
+5. 第二阶段接入公开 TTS，支持配置默认模型/音色、对话内覆盖音色和模型能力允许的声音设计/情绪参数。
 
 ## 2. 已确认决策
 
@@ -369,6 +370,17 @@ sequenceDiagram
 
 首个底座候选包位于 `integrations/v-harness/tool-v-yovoice`，版本为 `0.2.1`。
 
+`0.3.0` 候选包在同一底座上新增公开 TTS：
+
+- `src/features/speech`：公开 `/v1/audio/speech` 与 `/v1/audio/voices`、音色覆盖、模型能力校验和有界 WAV 流。
+- `src/core/service.ts`：JSON 与二进制请求共用超时、取消、HTTP 错误和响应上限语义。
+- `src/core/projection.ts`：会话投影升级到 `stateVersion: 4`，加入已生成语音并保持旧转写恢复。
+- `src/core/playback.ts`：同一受会话授权的播放路由同时服务上传音频和生成语音。
+- `src/client/speech-turn.ts`、配置页和轮次卡片：显示生成中、失败、播放器、朗读文本和下载入口，不自动播放。
+- `yovoice_speak` 与 `yovoice_voices` 使用 `yovoice_` 前缀；现有转写工具名不变。
+
+`0.3.0` 不包含参考音色导入；该能力仍需设计 VOS 每租户私有能力端点及用户身份注入。
+
 已落地的模块：
 
 - `src/core/config.ts`：服务根地址、能力默认值和公共限制的归一化。
@@ -384,8 +396,8 @@ sequenceDiagram
 首版继续保留 `tool-audio-transcription` 的 Loader 标识、设置命名空间和
 `api/tool-audio-transcription/file` 播放路由，避免旧 profile 和已保存会话失效。
 
-构建验证使用固定 v-harness `0.2.2-rc.1.vos.06`
-（`d1017fcd06b7aae7a2ceab3f4b8dd51f9def2ab5`）执行
+构建验证使用固定 v-harness `0.2.2-rc.3.vos.09`
+（`6b2801260506b28bb501da73d24825427ddb6803`）执行
 `build:candidate`，通过插件测试、Host/Client 编译、打包和归档审计。最终发布仍须使用
 目标租户中的正式 `.tgz` 完成安装和实际调用验收。
 

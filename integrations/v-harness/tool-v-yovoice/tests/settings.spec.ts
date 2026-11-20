@@ -46,12 +46,18 @@ it('saves real profile settings, updates the running tool deadline, and restores
   }
   const ctx = await start()
   expect(ctx.tools.get('transcribe_audio')?.timeoutMs).toBe(1860000)
-  await ctx.settings.update('tool-audio-transcription', { baseUrl: 'http://voice:7070', model: 'sensevoice-int8', requestTimeoutMs: 12345 })
+  await ctx.settings.update('tool-audio-transcription', {
+    baseUrl: 'http://voice:7070', model: 'sensevoice-int8', speechModel: 'kokoro-multilang',
+    speechVoice: 'zf_xiaoxiao', requestTimeoutMs: 12345,
+  })
   expect(ctx.tools.get('transcribe_audio')?.timeoutMs).toBe(12345)
+  expect(ctx.tools.get('yovoice_speak')?.timeoutMs).toBe(12345)
   expect(await readFile(profile.patchPath, 'utf8')).toContain('http://voice:7070')
   await expect(ctx.settings.update('tool-audio-transcription', { baseUrl: 'http://user:secret@voice' })).rejects.toThrow()
   await ctx.fiber.dispose()
   const restored = await start()
   expect(restored.tools.get('transcribe_audio')?.timeoutMs).toBe(12345)
-  expect(restored.settings.describe().find(row => row.ns === 'tool-audio-transcription')?.value).toMatchObject({ baseUrl: 'http://voice:7070', model: 'sensevoice-int8' })
+  expect(restored.settings.describe().find(row => row.ns === 'tool-audio-transcription')?.value).toMatchObject({
+    baseUrl: 'http://voice:7070', model: 'sensevoice-int8', speechModel: 'kokoro-multilang', speechVoice: 'zf_xiaoxiao',
+  })
 })

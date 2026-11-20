@@ -57,7 +57,13 @@ async function response(
   if (sessions === undefined) return fail(404, 'session store unavailable')
   const session = sessions.get(brandString<SessionId>(sessionId))
   if (session === undefined) return fail(404, 'session not found')
-  const file = audioStateOfSession(projection, session).files.find(candidate => candidate.id === attachmentId)
+  const state = audioStateOfSession(projection, session)
+  const uploaded = state.files.find(candidate => candidate.id === attachmentId)
+  const speeches = (state as { speeches?: typeof state.speeches }).speeches
+  const generated = speeches?.find(candidate => candidate.attachmentId === attachmentId)
+  const file = uploaded ?? (generated === undefined ? undefined : {
+    id: generated.attachmentId, name: generated.file, bytes: generated.bytes,
+  })
   if (file === undefined) return fail(404, 'audio attachment is not part of this session')
   const ref = { attachmentId: brandString<AttachmentId>(file.id), name: file.name, bytes: file.bytes }
   const path = ctx.attachments.fileHostPath(ref)

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { PartialArguments } from '@deepseek-ai/dsh-util-values'
 import type { ToolResultNode } from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '../src/client/locales.ts'
-import { AudioTranscriptResult as ProductToolCard, AudioTurnOriginalCard } from '../src/client/Views.tsx'
+import { AudioSpeechCard, AudioTranscriptResult as ProductToolCard, AudioTurnOriginalCard } from '../src/client/Views.tsx'
 
 it('renders complete verbatim audio text as escaped text, independently of model preview length', () => {
   const text = '第一段\n<script>untrusted()</script>\n' + '完整原文'.repeat(4000)
@@ -59,4 +59,26 @@ it('keeps the original available when an uploaded source cannot be played', () =
   expect(html).toContain('playbackUnavailable')
   expect(html).not.toContain('<audio')
   expect(html).toContain('hello')
+})
+
+it('renders generated speech with the requested text and a persistent player', () => {
+  const attachmentId = `sha256:${'c'.repeat(64)}`
+  const t: Parameters<typeof ProductToolCard>[0]['t'] = key => key
+  const html = renderToStaticMarkup(<AudioSpeechCard
+    item={{
+      callId: 'speech-a', seq: 2, state: 'success', attachmentId, file: 'speech-test.wav',
+      model: 'kokoro', voice: 'zf_xiaoxiao', text: '你好，欢迎。<script>', bytes: 12,
+    }}
+    sessionId={'session-a' as never}
+    t={t}
+  />)
+  expect(html).toContain('<audio')
+  expect(html).toContain('preload="metadata"')
+  expect(html).toContain('speech-test.wav')
+  expect(html).toContain('kokoro')
+  expect(html).toContain('zf_xiaoxiao')
+  expect(html).toContain('&lt;script&gt;')
+  expect(html).not.toContain('<script>')
+  expect(html).not.toContain('autoplay')
+  expect(html).toContain('downloadSpeech')
 })

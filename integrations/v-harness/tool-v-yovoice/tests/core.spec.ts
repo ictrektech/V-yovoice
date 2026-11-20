@@ -1,8 +1,9 @@
 import { expect, it } from 'vitest'
-import { transcriptArtifact } from '../src/core/artifact.ts'
+import { speechArtifact, transcriptArtifact } from '../src/core/artifact.ts'
 import { CapabilityRegistry } from '../src/core/capability.ts'
-import { resolveConfig } from '../src/core/config.ts'
+import { resolveConfig, resolveSpeechConfig } from '../src/core/config.ts'
 import { completedOperation } from '../src/core/operation.ts'
+import { speechModelRows } from '../src/features/speech/client.ts'
 
 it('registers capabilities once in deterministic order', () => {
   const registry = new CapabilityRegistry()
@@ -24,6 +25,10 @@ it('normalizes legacy settings and capability defaults to one service config', (
   })
   expect(resolveConfig({ baseUrl: 'http://voice:7070', model: 'explicit' }, false).model).toBe('explicit')
   expect(() => resolveConfig({ baseUrl: 'http://voice:7070' })).toThrow('Select an ASR model')
+  expect(resolveSpeechConfig({ baseUrl: 'http://voice:7070', speechModel: 'kokoro', speechVoice: 'zf_xiaoxiao' })).toMatchObject({
+    baseUrl: 'http://voice:7070', speechModel: 'kokoro', speechVoice: 'zf_xiaoxiao', maxSpeechBytes: 268_435_456,
+  })
+  expect(() => resolveSpeechConfig({ baseUrl: 'http://voice:7070', speechModel: 'kokoro' })).toThrow('default TTS voice')
 })
 
 it('describes transcript artifacts and completed synchronous work without storing text', () => {
@@ -39,4 +44,18 @@ it('describes transcript artifacts and completed synchronous work without storin
     capability: 'transcription',
     state: 'completed',
   })
+  expect(speechArtifact({ source: 'b'.repeat(64), model: 'kokoro', voice: 'zf_xiaoxiao' })).toEqual({
+    id: `speech:${'b'.repeat(64)}`,
+    kind: 'audio',
+    mimeType: 'audio/wav',
+    source: 'b'.repeat(64),
+    provenance: { capability: 'speech', model: 'kokoro', voice: 'zf_xiaoxiao' },
+  })
+  expect(speechModelRows([{
+    kind: 'tts', key: 'kokoro', name: 'Kokoro', status: 'ready', capabilities: ['builtin_voices'],
+    voices: { zf_xiaoxiao: { language: 'zh' } },
+  }])).toEqual([{
+    key: 'kokoro', name: 'Kokoro', ready: true, languages: [], capabilities: ['builtin_voices'],
+    voices: [{ id: 'zf_xiaoxiao', name: 'zf_xiaoxiao', language: 'zh' }],
+  }])
 })

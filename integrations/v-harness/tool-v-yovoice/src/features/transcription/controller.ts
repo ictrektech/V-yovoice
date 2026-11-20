@@ -6,6 +6,7 @@ import { brandString } from '@deepseek-ai/dsh-brand'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { audioStateOfSession, type AudioProjection } from '../../core/projection.ts'
 import { modelRows, voiceJson, type VoiceConfig } from './client.ts'
+import { speechModelRows } from '../speech/client.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -38,7 +39,19 @@ export class AudioController extends TypertRemoteService {
   async catalog(signal: AbortSignal): Promise<AudioCatalog> {
     try {
       const config = this.options()
-      return { selected: config.model, models: modelRows(await voiceJson(config, '/api/v1/models', AbortSignal.any([signal, this.lifetime]))) }
+      const rows = await voiceJson(config, '/api/v1/models', AbortSignal.any([signal, this.lifetime]))
+      const speechModels = speechModelRows(rows)
+      const selectedSpeech = speechModels.find(model => model.key === config.speechModel)
+      return {
+        selected: config.model,
+        models: modelRows(rows),
+        speech: {
+          selectedModel: config.speechModel,
+          selectedVoice: config.speechVoice,
+          models: speechModels,
+          voices: selectedSpeech?.voices ?? [],
+        },
+      }
     } catch (cause) {
       signal.throwIfAborted()
       throw new RemoteError('gateway/internal', cause instanceof Error ? cause.message : String(cause), {}, { cause })

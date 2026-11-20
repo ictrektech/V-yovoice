@@ -5,9 +5,12 @@ import { SettingsFormModel, settingsNumberField, settingsTextField, type Setting
 export interface AudioSettings {
   baseUrl: string
   model: string
+  speechModel: string
+  speechVoice: string
   requestTimeoutMs: number
   maxUploadBytes: number
   maxResponseBytes: number
+  maxSpeechBytes: number
   pageCharacters: number
 }
 
@@ -17,9 +20,13 @@ export interface AudioSettings {
  * @returns staged form, store, and actions for the configuration slot.
  */
 export function audioForm(scope: SettingsFormScope<AudioSettings>) {
-  const fields = ['baseUrl', 'model', 'requestTimeoutMs', 'maxUploadBytes', 'maxResponseBytes', 'pageCharacters'] as const
-  const form = new SettingsFormModel(scope, fields.map(field => field === 'baseUrl' || field === 'model' ? settingsTextField(field) : settingsNumberField(field)))
-  const store = form.bind(() => ({ ...form.shell(), fields: { baseUrl: form.field('baseUrl'), model: form.field('model'), requestTimeoutMs: form.field('requestTimeoutMs'),
-    maxUploadBytes: form.field('maxUploadBytes'), maxResponseBytes: form.field('maxResponseBytes'), pageCharacters: form.field('pageCharacters') } }))
+  const fields = ['baseUrl', 'model', 'speechModel', 'speechVoice', 'requestTimeoutMs', 'maxUploadBytes', 'maxResponseBytes', 'maxSpeechBytes', 'pageCharacters'] as const
+  const textFields = new Set(['baseUrl', 'model', 'speechModel', 'speechVoice'])
+  const form = new SettingsFormModel(scope, fields.map(field =>
+    textFields.has(field) ? settingsTextField(field) : settingsNumberField(field)))
+  const store = form.bind(() => ({ ...form.shell(), fields: { baseUrl: form.field('baseUrl'), model: form.field('model'),
+    speechModel: form.field('speechModel'), speechVoice: form.field('speechVoice'), requestTimeoutMs: form.field('requestTimeoutMs'),
+    maxUploadBytes: form.field('maxUploadBytes'), maxResponseBytes: form.field('maxResponseBytes'), maxSpeechBytes: form.field('maxSpeechBytes'),
+    pageCharacters: form.field('pageCharacters') } }))
   return { form, store, fields, actions: form.actions() }
 }

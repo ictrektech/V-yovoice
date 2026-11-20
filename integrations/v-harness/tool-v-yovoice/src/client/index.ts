@@ -11,8 +11,9 @@ import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import contribution from '@ictrek/dsh-tool-v-yovoice/remote'
 import { audioForm, type AudioSettings } from './form.ts'
-import { AudioSettingsView, AudioTranscriptView, AudioTurnOriginals, type AudioTurnOriginalsInjected } from './Views.tsx'
+import { AudioSettingsView, AudioSpeechCards, AudioTranscriptView, AudioTurnOriginals, SpeechToolView, type AudioTurnOriginalsInjected } from './Views.tsx'
 import { audioTurnDefinition } from './turn.ts'
+import { speechTurnDefinition } from './speech-turn.ts'
 import { NS, en, zh } from './locales.ts'
 
 /** Services supplied by the Web or Desktop host. */
@@ -37,7 +38,9 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
       } }),
     }, AudioSettingsView))
     child.slots.inject('tool.call.toolview', () => child.slots.register({ name: 'tool.call.toolview', key: 'transcribe_audio', locale: NS }, AudioTranscriptView))
+    child.slots.inject('tool.call.toolview', () => child.slots.register({ name: 'tool.call.toolview', key: 'yovoice_speak', locale: NS }, SpeechToolView))
     child.effect(() => child.uiConversation.events.register(audioTurnDefinition))
+    child.effect(() => child.uiConversation.events.register(speechTurnDefinition))
     child.slots.inject('conversation.chat.turnTail', () => child.slots.register({
       name: 'conversation.chat.turnTail', id: 'audio-originals', order: 20, locale: NS,
       inject: (sessionId: SessionId): AudioTurnOriginalsInjected => ({
@@ -49,6 +52,9 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
         },
       }),
     }, AudioTurnOriginals))
+    child.slots.inject('conversation.chat.turnTail', () => child.slots.register({
+      name: 'conversation.chat.turnTail', id: 'audio-speech', order: 21, locale: NS,
+    }, AudioSpeechCards))
   })
   try { await ui } catch (error) { await ui.dispose(); await disposeRemote(); throw error }
   return async () => { await ui.dispose(); await disposeRemote() }

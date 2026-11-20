@@ -2,7 +2,11 @@
 
 ### English
 
+- The V-yovoice DSH plugin can turn supplied text into speech through V-Voice's public TTS API. Choose a ready TTS model and default voice in the plugin, optionally use another advertised voice or supported voice-design/emotion controls in chat, and play or download the saved WAV from the conversation card. Existing transcription settings and tools remain compatible. The plugin supports DSH 0.2.2-rc.3 and retains the declared 0.2.2-rc.2 range.
+
 ### 简体中文
+
+- V-yovoice DSH 插件可通过 V-Voice 公开 TTS 接口把指定文本转换为语音。在插件中选择已就绪的 TTS 模型和默认音色，对话中可改用该模型提供的其他音色或使用支持的声音设计/情绪参数，并在会话卡片中播放或下载保存的 WAV。现有转写配置和工具保持兼容；插件支持 DSH 0.2.2-rc.3，并保留声明的 0.2.2-rc.2 兼容范围。
 
 ## [0.0.39] - 2026-11-20
 

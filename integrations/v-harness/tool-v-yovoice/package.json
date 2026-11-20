@@ -1,7 +1,7 @@
 {
   "name": "@ictrek/dsh-tool-v-yovoice",
   "description": "Single installable V-yovoice plugin for DSH sessions",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": false,
   "publishConfig": { "access": "public" },
   "packageManager": "pnpm@11.28.5",
@@ -121,7 +121,7 @@
     "zod": "4.6.6"
   },
   "engines": {
-    "dsh": "0.2.2-rc.2",
+    "dsh": ">=0.2.2-rc.2 <0.2.3",
     "node": ">=24.9.0"
   },
   "dsh": {
