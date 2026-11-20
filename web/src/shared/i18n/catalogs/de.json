@@ -6769,5 +6769,68 @@
   },
   "@vvoice.dialogue.adminOnly": {
     "defaultMessage": "Administratorzugriff erforderlich."
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "Synchrontexte übersetzen"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "Übersetzen Sie die Dialoge mit V-Scheduler, prüfen und bearbeiten Sie jede Zeile im ursprünglichen Zeitfenster und erstellen Sie ein Projekt mit denselben Sprechern und Timecodes."
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "Zielsprache"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "Für dieses VOS-Konto sind keine Chatmodelle verfügbar."
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "Die V-Scheduler-Modellliste konnte nicht geladen werden."
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "Die V-Scheduler-Anfrage ist fehlgeschlagen oder die Übersetzung ist unvollständig. Versuchen Sie es erneut oder wählen Sie ein anderes Modell."
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "Das Synchronprojekt konnte nicht gespeichert werden. Versuchen Sie es erneut."
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "Synchronprojekt erstellen"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "Dialoge übersetzen"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "Übersetzung für Zeile {n}"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "Übersetzungsseite"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "Die Übersetzung überschreitet 12.000 Zeichen. Kürzen Sie sie oder teilen Sie das Projekt auf."
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "Die Synchronaufnahme dauert {duration} s bei einem Zeitfenster von {slot} s"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "MP4 mit mehreren Audiospuren"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "Ergänzen Sie Originalvideo und -ton um die Synchronspur und Untertitel aus der Zeitleiste. Das Video darf bis zu einer Stunde lang sein und alle Eingaben zusammen höchstens 200 MiB groß."
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "Originalvideo (MP4)"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "Isolierter Hintergrundton (optional, WAV)"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "Standard-Audiospur"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "Synchronspur"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "Originalton"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "Die Eingaben für den Export überschreiten zusammen 200 MiB."
   }
 }

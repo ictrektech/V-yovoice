@@ -6769,5 +6769,68 @@
   },
   "@vvoice.dialogue.adminOnly": {
     "defaultMessage": "Требуется доступ администратора."
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "Перевести реплики для дубляжа"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "Переведите реплики через V-Scheduler, проверьте каждую в исходном временном интервале и создайте проект с теми же говорящими и таймкодами."
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "Язык перевода"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "Для этой учётной записи VOS нет доступных чат-моделей."
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "Не удалось загрузить список моделей V-Scheduler."
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "Запрос к V-Scheduler завершился ошибкой или перевод неполный. Повторите попытку или выберите другую модель."
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "Не удалось сохранить проект дубляжа. Повторите попытку."
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "Создать проект дубляжа"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "Перевести реплики"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "Перевод реплики {n}"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "Страница перевода"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "Перевод превышает 12 000 символов. Сократите его или разделите проект."
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "Дубляж длится {duration} с при интервале субтитров {slot} с"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "MP4 с несколькими аудиодорожками"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "Сохраните исходное видео и звук и добавьте дубляж и субтитры с временной шкалы. Видео может длиться до часа, общий размер входных файлов до 200 МиБ."
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "Исходное видео (MP4)"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "Отдельный фоновый звук (необязательно, WAV)"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "Аудиодорожка по умолчанию"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "Дубляж"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "Исходный звук"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "Общий размер файлов для экспорта превышает 200 МиБ."
   }
 }

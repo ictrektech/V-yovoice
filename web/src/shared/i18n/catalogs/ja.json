@@ -6769,5 +6769,68 @@
   },
   "@vvoice.dialogue.adminOnly": {
     "defaultMessage": "管理者権限が必要です。"
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "吹き替えの台詞を翻訳"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "V-Scheduler で台詞を翻訳し、元の時間枠に合わせて確認・編集してから、話者とタイムコードを引き継ぐ作品を作成します。"
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "翻訳先の言語"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "この VOS アカウントで利用できるチャットモデルがありません。"
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "V-Scheduler のモデル一覧を取得できませんでした。"
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "V-Scheduler のリクエストが失敗したか、訳文が揃っていません。再試行するか、別のモデルを選んでください。"
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "吹き替え作品を保存できませんでした。もう一度お試しください。"
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "吹き替え作品を作成"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "台詞を翻訳"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "台詞 {n} の訳文"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "訳文のページ"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "訳文が合計 12,000 文字を超えています。短くするか、作品を分割してください。"
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "吹き替えは {duration} 秒で、字幕の時間枠 {slot} 秒を超えています"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "複数の音声トラック付き MP4"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "元の映像と音声に、タイムラインの吹き替えと字幕を追加します。映像は最大 1 時間、入力は合計 200 MiB までです。"
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "元の映像（MP4）"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "分離済みの背景音（任意、WAV）"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "既定の音声トラック"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "吹き替え"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "原音"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "入力の合計が 200 MiB を超えています。"
   }
 }

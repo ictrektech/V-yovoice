@@ -6769,5 +6769,68 @@
   },
   "@vvoice.dialogue.adminOnly": {
     "defaultMessage": "Se requiere acceso de administrador."
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "Traducir diálogos de doblaje"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "Traduce los diálogos con V-Scheduler, revisa cada frase en su intervalo original y crea un proyecto que conserva los hablantes y los códigos de tiempo."
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "Idioma de destino"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "Esta cuenta de VOS no tiene modelos de chat disponibles."
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "No se pudo cargar la lista de modelos de V-Scheduler."
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "La solicitud a V-Scheduler falló o devolvió una traducción incompleta. Vuelve a intentarlo o elige otro modelo."
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "No se pudo guardar el proyecto de doblaje. Vuelve a intentarlo."
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "Crear proyecto de doblaje"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "Traducir diálogos"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "Traducción de la frase {n}"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "Página de traducción"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "La traducción supera los 12 000 caracteres. Acórtala o divide el proyecto."
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "El doblaje dura {duration} s y el intervalo del subtítulo es de {slot} s"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "MP4 con varias pistas de audio"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "Conserva el vídeo y el audio originales y añade el doblaje y los subtítulos de la línea de tiempo. El vídeo puede durar hasta una hora y las entradas no pueden superar los 200 MiB en total."
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "Vídeo original (MP4)"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "Audio de fondo aislado (opcional, WAV)"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "Pista de audio predeterminada"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "Doblaje"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "Audio original"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "Las entradas de exportación superan los 200 MiB en total."
   }
 }

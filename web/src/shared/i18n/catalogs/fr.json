@@ -6769,5 +6769,68 @@
   },
   "@vvoice.dialogue.adminOnly": {
     "defaultMessage": "Accès administrateur requis."
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "Traduire les répliques à doubler"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "Traduisez les répliques avec V-Scheduler, révisez-les dans leurs créneaux d’origine, puis créez un projet qui conserve les locuteurs et les codes temporels."
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "Langue cible"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "Aucun modèle de conversation n’est disponible pour ce compte VOS."
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "Impossible de charger la liste des modèles de V-Scheduler."
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "La requête V-Scheduler a échoué ou la traduction est incomplète. Réessayez ou choisissez un autre modèle."
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "Impossible d’enregistrer le projet de doublage. Réessayez."
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "Créer le projet de doublage"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "Traduire les répliques"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "Traduction de la réplique {n}"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "Page de traduction"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "La traduction dépasse 12 000 caractères. Raccourcissez-la ou divisez le projet."
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "Le doublage dure {duration} s pour un créneau de sous-titre de {slot} s"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "MP4 avec plusieurs pistes audio"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "Conservez la vidéo et le son d’origine et ajoutez le doublage et les sous-titres de la timeline. La vidéo est limitée à une heure et la taille totale des fichiers à 200 Mio."
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "Vidéo source (MP4)"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "Son d’ambiance isolé (facultatif, WAV)"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "Piste audio par défaut"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "Doublage"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "Son d’origine"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "La taille totale des fichiers à exporter dépasse 200 Mio."
   }
 }

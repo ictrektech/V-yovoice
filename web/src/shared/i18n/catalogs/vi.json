@@ -6769,5 +6769,68 @@
   },
   "@vvoice.dialogue.adminOnly": {
     "defaultMessage": "Cần quyền quản trị viên."
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "Dịch lời thoại lồng tiếng"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "Dùng V-Scheduler để dịch, kiểm tra từng câu theo khung thời gian gốc rồi tạo dự án giữ nguyên người nói và mã thời gian."
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "Ngôn ngữ đích"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "Tài khoản VOS này không có mô hình hội thoại khả dụng."
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "Không thể tải danh sách mô hình V-Scheduler."
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "Yêu cầu V-Scheduler thất bại hoặc bản dịch chưa đầy đủ. Hãy thử lại hoặc chọn mô hình khác."
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "Không thể lưu dự án lồng tiếng. Hãy thử lại."
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "Tạo dự án lồng tiếng"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "Dịch lời thoại"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "Bản dịch câu {n}"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "Trang bản dịch"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "Bản dịch vượt quá 12.000 ký tự. Hãy rút gọn hoặc chia nhỏ dự án."
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "Đoạn lồng tiếng dài {duration} giây trong khung phụ đề {slot} giây"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "MP4 có nhiều rãnh âm thanh"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "Giữ video và âm thanh gốc, thêm phần lồng tiếng và phụ đề từ dòng thời gian. Video dài tối đa một giờ, tổng dung lượng đầu vào tối đa 200 MiB."
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "Video gốc (MP4)"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "Âm thanh nền đã tách (không bắt buộc, WAV)"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "Rãnh âm thanh mặc định"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "Lồng tiếng"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "Âm thanh gốc"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "Tổng dung lượng đầu vào để xuất vượt quá 200 MiB."
   }
 }

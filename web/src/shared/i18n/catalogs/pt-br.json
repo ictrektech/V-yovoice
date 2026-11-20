@@ -6769,5 +6769,68 @@
   },
   "@vvoice.dialogue.adminOnly": {
     "defaultMessage": "É necessário acesso de administrador."
+  },
+  "@vvoice.dub.title": {
+    "defaultMessage": "Traduzir falas de dublagem"
+  },
+  "@vvoice.dub.help": {
+    "defaultMessage": "Traduza com o V-Scheduler, revise cada fala no intervalo original e crie um projeto que mantém os falantes e os códigos de tempo."
+  },
+  "@vvoice.dub.language": {
+    "defaultMessage": "Idioma de destino"
+  },
+  "@vvoice.dub.noModels": {
+    "defaultMessage": "Não há modelos de chat disponíveis para esta conta VOS."
+  },
+  "@vvoice.dub.schedulerError": {
+    "defaultMessage": "Não foi possível carregar a lista de modelos do V-Scheduler."
+  },
+  "@vvoice.dub.translationError": {
+    "defaultMessage": "A solicitação ao V-Scheduler falhou ou a tradução está incompleta. Tente novamente ou escolha outro modelo."
+  },
+  "@vvoice.dub.saveError": {
+    "defaultMessage": "Não foi possível salvar o projeto de dublagem. Tente novamente."
+  },
+  "@vvoice.dub.create": {
+    "defaultMessage": "Criar projeto de dublagem"
+  },
+  "@vvoice.dub.translate": {
+    "defaultMessage": "Traduzir falas"
+  },
+  "@vvoice.dub.line": {
+    "defaultMessage": "Tradução da fala {n}"
+  },
+  "@vvoice.dub.page": {
+    "defaultMessage": "Página de tradução"
+  },
+  "@vvoice.dub.textLimit": {
+    "defaultMessage": "A tradução excede 12 mil caracteres. Reduza o texto ou divida o projeto."
+  },
+  "@vvoice.dub.overrun": {
+    "defaultMessage": "A dublagem dura {duration} s em um intervalo de legenda de {slot} s"
+  },
+  "@vvoice.dub.videoFormat": {
+    "defaultMessage": "MP4 com várias faixas de áudio"
+  },
+  "@vvoice.dub.videoHelp": {
+    "defaultMessage": "Mantenha o vídeo e o áudio originais e adicione a dublagem e as legendas da linha do tempo. O vídeo pode ter até uma hora e as entradas podem somar até 200 MiB."
+  },
+  "@vvoice.dub.videoSource": {
+    "defaultMessage": "Vídeo original (MP4)"
+  },
+  "@vvoice.dub.background": {
+    "defaultMessage": "Áudio de fundo isolado (opcional, WAV)"
+  },
+  "@vvoice.dub.defaultTrack": {
+    "defaultMessage": "Faixa de áudio padrão"
+  },
+  "@vvoice.dub.audioDub": {
+    "defaultMessage": "Dublagem"
+  },
+  "@vvoice.dub.audioOriginal": {
+    "defaultMessage": "Áudio original"
+  },
+  "@vvoice.dub.videoSize": {
+    "defaultMessage": "As entradas da exportação excedem 200 MiB no total."
   }
 }
