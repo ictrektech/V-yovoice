@@ -12,7 +12,15 @@
 
 GitHub Release 完成后，将同一个版本化归档发布到 npm。npm 发布在本机 Mac 终端执行；浏览器只用于登录和发布确认，归档由终端上传。
 
-发布前核对 canonical registry。本机默认 registry 是 npmmirror，以下命令都必须显式指定 `--registry=https://registry.npmjs.org`：
+优先执行：
+
+```sh
+pnpm --dir integrations/v-harness/tool-v-yovoice run publish:npm
+```
+
+脚本会校验 `compatibility.json`、归档 sha256 和版本幂等，未发布版本才要求 npm 登录；发布后轮询 15 分钟并核对 integrity。已发布版本只做校验，不会重复发布。每次新版本都让脚本重新检查登录，不要把上次的 token 当作长期有效。以下手工命令用于排障。
+
+`package.json` 的 `publishConfig.registry` 已固定为 npm 官方 registry；手工发布仍显式指定 `--registry=https://registry.npmjs.org` 作为双保险。本机默认 registry 是 npmmirror：
 
 ```sh
 npm whoami --registry=https://registry.npmjs.org

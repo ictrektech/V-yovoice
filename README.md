@@ -104,8 +104,9 @@ configured upload cap. See
 The installable v-harness plugin is maintained in
 [`integrations/v-harness/tool-v-yovoice`](integrations/v-harness/tool-v-yovoice)
 and is released as a prebuilt `.tgz` rather than bundled into the VOS service image.
-The [versioned plugin download](https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.2.1/ictrek-dsh-tool-v-yovoice-0.2.1.tgz)
+The [versioned plugin download](https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.4.0/ictrek-dsh-tool-v-yovoice-0.4.0.tgz)
 points at the current plugin release; check host compatibility before upgrading.
+The plugin can also dictate speech into the unsent chat draft, with recognition kept separate from message submission.
 Qwen3-ASR 0.6B and 1.7B accept their own approved duration, source sample-rate,
 encoded-byte and hotword limits; they do not inherit SenseVoice approval. The ASR
 selector distinguishes downloaded files from inference approval on this device

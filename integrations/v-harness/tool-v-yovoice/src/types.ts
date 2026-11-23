@@ -8,6 +8,28 @@ export interface AudioCatalog {
   speech: SpeechCatalog
 }
 
+/** Browser recording bounds checked before a dictation request leaves the client. */
+export interface DictationLimits {
+  /** Maximum recording duration in whole seconds. */
+  maxSeconds: number
+  /** Maximum canonical PCM16 WAV bytes accepted by the Host. */
+  maxAudioBytes: number
+}
+
+/** One complete browser recording; audio is never attached to the conversation automatically. */
+export interface DictationRequest {
+  /** Canonical base64 of a 16 kHz mono PCM16 WAV. */
+  audioBase64: string
+}
+
+/** Final dictation text returned for insertion into the unsent composer draft. */
+export interface DictationResult {
+  /** Verbatim recognition result; an empty string means no speech. */
+  text: string
+  /** ASR model that produced the text. */
+  model: string
+}
+
 /** TTS identity advertised by the configured V-yovoice service. */
 export interface SpeechModel {
   /** Service-owned model key. */

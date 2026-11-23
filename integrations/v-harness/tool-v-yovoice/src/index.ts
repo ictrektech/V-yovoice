@@ -43,6 +43,8 @@ export interface Config {
   maxSpeechBytes: Volatile<number>
   /** UTF-16 characters in one model-visible transcript window. */
   pageCharacters: Volatile<number>
+  /** Maximum microphone recording duration for composer dictation. */
+  maxDictationSeconds: Volatile<number>
 }
 
 /** Validated Loader configuration. */
@@ -56,6 +58,7 @@ export const Config = z.object({
   maxResponseBytes: z.natural().min(1).max(2_147_483_647).default(16_777_216).volatile(),
   maxSpeechBytes: z.natural().min(1).max(2_147_483_647).default(268_435_456).volatile(),
   pageCharacters: z.natural().min(1).max(2_147_483_647).default(12_000).volatile(),
+  maxDictationSeconds: z.natural().min(1).max(600).default(120).volatile(),
 })
 
 /**
@@ -77,6 +80,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     maxResponseBytes: config.maxResponseBytes.get(),
     maxSpeechBytes: config.maxSpeechBytes.get(),
     pageCharacters: config.pageCharacters.get(),
+    maxDictationSeconds: config.maxDictationSeconds.get(),
   })
   const current = () => resolveConfig(options())
   const catalog = () => resolveConfig(options(), false)
@@ -88,7 +92,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   capabilities.register({ id: 'speech', available: true })
 
   ctx.inject(['typert'], (child) => {
-    new AudioController(child, catalog, lifetime.signal, projection)
+    new AudioController(child, catalog, current, lifetime.signal, projection)
   })
   ctx.inject(['settings'], (child) => {
     child.settings.configure({ auto: false }, ctx.fiber)

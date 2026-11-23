@@ -4,7 +4,7 @@ import { audioForm, type AudioSettings } from '../src/client/form.ts'
 
 it('stages profile changes, saves one atomic patch, and releases its subscription', async () => {
   const host = stubConfigForm<AudioSettings>()
-  const defaults = { baseUrl: '', model: '', speechModel: '', speechVoice: '', requestTimeoutMs: 1860000, maxUploadBytes: 209715200, maxResponseBytes: 16777216, maxSpeechBytes: 268435456, pageCharacters: 12000 }
+  const defaults = { baseUrl: '', model: '', speechModel: '', speechVoice: '', requestTimeoutMs: 1860000, maxUploadBytes: 209715200, maxResponseBytes: 16777216, maxSpeechBytes: 268435456, pageCharacters: 12000, maxDictationSeconds: 120 }
   host.publish({ status: 'ready', writable: true, value: defaults, base: defaults, user: {} })
   const form = audioForm(host.scope)
   expect(form.store.getSnapshot()).toMatchObject({ available: true, dirty: false })

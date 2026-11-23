@@ -48,7 +48,7 @@ it('saves real profile settings, updates the running tool deadline, and restores
   expect(ctx.tools.get('transcribe_audio')?.timeoutMs).toBe(1860000)
   await ctx.settings.update('tool-audio-transcription', {
     baseUrl: 'http://voice:7070', model: 'sensevoice-int8', speechModel: 'kokoro-multilang',
-    speechVoice: 'zf_xiaoxiao', requestTimeoutMs: 12345,
+    speechVoice: 'zf_xiaoxiao', requestTimeoutMs: 12345, maxDictationSeconds: 90,
   })
   expect(ctx.tools.get('transcribe_audio')?.timeoutMs).toBe(12345)
   expect(ctx.tools.get('yovoice_speak')?.timeoutMs).toBe(12345)
@@ -59,5 +59,6 @@ it('saves real profile settings, updates the running tool deadline, and restores
   expect(restored.tools.get('transcribe_audio')?.timeoutMs).toBe(12345)
   expect(restored.settings.describe().find(row => row.ns === 'tool-audio-transcription')?.value).toMatchObject({
     baseUrl: 'http://voice:7070', model: 'sensevoice-int8', speechModel: 'kokoro-multilang', speechVoice: 'zf_xiaoxiao',
+    maxDictationSeconds: 90,
   })
 })

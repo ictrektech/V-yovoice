@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：转写底座与公开文本转语音已实现，待候选包安装验收。
+- 状态：转写底座、公开文本转语音与输入框语音听写已实现，待候选包安装验收。
 - 首发环境：VOS 上的 v-harness。
 - 首发能力：沿用现有音频转写，不新增用户可见功能。
 - 目标插件包：`@ictrek/dsh-tool-v-yovoice`。
@@ -21,6 +21,7 @@ v-harness 会话中使用 V-yovoice 的转写、语音、编曲、音乐和音�
 3. 抽出所有后续能力共用的服务接入、任务、产物、会话投影、播放和卡片边界。
 4. 后续能力按模块追加，不再次拆分插件包。
 5. 第二阶段接入公开 TTS，支持配置默认模型/音色、对话内覆盖音色和模型能力允许的声音设计/情绪参数。
+6. 在 `conversation.input.activity` 接入输入框听写：录音只写入未发送草稿，不自动发送，也不保存为会话附件。
 
 ## 2. 已确认决策
 
@@ -380,6 +381,14 @@ sequenceDiagram
 - `yovoice_speak` 与 `yovoice_voices` 使用 `yovoice_` 前缀；现有转写工具名不变。
 
 `0.3.0` 不包含参考音色导入；该能力仍需设计 VOS 每租户私有能力端点及用户身份注入。
+
+当前未发布的 `0.4.0` 候选在现有 ASR 能力上增加输入框听写：
+
+- `src/client/dictation.tsx`、`src/client/recording.ts`：模型选择器后的麦克风、录音状态机、系统默认麦克风采集、16 kHz 单声道 PCM16 WAV 和实时电平。
+- `src/core/wav.ts`、`src/features/dictation`：Host 侧严格 WAV 校验、模型就绪与输入限额检查、单段 ASR 调用；不创建会话事件或附件。
+- `AudioController.dictationLimits` / `transcribeDictation`：只通过已认证 Remote 传输临时音频和有界文字。
+- 草稿安全插入复用 `captureInsertion()` / `insertText()`；录音期间草稿变化时保留文字供用户明确插入。
+- 配置新增 `maxDictationSeconds`，默认 120 秒；客户端和 Host 同时执行时长与字节上限。
 
 已落地的模块：
 

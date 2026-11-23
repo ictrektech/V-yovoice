@@ -53,7 +53,7 @@ export function AudioSettingsView(props: PropsRuntime<'plugins.bundle.config'> &
   return <section className={css.config}>
     <p>{t('description')}</p>
     <SettingsForm labels={{ unavailable: t('configUnavailable'), readOnly: t('readOnly'), saveFailed: t('saveFailed'), save: t('save'), saving: t('saving') }} state={state} onSave={props.save} onDiscard={props.discard}>
-      {(['baseUrl', 'model', 'speechModel', 'speechVoice', 'requestTimeoutMs', 'maxUploadBytes', 'maxResponseBytes', 'maxSpeechBytes', 'pageCharacters'] as const).map(field => <SettingsValueField key={field}
+      {(['baseUrl', 'model', 'speechModel', 'speechVoice', 'requestTimeoutMs', 'maxUploadBytes', 'maxResponseBytes', 'maxSpeechBytes', 'pageCharacters', 'maxDictationSeconds'] as const).map(field => <SettingsValueField key={field}
         id={`audio-${field}`} label={t(field)} overriddenLabel={t('overridden')} resetLabel={t('reset')} invalidLabel={t('invalid')}
         numeric={!textFields.has(field)} disabled={!state.writable}
         {...state.fields[field]} onEdit={(text) => { props.edit(field, text) }} onReset={() => { props.resetField(field) }} />)}

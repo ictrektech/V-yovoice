@@ -1,5 +1,5 @@
 ---
-description: "可直接安装的 V-yovoice DSH 单插件；提供转写、文本转语音、配置页与持久音频卡片。"
+description: "可直接安装的 V-yovoice DSH 单插件；提供输入框听写、转写、文本转语音、配置页与持久音频卡片。"
 kind: "package-bundle"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-这是 V-yovoice 面向 DSH 的唯一安装包。它沿用已经跑通的音频转写，并新增 V-Voice 公开文本转语音能力；能力、任务、产物、会话恢复和播放共用同一底座，后续编曲和音乐模块在同一插件内追加，不拆分安装包。
+这是 V-yovoice 面向 DSH 的唯一安装包。它提供输入框语音听写，沿用已经跑通的音频转写，并包含 V-Voice 公开文本转语音能力；能力、任务、产物、会话恢复和播放共用同一底座，后续编曲和音乐模块在同一插件内追加，不拆分安装包。
 
 在会话中粘贴音频并询问“这段音频内容是什么？”。智能体按需调用 V-yovoice。助手最终回答之后的持久化音频卡片提供播放、拖动进度和完整原文，原文与智能体总结分开展示。支持多个文件、后续提问、重新识别及恢复会话。
 
@@ -17,25 +17,27 @@ kind: "package-bundle"
 
 ## 安装与配置
 
-预构建安装包为 `ictrek-dsh-tool-v-yovoice-0.3.0.tgz`，适配 v-harness **0.2.2-rc.3.vos.09** 和 DSH **0.2.2-rc.3**；声明的版本范围也保留此前验证过的 DSH 0.2.2-rc.2 兼容。打开**插件 → 添加插件**，填写宿主可访问的安装包 URL 或绝对路径。这里不是文件上传器：Mac 本地路径不能表示远程 VOS 上的文件。VOS 使用前将包复制到目标租户工作区，并使用租户内部路径；容器共享的 `/tmp` 在租户内不可见。安装进目标租户的 profile，不修改共享运行时。
+预构建安装包为 `ictrek-dsh-tool-v-yovoice-0.4.0.tgz`，适配 v-harness **0.2.2-rc.3.vos.09** 和 DSH **0.2.2-rc.3**；声明的版本范围也保留此前验证过的 DSH 0.2.2-rc.2 兼容。打开**插件 → 添加插件**，填写宿主可访问的安装包 URL 或绝对路径。这里不是文件上传器：Mac 本地路径不能表示远程 VOS 上的文件。VOS 使用前将包复制到目标租户工作区，并使用租户内部路径；容器共享的 `/tmp` 在租户内不可见。安装进目标租户的 profile，不修改共享运行时。
 
-版本化下载地址为 `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.3.0/ictrek-dsh-tool-v-yovoice-0.3.0.tgz`，升级前核对 `compatibility.json`。
+版本化下载地址为 `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.4.0/ictrek-dsh-tool-v-yovoice-0.4.0.tgz`，升级前核对 `compatibility.json`。
 
 npm 包发布后，插件市场可从可访问的 npm 源安装 `@ictrek/dsh-tool-v-yovoice`。
 
 在宿主上以 profile 所有者执行 CLI 示例：
 
 ```sh
-dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-v-yovoice-0.3.0.tgz
+dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-v-yovoice-0.4.0.tgz
 ```
 
-启用组合包后打开配置页，保存 V-yovoice **服务根地址**（不含 `/v1`），点击**检查连接 / 获取模型**，选择已就绪的 ASR 模型、TTS 模型及其默认音色并再次保存。地址必须能从宿主所在容器访问。Desktop 应通过其插件页安装进受管 Desktop profile，不能用无关的 `web` profile 代替。按宿主提示刷新或重启。尚未配置的插件可以正常加载，调用转写或语音生成时会明确提示配置要求。
+启用组合包后打开配置页，保存 V-yovoice **服务根地址**（不含 `/v1`），点击**检查连接 / 获取模型**，选择已就绪的 ASR 模型、TTS 模型及其默认音色并再次保存。地址必须能从宿主所在容器访问。Desktop 应通过其插件页安装进受管 Desktop profile，不能用无关的 `web` profile 代替。按宿主提示刷新或重启。尚未配置的插件可以正常加载，调用转写、听写或语音生成时会明确提示配置要求。
 
 设置保存在当前 profile。目标服务必须提供 `/api/v1/models`、`/api/v1/models/{key}/input-limits`、`/v1/audio/transcriptions`、`/v1/audio/speech` 和 `/v1/audio/voices`。这里接入 VOS 的 V-yovoice 服务，不是桌面/CLI 的独立语音 API。模型查询经过 DSH 已认证的 Remote 连接，由宿主访问语音服务。VOS 租户的网络策略必须允许访问该地址；租户外可达的服务在租户内仍可能被阻止。插件不修改网关设置或网络隔离；安装包不包含凭据。
 
 输入限制声明 `/v1/audio/transcriptions/full` 时，宿主向该接口发送原始文件，只接受完整且与请求匹配的结果；转换和分段由 V-yovoice 负责。旧版服务继续使用单段接口及其模型限制；插件不会静默转码。
 
 ## 使用
+
+点击模型选择器后面的麦克风即可把语音写入当前未发送草稿。点击开始录音，在展开的工具栏中取消或停止，识别完成后文字插入到开始录音时的光标位置；不会自动发送消息。识别期间如果草稿或其中的引用发生改变，文字会保留在工具栏中，可在当前光标位置明确插入。取消、Escape、隐藏页面或切换会话会丢弃录音；达到配置的最长时长时自动停止。浏览器使用系统默认麦克风，音频只临时发送给 V-yovoice 识别，不保存为会话附件。不要同时启用 DSH 的实验性 voice-input bundle，两者占用同一个输入框活动位置。
 
 附加一个或多个音频后要求转写、总结或针对内容提问。多个文件逐个选择转写。轮次卡片位于助手最终回答之后，每个上传文件都有播放器；由用户主动开始播放。中央播放键、当前位置、剩余时间和波形进度条跟随宿主亮色或暗色主题；波形支持点击、拖动、悬停时间和键盘定位。不超过 20 MiB 且 10 分钟的音频在浏览器本地解码为真实峰值；更大文件、解码失败或受限宿主改为高对比度进度条。峰值只缓存在当前浏览器会话内存中，不写入会话日志。短原文直接展示，长原文从预览展开，复制操作保留完整文本；无语音时明确提示。浏览器或附件后端无法流式读取时，已保存原文仍保留并显示具体原因。没有最终回答时，卡片继续显示在停止的轮次之后。桌面文件路径必须由用户在当前会话中明确提供，并通过当前执行文件系统读取。
 
@@ -58,6 +60,7 @@ dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-v-yovoice-0.3.0
 | `maxResponseBytes` | 16777216 | 完整服务 JSON 响应的字节上限。 |
 | `maxSpeechBytes` | 268435456 | 单次语音生成接受的 WAV 最大字节数。 |
 | `pageCharacters` | 12000 | 模型每次收到的转写窗口上限，单位为 UTF-16 字符。 |
+| `maxDictationSeconds` | 120 | 输入框听写的最长录音时长，范围 1–600 秒。字节上限按 16 kHz 单声道 PCM16 WAV 与 `maxUploadBytes` 推导，同时继续遵守服务校准的输入限制。 |
 
 `audioTranscription.catalog()` 返回当前配置的 ASR `selected` 模型及 `models`，以及 TTS 的 `speech` 目录；ASR 模型包含 `key`、`name` 和 `ready`，TTS 目录包含模型、默认音色和可选音色。
 
@@ -85,7 +88,7 @@ V_HARNESS_REPO=/absolute/path/to/v-harness \
 
 #### 模型看到什么
 
-插件增加六个工具声明及音频使用提示。音频字节不进入大模型请求。成功转写的完整原文作为工具结果元数据留存在会话，模型每次收到有界文本窗口、总长度和下一页位置；后续通过读取工具分页，不重复识别。生成语音只作为会话附件保存，不会把音频字节注入模型请求。转写属于不可信来源内容，不作为指令执行；总结只依据实际读入的部分。
+插件增加六个工具声明及音频使用提示。输入框听写不增加工具声明；只有用户实际发送草稿后，识别文字才会进入模型请求。音频字节不进入大模型请求。成功转写的完整原文作为工具结果元数据留存在会话，模型每次收到有界文本窗口、总长度和下一页位置；后续通过读取工具分页，不重复识别。生成语音只作为会话附件保存，不会把音频字节注入模型请求。转写属于不可信来源内容，不作为指令执行；总结只依据实际读入的部分。
 
 #### Token 影响
 
@@ -98,4 +101,4 @@ V_HARNESS_REPO=/absolute/path/to/v-harness \
 
 ## 已知限制与后续工作
 
-- MP3 是转写必测格式；其他格式的浏览器播放和 V-yovoice 解码能力取决于实际宿主与服务。全文件录音须满足服务的总限制；旧版单段服务直接执行模型限制。语音生成目前只使用公开的模型内置音色，不包含参考音色导入、编曲、音乐或环境音分析。超时后远端工作可能继续，重试前应检查服务。后续模块和授权边界见[设计文档](https://github.com/ictrektech/V-yovoice/blob/main/integrations/v-harness/v-yovoice-plugin-design.md)。
+- MP3 是转写必测格式；其他格式的浏览器播放和 V-yovoice 解码能力取决于实际宿主与服务。听写当前在停止录音后返回最终文字，不包含流式字幕、长按/快捷键录音、自动发送、唤醒词或麦克风设备选择。全文件录音须满足服务的总限制；旧版单段服务直接执行模型限制。语音生成目前只使用公开的模型内置音色，不包含参考音色导入、编曲、音乐或环境音分析。超时后远端工作可能继续，重试前应检查服务。后续模块和授权边界见[设计文档](https://github.com/ictrektech/V-yovoice/blob/main/integrations/v-harness/v-yovoice-plugin-design.md)。

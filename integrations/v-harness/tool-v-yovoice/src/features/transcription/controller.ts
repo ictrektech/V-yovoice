@@ -5,6 +5,8 @@ import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typer
 import { brandString } from '@deepseek-ai/dsh-brand'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { audioStateOfSession, type AudioProjection } from '../../core/projection.ts'
+import { dictationLimits, transcribeDictation } from '../dictation/index.ts'
+import type { DictationLimits, DictationRequest, DictationResult } from '../../types.ts'
 import { modelRows, voiceJson, type VoiceConfig } from './client.ts'
 import { speechModelRows } from '../speech/client.ts'
 
@@ -20,11 +22,12 @@ export class AudioController extends TypertRemoteService {
   /**
    * @param ctx - plugin context with the authenticated Typert gateway.
    * @param options - current profile settings, resolved at request admission.
+   * @param current - settings that require a selected ASR model.
    * @param lifetime - plugin disposal cancellation.
    * @param projection - registered session projection.
    */
   constructor(
-    ctx: Context, private readonly options: () => VoiceConfig,
+    ctx: Context, private readonly options: () => VoiceConfig, private readonly current: () => VoiceConfig,
     private readonly lifetime: AbortSignal, private readonly projection: AudioProjection,
   ) {
     super(ctx, 'audioTranscription')
@@ -54,6 +57,39 @@ export class AudioController extends TypertRemoteService {
       }
     } catch (cause) {
       signal.throwIfAborted()
+      throw new RemoteError('gateway/internal', cause instanceof Error ? cause.message : String(cause), {}, { cause })
+    }
+  }
+
+  /**
+   * Read the current dictation duration and byte bounds without inference.
+   * @param signal - browser request cancellation.
+   * @returns bounds derived from the configured ASR model and profile limits.
+   */
+  @Remote
+  dictationLimits(signal: AbortSignal): DictationLimits {
+    try {
+      signal.throwIfAborted()
+      return dictationLimits(this.current())
+    } catch (cause) {
+      signal.throwIfAborted()
+      throw new RemoteError('gateway/internal', cause instanceof Error ? cause.message : String(cause), {}, { cause })
+    }
+  }
+
+  /**
+   * Recognize one transient microphone recording for the unsent composer draft.
+   * @param request - canonical base64 PCM16 WAV.
+   * @param signal - browser cancellation.
+   * @returns verbatim text; no Session event or attachment is created.
+   */
+  @Remote
+  async transcribeDictation(request: DictationRequest, signal: AbortSignal): Promise<DictationResult> {
+    const combined = AbortSignal.any([signal, this.lifetime])
+    try {
+      return await transcribeDictation(this.current(), request, combined)
+    } catch (cause) {
+      combined.throwIfAborted()
       throw new RemoteError('gateway/internal', cause instanceof Error ? cause.message : String(cause), {}, { cause })
     }
   }

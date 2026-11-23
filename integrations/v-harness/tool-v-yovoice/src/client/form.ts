@@ -12,6 +12,7 @@ export interface AudioSettings {
   maxResponseBytes: number
   maxSpeechBytes: number
   pageCharacters: number
+  maxDictationSeconds: number
 }
 
 /**
@@ -20,13 +21,13 @@ export interface AudioSettings {
  * @returns staged form, store, and actions for the configuration slot.
  */
 export function audioForm(scope: SettingsFormScope<AudioSettings>) {
-  const fields = ['baseUrl', 'model', 'speechModel', 'speechVoice', 'requestTimeoutMs', 'maxUploadBytes', 'maxResponseBytes', 'maxSpeechBytes', 'pageCharacters'] as const
+  const fields = ['baseUrl', 'model', 'speechModel', 'speechVoice', 'requestTimeoutMs', 'maxUploadBytes', 'maxResponseBytes', 'maxSpeechBytes', 'pageCharacters', 'maxDictationSeconds'] as const
   const textFields = new Set(['baseUrl', 'model', 'speechModel', 'speechVoice'])
   const form = new SettingsFormModel(scope, fields.map(field =>
     textFields.has(field) ? settingsTextField(field) : settingsNumberField(field)))
   const store = form.bind(() => ({ ...form.shell(), fields: { baseUrl: form.field('baseUrl'), model: form.field('model'),
     speechModel: form.field('speechModel'), speechVoice: form.field('speechVoice'), requestTimeoutMs: form.field('requestTimeoutMs'),
     maxUploadBytes: form.field('maxUploadBytes'), maxResponseBytes: form.field('maxResponseBytes'), maxSpeechBytes: form.field('maxSpeechBytes'),
-    pageCharacters: form.field('pageCharacters') } }))
+    pageCharacters: form.field('pageCharacters'), maxDictationSeconds: form.field('maxDictationSeconds') } }))
   return { form, store, fields, actions: form.actions() }
 }

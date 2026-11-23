@@ -12,6 +12,8 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import contribution from '@ictrek/dsh-tool-v-yovoice/remote'
 import { audioForm, type AudioSettings } from './form.ts'
 import { AudioSettingsView, AudioSpeechCards, AudioTranscriptView, AudioTurnOriginals, SpeechToolView, type AudioTurnOriginalsInjected } from './Views.tsx'
+import { DictationControl } from './dictation.tsx'
+import { Recording } from './recording.ts'
 import { audioTurnDefinition } from './turn.ts'
 import { speechTurnDefinition } from './speech-turn.ts'
 import { NS, en, zh } from './locales.ts'
@@ -26,6 +28,10 @@ export const inject = ['remote', 'slots', 'locale', 'configForms', 'uiConversati
 export async function apply(ctx: Context): Promise<() => Promise<void>> {
   const disposeRemote = await ctx.remote.$mount(contribution)
   const ui = ctx.inject(['remote.audioTranscription'], (child) => {
+    const recordings = new Set<Recording>()
+    child.effect(() => () => {
+      for (const recording of recordings) void recording.dispose()
+    })
     child.effect(() => child.locale.register(NS, { en, zh }))
     const config = audioForm(child.configForms.get<AudioSettings>('tool-audio-transcription'))
     child.effect(() => () => { config.form.dispose() })
@@ -39,6 +45,26 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
     }, AudioSettingsView))
     child.slots.inject('tool.call.toolview', () => child.slots.register({ name: 'tool.call.toolview', key: 'transcribe_audio', locale: NS }, AudioTranscriptView))
     child.slots.inject('tool.call.toolview', () => child.slots.register({ name: 'tool.call.toolview', key: 'yovoice_speak', locale: NS }, SpeechToolView))
+    child.slots.inject('conversation.input.activity', () => child.slots.register({
+      name: 'conversation.input.activity', locale: NS,
+      inject: () => ({
+        loadLimits: async (signal: AbortSignal) => {
+          const result = await child.remote.audioTranscription.dictationLimits(signal)
+          if (!result.ok) throw result.error
+          return result.value
+        },
+        createRecording: () => {
+          const recording = new Recording(() => { recordings.delete(recording) })
+          recordings.add(recording)
+          return recording
+        },
+        transcribe: async (request, signal: AbortSignal) => {
+          const result = await child.remote.audioTranscription.transcribeDictation(request, signal)
+          if (!result.ok) throw result.error
+          return result.value
+        },
+      }),
+    }, DictationControl))
     child.effect(() => child.uiConversation.events.register(audioTurnDefinition))
     child.effect(() => child.uiConversation.events.register(speechTurnDefinition))
     child.slots.inject('conversation.chat.turnTail', () => child.slots.register({

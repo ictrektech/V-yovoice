@@ -1,5 +1,5 @@
 ---
-description: "Installable V-yovoice DSH plugin with transcription, text-to-speech, settings and durable audio cards."
+description: "Installable V-yovoice DSH plugin with composer dictation, transcription, text-to-speech, settings and durable audio cards."
 kind: "package-bundle"
 ---
 
@@ -9,31 +9,33 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This is the single V-yovoice installation package for DSH. It provides the proven audio transcription flow plus text-to-speech through V-Voice's public API, on the shared capability, operation, artifact, session-restoration and playback base. Score and music modules will be added to the same plugin rather than split into separate installs.
+This is the single V-yovoice installation package for DSH. It provides composer dictation, the proven audio transcription flow and text-to-speech through V-Voice's public API, on the shared capability, operation, artifact, session-restoration and playback base. Score and music modules will be added to the same plugin rather than split into separate installs.
 
 Paste an MP3 into a normal conversation and ask what it says. The agent calls V-yovoice on demand. A durable audio card after the closing answer provides playback, byte-range seeking and the complete original independently from assistant summaries. It supports multiple files, continued questions, explicit reprocessing and restored sessions.
 
 ## Install and configure
 
-Use the prebuilt `ictrek-dsh-tool-v-yovoice-0.3.0.tgz` with v-harness **0.2.2-rc.3.vos.09** and DSH **0.2.2-rc.3**; the declared range also retains the previously tested DSH 0.2.2-rc.2 compatibility. In **Plugins → Add plugin**, enter a tarball URL or absolute path readable by the Host. This is not an upload picker: a Mac path cannot name a file on a remote VOS Host. For VOS, copy the archive into the intended tenant's workspace and use its in-tenant path; the container's shared `/tmp` is not visible inside the tenant. Install into that tenant's profile, not the shared runtime.
+Use the prebuilt `ictrek-dsh-tool-v-yovoice-0.4.0.tgz` with v-harness **0.2.2-rc.3.vos.09** and DSH **0.2.2-rc.3**; the declared range also retains the previously tested DSH 0.2.2-rc.2 compatibility. In **Plugins → Add plugin**, enter a tarball URL or absolute path readable by the Host. This is not an upload picker: a Mac path cannot name a file on a remote VOS Host. For VOS, copy the archive into the intended tenant's workspace and use its in-tenant path; the container's shared `/tmp` is not visible inside the tenant. Install into that tenant's profile, not the shared runtime.
 
-The versioned download is `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.3.0/ictrek-dsh-tool-v-yovoice-0.3.0.tgz`; check `compatibility.json` before upgrading.
+The versioned download is `https://github.com/ictrektech/V-yovoice/releases/download/harness-plugin-v0.4.0/ictrek-dsh-tool-v-yovoice-0.4.0.tgz`; check `compatibility.json` before upgrading.
 
 After npm publication, the market can install `@ictrek/dsh-tool-v-yovoice` from an accessible registry.
 
 CLI example, executed as the profile owner on the Host:
 
 ```sh
-dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-v-yovoice-0.3.0.tgz
+dsh plugin --profile web add /absolute/host/path/ictrek-dsh-tool-v-yovoice-0.4.0.tgz
 ```
 
-Enable the installed bundle. Open its configuration, save the V-yovoice **service root URL** (without `/v1`), select **Check connection / list models**, choose a ready ASR model, a ready TTS model and its default voice, then save again. Use an address reachable from the Host, including from its container. Desktop uses its managed Desktop profile: install through its Plugins page, not an unrelated `web` profile. Follow any restart or refresh notice from the Host. Unconfigured installations remain loadable and report configuration requirements when transcription or speech is attempted.
+Enable the installed bundle. Open its configuration, save the V-yovoice **service root URL** (without `/v1`), select **Check connection / list models**, choose a ready ASR model, a ready TTS model and its default voice, then save again. Use an address reachable from the Host, including from its container. Desktop uses its managed Desktop profile: install through its Plugins page, not an unrelated `web` profile. Follow any restart or refresh notice from the Host. Unconfigured installations remain loadable and report configuration requirements when transcription, dictation or speech is attempted.
 
 Settings persist in the current profile. The service must expose `/api/v1/models`, `/api/v1/models/{key}/input-limits`, `/v1/audio/transcriptions`, `/v1/audio/speech`, and `/v1/audio/voices`. This integration targets the VOS V-yovoice service, not the Desktop/CLI synthesis-only API. Model discovery crosses the authenticated DSH Remote connection; only the Host accesses V-yovoice. A VOS tenant's network policy must permit that service address; a service reachable outside the tenant can still be blocked inside it. The plugin does not change gateway settings or network isolation. No credentials are embedded in the archive.
 
 When input limits advertise `/v1/audio/transcriptions/full`, the Host sends the original file to that endpoint and accepts only a complete, matching response. V-yovoice owns conversion and segmentation. Older services continue using the single-segment endpoint and its model limits; the plugin does not silently transcode audio.
 
 ## Use
+
+Click the microphone after the model selector to dictate into the current unsent draft. Click it again to start capture, use the expanded toolbar to cancel or stop, and wait for recognition before the text is inserted at the cursor where recording started. Recognition does not send the message. If the draft or its reference chips changed while recognition was running, the transcript stays in the toolbar and can be inserted explicitly at the current cursor. Cancel, Escape, leaving the page or switching Sessions discards capture; the configured maximum duration stops recording automatically. The browser requests the system-default microphone and keeps audio transient: it is sent only to V-yovoice for recognition and is not saved as a conversation attachment. Do not enable DSH's experimental voice-input bundle with this plugin because both occupy the same composer activity seat.
 
 Attach one or more audio files and ask for transcription, a summary, or a specific answer. Multiple files are selected individually. The turn card sits after the final assistant answer and shows one player per uploaded file; playback is user-initiated. Its central play control, elapsed and remaining time, and waveform seek bar follow the host light or dark theme. The waveform supports click, drag, hover time, and keyboard seeking. Sources up to 20 MiB and 10 minutes are decoded locally into real peaks; larger sources, decode failures, or restricted hosts use the high-contrast progress bar instead. Peaks are cached in memory for the current browser session and never enter the conversation log. Short originals are shown directly, while long originals expand from a preview. A copy action preserves the complete text. Empty recognition is reported explicitly. If the browser or attachment provider cannot stream the source, the saved original and explicit reason remain visible. If no final answer exists, the same card remains after the stopped Turn. Desktop file references must be explicitly supplied by the user in the same conversation and remain self-contained and readable through the current execution filesystem.
 
@@ -56,6 +58,7 @@ For speech generation, ask the agent to read supplied text aloud. It calls `yovo
 | `maxResponseBytes` | 16777216 | Complete service JSON response cap. |
 | `maxSpeechBytes` | 268435456 | Maximum generated WAV size accepted for one speech request. |
 | `pageCharacters` | 12000 | Maximum UTF-16 characters returned to the model in one transcript window. |
+| `maxDictationSeconds` | 120 | Maximum microphone recording duration for composer dictation, from 1 to 600 seconds. The byte bound is derived from 16 kHz mono PCM16 WAV and `maxUploadBytes`; the service's calibrated input limit still applies. |
 
 `audioTranscription.catalog()` returns the configured ASR `selected` model and `models`, plus a `speech` catalogue with the configured TTS model, default voice and available voices. ASR entries contain `key`, `name`, and `ready`; speech entries also expose languages and capabilities.
 
@@ -83,7 +86,7 @@ The pinned 0.2.2-rc.3 host source is checked against the exact reviewed aggregat
 
 #### What the model sees
 
-The plugin adds six tool declarations and audio-use prompt sections. Uploaded audio bytes never enter the language-model request. A successful transcription logs its full text as result metadata; the model receives a bounded original-text window with total length and the next offset. `read_audio_transcript` reads further windows without another ASR call. Generated speech is stored as a durable attachment and is never inserted into the model request as audio bytes. The original is untrusted source material, not instructions. Assistant summaries consume only text actually read.
+The plugin adds six tool declarations and audio-use prompt sections. Composer dictation adds no tool declaration: its recognized text becomes model-visible only if the user sends the resulting draft. Uploaded audio bytes never enter the language-model request. A successful transcription logs its full text as result metadata; the model receives a bounded original-text window with total length and the next offset. `read_audio_transcript` reads further windows without another ASR call. Generated speech is stored as a durable attachment and is never inserted into the model request as audio bytes. The original is untrusted source material, not instructions. Assistant summaries consume only text actually read.
 
 #### Token effect
 
@@ -96,4 +99,4 @@ Enabling or disabling the plugin changes tool/prompt declarations. Recognized te
 
 ## Known Limitations and Deferred Work
 
-- MP3 is the required transcription acceptance format; browser playback and V-yovoice decoding support for other formats depends on the configured host and service. Full-file recordings must fit the service's total limits; older single-segment services enforce their model limits directly. Speech generation currently uses public built-in voices only; reference-voice import, score, music and environmental-sound analysis are not included. A Host stopped by timeout may leave remote work running; check the service before retrying. See the [design document](https://github.com/ictrektech/V-yovoice/blob/main/integrations/v-harness/v-yovoice-plugin-design.md) for later modules and authorization boundaries.
+- MP3 is the required transcription acceptance format; browser playback and V-yovoice decoding support for other formats depends on the configured host and service. Dictation currently produces final text after recording stops; streaming captions, hold-to-talk/shortcut capture, automatic send, wake words and microphone-device selection are not included. Full-file recordings must fit the service's total limits; older single-segment services enforce their model limits directly. Speech generation currently uses public built-in voices only; reference-voice import, score, music and environmental-sound analysis are not included. A Host stopped by timeout may leave remote work running; check the service before retrying. See the [design document](https://github.com/ictrektech/V-yovoice/blob/main/integrations/v-harness/v-yovoice-plugin-design.md) for later modules and authorization boundaries.

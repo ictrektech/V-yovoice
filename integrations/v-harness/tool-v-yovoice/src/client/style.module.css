@@ -31,3 +31,13 @@
 .muted { color: var(--dsw-alias-label-secondary); }
 .longTranscript summary { cursor: pointer; white-space: pre-wrap; overflow-wrap: anywhere; }
 .transcript { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 32rem; overflow: auto; font: inherit; color: var(--dsw-alias-label-primary); }
+.dictationAnchor { display: inline-flex; flex: none; }
+.dictationTrigger { width: 28px; padding: 0; flex: none; }
+.dictationRow { display: flex; align-items: center; gap: 0.75rem; width: 100%; min-width: 0; min-height: 2.125rem; }
+.dictationRound { width: 32px; height: 32px; padding: 0; border-radius: 50%; flex: none; background: var(--dsw-specific-selector); }
+@media (hover: hover) {
+  .dictationRound:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover-solid); }
+}
+.dictationWave { display: block; flex: 1; width: 0; height: 24px; min-width: 24px; color: var(--dsw-alias-label-secondary); }
+.dictationMessage { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--dsw-alias-label-secondary); font-size: 12px; }
+.dictationInlineAction { flex: none; }

@@ -21,6 +21,8 @@ export interface VoiceConfig {
   pageCharacters: number
   /** Maximum bytes in a complete service JSON response. */
   maxResponseBytes: number
+  /** Maximum dictation recording duration in whole seconds. */
+  maxDictationSeconds: number
 }
 
 /** Input accepted by the first compatibility release. */
@@ -90,6 +92,7 @@ function resolveBaseConfig(config: ConfigInput): VoiceConfig {
     maxSpeechBytes: config.maxSpeechBytes ?? 256 * 1024 * 1024,
     pageCharacters: config.pageCharacters ?? 12_000,
     maxResponseBytes: config.maxResponseBytes ?? 16 * 1024 * 1024,
+    maxDictationSeconds: config.maxDictationSeconds ?? 120,
   }
   for (const [key, value] of Object.entries(resolved)) {
     if (typeof value === 'number' && (!Number.isSafeInteger(value) || value < 1 || value > 2_147_483_647)) {
