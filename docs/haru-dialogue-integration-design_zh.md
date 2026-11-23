@@ -73,7 +73,7 @@ V-Voice 将 Haru 做成应用内的独立实时对话能力：
   加载 `15360 ms`，生成 4 帧 / 12800 samples；VOS WebSocket 再完成 4 帧并正常
   `end`。
 - 三台设备均通过 VOS 正常升级到 `0.0.40`，`runtime_ready=true`，依赖
-  V-Scheduler `0.0.119`；结束后 `/api/v1/dialogue/status` 均为
+  V-Scheduler `0.0.120`；结束后 `/api/v1/dialogue/status` 均为
   `supported=true`、`model_installed=true`、`state=ready_idle`。
 - 空闲 120 秒后设备均回到 `state=unloaded`，容器内无 `speech` 进程，
   `residency.json` 已清除，确认热保留到期会释放 worker 和驻留许可。
