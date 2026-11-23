@@ -47,14 +47,14 @@ class BuildImageDryRunTests(unittest.TestCase):
         return result
 
     def test_profiles_without_external_commands(self):
-        for sheet, arch, prefix, cuda in [
-            ("AMD_with_mxn100", "x86_64", "amd", "OFF"),
-            ("AMD_with_cuda", "x86_64", "amd_cu128", "ON"),
-            ("ARM_without_cuda", "aarch64", "arm", "OFF"),
-            ("SOPHON_bm1688", "arm64", "arm", "OFF"),
-            ("ARM_with_cuda", "aarch64", "arm_cu130", "ON"),
-            ("l4t", "aarch64", "l4t", "ON"),
-            ("thor_spark", "aarch64", "thor", "ON"),
+        for sheet, arch, prefix, cuda, speech_cuda, speech_architectures, audio_architectures in [
+            ("AMD_with_mxn100", "x86_64", "amd", "OFF", "OFF", "", ""),
+            ("AMD_with_cuda", "x86_64", "amd_cu128", "ON", "ON", "80-real;86-real;89-real;90-real", ""),
+            ("ARM_without_cuda", "aarch64", "arm", "OFF", "OFF", "", ""),
+            ("SOPHON_bm1688", "arm64", "arm", "OFF", "OFF", "", ""),
+            ("ARM_with_cuda", "aarch64", "arm_cu130", "ON", "OFF", "", ""),
+            ("l4t", "aarch64", "l4t", "ON", "ON", "87-real", "87-real"),
+            ("thor_spark", "aarch64", "thor", "ON", "ON", "110-real", "110-real"),
         ]:
             with self.subTest(sheet=sheet):
                 result = self.preview("--sheet", sheet, "--dry-run", arch=arch)
@@ -62,6 +62,15 @@ class BuildImageDryRunTests(unittest.TestCase):
                 image = f"registry.example.test/team/v-voice:{prefix}_1.2.3"
                 self.assertIn(f"IMAGE={image}", result.stdout)
                 self.assertIn(f"CUDA={cuda}", result.stdout)
+                self.assertIn(
+                    f"AUDIOCPP_CUDA_ARCHITECTURES={audio_architectures}",
+                    result.stdout,
+                )
+                self.assertIn(f"SPEECCPP_CUDA={speech_cuda}", result.stdout)
+                self.assertIn(
+                    f"SPEECCPP_CUDA_ARCHITECTURES={speech_architectures}",
+                    result.stdout,
+                )
                 self.assertIn(f"docker push {image}", result.stdout)
                 self.assertIn(f"FEISHU_SHEETS={sheet}", result.stdout)
                 self.assertEqual("FEISHU_SHEETS=SOPHON_bm1688" in result.stdout,

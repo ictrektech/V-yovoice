@@ -2,11 +2,25 @@
 
 ### English
 
+- The V-yovoice DSH plugin adds a microphone beside the model selector for voice dictation into the unsent chat draft. Recording stops manually or at the configured limit, recognition stays separate from message submission, and text is inserted only while the captured draft is still current; changed drafts keep the transcript for explicit insertion. Audio is transient and is not saved as a conversation attachment.
+
+### 简体中文
+
+- V-yovoice DSH 插件在模型选择器旁新增语音听写麦克风，可把语音写入未发送的聊天草稿。录音可手动停止或在达到配置时长时自动结束，识别与消息发送完全分离；只有草稿版本未变化时才自动插入，草稿已修改时保留识别文字供明确插入。音频不会被保存为会话附件。
+
+## [0.0.40] - 2026-11-22
+
+### English
+
 - The V-yovoice DSH plugin can turn supplied text into speech through V-Voice's public TTS API. Choose a ready TTS model and default voice in the plugin, optionally use another advertised voice or supported voice-design/emotion controls in chat, and play or download the saved WAV from the conversation card. Existing transcription settings and tools remain compatible. The plugin supports DSH 0.2.2-rc.3 and retains the declared 0.2.2-rc.2 range.
+- Realtime dialogue with Haru now runs on the AMD CUDA and Thor profiles as well as Jetson / L4T. The speech.cpp worker is built for each profile's CUDA architecture, both new profiles passed a real model session, and CPU-only profiles continue to hide the entry.
+- Realtime dialogue now allows up to 90 seconds for a cold model start when the GPU is shared with other workloads.
 
 ### 简体中文
 
 - V-yovoice DSH 插件可通过 V-Voice 公开 TTS 接口把指定文本转换为语音。在插件中选择已就绪的 TTS 模型和默认音色，对话中可改用该模型提供的其他音色或使用支持的声音设计/情绪参数，并在会话卡片中播放或下载保存的 WAV。现有转写配置和工具保持兼容；插件支持 DSH 0.2.2-rc.3，并保留声明的 0.2.2-rc.2 兼容范围。
+- Haru 实时对话除 Jetson / L4T 外，现也支持 AMD CUDA 与 Thor profile。speech.cpp worker 会按各 profile 的 CUDA 架构编译，两个新增 profile 均通过真实模型会话，纯 CPU profile 仍不显示该入口。
+- GPU 与其他任务共享时，Haru 冷启动现最长等待 90 秒。
 
 ## [0.0.39] - 2026-11-20
 

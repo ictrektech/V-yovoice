@@ -34,9 +34,9 @@ HTTP `/v1/audio/streaming/transcriptions` takes raw chunked audio and query para
 
 WebSocket `/v1/audio/streaming/ws?model=...` receives binary PCM/WAV frames and sends `{type:"partial",text,is_endpoint}`. Send text `{"type":"finish"}` and await `{type:"final",...native result}`. Disconnect is primarily cancellation and does not guarantee delivery of final output. Errors send `{type:"error",detail}` and close, commonly4404/4409/4422/4500; admission can map other44xx codes. WebSocket is documented here rather than in the HTTP OpenAPI route table.
 
-## Realtime dialogue (l4t/tc207)
+## Realtime dialogue (AMD CUDA / L4T / Thor)
 
-Realtime dialogue is exposed only on the L4T profile and has so far been validated on tc207. It is not a replacement for the OpenAI-compatible speech endpoints.
+Realtime dialogue is exposed on the AMD CUDA, Jetson / L4T and Thor profiles; other profiles hide the entry. It is not a replacement for the OpenAI-compatible speech endpoints.
 
 `GET /api/v1/dialogue/status` returns support, model installation, manager state, busy state and idle-unload seconds. `POST /api/v1/dialogue/tickets` requires the VOS user Bearer token and accepts `language` (`zh`/`en`), `persona_id` (`companion`/`study`/`interview`) and `max_seconds` (1–300). It returns a single-use ticket and `/api/v1/dialogue/ws` path. Open `WS /api/v1/dialogue/ws?ticket=...`, send `{"type":"start","protocol":1}`, then binary 24 kHz s16le mono PCM; send `{"type":"hang_up"}` to end. Server messages include `loading`, `started`, `text`, binary 3200-sample audio frames, `end` and `error`. Tickets expire after 5 minutes and are bound to the VOS user. `GET /api/v1/dialogue/settings` is readable by signed-in users; `PUT /api/v1/dialogue/settings` is administrator-only and sets `idle_unload_seconds` from 0 to 600. Only one dialogue session may run on the device.
 

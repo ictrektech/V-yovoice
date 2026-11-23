@@ -63,6 +63,22 @@ def _manager(tmp_path: Path, seconds: int = 120) -> DialogueManager:
     return DialogueManager(config)
 
 
+@pytest.mark.parametrize("profile", ["amd-cuda", "l4t", "thor"])
+def test_dialogue_is_supported_on_cuda_profiles(tmp_path, profile):
+    manager = _manager(tmp_path)
+    manager.config = dataclasses.replace(manager.config, profile=profile)
+
+    assert manager.supported
+
+
+@pytest.mark.parametrize("profile", ["amd", "arm", "arm-cuda", "local"])
+def test_dialogue_is_not_supported_on_cpu_profiles(tmp_path, profile):
+    manager = _manager(tmp_path)
+    manager.config = dataclasses.replace(manager.config, profile=profile)
+
+    assert not manager.supported
+
+
 def test_ticket_is_single_use_and_bound_to_user():
     store = TicketStore()
     ticket, _ = store.issue("alice", "en", "companion", 180)

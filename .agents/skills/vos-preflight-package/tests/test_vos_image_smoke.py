@@ -30,14 +30,19 @@ class VosImageSmokeTest(unittest.TestCase):
                 )
                 self.assertIn("bash -s", command)
                 self.assertIn("--runtime nvidia", command)
+                self.assertIn("NVIDIA_VISIBLE_DEVICES=all", command)
+                self.assertIn("NVIDIA_DRIVER_CAPABILITIES=compute,utility", command)
 
     def test_profiles_select_expected_cuda_family(self):
         self.assertEqual(smoke.PROFILES["amd-cuda"]["architecture"], "amd64")
         self.assertFalse(smoke.PROFILES["amd-cuda"]["requires_onnx_cuda"])
+        self.assertTrue(smoke.PROFILES["amd-cuda"]["requires_speech_cuda"])
         self.assertEqual(smoke.PROFILES["l4t"]["architecture"], "arm64")
         self.assertTrue(smoke.PROFILES["l4t"]["requires_onnx_cuda"])
+        self.assertTrue(smoke.PROFILES["l4t"]["requires_speech_cuda"])
         self.assertEqual(smoke.PROFILES["thor"]["sherpa_suffix"], "+cuda13")
         self.assertTrue(smoke.PROFILES["thor"]["requires_onnx_cuda"])
+        self.assertTrue(smoke.PROFILES["thor"]["requires_speech_cuda"])
 
     def test_dry_run_can_pin_the_source_catalog(self):
         digest = "a" * 64

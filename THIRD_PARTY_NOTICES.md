@@ -18,10 +18,11 @@ OmniVoice、YuE2 权重采用 CC-BY-NC-4.0，Breeze TTS 2 采用其研究与非�
 
 - Astryx 0.6.1：https://astryx.atmeta.com/ ，保留 npm 包中的许可。
 - audio.cpp v0.9.3：https://github.com/0xShug0/audio.cpp ，Apache-2.0，Copyright 2026 ShugoAI LLC。macOS 包内置 Metal 服务，Windows 包内置 CPU 服务及 DLL；原始 LICENSE 随 engine 目录分发；其他运行包从官方发行页下载并保留许可。
-- speech.cpp 0.11.0：https://github.com/nyosegawa/speech.cpp ，MIT；L4T 画像从固定源码构建独立 worker，原始 LICENSE 位于 `/opt/vvoice/speechcpp/LICENSE`。
+- speech.cpp 0.11.0：https://github.com/nyosegawa/speech.cpp ，MIT；NVIDIA CUDA profile 从固定源码构建独立 worker，原始 LICENSE 位于 `/opt/vvoice/speechcpp/LICENSE`。
 - Haru-4B：https://huggingface.co/higurashi-ai/Haru-4B ，Apache-2.0；GGUF 权重由 V-Scheduler 单独下载，不随应用分发。内置 VibeVoice codec 参数另按 MIT 许可。
 - IndexTTS：https://github.com/index-tts/index-tts ，模型不随应用分发。中文模型协议原文保存在 web/public/model-license.txt，下载和使用模型须遵守该协议。
 - React、Vite、TypeScript、Lucide、StyleX、WebView2 的许可与版权声明以对应依赖包为准。
+- [DeepSeek Harness voice input](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/experimental/client-ui-voice-input)：MIT，Copyright (c) 2026 DeepSeek。V-yovoice DSH 插件参考其输入框活动区布局、麦克风录音生命周期、PCM16 WAV 编码和草稿版本保护实现。
 
 - FFmpeg 8.1.2：https://ffmpeg.org/ ，LGPL-2.1-or-later。构建时从校验摘要的官方源码裁剪，保留音轨探测、音频解码、WAV 输出与 FLAC / AAC（M4A）导出编码，ffmpeg 与 ffprobe 作为独立可执行程序随 App/CLI 分发。许可证与构建参数位于安装包 `tools/FFmpeg-LICENSE.txt`、`tools/build.json`（macOS App 为 `Contents/Resources/tools/`）；对应源码与构建脚本随 Release 的 `yovoice-<版本>-ffmpeg-source.tar.gz` 提供。
 

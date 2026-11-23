@@ -305,7 +305,7 @@
       "source": "hf",
       "remote_repo": "sakasegawa/Haru-4B-GGUF",
       "revision": "fc026182f7bbfaa0400b2d44358a5e9e327b957f",
-      "description": "Bilingual full-duplex spoken dialogue on the VOS L4T CUDA runtime.",
+      "description": "Bilingual full-duplex spoken dialogue on the VOS NVIDIA CUDA runtime.",
       "languages": ["zh", "en"],
       "license": "Apache-2.0",
       "shared_files": [

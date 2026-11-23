@@ -1,17 +1,17 @@
 # Haru 实时对话集成设计
 
-状态：已实现，首版仅在 `l4t` / tc207 验证
-适用范围：VOS `l4t` profile，目标设备 `tc207`
+状态：已实现；`amd-cuda`、`l4t` 与 `thor` 已适配
+适用范围：VOS `amd-cuda`、`l4t` 与 `thor` profile
 推理后端：`speech.cpp` 0.11.0 / Haru-4B Q8_0 / CUDA 0
-日期：2026-11-16
+日期：2026-11-16；2026-11-22 更新 AMD CUDA / Thor
 
-本文确定 V-Voice 集成 Haru 全双工对话的边界、生命周期和跨应用契约。首版随 `0.0.38` 在 l4t/tc207 发布。
+本文确定 V-Voice 集成 Haru 全双工对话的边界、生命周期和跨应用契约。首版随 `0.0.38` 在 l4t/tc207 发布；`amd-cuda` 与 `thor` 随后使用各自的 CUDA 架构构建并开放。
 
 ## 1. 结论
 
-首版将 Haru 做成 V-Voice 内的独立实时对话能力：
+V-Voice 将 Haru 做成应用内的独立实时对话能力：
 
-- l4t/tc207 的 VOS 用户可见，同一设备同时只允许一个 Haru 会话。
+- `amd-cuda`、`l4t` 与 `thor` 的 VOS 用户可见，同一设备同时只允许一个 Haru 会话。
 - 使用 `speech worker` 作为同容器子进程，不使用 Vulkan，也不开放 speech.cpp 的网络端口。
 - 首个会话按需加载模型；默认会话结束后热保留 120 秒，随后卸载。保留时间由管理员在设备级设置中调整。
 - 模型由 V-Scheduler 下载到共享目录，V-Voice 只读读取；模型权重不打进镜像。
@@ -22,7 +22,7 @@
 
 | 决策 | 结果 |
 | --- | --- |
-| 交付阶段 | 先设计和评审，测试作为后续提议；当前不改运行代码 |
+| 交付阶段 | 0.0.38 完成 L4T 首版；0.0.40 增加 AMD CUDA 与 Thor |
 | 用户范围 | 所有 VOS 用户可用 |
 | 并发 | 单设备单 Haru 会话，其他请求返回忙碌，不排队 |
 | 模型生命周期 | 首次懒加载；挂断后默认热保留 2 分钟，可配置 |
@@ -37,7 +37,7 @@
 ## 3. 非目标
 
 - 不把 Haru 纳入现有 OpenAI 兼容 `/v1/audio/*`，Haru 不是普通 TTS。
-- 不在 `amd64`、ARM CPU、Thor 或其他 profile 上承诺运行；这些 profile 首版不显示入口。
+- 不在 AMD CPU、ARM CPU、通用 ARM CUDA 等未适配 profile 上承诺运行；这些 profile 不显示入口。
 - 不替换 audio.cpp、sherpa-onnx、现有 TTS、ASR 或声纹流程。
 - 不保留实时音频、对话文本、会话录制或用户音色文件。
 - 不支持多会话并发、会话迁移、断线恢复或后台自动重连。
@@ -58,6 +58,32 @@
 - 模型加载约 11–14 秒；会话结束后 V-Voice 主容器仍健康，临时容器已清理。
 
 未验证项：10 分钟连续会话、与 VOS 其他容器并发、热降频、V-Scheduler 租约、正式镜像内构建和浏览器完整链路。设计不应把 POC 结果表述为发布验收。
+
+### 0.0.40 实机验证
+
+2026-11-22 在正式 VOS 安装流程内验证：
+
+- tc232 / `amd-cuda`：RTX 5880 Ada，SM 8.9；`amd_cu128_0.0.40` 使用
+  `80-real;86-real;89-real;90-real`。真实 Haru worker 加载 `6116 ms`，生成
+  4 帧 / 12800 samples；VOS WebSocket 再完成 4 帧并正常 `end`。
+- tc229 / `thor`：Thor，SM 11.0 / CUDA 13.2；`thor_0.0.40` 使用 `110-real`。
+  真实 Haru worker 加载 `9338 ms`，生成 4 帧 / 12800 samples；VOS WebSocket
+  再完成 4 帧并正常 `end`。
+- tc207 / `l4t`：Orin，SM 8.7；`l4t_0.0.40` 使用 `87-real`。真实 Haru worker
+  加载 `15360 ms`，生成 4 帧 / 12800 samples；VOS WebSocket 再完成 4 帧并正常
+  `end`。
+- 三台设备均通过 VOS 正常升级到 `0.0.40`，`runtime_ready=true`，依赖
+  V-Scheduler `0.0.119`；结束后 `/api/v1/dialogue/status` 均为
+  `supported=true`、`model_installed=true`、`state=ready_idle`。
+- 空闲 120 秒后设备均回到 `state=unloaded`，容器内无 `speech` 进程，
+  `residency.json` 已清除，确认热保留到期会释放 worker 和驻留许可。
+- tc232 在其他 GPU 任务共存时另有一次 `38754 ms` 冷启动；90 秒启动上限内正常
+  完成会话。
+- 三次会话均使用同一固定模型：`6,623,102,720` 字节，
+  SHA-256 `c372a527e63ca4251429a48863535b8bca03ebd6f414bbf31f28a9d175349934`。
+
+本轮验证覆盖镜像构建、CUDA 链接、真实模型加载、VOS 身份、Scheduler 驻留许可和
+WebSocket 全链路；不覆盖 10 分钟持续会话、多会话并发、热降频和断线恢复。
 
 ## 5. 总体架构
 
@@ -191,7 +217,7 @@ WebSocket 只接受同源连接，ticket 校验后立即作废。协议版本 1�
 
 ## 7. 角色和前端
 
-新增独立的“实时对话 / Real-time dialogue”页面，l4t/tc207 的 VOS 用户可见。首版只显示：
+新增独立的“实时对话 / Real-time dialogue”页面，`amd-cuda`、`l4t` 与 `thor` 的 VOS 用户可见。页面只显示：
 
 - 语言：中文、英文。
 - 角色：轻松聊天、语言练习、面试练习三张固定角色卡。
@@ -226,7 +252,7 @@ WebSocket 只接受同源连接，ticket 校验后立即作废。协议版本 1�
 
 - 使用无 shell 参数列表启动；`start_new_session=true` 建立独立进程组。
 - 读取首个 `ready`，校验 protocol 4、模型名、任务 `dialogue`、采样率 24000 和帧大小 3200。
-- `ready` 超时 30 秒，失败则终止进程并释放 lease。
+- `ready` 超时 90 秒，失败则终止进程并释放 lease；GPU 与其他任务共存时冷加载可能显著超过 30 秒。
 - 正常卸载：结束当前会话，关闭 stdin，等待 worker 处理完已收会话并 `exit 0`；超时后 SIGTERM，最后 SIGKILL 进程组。
 - 父进程退出、容器停止或 Uvicorn shutdown 必须走同一收尾路径；遗留 PID 记入诊断日志。
 
@@ -308,7 +334,7 @@ audio.cpp 创作目录，也不让它进入 OpenAI 兼容 `/v1/models`。
 
 ### Profile 限制
 
-首版只在 `l4t` 构建和显示入口；其他 profile 不提供该功能，不以 CPU 或未测 CUDA 静默回退。Haru 对 `tc207` 的所有 VOS 用户开放，不等于对全部硬件 profile 开放。
+`amd-cuda`、`l4t` 与 `thor` 构建并显示入口；其他 profile 不提供该功能，不以 CPU 或未测 CUDA 静默回退。Haru 对已适配设备的全部 VOS 用户开放，不等于对全部硬件 profile 开放。
 
 ## 10. V-Scheduler 契约
 
@@ -371,15 +397,17 @@ V-Voice 的 discovery/binding 增加 `dialogue_models` 声明，包含模型 key
 
 ### 镜像构建
 
-- 在 `Dockerfile.studio` 增加独立 `speechcpp` build stage；复用现有 L4T CUDA 构建基础镜像，
+- 在 `Dockerfile.studio` 增加独立 `speechcpp` build stage；复用各 profile 的 CUDA 构建基础镜像，
   不把编译器和源码复制到最终层。
 - 固定 speech.cpp `8d18924cd238b87c0297df112f7ff40783a6414f` 和 ggml
   `79b50d239d0b88852814c873db0d85d43ed66d9b`；源码包及 SHA 由
   `docker/build_image.sh` 验证。
-- 配置 `GGML_CUDA=ON`、`GGML_VULKAN=OFF`、`CMAKE_CUDA_ARCHITECTURES=87-real`；
+- `amd-cuda` 配置 `GGML_CUDA=ON`、`GGML_VULKAN=OFF`、`CMAKE_CUDA_ARCHITECTURES=80-real;86-real;89-real;90-real`；
+  `l4t` 使用 `87-real`，`thor` 使用 `110-real`；
   不使用 Vulkan SDK 或 glslc。
-- 最终镜像只复制 `speech`、所需许可证和运行库；CUDA 运行库继续来自现有 L4T 基础镜像。
-- 只在 `l4t` profile 构建该 stage；其他 profile 不暴露入口。
+- L4T 与 Thor 的 audio.cpp 分别限定为 `87-real`、`110-real`，避免在构建机为无关算力生成代码。
+- 最终镜像只复制 `speech`、所需许可证和运行库；CUDA 运行库继续来自对应 profile 的基础镜像。
+- 只在 `amd-cuda`、`l4t` 与 `thor` profile 启用 CUDA worker；其他 profile 不暴露入口。
 
 ### 镜像和 release
 
@@ -419,8 +447,10 @@ V-Voice 的 discovery/binding 增加 `dialogue_models` 声明，包含模型 key
 
 以下是设计后的测试建议，不是当前实现门槛：
 
-1. tc207 真实镜像内持续 10 分钟中文和英文会话，记录热降频、p50/p99 和 backlog。
-2. 与 VOS 其他容器共存时执行 3 次连续会话，确认 lease、内存和 V-Scheduler 预算。
+1. 在 tc232、tc207 和 tc229 的正式镜像内持续 10 分钟中文和英文会话，记录热降频、
+   p50/p99 和 backlog。
+2. 三个平台分别与 VOS 其他容器共存时执行 3 次连续会话，确认 lease、内存和
+   V-Scheduler 预算。
 3. 模拟浏览器断开、worker 崩溃、Scheduler 租约过期，确认无孤儿进程和未释放 lease。
 4. 验证同一 ticket 重放、过期 ticket、跨用户 ticket 和 Origin 伪造均被拒绝。
 5. 验证模型未安装、HF 镜像失败、共享文件 SHA 错误时不启动 worker。
@@ -434,13 +464,14 @@ V-Voice 的 discovery/binding 增加 `dialogue_models` 声明，包含模型 key
 4. 实现 DialogueManager、worker 监管和 ticket/WebSocket。
 5. 增加实时对话页面、预设角色卡、管理员设置和状态展示。
 6. 在 `Dockerfile.studio`/`build_image.sh` 增加固定版本 CUDA 构建。
-7. 按测试提议在 tc207 真实镜像验证，再决定 VOS 发布。
+7. 在 L4T、AMD CUDA 与 Thor 真实镜像验证，再决定 VOS 发布。
 
 ## 17. 风险
 
-- CUDA 后端不是 speech.cpp 的官方验证路径；当前只在一个 Orin 设备和一个短会话中验证。
+- CUDA 后端不是 speech.cpp 的官方验证路径；当前已在 Orin、Ada 与 Thor 上验证短会话，
+  但尚无三个平台的长时会话和多会话并发数据。
 - `p99` 曾达到 133.6 ms，距离 133 ms 帧预算没有稳定余量；负载或热降频会导致会话失败。
 - 6.62 GB 模型在 15 GB 统一内存设备上需要严格的单会话和驻留 lease；空闲热保留不能按普通请求释放资源。
 - V-Scheduler 的 `model.dialogue` 是跨仓契约变更，未完成前 V-Voice 不能宣称可调度。
 - Python 目前没有生产级 Haru worker supervisor；实现必须补齐进程组、日志、PID、SIGTERM/SIGKILL 和孤儿清理。
-- 首版只支持 L4T；其他架构在独立验证前必须保持不可用，不能静默回退到 CPU。
+- CPU profile 与通用 ARM CUDA 在独立验证前必须保持不可用，不能静默回退到 CPU。

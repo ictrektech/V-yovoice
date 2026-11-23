@@ -29,13 +29,16 @@ fi
 case "$(uname -m)" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) exit 1 ;; esac
 cuda=OFF
 backend=cpu
+speech_cuda=OFF
+speech_architectures=""
+audio_architectures=""
 case "$sheet" in
-  AMD_with_mxn100) [[ "$arch" == amd64 ]]; prefix=amd ;;
-  AMD_with_cuda) [[ "$arch" == amd64 ]]; prefix=amd_cu128; cuda=ON ;;
-  ARM_without_cuda|SOPHON_bm1688) [[ "$arch" == arm64 ]]; prefix=arm ;;
-  ARM_with_cuda) [[ "$arch" == arm64 ]]; prefix=arm_cu130; cuda=ON ;;
-  l4t) [[ "$arch" == arm64 ]]; prefix=l4t; cuda=ON ;;
-  thor_spark) [[ "$arch" == arm64 ]]; prefix=thor; cuda=ON ;;
+  AMD_with_mxn100) [[ "$arch" == amd64 ]] || exit 1; prefix=amd ;;
+  AMD_with_cuda) [[ "$arch" == amd64 ]] || exit 1; prefix=amd_cu128; cuda=ON; speech_cuda=ON; speech_architectures='80-real;86-real;89-real;90-real' ;;
+  ARM_without_cuda|SOPHON_bm1688) [[ "$arch" == arm64 ]] || exit 1; prefix=arm ;;
+  ARM_with_cuda) [[ "$arch" == arm64 ]] || exit 1; prefix=arm_cu130; cuda=ON ;;
+  l4t) [[ "$arch" == arm64 ]] || exit 1; prefix=l4t; cuda=ON; speech_cuda=ON; speech_architectures='87-real'; audio_architectures='87-real' ;;
+  thor_spark) [[ "$arch" == arm64 ]] || exit 1; prefix=thor; cuda=ON; speech_cuda=ON; speech_architectures='110-real'; audio_architectures='110-real' ;;
   *) echo "Explicit supported --sheet required" >&2; exit 1 ;;
 esac
 if [[ -z "$version" ]]; then
@@ -48,8 +51,8 @@ tag="${prefix}_${version}"
 image="${registry}/v-voice:${tag}"
 # 预览在任何下载、编译、文件写入或外部服务调用之前退出。
 if [[ "$dry_run" == true ]]; then
-  printf '[DRY-RUN] SHEET=%s\n[DRY-RUN] ARCH=%s\n[DRY-RUN] MODE=%s\n[DRY-RUN] CUDA=%s\n[DRY-RUN] IMAGE=%s\n[DRY-RUN] BUILD_ROOT=%s\n' \
-    "$sheet" "$arch" "$mode" "$cuda" "$image" "$build_root"
+  printf '[DRY-RUN] SHEET=%s\n[DRY-RUN] ARCH=%s\n[DRY-RUN] MODE=%s\n[DRY-RUN] CUDA=%s\n[DRY-RUN] AUDIOCPP_CUDA_ARCHITECTURES=%s\n[DRY-RUN] SPEECCPP_CUDA=%s\n[DRY-RUN] SPEECCPP_CUDA_ARCHITECTURES=%s\n[DRY-RUN] IMAGE=%s\n[DRY-RUN] BUILD_ROOT=%s\n' \
+    "$sheet" "$arch" "$mode" "$cuda" "$audio_architectures" "$speech_cuda" "$speech_architectures" "$image" "$build_root"
   if [[ "$mode" == prepare || "$mode" == full || "$mode" == build ]]; then
     if [[ "$prepare" == true ]]; then
       echo '[DRY-RUN] 准备 Go 服务、两套前端和固定版本 audio.cpp 源码包'
@@ -155,7 +158,9 @@ if [[ "$mode" == full || "$mode" == build ]]; then
     --build-context "speechcpp_source=${build_root}/sources" \
     --build-arg "VVOICE_BASE_IMAGE=${base}" --build-arg "AUDIOCPP_BUILD_BASE_IMAGE=${compiler}" \
     --build-arg "AUDIOCPP_CUDA=${cuda}" --build-arg "AUDIOCPP_BACKEND=${backend}" --build-arg "TARGETARCH=${arch}" \
-    --build-arg "SPEECCPP_CUDA=$([[ "$sheet" == l4t ]] && echo ON || echo OFF)" \
+    --build-arg "AUDIOCPP_CUDA_ARCHITECTURES=${audio_architectures}" \
+    --build-arg "SPEECCPP_CUDA=${speech_cuda}" \
+    --build-arg "SPEECCPP_CUDA_ARCHITECTURES=${speech_architectures}" \
     -f docker/Dockerfile.studio -t "$image" .
 fi
 if [[ "$mode" == full || "$mode" == publish ]]; then

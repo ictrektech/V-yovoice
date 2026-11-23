@@ -17,18 +17,29 @@ PROFILES = {
         "docker_runtime": ["--gpus", "all"],
         "sherpa_suffix": "+cuda12",
         "requires_onnx_cuda": False,
+        "requires_speech_cuda": True,
     },
     "l4t": {
         "architecture": "arm64",
-        "docker_runtime": ["--runtime", "nvidia"],
+        "docker_runtime": [
+            "--runtime", "nvidia",
+            "-e", "NVIDIA_VISIBLE_DEVICES=all",
+            "-e", "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+        ],
         "sherpa_suffix": "+cuda12",
         "requires_onnx_cuda": True,
+        "requires_speech_cuda": True,
     },
     "thor": {
         "architecture": "arm64",
-        "docker_runtime": ["--runtime", "nvidia"],
+        "docker_runtime": [
+            "--runtime", "nvidia",
+            "-e", "NVIDIA_VISIBLE_DEVICES=all",
+            "-e", "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+        ],
         "sherpa_suffix": "+cuda13",
         "requires_onnx_cuda": True,
+        "requires_speech_cuda": True,
     },
 }
 
@@ -42,6 +53,7 @@ import sys
 paths = [
     pathlib.Path("/opt/vvoice/vvoice-studio"),
     pathlib.Path("/opt/vvoice/audiocpp/audiocpp_server"),
+    pathlib.Path("/opt/vvoice/speechcpp/speech"),
     pathlib.Path("/opt/vvoice/web/index.html"),
     pathlib.Path("/app/catalog/audio-cpp.json"),
 ]
@@ -88,8 +100,21 @@ linked = subprocess.run(
     ["ldd", "/opt/vvoice/audiocpp/audiocpp_server"],
     check=True, capture_output=True, text=True,
 ).stdout
-if "libcuda.so" not in linked or "libcudart.so" not in linked:
+if "libcuda.so" not in linked or "libcudart.so" not in linked or "not found" in linked:
     raise SystemExit("audio.cpp is not linked to CUDA runtime")
+
+requires_speech_cuda = sys.argv[3] == "true"
+if requires_speech_cuda:
+    speech_linked = subprocess.run(
+        ["ldd", "/opt/vvoice/speechcpp/speech"],
+        check=True, capture_output=True, text=True,
+    ).stdout
+    if (
+        "libcuda.so" not in speech_linked
+        or "libcudart.so" not in speech_linked
+        or "not found" in speech_linked
+    ):
+        raise SystemExit("speech.cpp is not linked to CUDA runtime")
 
 print(json.dumps({
     "model_count": len(models),
@@ -97,6 +122,7 @@ print(json.dumps({
     "providers": providers,
     "sherpa": sherpa_onnx.__version__,
     "cuda_linked": True,
+    "speech_cuda_linked": requires_speech_cuda,
 }))
 """
 
@@ -125,6 +151,7 @@ def docker_run_command(
         image, "-c", CONTAINER_CHECK.strip(),
         "true" if config["requires_onnx_cuda"] else "false",
         expected_catalog_sha256 or "",
+        "true" if config["requires_speech_cuda"] else "false",
     ]
 
 

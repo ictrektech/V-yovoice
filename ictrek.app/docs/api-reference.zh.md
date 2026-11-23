@@ -34,9 +34,9 @@ HTTP `/v1/audio/streaming/transcriptions` 的 body 是原始音频分块，参�
 
 WebSocket `/v1/audio/streaming/ws?model=...` 接收二进制 PCM/WAV 帧，返回 `{type:"partial",text,is_endpoint}`；发送文本 `{"type":"finish"}` 请求最终 `{type:"final",...原生结果}`。关闭连接主要用于取消，不能保证断开后仍能读到 final；请明确发送 finish 并等 final。错误为 `{type:"error",detail}` 后关闭，常见4404/4409/4422/4500，调度错误可能映射其他44xx。WebSocket 未包含在 OpenAPI HTTP 路由表中，本节是其协议说明。
 
-## 实时对话（l4t/tc207）
+## 实时对话（AMD CUDA / L4T / Thor）
 
-实时对话只在 L4T profile 开放，目前只在 tc207 完成验证，不替代 OpenAI 兼容语音接口。
+实时对话在 AMD CUDA、Jetson / L4T 与 Thor profile 开放；其他 profile 不显示入口。它不替代 OpenAI 兼容语音接口。
 
 `GET /api/v1/dialogue/status` 返回是否支持、模型是否安装、管理器状态、忙碌状态和空闲卸载秒数。`POST /api/v1/dialogue/tickets` 需要 VOS 用户 Bearer token，接受 `language`（`zh`/`en`）、`persona_id`（`companion`/`study`/`interview`）和 `max_seconds`（1–300），返回一次性 ticket 与 `/api/v1/dialogue/ws` 路径。连接 `WS /api/v1/dialogue/ws?ticket=...` 后发送 `{"type":"start","protocol":1}`，随后发送 24 kHz、16-bit little-endian、单声道 PCM；发送 `{"type":"hang_up"}` 结束。服务端事件包含 `loading`、`started`、`text`、3200 samples 的二进制音频帧、`end` 和 `error`。ticket 5 分钟过期并绑定 VOS 用户。登录用户可读取 `GET /api/v1/dialogue/settings`；`PUT /api/v1/dialogue/settings` 仅管理员可用，设置 `idle_unload_seconds`（0–600）。同一设备只能有一场对话。
 

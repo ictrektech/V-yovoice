@@ -24,6 +24,8 @@ from .config import Settings, settings
 logger = logging.getLogger(__name__)
 
 MODEL_KEY = "haru-4b-q8"
+DIALOGUE_PROFILES = frozenset({"amd-cuda", "l4t", "thor"})
+DIALOGUE_READY_SECONDS = 90
 FRAME_SECONDS = 3200 / 24000
 
 
@@ -245,10 +247,12 @@ class SpeechWorker:
         self.reader_task = asyncio.create_task(self._read_stdout())
         self.stderr_task = asyncio.create_task(self._read_stderr())
         try:
-            ready = await asyncio.wait_for(self.ready, 30)
+            ready = await asyncio.wait_for(self.ready, DIALOGUE_READY_SECONDS)
         except asyncio.TimeoutError:
             await self.stop()
-            raise WorkerClosed("Haru worker did not become ready in 30 seconds") from None
+            raise WorkerClosed(
+                f"Haru worker did not become ready in {DIALOGUE_READY_SECONDS} seconds"
+            ) from None
         if ready.get("model", {}).get("task") != "dialogue":
             await self.stop()
             raise WorkerClosed("Haru worker returned the wrong task")
@@ -619,7 +623,10 @@ class DialogueManager:
 
     @property
     def supported(self) -> bool:
-        return self.config.profile == "l4t" and self.config.haru_worker_path.is_file()
+        return (
+            self.config.profile in DIALOGUE_PROFILES
+            and self.config.haru_worker_path.is_file()
+        )
 
     @property
     def model_installed(self) -> bool:
