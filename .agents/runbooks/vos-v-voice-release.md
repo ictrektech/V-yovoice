@@ -159,6 +159,8 @@ python3 .agents/skills/vos-preflight-package/scripts/vos_preflight.py plan \
 
 向用户展示设备、当前版本、候选版本、当前 profile 和依赖检查结果，取得明确确认后才能执行：
 
+plan 还会检查 V-Voice 的容器和发布端口 `22700`。端口被当前应用容器占用属于正常；被其他进程或其他应用占用时阻止安装；停止的历史容器只显示警告，不自动删除。apply 会在上传前再次检查，宿主状态变化时停止升级。
+
 ```bash
 python3 .agents/skills/vos-preflight-package/scripts/vos_preflight.py apply \
   --package ictrek.app/dist/v_voice_X.Y.Z_pull.tar \
