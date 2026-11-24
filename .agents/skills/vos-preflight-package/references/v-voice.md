@@ -49,4 +49,14 @@ The check fails unless it confirms:
 
 `--expected-catalog-sha256` is optional for checking an older image with no matching local source. For a release candidate built from the current checkout, always pass it so all three profiles must contain the same catalog.
 
+For `amd-cuda`, `l4t` and `thor`, also run the repository's real Haru dialogue smoke before pushing:
+
+```bash
+python3 scripts/haru_dialogue_smoke.py \
+  --profile amd-cuda \
+  --image "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_cu128_${RELEASE_VERSION}"
+```
+
+Use the corresponding profile and tag on each host. It requires a real worker `ready`, a 6400-byte first PCM frame, a normal `end`, worker exit code 0, no orphan worker and cleared residency state.
+
 Only after all applicable checks pass should the preflight candidate be pushed. Use `scripts/package.py --image ...` overrides for the target profiles when creating the candidate package, so candidate tags do not need to be written to Feishu. Feishu and `--publish-only` remain part of the formal publication decision.

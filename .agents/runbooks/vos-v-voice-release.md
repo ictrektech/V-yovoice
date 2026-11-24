@@ -12,6 +12,15 @@
 
 各构建机使用同一份已提交源码，镜像仓库已登录，飞书写表凭据可用（默认 `~/.feishu.json`，可用 `FEISHU_CONFIG_FILE` 指定）。
 
+本机同步和工具链自举使用固定脚本。同步默认只做 dry-run，确认后再加 `--apply`；`--bootstrap` 会安装或复用 `~/dev/toolchains` 下的 Node 22+ 和 Go 1.26+：
+
+```bash
+python3 scripts/sync_build_source.py --host czy@10.144.144.232
+python3 scripts/sync_build_source.py --host czy@10.144.144.232 --apply --bootstrap
+```
+
+按构建机重复：AMD CUDA 用 `czy@10.144.144.232`，Thor 用 `czy@192.168.1.229`，L4T 用 `czy@192.168.1.207`。脚本只接受 `~/dev/repos/V-yovoice`，校验目录所有权和符号链接，保护 `.git`、`.env`、缓存、模型目录和构建产物，不使用 `--delete-excluded`。`docker/build_image.sh` 会自动读取 `~/dev/build/v-yovoice/toolchain.env`。
+
 ## 1. 检查代码并提交
 
 从仓库根目录操作：
@@ -23,6 +32,8 @@ git diff --check
 ```
 
 确认本次改动及已有测试结果，提交待构建的应用代码，各构建机同步到该提交。正式 CI 会再次执行项目检查。
+
+每次同步前先看 dry-run 的变更和删除数。`build/`、`dist/`、`__pycache__/`、`.pytest_cache/`、`.ruff_cache/`、`.mypy_cache/`、`node_modules/`、`/.git/` 和 `.env` 固定排除；不要再手工加 `--delete-excluded`。
 
 ## 2. 确定候选版本
 
@@ -83,10 +94,16 @@ python3 .agents/skills/vos-preflight-package/scripts/vos_image_smoke.py \
   --image "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_cu128_${RELEASE_VERSION}" \
   --expected-catalog-sha256 "$EXPECTED_CATALOG_SHA256"
 
+python3 scripts/haru_dialogue_smoke.py \
+  --profile amd-cuda \
+  --image "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_cu128_${RELEASE_VERSION}"
+
 docker push "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_cu128_${RELEASE_VERSION}"
 ```
 
-L4T 和 Thor 使用相同顺序，在各自构建机执行 `--build-only`、冒烟脚本（映射见 `$vos-preflight-package/references/v-voice.md`）和 `docker push`。三个镜像全部通过后才能开始打包。
+L4T 和 Thor 使用相同顺序，在各自构建机执行 `--build-only`、镜像冒烟、Haru 冒烟（映射见 `$vos-preflight-package/references/v-voice.md`）和 `docker push`。三个镜像全部通过后才能开始打包。
+
+`haru_dialogue_smoke.py` 自动从当前已安装的 V-Voice 容器找到只读模型目录；没有已安装实例时显式传 `--model-root`。它使用 `docker run --rm`、无网络、临时 `/data`，不修改现有容器，验证 worker `ready`、首个 6400 字节 PCM 帧、正常 `end`、worker 退出码 0、无孤儿进程和驻留状态清理。AMD CUDA、L4T、Thor 都必须通过，不能只看镜像里的 CUDA 链接结果。
 
 默认版本为 `ictrek.app/VERSION` 的下一个 patch；发布时建议明确传入候选版本。预检阶段发现问题时，修复后可用同一候选版本重新构建、冒烟和推送覆盖；尚未写入飞书的候选标签不视为正式发布。未受影响的平台可以沿用旧镜像，包括日期标签。
 
@@ -96,7 +113,16 @@ L4T 和 Thor 使用相同顺序，在各自构建机执行 `--build-only`、冒�
 
 ## 4. 本地打包预检与测试
 
-在仓库根目录执行，使用第 2 节计算的候选版本。`--version` 只设置包内版本，不修改 VERSION、不读取 CHANGELOG，也不创建标签或发布 Release：
+先核对已验收的 V-Scheduler 依赖锁。命令读取实时发布包；如果与 `ictrek.app/dependency-lock.json` 不一致，会明确报 drift：
+
+```bash
+python3 ictrek.app/scripts/package.py --update-dependency-lock
+git diff -- ictrek.app/dependency-lock.json
+```
+
+锁发生变化时，必须重新执行候选包的安装和功能测试，并把锁文件与本次改动一起提交。不要直接手工改锁或绕过 drift 错误。打包和 CI 都会再次读取实时发布包并要求版本完全一致。
+
+在仓库根目录执行，使用第 2 节计算的候选版本。`--version` 只设置包内版本，不修改 VERSION、不读取 CHANGELOG，也不创建标签或发布 Release。打包结束后会自动校验包结构、镜像引用、版本和依赖：
 
 ```bash
 (
@@ -116,7 +142,7 @@ L4T 和 Thor 使用相同顺序，在各自构建机执行 `--build-only`、冒�
 
 三个目标 profile 通过 `--image` 使用候选标签，其余 profile 仍使用现有飞书读凭据（优先 `~/.feishu.components.json`，其次 `~/.feishu.json`，或由 `FEISHU_CONFIG_FILE` 指定）。本步骤只读取飞书，不写入。V-Scheduler 依赖从已发布的 GitHub 包查询，依次使用 `GH_TOKEN`、`GITHUB_TOKEN` 或本机 `gh auth login` 已保存的登录，避免匿名 API 限流；无需手动导出 CLI 令牌。私有仓库无法读取时，可通过已授权的本机隧道设置 `VVOICE_APPSTORE_API_URL` 查询商店记录。依赖查询失败时先解决凭据或通道问题，不提前触发正式发布。
 
-外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、镜像引用和依赖，并确认三个本次目标 profile 指向新候选标签；其余 profile 只确认保留了已有标签。产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。
+外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、镜像引用和依赖，并确认三个本次目标 profile 指向新候选标签；其余 profile 只确认保留了已有标签。产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。如果看到 `Dependency drift`，停止打包，重新验证并提交锁文件。
 
 ### 候选包安装预检
 
@@ -180,7 +206,7 @@ bash ictrek.app/scripts/update_version.sh "$RELEASE_VERSION"
 
 不要再次传入 `patch`、`minor` 或 `major` 让脚本重新计算版本；当前 VERSION 应仍为第 2 节记录的基线，脚本会把已验收的 `RELEASE_VERSION` 原样写入并发布。
 
-脚本更新并提交 `ictrek.app/VERSION`，创建 `vos-v-voice-vX.Y.Z`，原子推送当前分支和触发标签。GitHub Actions 随后执行检查、读取飞书镜像和已发布的 V-Scheduler 依赖、重新生成正式安装包，创建公开 `vX.Y.Z` Release，并发布到 VOS App Store。正式打包前保持测试通过的镜像引用不变，并核对 CI 解析的依赖与测试包一致；镜像或依赖变化时重新测试。
+脚本更新并提交 `ictrek.app/VERSION`，创建 `vos-v-voice-vX.Y.Z`，原子推送当前分支和触发标签。GitHub Actions 随后执行检查、读取飞书镜像和已发布的 V-Scheduler 依赖、重新生成正式安装包，创建公开 `vX.Y.Z` Release，并发布到 VOS App Store。正式打包前保持测试通过的镜像引用和 `dependency-lock.json` 不变；CI 发现依赖或锁不一致时直接失败，镜像或依赖变化后重新测试。
 
 不要提前修改 VERSION 或手工创建公开标签。CHANGELOG 必须提前提交，本项目没有 `--with-changelog` 参数。
 
@@ -210,7 +236,7 @@ gh run view "$RUN_ID" --repo ictrektech/V-yovoice --log \
 
 - 镜像构建、推送或飞书写入失败：修复后补齐，不继续创建发布标签。构建失败可能留下中间镜像，不能直接用 `--publish-only` 发布。
 - 工作区不干净或标签已存在：先处理改动或检查已有发布，不强制覆盖标签。
-- CI 检查或依赖解析失败：查看对应步骤并修复，不绕过检查。
+- CI 检查、依赖解析或依赖锁失败：查看对应步骤；如已发布依赖确需升级，先重新测试，再运行 `--update-dependency-lock` 并提交锁文件，不绕过 drift。
 - 公开标签尚未创建：修复并推送代码；如影响镜像，先重新构建发布。保持失败版本的 VERSION 不变，然后使用下方命令重试。
 - GitHub Release 已成功、商店失败：修复连接后重跑原 CI；流程会复用已有 Release 包。不要重新递增版本或移动标签。
 

@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+toolchain_env="${VVOICE_TOOLCHAIN_ENV:-${HOME}/dev/build/v-yovoice/toolchain.env}"
+if [[ -r "$toolchain_env" ]]; then
+  # shellcheck source=/dev/null
+  source "$toolchain_env"
+fi
 registry="${REGISTRY:-swr.cn-southwest-2.myhuaweicloud.com/ictrek}"
 build_root="${VVOICE_BUILD_ROOT:-${HOME}/dev/build/v-yovoice}"
 artifacts="${build_root}/artifacts"
@@ -87,9 +92,23 @@ if [[ "$mode" == assets || "$mode" == application ]]; then
   assets_base="$source_image"
   dockerfile="$root/docker/Dockerfile.studio-assets"
   if [[ "$mode" == application ]]; then dockerfile="$root/docker/Dockerfile.application"; fi
+  # Buildx 从同名基础镜像构建时不一定移动目标 tag；先写入临时 tag，再显式回绑。
+  build_image="${registry}/v-voice:${tag}-incremental"
+  cleanup_build_image() { docker image rm "$build_image" >/dev/null 2>&1 || true; }
+  trap cleanup_build_image EXIT
   docker buildx build --builder default --load --provenance=false --sbom=false \
     --build-context "studio_artifacts=${artifacts}" --build-arg "TARGETARCH=${arch}" --build-arg "VVOICE_STUDIO_BASE_IMAGE=${assets_base}" \
-    -f "$dockerfile" -t "$image" "$root"
+    -f "$dockerfile" -t "$build_image" "$root"
+  docker image inspect "$build_image" >/dev/null
+  docker tag "$build_image" "$image"
+  built_id="$(docker image inspect --format '{{.Id}}' "$build_image")"
+  target_id="$(docker image inspect --format '{{.Id}}' "$image")"
+  if [[ -z "$built_id" || "$built_id" != "$target_id" ]]; then
+    echo "Incremental build did not update image tag: $image" >&2
+    exit 1
+  fi
+  docker image rm "$build_image" >/dev/null 2>&1 || true
+  trap - EXIT
   exit 0
 fi
 if [[ "$prepare" == true && ( "$mode" == prepare || "$mode" == full || "$mode" == build ) ]]; then

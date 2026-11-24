@@ -16,13 +16,24 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 DIST = ROOT / "dist"
+LOCK_PATH = ROOT / "dependency-lock.json"
 SPREADSHEET = os.getenv("FEISHU_SPREADSHEET_TOKEN", "Htotsn3oahO1zxt73YMcaB1zn8e")
 REPOSITORY = "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice"
 IMAGE_REFERENCE = re.compile(r"^[\w.-]+\.[\w.-]+(?::\d+)?/[^\s]+$")
+IMAGE_TAG = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
+PACKAGE_MEMBERS = (
+    ".env",
+    "manifest.yml",
+    "docker-compose.yml",
+    "configs.yml",
+    "routers.yml",
+    "icon.png",
+    "README.zh-CN.md",
+    "README.en.md",
+)
 PROFILES = {
     "VVOICE_AMD_IMAGE": ["AMD_with_mxn100"],
     "VVOICE_AMD_CUDA_IMAGE": ["AMD_with_cuda"],
@@ -76,14 +87,60 @@ def appstore_version(app_id: str, base: str) -> str:
     return version
 
 
-def resolve_dependencies(manifest: dict) -> None:
+def load_dependency_lock(path: Path = LOCK_PATH) -> dict[str, str]:
+    """读取已验收依赖；缺失、未知应用或非法版本都阻止打包。"""
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise RuntimeError(
+            "dependency lock is missing; run python3 ictrek.app/scripts/package.py "
+            "--update-dependency-lock"
+        ) from None
+    locks = value.get("apps") if isinstance(value, dict) and value.get("version") == 1 else None
+    if not isinstance(locks, dict) or set(locks) != set(DEPENDENCIES):
+        raise RuntimeError("dependency lock does not cover the supported applications")
+    for app_id, version in locks.items():
+        if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+\.\d+", version):
+            raise RuntimeError(f"invalid dependency lock version for {app_id}")
+    return locks
+
+
+def write_dependency_lock(manifest: dict, path: Path = LOCK_PATH) -> dict[str, str]:
+    """把刚从已发布包解析出的版本写成可提交的验收锁。"""
+    existing = load_dependency_lock(path) if path.is_file() else {}
+    apps = {}
+    for dependency in manifest.get("dependencies", {}).get("apps", []):
+        match = re.fullmatch(r">=(\d+\.\d+\.\d+)", str(dependency.get("version", "")))
+        if not match:
+            raise RuntimeError(f"{dependency.get('id')} has no resolved minimum version")
+        apps[dependency["id"]] = match.group(1)
+    if set(apps) != set(DEPENDENCIES):
+        raise RuntimeError("dependency lock does not cover the supported applications")
+    for app_id, version in apps.items():
+        if app_id in existing and tuple(map(int, version.split("."))) < tuple(
+            map(int, existing[app_id].split("."))
+        ):
+            raise RuntimeError(f"refusing dependency lock downgrade for {app_id}")
+    value = {"version": 1, "apps": apps}
+    temporary = path.with_suffix(f".{os.getpid()}.pending")
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)
+    return apps
+
+
+def resolve_dependencies(manifest: dict, expected: dict[str, str] | None = None) -> None:
     headers = {"Accept": "application/vnd.github+json", "User-Agent": "V-Voice VOS packaging"}
     token = os.getenv("GH_TOKEN") or os.getenv("GITHUB_TOKEN")
     if not token and shutil.which("gh"):
         # 本机复用已有登录，不要求用户把凭据复制到命令行或配置文件。
         try:
-            login = subprocess.run(["gh", "auth", "token", "--hostname", "github.com"],
-                                   capture_output=True, text=True, timeout=10)
+            login = subprocess.run(
+                ["gh", "auth", "token", "--hostname", "github.com"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
             if login.returncode == 0:
                 token = login.stdout.strip()
         except (OSError, subprocess.TimeoutExpired):
@@ -114,6 +171,13 @@ def resolve_dependencies(manifest: dict) -> None:
         # 已发布版本不能替代本应用实际需要的协议下限；不足时明确阻止打包。
         if tuple(map(int, version.split("."))) < tuple(map(int, minimum.split("."))):
             raise RuntimeError(f"{repository}: published {version} lacks required contract >= {minimum}")
+        locked = (expected or {}).get(dependency["id"])
+        if locked is not None and version != locked:
+            raise RuntimeError(
+                f"Dependency drift: {dependency['id']} locked={locked} latest={version}; "
+                "retest the candidate, then run python3 ictrek.app/scripts/package.py "
+                "--update-dependency-lock"
+            )
         dependency["version"] = ">=" + version
         print(f"Dependency resolved: {dependency['id']} source={source} published={version} package=>={version}")
 
@@ -188,13 +252,18 @@ class Feishu:
         return f"{repository or REPOSITORY}:{tag}"
 
 
-def render(version: str, images: dict[str, str], stage: Path) -> None:
+def render(
+    version: str,
+    images: dict[str, str],
+    stage: Path,
+    dependency_lock: dict[str, str],
+) -> None:
     stage.mkdir(parents=True)
     for name in ("manifest.yml", "configs.yml", "routers.yml", "README.zh-CN.md", "README.en.md"):
         text = (SRC / name).read_text(encoding="utf-8").replace("__APP_VERSION__", version)
         if name == "manifest.yml":
             manifest = yaml.safe_load(text)
-            resolve_dependencies(manifest)
+            resolve_dependencies(manifest, expected=dependency_lock)
             text = yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False)
         (stage / name).write_text(text, encoding="utf-8")
     shutil.copy2(SRC / "icon.png", stage / "icon.png")
@@ -226,10 +295,73 @@ def parse_image_overrides(values: list[str]) -> dict[str, str]:
     return overrides
 
 
+def verify_pull_package(output: Path, version: str) -> None:
+    """校验最终安装包，不依赖某个候选版本，也不访问外部服务。"""
+    with tarfile.open(output) as outer:
+        if outer.getnames() != ["app.tar.gz"]:
+            raise RuntimeError("invalid outer package")
+        archive = outer.extractfile("app.tar.gz")
+        if archive is None:
+            raise RuntimeError("invalid outer package")
+        payload = archive.read()
+
+    with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as inner:
+        members = inner.getnames()
+        if sorted(members) != sorted(PACKAGE_MEMBERS) or len(members) != len(PACKAGE_MEMBERS):
+            raise RuntimeError(f"invalid package members: {members}")
+
+        def read(name: str) -> str:
+            member = inner.extractfile(name)
+            if member is None:
+                raise RuntimeError(f"missing package member: {name}")
+            return member.read().decode("utf-8")
+
+        images: dict[str, str] = {}
+        for line in read(".env").splitlines():
+            if not line:
+                continue
+            key, separator, image = line.partition("=")
+            if not separator or not key or key in images:
+                raise RuntimeError(f"invalid image entry: {line}")
+            images[key] = image
+        if set(images) != set(PROFILES):
+            raise RuntimeError(f"image variables differ from supported profiles: {sorted(images)}")
+        for variable, image in images.items():
+            prefix = REPOSITORY + ":"
+            if not image.startswith(prefix):
+                raise RuntimeError(f"{variable} does not use the approved repository: {image}")
+            tag = image.removeprefix(prefix)
+            if not IMAGE_TAG.fullmatch(tag) or tag.lower() == "latest":
+                raise RuntimeError(f"{variable} has an invalid release tag: {image}")
+
+        manifest = yaml.safe_load(read("manifest.yml"))
+        if str(manifest.get("version", "")) != version:
+            raise RuntimeError(f"manifest version differs from {version}")
+        dependencies = manifest.get("dependencies", {}).get("apps", [])
+        if {entry.get("id") for entry in dependencies} != set(DEPENDENCIES):
+            raise RuntimeError("dependency set differs from the supported applications")
+        for dependency in dependencies:
+            _, minimum = DEPENDENCIES[dependency["id"]]
+            match = re.fullmatch(r">=(\d+\.\d+\.\d+)", str(dependency.get("version", "")))
+            if not match:
+                raise RuntimeError(f"{dependency['id']} has no resolved minimum version")
+            resolved = tuple(map(int, match.group(1).split(".")))
+            required = tuple(map(int, minimum.split(".")))
+            if resolved < required:
+                raise RuntimeError(f"{dependency['id']} is below required contract {minimum}")
+
+        compose = yaml.safe_load(read("docker-compose.yml"))
+        service_images = [str(service.get("image", "")) for service in compose.get("services", {}).values()]
+        if sorted(service_images) != sorted(images.values()):
+            raise RuntimeError("docker-compose image references differ from .env")
+
+    print(f"PASS: pull package {output.name} version={version} profiles={len(images)}")
+
+
 def package(version: str, stage: Path) -> Path:
     DIST.mkdir(exist_ok=True)
     app_tar = DIST / "app.tar.gz"
-    members = [".env", "manifest.yml", "docker-compose.yml", "configs.yml", "routers.yml", "icon.png", "README.zh-CN.md", "README.en.md"]
+    members = list(PACKAGE_MEMBERS)
     with tarfile.open(app_tar, "w:gz") as archive:
         for name in members:
             archive.add(stage / name, arcname=name)
@@ -256,6 +388,7 @@ def package(version: str, stage: Path) -> Path:
             raise RuntimeError("invalid service image")
         if not service.get("networks", {}).get("vos_default", {}).get("aliases"):
             raise RuntimeError("missing vos_default service alias")
+    verify_pull_package(output, version)
     return output
 
 
@@ -269,10 +402,34 @@ def main() -> None:
         metavar="VARIABLE=REFERENCE",
         help="override one profile image, for example VVOICE_L4T_IMAGE=registry.example/v-voice:l4t_0.0.35",
     )
+    parser.add_argument(
+        "--verify-package",
+        metavar="PATH",
+        help="verify an existing pull package for the selected version",
+    )
+    parser.add_argument(
+        "--update-dependency-lock",
+        action="store_true",
+        help="resolve live dependencies and update dependency-lock.json after retesting",
+    )
     args = parser.parse_args()
     version = args.version or (ROOT / "VERSION").read_text().strip()
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         raise SystemExit(f"invalid version: {version}")
+    if args.update_dependency_lock:
+        if args.verify_package or args.image:
+            parser.error("--update-dependency-lock cannot be combined with package verification or image overrides")
+        manifest = yaml.safe_load((SRC / "manifest.yml").read_text(encoding="utf-8"))
+        resolve_dependencies(manifest)
+        apps = write_dependency_lock(manifest)
+        print(json.dumps({"dependency_lock": str(LOCK_PATH), "apps": apps}, sort_keys=True))
+        return
+    if args.verify_package:
+        if args.image:
+            parser.error("--verify-package cannot be combined with --image")
+        verify_pull_package(Path(args.verify_package), version)
+        return
+    dependency_lock = load_dependency_lock()
     try:
         overrides = parse_image_overrides(args.image)
     except ValueError as exc:
@@ -293,7 +450,7 @@ def main() -> None:
         for sheet in sheets:
             try:
                 images[variable] = feishu.latest_image(sheet)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - 汇总每个 sheet 的读取错误
                 errors.append(str(exc))
                 continue
             profile = variable.removeprefix("VVOICE_").removesuffix("_IMAGE").lower().replace("_", "-")
@@ -304,7 +461,7 @@ def main() -> None:
     stage = DIST / "staging"
     if stage.exists():
         shutil.rmtree(stage)
-    render(version, images, stage)
+    render(version, images, stage, dependency_lock)
     output = package(version, stage)
     print(output)
 

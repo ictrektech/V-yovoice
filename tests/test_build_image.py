@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -127,6 +128,65 @@ class BuildImageDryRunTests(unittest.TestCase):
         ]:
             with self.subTest(args=args, arch=arch):
                 self.assertNotEqual(self.preview(*args, arch=arch).returncode, 0)
+
+
+class BuildImageIncrementalTests(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.commands = self.root / "commands"
+        self.commands.mkdir()
+        uname = self.commands / "uname"
+        uname.write_text('#!/bin/bash\nprintf "aarch64\\n"\n')
+        uname.chmod(0o755)
+        self.log = self.root / "docker.log"
+        docker = self.commands / "docker"
+        docker.write_text(
+            '#!/bin/bash\n'
+            'printf "%s\\n" "$*" >> "$VVOICE_TEST_LOG"\n'
+            'if [[ "$1" == image && "$2" == inspect ]]; then\n'
+            '  printf "sha256:incremental\\n"\n'
+            'fi\n',
+        )
+        docker.chmod(0o755)
+        self.build_root = self.root / "build"
+        artifacts = self.build_root / "artifacts"
+        for path in (artifacts / "web/index.html", artifacts / "frontend/index.html",
+                     artifacts / "linux-arm64/vvoice-studio"):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("artifact")
+        self.target = "registry.example.test/team/v-voice:l4t_1.2.3"
+        self.env = {
+            **os.environ,
+            "PATH": f"{self.commands}:{os.environ['PATH']}",
+            "VVOICE_TEST_LOG": str(self.log),
+            "VVOICE_BUILD_ROOT": str(self.build_root),
+            "VVOICE_STUDIO_BASE_IMAGE": self.target,
+            "REGISTRY": "registry.example.test/team",
+        }
+
+    def test_incremental_build_uses_temporary_tag_then_retags_target(self):
+        expected_build = self.target + "-incremental"
+        for mode in ("--assets-only", "--application-only"):
+            with self.subTest(mode=mode):
+                self.log.unlink(missing_ok=True)
+                result = subprocess.run(
+                    ["/bin/bash", str(SCRIPT), "--sheet", "l4t", "--version", "1.2.3", mode],
+                    cwd=self.root, env=self.env, text=True, capture_output=True, timeout=5,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                calls = [shlex.split(line) for line in self.log.read_text().splitlines()]
+                build_index = next(index for index, args in enumerate(calls) if args[:1] == ["buildx"])
+                build = calls[build_index]
+                self.assertEqual(build[build.index("-t") + 1], expected_build)
+                self.assertIn(f"VVOICE_STUDIO_BASE_IMAGE={self.target}", build)
+                tag_index = calls.index(["tag", expected_build, self.target])
+                self.assertLess(build_index, tag_index)
+                self.assertIn(
+                    ["image", "inspect", "--format", "{{.Id}}", self.target],
+                    calls[tag_index + 1:],
+                )
 
 
 if __name__ == "__main__":
