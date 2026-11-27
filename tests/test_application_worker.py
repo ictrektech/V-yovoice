@@ -59,24 +59,28 @@ def test_workbench_copied_model_keeps_native_sidecars_adjacent(monkeypatch, tmp_
 
     files = {}
     for role, name in enumerate(("phonon-31m-en-q8_0.gguf", "default-voice.safetensors")):
-        source = tmp_path / f"file_{role}" / name
-        source.parent.mkdir()
+        source = tmp_path / "weights" / "fixture-transfer" / "files" / f"file_{role}" / name
+        source.parent.mkdir(parents=True)
         source.write_bytes(name.encode())
         files[f"mirrors/gradium/phonon-31m-en-audiocpp/{name}"] = str(source)
-    operation = tmp_path / "operation.json"
-    operation.write_text(json.dumps({"model_id": "audiocpp-gradium-phonon-31m-en-q8", "packages": files}))
+    original = {path: Path(path).stat().st_ctime_ns for path in files.values()}
+    operation = tmp_path / "attempts" / "fixture" / "operation.json"
+    operation.parent.mkdir(parents=True)
+    operation.write_text(json.dumps({"model_id": "audiocpp-gradium-phonon-31m-en-q8", "packages": files,
+                                     "copied_packages": list(files)}))
 
     def run(arguments, *, env, check):
         base = Path(env["MODEL_HUB_SHARED_MODELS_PATH"]) / "export/ms/vivibit/v-voice-audiocpp-gguf/current"
         for relative, source in files.items():
             target = base / relative
             assert not target.is_symlink()
-            assert target.samefile(source)
+            assert target.read_bytes() == Path(source).read_bytes()
         Path(arguments[-1]).write_bytes(b"fixture output")
 
     monkeypatch.setattr(worker_execution.subprocess, "run", run)
     worker_execution.execute_operation(operation)
-    assert (tmp_path / "workbench.zip").read_bytes() == b"fixture output"
+    assert (operation.parent / "workbench.zip").read_bytes() == b"fixture output"
+    assert {path: Path(path).stat().st_ctime_ns for path in files.values()} == original
 
 
 def test_worker_copy_verification_and_cancellation(tmp_path, monkeypatch):

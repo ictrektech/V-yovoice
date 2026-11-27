@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import errno
 import hashlib
 import json
 import math
@@ -266,6 +265,7 @@ class ComputeWorker:
                     raise ValueError()
             paths = self.store.verified_files(body.get("transfer_id", ""), model_id)
             packages = {}
+            copied_packages = set()
             if task == WORKBENCH:
                 if model_id not in parameters.models or len(set(parameters.models)) != len(parameters.models):
                     raise ValueError()
@@ -277,13 +277,16 @@ class ComputeWorker:
                         previous = packages.setdefault(target, source)
                         if previous != source and file_sha256(Path(previous)) != file_sha256(Path(source)):
                             raise ValueError()
+                        if len(verified) > 1 and verified[field].is_relative_to(self.store.root):
+                            copied_packages.add(target)
         except (KeyError, OSError, TypeError, ValueError, HTTPException):
             return self.stop(attempt, failure("WORKER_INPUT_OR_WEIGHTS_INVALID"))
         if self.active:
             return self.stop(attempt, failure("WORKER_EXECUTOR_BUSY"))
         operation = directory / "operation.json"
         write_json(operation, {"model_id": model_id, "files": {name: str(path) for name, path in paths.items()},
-                               "parameters": parameters.model_dump(), "limits": limits, "packages": packages})
+                               "parameters": parameters.model_dump(), "limits": limits, "packages": packages,
+                               "copied_packages": sorted(copied_packages)})
         env = {**os.environ, "VVOICE_SCHEDULER_REQUIRED": "false",
                "VVOICE_PROVIDER": self.provider, "VVOICE_NUM_THREADS": str(self.threads)}
         env.pop("V_SCHEDULER_BACKEND_CHANNEL_TOKEN", None)
@@ -311,18 +314,17 @@ def execute_operation(operation: Path):
         root = operation.parent / "workbench"
         modelhub = root / "modelhub"
         base = modelhub / "export" / "ms" / REPOSITORY / "current"
+        copied_packages = set(descriptor.get("copied_packages", []))
         for relative, path in descriptor["packages"].items():
             target = base / relative
             if not target.resolve().is_relative_to(base.resolve()):
                 raise ValueError("invalid catalog path")
             target.parent.mkdir(parents=True, exist_ok=True)
-            try:
-                # Copied roles occupy separate directories. Native runtimes
-                # resolve the model path and open sidecars next to it.
-                os.link(path, target)
-            except OSError as error:
-                if error.errno != errno.EXDEV:
-                    raise
+            if relative in copied_packages:
+                # Native runtimes resolve a model path before looking up its
+                # sidecars. Copy the package without changing verified inodes.
+                shutil.copyfile(path, target)
+            else:
                 target.symlink_to(path)
         output = operation.parent / "workbench.zip"
         subprocess.run(
