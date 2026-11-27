@@ -1,8 +1,14 @@
 """节点计算后端支持的模型、文件和任务类型。"""
 
+from functools import lru_cache
+from pathlib import PurePosixPath
+
+from .creative import models as creative_catalog
+
 TRANSCRIBE = "voice.transcribe"
 SYNTHESIZE = "voice.synthesize"
 EMBED = "voice.speaker_embedding"
+WORKBENCH = "voice.workbench"
 
 SENSEVOICE = "sensevoice-int8"
 SENSEVOICE_FILES = {"model": "model.int8.onnx", "tokens": "tokens.txt"}
@@ -21,3 +27,21 @@ MODELS = {
 }
 
 MAX_OUTPUT_BYTES = 20 << 20
+WORKBENCH_BUNDLE_LIMIT = 500 << 20
+
+
+@lru_cache(maxsize=1)
+def workbench_models():
+    return {item["key"]: item for item in creative_catalog(include_non_speech=True)}
+
+
+def model_spec(model_id: str):
+    if model_id in MODELS:
+        return MODELS[model_id]
+    item = workbench_models()[model_id]
+    files = {role: PurePosixPath(path).name for role, path in item["runtime"]["files"].items()}
+    return WORKBENCH, files, {"bundle_bytes": WORKBENCH_BUNDLE_LIMIT}
+
+
+def model_ids():
+    return (*MODELS, *workbench_models())

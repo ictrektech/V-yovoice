@@ -18,14 +18,14 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Resp
 from pydantic import BaseModel, ConfigDict, Field
 
 from .admission import configuration
-from .catalog import find_model, model_root, resolve_files
+from .catalog import find_model, model_root, resolve_files, shared_files_for
 from .config import settings
 from .dialogue import Identity, _admin, _verify_user
 from .modelhub import list_models
 from .scheduling_options import operator_headers
 from .worker import MODE
 from .worker_execution import MAX_AUDIO_BYTES, TASK_TYPE, SpeechParameters
-from .worker_models import EMBED, MAX_OUTPUT_BYTES, MODELS, SENSEVOICE, SYNTHESIZE
+from .worker_models import EMBED, MAX_OUTPUT_BYTES, MODELS, SENSEVOICE, SYNTHESIZE, model_ids, model_spec, workbench_models
 from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore, open_speaker_store
 from .worker_weights import CHUNK_BYTES, write_json
 
@@ -86,7 +86,7 @@ async def node_names(connection: httpx.AsyncClient) -> dict[tuple[str, str], str
 
 
 @router.get("/placements")
-async def placements(task_type: Literal["voice.transcribe", "voice.synthesize", "voice.speaker_embedding"] = TASK_TYPE,
+async def placements(task_type: Literal["voice.transcribe", "voice.synthesize", "voice.speaker_embedding", "voice.workbench"] = TASK_TYPE,
                      identity: Identity = Depends(_verify_user)):
     async with client() as connection:
         records = await scheduler(connection, "GET", "backend-deployments")
@@ -126,7 +126,7 @@ async def deployments():
                         raise
             return {**row, "node_name": names.get((row["target_kind"], row["target_id"])),
                     "registered_models": registered,
-                    "preparations": [record for key in MODELS if (record := read_preparation(row["id"], key))]}
+                    "preparations": [record for key in model_ids() if (record := read_preparation(row["id"], key))]}
         descriptions = await asyncio.gather(*(describe(row) for row in rows["items"]
                                               if worker_deployment(row) and row["state"] != "removed"))
     targets = [{**target, "node_name": names.get((target["kind"], target["id"]))}
@@ -137,7 +137,7 @@ async def deployments():
 
 
 async def preparation_models():
-    rows = await list_models([find_model(key) for key in MODELS])
+    rows = await list_models([*(find_model(key) for key in MODELS), *workbench_models().values()])
     return [{"model_id": item["key"], "name": item["name"], "kind": item["kind"],
              "status": item["status"], "ready": item["status"] == "ready", "progress": item.get("progress"),
              "error": item.get("error")} for item in rows]
@@ -149,6 +149,8 @@ class Deploy(BaseModel):
     kind: Literal["ssh", "cluster"]
     node_id: str = Field(pattern=ID)
     request_key: str = Field(pattern=ID)
+    cpu_millicores: int | None = Field(None, strict=True, ge=100, le=128_000)
+    memory_mib: int | None = Field(None, strict=True, ge=16, le=1_048_576)
 
 
 @router.post("/deployments", dependencies=[Depends(require_admin)])
@@ -160,9 +162,12 @@ async def deploy(data: Deploy):
         image = access.get("images", {}).get(target["profile"]) if target else None
         if not image:
             raise HTTPException(403, "VOICE_COMPUTE_TARGET_UNAVAILABLE")
+        budgets = {key: value for key, value in data.model_dump().items()
+                   if key in {"cpu_millicores", "memory_mib"} and value is not None}
         return await scheduler(connection, "POST", "backend-deployments", json={
             "request_key": data.request_key, "target": target, "image": image, "container_port": 7070,
             "config": {"mode": MODE, "profile": target["profile"]},
+            **budgets,
         })
 
 
@@ -186,14 +191,14 @@ async def lifecycle(deployment_id: str, action: Literal["start", "stop", "prepar
 async def delete_deployment(deployment_id: str):
     async with deployment_change(deployment_id) as (connection, path):
         receipt = await scheduler(connection, "DELETE", path)
-        for model_id in MODELS:
+        for model_id in model_ids():
             preparation_path(deployment_id, model_id).unlink(missing_ok=True)
         return receipt
 
 
 @router.delete("/deployments/{deployment_id}/models/{model_id}", dependencies=[Depends(require_admin)])
 async def delete_model(deployment_id: str, model_id: str):
-    if model_id not in MODELS:
+    if model_id not in model_ids():
         raise HTTPException(404, "VOICE_COMPUTE_MODEL_UNSUPPORTED")
     async with deployment_change(deployment_id) as (connection, path):
         receipt = await scheduler(connection, "DELETE", f"{path}/models/{model_id}")
@@ -237,7 +242,7 @@ class PrepareModel(BaseModel):
 
 @router.post("/deployments/{deployment_id}/models", status_code=202, dependencies=[Depends(require_admin)])
 async def prepare_model(deployment_id: str, data: PrepareModel):
-    if data.model_id not in MODELS:
+    if data.model_id not in model_ids():
         raise HTTPException(404, "VOICE_COMPUTE_MODEL_UNSUPPORTED")
     key = (deployment_id, data.model_id)
     if key in _preparations:
@@ -296,15 +301,22 @@ async def run_preparation(key: tuple[str, str], path: str, status_path: Path, re
 
 def source_files(model_id: str = SENSEVOICE) -> tuple[list[dict], dict[str, Path]]:
     try:
-        item = find_model(model_id)
-        paths = {role: Path(path) for role, path in resolve_files(item).items()}
+        creative = workbench_models().get(model_id)
+        item = creative or find_model(model_id)
         root = model_root(item).resolve()
+        if creative:
+            files = shared_files_for(item, root)
+            paths = {f"file_{i}": (root / row["path"]).resolve() for i, row in enumerate(files)}
+            if not all(path.is_relative_to(root) for path in paths.values()):
+                raise ValueError()
+        else:
+            paths = {role: Path(path) for role, path in resolve_files(item).items()}
         for name in item["runtime"].get("rule_fsts", []):
             rule = (root / name).resolve()
             if not rule.is_relative_to(root):
                 raise ValueError()
             paths[f"fst-{rule.stem}"] = rule
-        if {role: path.name for role, path in paths.items()} != MODELS[model_id][1]:
+        if {role: path.name for role, path in paths.items()} != model_spec(model_id)[1]:
             raise ValueError()
         records = []
         for role, path in paths.items():

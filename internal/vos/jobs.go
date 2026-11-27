@@ -63,6 +63,10 @@ type Job struct {
 	OutputMelodyID  string          `json:"output_melody_id,omitempty"`
 	BeforeFiles     []string        `json:"before_files,omitempty"`
 	OutputFiles     []string        `json:"output_files,omitempty"`
+	Node            *nodeDispatch   `json:"node,omitempty"`
+	ExpectedNode    string          `json:"expected_node,omitempty"`
+	ActualNode      string          `json:"actual_node,omitempty"`
+	ActivityStarted time.Time       `json:"activity_started,omitempty"`
 }
 
 type execution struct {
@@ -77,6 +81,7 @@ type Jobs struct {
 	ConfigPath string
 	mu         sync.Mutex
 	active     map[string]*execution
+	nodePolls  map[string]bool
 	// 当前镜像只允许一个创作引擎运行，跨用户也不能并行加载多个大模型。
 	executing string
 }
@@ -194,7 +199,7 @@ func (j *Jobs) controller(ctx context.Context, method, path string, body any, ke
 }
 
 // Enqueue 先持久化业务任务，再以同一幂等键提交；失败绝不直接启动模型。
-func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage) (string, error) {
+func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage, selected ...*NodeChoice) (string, error) {
 	if restrictedRuntime(data) {
 		return "", fmt.Errorf("unapproved runtime settings")
 	}
@@ -213,10 +218,15 @@ func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage) (string, 
 		return "", err
 	}
 	data = canonical
+	var choice *NodeChoice
+	if len(selected) > 0 {
+		choice = selected[0]
+	}
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	if old, err := j.read(key); err == nil {
-		if old.User != user || old.Method != method || !bytes.Equal(old.Data, data) {
+		if old.User != user || old.Method != method || !bytes.Equal(old.Data, data) ||
+			(old.Node == nil) != (choice == nil) || (choice != nil && old.Node.NodeChoice != *choice) {
 			return "", fmt.Errorf("idempotency conflict")
 		}
 		return old.ID, nil
@@ -279,6 +289,36 @@ func (j *Jobs) Enqueue(user, key, method string, data json.RawMessage) (string, 
 		}
 	}
 	executor := ""
+	if choice != nil {
+		if !nodeMethod(method) {
+			return "", fmt.Errorf("unsupported workbench node operation")
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		node, executor, err := j.selectNode(ctx, *choice, models)
+		if err != nil {
+			return "", err
+		}
+		w, err := j.Server.user(user)
+		if err != nil {
+			return "", err
+		}
+		job := Job{ID: key, User: user, Method: method, Data: data, Node: node,
+			Executor: executor, Status: "queued", Stopped: true, Created: time.Now().UTC()}
+		bundle := nodeSnapshot(job, w.Store.Read())
+		input := filepath.Join(j.nodeWorkDir(key), "input.zip")
+		if err = writeNodeBundle(input, bundle, nodeMedia(bundle.State), w.Store); err != nil {
+			return "", err
+		}
+		node.Size, node.SHA256, err = nodeFileReceipt(input)
+		if err == nil {
+			err = atomicJSON(j.path(job.ID), job)
+		}
+		if err != nil {
+			_ = os.RemoveAll(j.nodeWorkDir(key))
+		}
+		return job.ID, err
+	}
 	for model := range models {
 		approved := j.config().Models[model]
 		if approved == "" || (executor != "" && approved != executor) {
@@ -317,21 +357,25 @@ func (j *Jobs) poll(ctx context.Context) {
 		if err != nil || job.Status == "succeeded" || job.Status == "failed" || job.Status == "cancelled" {
 			continue
 		}
+		if job.Node != nil {
+			j.scheduleNodePoll(ctx, job)
+			continue
+		}
 		if job.TaskID == "" {
 			// discovery 的执行器列表按服务身份过滤；缺少批准契约时不提交。
 			available, lookupErr := j.controller(ctx, "GET", "/executors", nil, "")
 			if lookupErr != nil {
 				continue
 			}
-			approved := false
+			expectedNode := ""
 			if rows, ok := available["items"].([]any); ok {
 				for _, row := range rows {
 					if executor, ok := row.(map[string]any); ok && executor["id"] == job.Executor && executor["contract_version"] == "1" && executor["task_type"] == "voice.generate" {
-						approved = true
+						expectedNode, _ = executor["node_id"].(string)
 					}
 				}
 			}
-			if !approved {
+			if !schedulerID.MatchString(expectedNode) {
 				continue
 			}
 			var result map[string]any
@@ -349,6 +393,7 @@ func (j *Jobs) poll(ctx context.Context) {
 			current, e := j.read(id)
 			if e == nil {
 				current.TaskID = job.TaskID
+				current.ExpectedNode = expectedNode
 				_ = atomicJSON(j.path(id), current)
 				job = current
 			}
@@ -366,6 +411,14 @@ func (j *Jobs) poll(ctx context.Context) {
 			j.mu.Lock()
 			current, e := j.read(id)
 			if e == nil {
+				if status == "succeeded" && current.ExpectedNode != "" {
+					if result["node_id"] != current.ExpectedNode || result["executor_id"] != current.Executor {
+						status = "failed"
+						current.Error = "execution node or executor mismatch"
+					} else {
+						current.ActualNode = current.ExpectedNode
+					}
+				}
 				current.Status = status
 				_ = atomicJSON(j.path(id), current)
 			}
@@ -439,7 +492,7 @@ func (j *Jobs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	job, err := j.read(body.Parameters.JobID)
-	if err != nil || job.TaskID == "" || job.TaskID != body.TaskID {
+	if err != nil || job.Node != nil || job.TaskID == "" || job.TaskID != body.TaskID {
 		http.Error(w, "Job binding conflict", 409)
 		return
 	}
@@ -583,6 +636,9 @@ func (j *Jobs) execute(ctx context.Context, job Job, run *execution) {
 	current.Stopped = true
 	if w != nil {
 		state := w.Store.Read()
+		if state.Activity != nil {
+			current.ActivityStarted = state.Activity.StartedAt
+		}
 		if current.BeforeLyrics != nil {
 			current.OutputLyrics = timingOf(state, current.BeforeLyrics.ID)
 		}
@@ -720,6 +776,32 @@ func (j *Jobs) VisibleState(user string, state schema.State) schema.State {
 	}
 	if pending != nil && (state.Activity == nil || state.Activity.Status != "running") {
 		state.Activity = &schema.Activity{Kind: "generate", Code: msg.ActivityGenerate, Status: "running", RequestID: pending.ID, StartedAt: pending.Created}
+		if pending.Node != nil {
+			state.Activity.SelectedNode = pending.Node.NodeID
+		}
+	}
+	if pending == nil {
+		paths, _ := filepath.Glob(filepath.Join(j.Server.Root, "jobs", "*.json"))
+		var newest Job
+		for _, path := range paths {
+			job, err := j.read(strings.TrimSuffix(filepath.Base(path), ".json"))
+			if err == nil && job.User == user && job.Created.After(newest.Created) {
+				newest = job
+			}
+		}
+		if newest.ActualNode != "" && state.Activity != nil &&
+			(state.Activity.RequestID == newest.ID || newest.ActivityStarted.Equal(state.Activity.StartedAt)) {
+			state.Activity.SelectedNode = newest.ActualNode
+			state.Activity.ActualNode = newest.ActualNode
+		} else if newest.Node != nil && (newest.Status == "failed" || newest.Status == "cancelled") &&
+			(state.Activity == nil || !newest.Created.Before(state.Activity.StartedAt)) {
+			state.Activity = &schema.Activity{Kind: "generate", Status: newest.Status, Code: msg.ActivityGenerate,
+				SelectedNode: newest.Node.NodeID, RequestID: newest.ID, StartedAt: newest.Created}
+			if newest.Status == "failed" {
+				code := msg.ErrGenerateFailed
+				state.Activity.ErrorCode = &code
+			}
+		}
 	}
 	return state
 }

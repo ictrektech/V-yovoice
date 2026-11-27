@@ -159,9 +159,10 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == "POST" && r.URL.Path == "/studio-api/call":
 		var call struct {
-			Method    string          `json:"method"`
-			Data      json.RawMessage `json:"data"`
-			RequestID string          `json:"requestId"`
+			Method        string          `json:"method"`
+			Data          json.RawMessage `json:"data"`
+			RequestID     string          `json:"requestId"`
+			ExecutionNode *NodeChoice     `json:"executionNode"`
 		}
 		if json.NewDecoder(http.MaxBytesReader(out, r.Body, 28<<20)).Decode(&call) != nil {
 			http.Error(out, "Invalid request", 400)
@@ -222,7 +223,7 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 				http.Error(out, "V-Scheduler configuration required", 503)
 				return
 			}
-			result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, call.Data)
+			result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, call.Data, call.ExecutionNode)
 		case "generation.alignLyrics":
 			if s.Jobs == nil {
 				http.Error(out, "V-Scheduler configuration required", 503)
@@ -230,16 +231,22 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 			}
 			var snapshot json.RawMessage
 			if snapshot, err = s.Jobs.alignmentSnapshot(id, w, call.Data); err == nil {
-				result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, snapshot)
+				result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, snapshot, call.ExecutionNode)
 			}
 		case "melody.plan", "melody.cover", "melody.listen":
 			if s.Jobs == nil {
 				http.Error(out, "V-Scheduler configuration required", 503)
 				return
 			}
-			var snapshot json.RawMessage
-			if snapshot, err = musicSnapshot(w, call.Method, call.Data, s.Jobs.config().Models); err == nil {
-				result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, snapshot)
+			approved := s.Jobs.config().Models
+			if call.ExecutionNode != nil {
+				approved, err = s.Jobs.nodeApprovedModels(r.Context(), *call.ExecutionNode)
+			}
+			if err == nil {
+				var snapshot json.RawMessage
+				if snapshot, err = musicSnapshot(w, call.Method, call.Data, approved); err == nil {
+					result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, snapshot, call.ExecutionNode)
+				}
 			}
 		case "melody.result":
 			if s.Jobs == nil {

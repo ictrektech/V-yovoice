@@ -6833,6 +6833,15 @@
   "@vvoice.dub.videoSize": {
     "defaultMessage": "所有导出输入合计超过 200 MiB。"
   },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "工作台执行节点"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "暂时无法读取分节点列表"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "已指定执行节点"
+  },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "远端节点"
   },
@@ -6868,6 +6877,12 @@
   },
   "@yovoice.remoteVoice.removeDescription": {
     "defaultMessage": "将移除后端和远端模型登记。"
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "CPU 预算（毫核，0 为自动）"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "内存预算（MiB，0 为自动）"
   },
   "@yovoice.remoteVoice.primary": {
     "defaultMessage": "主节点（本机）"

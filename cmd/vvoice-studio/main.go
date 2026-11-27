@@ -27,6 +27,15 @@ func main() {
 	if runtime == "" {
 		runtime = "/opt/vvoice/audiocpp/audiocpp_server"
 	}
+	if len(os.Args) > 1 {
+		if len(os.Args) != 5 || os.Args[1] != "node-job" {
+			log.Fatal("invalid studio command")
+		}
+		if err := vos.RunNodeJob(ctx, os.Args[2], os.Args[3], os.Args[4], runtime); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	handler := &vos.Server{Root: root, Assets: assets, UserinfoURL: vos.DefaultUserinfo(), Runtime: runtime}
 	jobs := &vos.Jobs{Server: handler}
 	configPath := os.Getenv("VVOICE_SCHEDULER_CONFIG")

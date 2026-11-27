@@ -6833,6 +6833,15 @@
   "@vvoice.dub.videoSize": {
     "defaultMessage": "所有匯出輸入合計超過 200 MiB。"
   },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "工作臺執行節點"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "暫時無法讀取分節點清單"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "已指定執行節點"
+  },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "遠端節點"
   },
@@ -6868,6 +6877,12 @@
   },
   "@yovoice.remoteVoice.removeDescription": {
     "defaultMessage": "將移除後端和遠端模型登記。"
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "CPU 預算（毫核，0 為自動）"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "記憶體預算（MiB，0 為自動）"
   },
   "@yovoice.remoteVoice.primary": {
     "defaultMessage": "主節點（本機）"

@@ -1,6 +1,6 @@
 ## V-Voice for VOS
 
-Open **Manage node deployments** under **Model Management → Speech and speaker models**. Deploy to a node, choose an installed model and **Automatic**, **Read-only NFS mount** or **Transfer to node**, then prepare and register. Choose the primary node or a remote deployment in the **Execution node** field of the speech recognition, synthesis or speaker form. See **API Documentation** for model coverage and request fields.
+Open **Manage node deployments** under **Model Management → Speech and speaker models**. Deploy to a node, choose an installed model and **Automatic**, **Read-only NFS mount** or **Transfer to node**, then prepare and register. Choose the primary node or a remote deployment in the **Execution node** field of the speech recognition, synthesis or speaker form. See **API Documentation** for model coverage and request fields. The separate **Workbench execution node** selector applies to project generation and sound effects, subtitle cue regeneration, character previews, lyric alignment, melody planning and extraction, and score previews. Prepare every model used by a job on the selected deployment. The workbench shows the verified execution node after completion.
 
 The VOS build supports selecting a registered SenseVoice deployment for one-shot transcription. Administrators deploy the same V-Voice image with V-Scheduler and prepare the model on the target node. Use **API documentation → Cross-node transcription** for placement discovery, deployment and inference calls.
 

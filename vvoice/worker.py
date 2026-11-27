@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
 from .worker_execution import ComputeWorker
-from .worker_models import MODELS
+from .worker_models import model_ids, model_spec
 from .worker_weights import CHUNK_BYTES, MANIFEST_BYTES, Manifest, WeightStore
 
 MODE = "application-backend-v1"
@@ -77,7 +77,8 @@ def build_worker(encoded: str) -> FastAPI:
             "execution_settings": {"provider": provider, "num_threads": threads},
             "async_models": [
                 {"id": model_id, "task_type": task_type, "model_limits": limits}
-                for model_id, (task_type, _, limits) in MODELS.items() if store.ready(model_id)
+                for model_id in model_ids() if store.ready(model_id)
+                for task_type, _, limits in (model_spec(model_id),)
             ],
             "weight_model_delete": True,
         }
@@ -89,7 +90,11 @@ def build_worker(encoded: str) -> FastAPI:
         except ValidationError:
             raise HTTPException(422, "INVALID_WEIGHT_MANIFEST") from None
         files = {row.file_id: row.path for row in manifest.files}
-        if manifest.model_id not in MODELS or files != MODELS[manifest.model_id][1]:
+        try:
+            expected = model_spec(manifest.model_id)[1]
+        except KeyError:
+            expected = {}
+        if files != expected:
             raise HTTPException(422, "WORKER_MODEL_UNSUPPORTED")
         return await run_in_threadpool(store.begin, manifest)
 
@@ -130,7 +135,7 @@ def build_worker(encoded: str) -> FastAPI:
         return await run_in_threadpool(executions.write_input, attempt_id, offset, data)
 
     @app.get("/scheduler/executions/{attempt_id}/outputs/{file_id}", dependencies=channel)
-    def output(attempt_id: str, file_id: Literal["speech.mp3", "embedding.json"],
+    def output(attempt_id: str, file_id: Literal["speech.mp3", "embedding.json", "workbench.zip"],
                offset: Annotated[int, Query(ge=0)]):
         return executions.read_output(attempt_id, file_id, offset)
 

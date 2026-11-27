@@ -65,7 +65,11 @@ def models(include_non_speech: bool = False) -> list[dict]:
     previous = {row["id"]: row for row in json.loads(previous_path.read_text())} if previous_path.is_file() else {}
     result = []
     for row in json.loads(source.read_text())["models"]:
-        non_speech = row.get("task") in {"gen", "instrument", "midi", "align", "asr"}
+        kind = {
+            "gen": "music", "instrument": "soundfont", "midi": "midi",
+            "align": "align", "asr": "asr", "sep": "separation",
+        }.get(row.get("task"), "tts")
+        non_speech = kind != "tts"
         if non_speech and not include_non_speech:
             continue
         # 仅导入模型由管理员校验原文件后发布到同一 ModelScope 仓库，不能伪造下载来源。
@@ -81,7 +85,7 @@ def models(include_non_speech: bool = False) -> list[dict]:
         voices = row.get("voices") or (["Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric", "Ryan", "Aiden", "Ono_Anna", "Sohee"] if row.get("variant") == "customvoice" else [])
         result.append({
             "key": f"audiocpp-{row['id']}", "name": f"{row['name']} {row['precision']}",
-            "kind": ("soundfont" if row.get("task") == "instrument" else "music") if non_speech else "tts", "family": row["family"], "backend": "audio.cpp",
+            "kind": kind, "family": row["family"], "backend": "audio.cpp",
             "description": "Creative speech synthesis through audio.cpp.",
             "capabilities": [row["task"]] if non_speech else speech_capabilities(row),
             "import_required": not bool(row.get("remotePath")),

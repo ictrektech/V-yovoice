@@ -280,11 +280,13 @@ type GenerationSegment struct {
 	TargetClipID string `json:"targetClipId,omitempty"`
 }
 type Activity struct {
-	CueID       string `json:"cueId,omitempty"`
-	ProjectID   string `json:"projectId,omitempty"`
-	CharacterID string `json:"characterId,omitempty"`
-	RequestID   string `json:"requestId,omitempty"`
-	Kind        string `json:"kind"`
+	SelectedNode string `json:"selectedNode,omitempty"`
+	ActualNode   string `json:"actualNode,omitempty"`
+	CueID        string `json:"cueId,omitempty"`
+	ProjectID    string `json:"projectId,omitempty"`
+	CharacterID  string `json:"characterId,omitempty"`
+	RequestID    string `json:"requestId,omitempty"`
+	Kind         string `json:"kind"`
 	// Task 区分同一类操作里的具体任务：melody 为出谱或扒谱，界面据此在旋律谱区域显示进度；align 为歌词对齐，在播放页显示；
 	// recognize 为识别声音样本的参考文本，在参考文本输入框旁显示；transcribe 为转写页转写音频；caption 为给语音版本对齐字幕时间。
 	Task        string     `json:"task,omitempty"`

@@ -78,6 +78,8 @@ export type { UiLocale };
 export type MessageCode = `@yovoice.${string}`;
 export type MessageParams = Record<string, unknown>;
 export interface Activity {
+  selectedNode?: string;
+  actualNode?: string;
   cueId?: string;
   projectId?: string;
   characterId?: string;

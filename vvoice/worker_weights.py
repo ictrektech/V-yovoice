@@ -189,16 +189,19 @@ class WeightStore:
                 raise HTTPException(409, "WORKER_WEIGHTS_NOT_READY")
             return {row.file_id: self.path(directory, row) for row in manifest.files}
 
-    def ready(self, model_id: str) -> bool:
+    def ready_transfer(self, model_id: str) -> str | None:
         with self.lock:
             for path in self.root.glob("*/verified.json"):
                 try:
                     receipt = self.status(path.parent.name)
                     if receipt["model_id"] == model_id and receipt["verified"]:
-                        return True
+                        return path.parent.name
                 except HTTPException:
                     continue
-        return False
+        return None
+
+    def ready(self, model_id: str) -> bool:
+        return self.ready_transfer(model_id) is not None
 
     def delete(self, model_id: str) -> dict:
         count = 0

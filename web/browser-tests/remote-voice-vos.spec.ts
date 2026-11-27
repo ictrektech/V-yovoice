@@ -166,3 +166,51 @@ test('VOS 合成与声纹表单可选择实际执行节点', async ({ page }) =>
   await voices.getByRole('button', { name: '开始识别' }).click();
   await expect(voices.getByText('实际执行节点 Spark B · spark-b')).toBeVisible();
 });
+
+test('工作台的计算请求共用节点选择，取消和项目保存不携带节点', async ({ page }) => {
+  test.skip(process.env.VITE_VOS !== 'true', '需要 VOS 构建');
+  const target = { deployment_id: '00000000000000000000000000000001', node_id: 'spark-worker' };
+  const calls: Record<string, unknown>[] = [];
+  await page.addInitScript(() => {
+    localStorage.setItem('v-voice-creator-locale', 'zh-CN');
+    window.vos_platform = { getState: async () => ({ locale: 'zh-CN' }), api: { v1000: { oauth2: {
+      authorize: async input => ({ code: 'fixture-code', state: input.state }),
+      token: async () => ({ access_token: 'fixture-token', expires_in: 3600 }),
+    } } } };
+  });
+  await page.route('**/api/v1/compute/placements?task_type=voice.workbench', route => route.fulfill({ json: {
+    items: [{ ...target, node_name: 'Spark A', profile: 'dgx-spark', model_id: 'audiocpp-yue2-3b-q4' }],
+  } }));
+  await page.route('**/studio-api/call', route => {
+    const body = route.request().postDataJSON();
+    if (body.method === 'state.get') return route.fulfill({ json: {
+      result: { state: emptyState(), catalog: [], engine: { version: 'v0.9.1', minimum: 'v0.9.1' }, desktop: false },
+    } });
+    calls.push(body);
+    return route.fulfill({ json: { result: true } });
+  });
+  await page.route('**/api/v1/scheduler/binding', route => route.fulfill({ json: { configured: true } }));
+  await page.route('**/api/v1/creative-models', route => route.fulfill({ json: [] }));
+  await page.goto('/');
+  const node = page.getByRole('combobox', { name: '工作台执行节点' });
+  await node.click();
+  await page.getByRole('option', { name: 'Spark A · dgx-spark' }).click();
+  const methods = ['generation.start', 'generation.cue', 'character.preview', 'generation.alignLyrics',
+    'melody.plan', 'melody.cover', 'melody.listen', 'operation.cancel', 'draft.save'];
+  await page.evaluate(async names => {
+    const { vosCall } = await import(/* @vite-ignore */ '/src/shared/lib/vos.ts' as string);
+    for (const method of names) await vosCall(method, {});
+  }, methods);
+  for (const [index, method] of methods.entries()) {
+    const request = calls.find(row => row.method === method);
+    expect(request?.method).toBe(method);
+    expect(request?.executionNode).toEqual(index < 7 ? target : undefined);
+  }
+  await node.click();
+  await page.getByRole('option', { name: '主节点（本机）' }).click();
+  await page.evaluate(async () => {
+    const { vosCall } = await import(/* @vite-ignore */ '/src/shared/lib/vos.ts' as string);
+    await vosCall('generation.start', {});
+  });
+  expect(calls.filter(row => row.method === 'generation.start').at(-1)?.executionNode).toBeUndefined();
+});

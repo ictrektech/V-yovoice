@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@astryxdesign/core/Button';
+import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Server } from 'lucide-react';
@@ -62,6 +63,9 @@ function RemoteVoice({ onClose }: { onClose: () => void }) {
   const [modelIds, setModelIds] = useState<Record<string, string>>({});
   const [modes, setModes] = useState<Record<string, WeightMode>>({});
   const [target, setTarget] = useState('');
+  const [primaryModel, setPrimaryModel] = useState('');
+  const [cpu, setCpu] = useState(0);
+  const [memory, setMemory] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
   const [remove, setRemove] = useState<{ row: Deployment; model?: string }>();
@@ -70,6 +74,8 @@ function RemoteVoice({ onClose }: { onClose: () => void }) {
   const eligible = (overview?.targets ?? []).filter(item =>
     !overview?.deployments.some(row => row.target_id === item.id && row.target_kind === item.kind && row.state !== 'removed'));
   const destination = eligible.find(item => targetKey(item) === target);
+  const localModels = overview?.models ?? [];
+  const sourceModel = localModels.find(item => item.model_id === primaryModel) ?? localModels.find(item => item.ready) ?? localModels[0];
 
   async function load(signal?: AbortSignal) {
     const catalog = await payload<Overview>(vosFetch(deploymentsPath, { signal }));
@@ -104,14 +110,16 @@ function RemoteVoice({ onClose }: { onClose: () => void }) {
 
   function deploy() {
     if (!destination) return;
-    const requestKey = requestKeys.current.get(target) ?? crypto.randomUUID();
-    requestKeys.current.set(target, requestKey);
+    const budgetKey = `${target}:${cpu}:${memory}`;
+    const requestKey = requestKeys.current.get(budgetKey) ?? crypto.randomUUID();
+    requestKeys.current.set(budgetKey, requestKey);
     void run('deploy', async () => {
       await payload(vosFetch(deploymentsPath, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: destination.kind, node_id: destination.id, request_key: requestKey }),
+        body: JSON.stringify({ kind: destination.kind, node_id: destination.id, request_key: requestKey,
+          cpu_millicores: cpu ? cpu : undefined, memory_mib: memory ? memory : undefined }),
       }));
-      requestKeys.current.delete(target);
+      requestKeys.current.delete(budgetKey);
       setTarget('');
     });
   }
@@ -135,12 +143,14 @@ function RemoteVoice({ onClose }: { onClose: () => void }) {
       {overview ? <>
         <VStack gap={2}>
           <strong>{tr('primary')}</strong>
-          {(overview.models ?? []).map(item => {
+          {sourceModel ? (() => {
+            const item = sourceModel;
             const downloading = item.status === 'downloading';
             const verifying = item.status === 'verifying';
             const path = '/api/v1/models/' + encodeURIComponent(item.model_id);
-            return <HStack key={item.model_id} gap={2} wrap="wrap" vAlign="center">
-              <strong>{item.name}</strong>
+            return <HStack gap={2} wrap="wrap" vAlign="end">
+              <Selector label={tr('model')} value={item.model_id} onChange={setPrimaryModel}
+                options={localModels.map(model => ({ value: model.model_id, label: model.name }))} />
               <small role="status">{item.ready ? tr('registered') : tr(`primaryState.${item.status}`)}
                 {downloading && item.progress != null ? ` · ${Math.floor(item.progress * 100)}%` : ''}</small>
               {item.error ? <small role="alert">{item.error}</small> : null}
@@ -148,15 +158,24 @@ function RemoteVoice({ onClose }: { onClose: () => void }) {
                 isDisabled={!!busy} onClick={() => void run(`install:${item.model_id}`, () =>
                   payload(vosFetch(path + (downloading ? '/stop' : '/pull'), { method: 'POST' })))} /> : null}
             </HStack>;
-          })}
+          })() : null}
         </VStack>
         <HStack gap={2} wrap="wrap" vAlign="end">
           <Selector label={tr('target')} placeholder={tr('selectTarget')} options={eligible.map(item => ({
             value: targetKey(item), label: `${item.node_name || item.id} · ${item.profile}`,
           }))} value={target} onChange={setTarget} isDisabled={!!busy || !eligible.length} />
-          <Button label={tr('deploy')} variant="primary" isDisabled={!!busy || !destination} isLoading={busy === 'deploy'} onClick={deploy} />
+          <Button label={tr('deploy')} variant="primary" isDisabled={!!busy || !destination || (cpu > 0 && cpu < 100) || (memory > 0 && memory < 16)}
+            isLoading={busy === 'deploy'} onClick={deploy} />
         </HStack>
-        {destination ? <small>{overview.images[destination.profile]}</small> : null}
+        {destination ? <>
+          <small>{overview.images[destination.profile]}</small>
+          <HStack gap={2} wrap="wrap" vAlign="end">
+            <NumberInput label={tr('cpuBudget')} size="sm" value={cpu} onChange={value => setCpu(Math.round(value || 0))}
+              min={0} max={128000} step={100} isDisabled={!!busy} />
+            <NumberInput label={tr('memoryBudget')} size="sm" value={memory} onChange={value => setMemory(Math.round(value || 0))}
+              min={0} max={1048576} step={16} isDisabled={!!busy} />
+          </HStack>
+        </> : null}
         {overview.deployments.filter(row => row.state !== 'removed').map(row => {
           const name = row.node_name || row.target_id;
           const preparations = row.preparations ?? [];

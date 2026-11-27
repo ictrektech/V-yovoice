@@ -8,6 +8,7 @@ import json
 import math
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -20,7 +21,10 @@ from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from .worker_weights import CHUNK_BYTES, DIGEST, WeightStore, write_json
-from .worker_models import EMBED, MAX_OUTPUT_BYTES, MODELS, SYNTHESIZE, TRANSCRIBE
+from .worker_models import (
+    EMBED, MAX_OUTPUT_BYTES, SYNTHESIZE, TRANSCRIBE, WORKBENCH, WORKBENCH_BUNDLE_LIMIT,
+    model_spec, workbench_models,
+)
 
 ATTEMPT = r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,95}$"
 TASK_TYPE = TRANSCRIBE
@@ -43,8 +47,23 @@ class SpeechParameters(BaseModel):
     voice: str = Field(default="default", max_length=96)
 
 
+class WorkbenchParameters(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    size_bytes: int = Field(strict=True, gt=0, le=WORKBENCH_BUNDLE_LIMIT)
+    sha256: str = Field(pattern=DIGEST)
+    models: list[str] = Field(min_length=1, max_length=16)
+
+
 def failure(code: str) -> dict:
     return {"status": "failed", "stopped": True, "result": {"code": code}}
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(CHUNK_BYTES), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 class ComputeWorker:
@@ -97,9 +116,10 @@ class ComputeWorker:
 
     def sweep_embeddings(self):
         cutoff = time() - OUTPUT_RETENTION_SECONDS
-        for path in self.root.glob("*/embedding.json"):
-            if path.parent.name not in self.active and path.stat().st_mtime < cutoff:
-                path.unlink(missing_ok=True)
+        for pattern, age in (("*/embedding.json", cutoff), ("*/workbench.zip", time() - 86400)):
+            for path in self.root.glob(pattern):
+                if path.parent.name not in self.active and path.stat().st_mtime < age:
+                    path.unlink(missing_ok=True)
 
     def stop(self, attempt: str, result: dict) -> dict:
         run = self.active.get(attempt)
@@ -113,6 +133,7 @@ class ComputeWorker:
                 process.wait(timeout=5)
         directory = self.path(attempt)
         (directory / "reference").unlink(missing_ok=True)
+        shutil.rmtree(directory / "workbench", ignore_errors=True)
         write_json(directory / "receipt.json", result)
         self.active.pop(attempt, None)
         return result
@@ -158,7 +179,9 @@ class ComputeWorker:
             directory.mkdir(mode=0o700, parents=True, exist_ok=True)
             size = path.stat().st_size if path.is_file() else 0
             end = offset + len(data)
-            if end > MAX_AUDIO_BYTES or offset > size:
+            limit_file = directory / "input-limit"
+            limit = int(limit_file.read_text()) if limit_file.is_file() else MAX_AUDIO_BYTES
+            if end > limit or offset > size:
                 raise HTTPException(409, "WORKER_INPUT_OFFSET_MISMATCH")
             if offset < size:
                 with path.open("rb") as stream:
@@ -210,11 +233,11 @@ class ComputeWorker:
     def start(self, attempt: str, directory: Path, body: dict, lease: int) -> dict:
         try:
             model_id = body.get("model_id")
-            if model_id not in MODELS:
-                raise ValueError()
-            task, _, _ = MODELS[model_id]
+            task, _, _ = model_spec(model_id)
             limits = body.get("model_limits")
-            expected = {"text_characters"} if task == SYNTHESIZE else {"input_bytes", "sample_rate", "duration_seconds"}
+            expected = {
+                SYNTHESIZE: {"text_characters"}, WORKBENCH: {"bundle_bytes"},
+            }.get(task, {"input_bytes", "sample_rate", "duration_seconds"})
             if not isinstance(limits, dict) or not expected.issubset(limits) or any(
                 type(limits[name]) not in (float, int) or not math.isfinite(limits[name]) or limits[name] <= 0
                 for name in expected
@@ -225,27 +248,40 @@ class ComputeWorker:
                 if len(parameters.input) > limits["text_characters"]:
                     raise ValueError()
             else:
-                parameters = AudioParameters.model_validate(body.get("parameters"))
-                if parameters.size_bytes > limits["input_bytes"]:
+                parameters = (WorkbenchParameters if task == WORKBENCH else AudioParameters).model_validate(body.get("parameters"))
+                limit = limits["bundle_bytes"] if task == WORKBENCH else limits["input_bytes"]
+                if parameters.size_bytes > limit:
                     raise ValueError()
+                if task == WORKBENCH:
+                    (directory / "input-limit").write_text(str(parameters.size_bytes))
                 audio = directory / "reference"
                 if not audio.is_file() or audio.stat().st_size < parameters.size_bytes:
-                    if (directory / "attempt.json").stat().st_mtime + 120 < time():
+                    if (directory / "attempt.json").stat().st_mtime + (900 if task == WORKBENCH else 120) < time():
                         return self.stop(attempt, failure("WORKER_INPUT_TIMEOUT"))
                     return self.receipt(attempt)
                 if audio.stat().st_size != parameters.size_bytes:
                     raise ValueError()
-                with audio.open("rb") as stream:
-                    if hashlib.file_digest(stream, "sha256").hexdigest() != parameters.sha256:
-                        raise ValueError()
+                if file_sha256(audio) != parameters.sha256:
+                    raise ValueError()
             paths = self.store.verified_files(body.get("transfer_id", ""), model_id)
-        except (TypeError, ValueError, HTTPException):
+            packages = {}
+            if task == WORKBENCH:
+                if model_id not in parameters.models or len(set(parameters.models)) != len(parameters.models):
+                    raise ValueError()
+                for key in parameters.models:
+                    item = workbench_models()[key]
+                    verified = paths if key == model_id else self.store.verified_files(self.store.ready_transfer(key) or "", key)
+                    for field, target in item["runtime"]["files"].items():
+                        if target in packages and packages[target] != str(verified[field]):
+                            raise ValueError()
+                        packages[target] = str(verified[field])
+        except (KeyError, OSError, TypeError, ValueError, HTTPException):
             return self.stop(attempt, failure("WORKER_INPUT_OR_WEIGHTS_INVALID"))
         if self.active:
             return self.stop(attempt, failure("WORKER_EXECUTOR_BUSY"))
         operation = directory / "operation.json"
         write_json(operation, {"model_id": model_id, "files": {name: str(path) for name, path in paths.items()},
-                               "parameters": parameters.model_dump(), "limits": limits})
+                               "parameters": parameters.model_dump(), "limits": limits, "packages": packages})
         env = {**os.environ, "VVOICE_SCHEDULER_REQUIRED": "false",
                "VVOICE_PROVIDER": self.provider, "VVOICE_NUM_THREADS": str(self.threads)}
         env.pop("V_SCHEDULER_BACKEND_CHANNEL_TOKEN", None)
@@ -266,7 +302,32 @@ def execute_operation(operation: Path):
 
     descriptor = json.loads(operation.read_bytes())
     model_id = descriptor["model_id"]
-    task = MODELS[model_id][0]
+    task = model_spec(model_id)[0]
+    if task == WORKBENCH:
+        from .creative import REPOSITORY
+
+        root = operation.parent / "workbench"
+        modelhub = root / "modelhub"
+        base = modelhub / "export" / "ms" / REPOSITORY / "current"
+        for relative, path in descriptor["packages"].items():
+            target = base / relative
+            if not target.resolve().is_relative_to(base.resolve()):
+                raise ValueError("invalid catalog path")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.symlink_to(path)
+        output = operation.parent / "workbench.zip"
+        subprocess.run(
+            ["/opt/vvoice/vvoice-studio", "node-job", str(root / "state"), str(operation.parent / "reference"), str(output)],
+            env={**os.environ, "MODEL_HUB_SHARED_MODELS_PATH": str(modelhub), "VVOICE_SHARED_MODELS": "true"},
+            check=True,
+        )
+        size = output.stat().st_size
+        if not 0 < size <= WORKBENCH_BUNDLE_LIMIT:
+            raise ValueError("invalid workbench result size")
+        write_json(operation.parent / "transcription.json", {
+            "output": {"file_id": output.name, "size_bytes": size, "sha256": file_sha256(output)},
+        })
+        return
     worker_files.set({model_id: descriptor["files"]})
     if task == SYNTHESIZE:
         parameters = SpeechParameters.model_validate(descriptor["parameters"])

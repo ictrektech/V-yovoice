@@ -55,6 +55,14 @@ export function schedulerFetch(path: string, init?: RequestInit) {
   return authenticatedFetch(`/api/com.ictrek.v-scheduler${path}`, init);
 }
 
+export type WorkbenchNode = { node_id: string; deployment_id: string };
+const workbenchJobs = new Set([
+  'generation.start', 'generation.cue', 'character.preview', 'generation.alignLyrics',
+  'melody.plan', 'melody.cover', 'melody.listen',
+]);
+let workbenchNode: WorkbenchNode | undefined;
+export function selectWorkbenchNode(next: WorkbenchNode | undefined) { workbenchNode = next; }
+
 async function authenticatedFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${await token()}`);
@@ -65,7 +73,8 @@ async function authenticatedFetch(url: string, init: RequestInit = {}): Promise<
 
 export async function vosCall<T>(method: string, data: unknown): Promise<T> {
   const requestId = crypto.randomUUID().replaceAll('-', '');
-  const response = await vosFetch('/studio-api/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method, data, requestId }) });
+  const executionNode = workbenchJobs.has(method) ? workbenchNode : undefined;
+  const response = await vosFetch('/studio-api/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method, data, requestId, executionNode }) });
   if (!response.ok) throw new Error((await response.text()).slice(0, 300));
   const result = await response.json();
   if (result.error) throw parseCallError(result.error);

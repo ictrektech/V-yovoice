@@ -27,6 +27,7 @@ import { SchedulerStatus } from '../features/api/scheduler-status';
 import { ModelManagement } from '../features/api/model-management';
 import { PrepareModels } from '../features/api/prepare-models';
 import { RemoteVoiceButton } from '../features/api/remote-voice';
+import { WorkbenchExecutionNode } from '../features/api/workbench-node';
 const ApiDocumentation = lazy(() => import('../features/api/api-documentation').then(module => ({ default: module.ApiDocumentation })));
 import { noticeMessage } from '../shared/lib/call-error';
 import { isYuE, projectKind, createDraft, requiresVoice, synthesisSettings, type Draft, type EngineInfo, type State, type ModelPackage, type Voice, type Generation, type Track, preferredModel, newId } from '../shared/workbench';
@@ -344,9 +345,13 @@ export function WorkbenchChrome({ state, catalog, catalogRevision, engine, ready
       {ready && !assistantHidden && launcherHidden && !assistantOpen ? <PageBoundary name="assistant-title"><Suspense fallback={null}><AssistantTitleButton open={assistantOpen} toggle={() => setAssistantOpen(open => !open)} /></Suspense></PageBoundary> : null}
       {inspectorAvailable ? <Button label={inspectorCollapsed ? t('@yovoice.app.expandInspector') : t('@yovoice.app.collapseInspector')} isIconOnly variant="ghost" size="sm" icon={<PanelRight size={17} />} aria-expanded={!inspectorCollapsed} onClick={toggleInspectorPanel} /> : null}</HStack> : null}
     {isVos ? <SchedulerStatus /> : null}
-    {isVos && page !== 'models' && page !== 'models-creative' ? <HStack paddingInline={4} paddingBlock={2} gap={2} hAlign="end">
-      {page === 'asr' || page === 'tts' || page === 'speaker' ? <RemoteVoiceButton /> : null}
+    {isVos ? <HStack paddingInline={4} paddingBlock={2} gap={2} hAlign="end" wrap="wrap" vAlign="end">
+      <WorkbenchExecutionNode busy={busy} selected={activity?.selectedNode} actual={activity?.actualNode}
+        visible={!['asr', 'tts', 'speaker', 'hotwords', 'dialogue', 'api-docs', 'models'].includes(page)} />
+      {page !== 'models' ? <RemoteVoiceButton /> : null}
+      {page !== 'models' && page !== 'models-creative' ?
       <Button data-testid="prepare-models" size="sm" label={t('@vvoice.models.prepare')} aria-haspopup="dialog" onClick={() => setPrepareOpen(true)} />
+      : null}
     </HStack> : null}
     <AppShell variant="elevated" sideNav={navigation.isCollapsed ? undefined : sidebar} mobileNav={{ breakpoint: 'none' }} height="fill"><VStack className="app-sheet" gap={0}>
       {characterEditor ? <VStack style={{ display: page === 'characters' ? 'flex' : 'none', height: '100%', minHeight: 0 }} gap={0}><PageBoundary name="character-editor"><CharacterEditor active={page === 'characters'} initial={characterEditor} state={state} catalog={catalog} settings={openSettings} apply={characterOrigin.current ? async saved => { const origin = characterOrigin.current!; await applyToTarget(saved, origin.draftId, origin.speakerId); setCharacterEditor(null); } : undefined} close={() => { setCharacterEditor(null); setPage(characterReturnPage.current); }} /></PageBoundary></VStack> : null}

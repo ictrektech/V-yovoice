@@ -6833,6 +6833,15 @@
   "@vvoice.dub.videoSize": {
     "defaultMessage": "Combined export inputs exceed 200 MiB."
   },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "Workbench execution node"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "Remote node discovery temporarily unavailable"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "Selected execution node"
+  },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "Remote nodes"
   },
@@ -6868,6 +6877,12 @@
   },
   "@yovoice.remoteVoice.removeDescription": {
     "defaultMessage": "The backend and its remote model registration will be removed."
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "CPU budget (millicores, 0 = automatic)"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "Memory budget (MiB, 0 = automatic)"
   },
   "@yovoice.remoteVoice.primary": {
     "defaultMessage": "Primary node (local)"
