@@ -80,7 +80,7 @@ func TestAlignmentSnapshotChecksOwnerAndApprovedModel(t *testing.T) {
 	}
 	j.Config.Models = map[string]string{"lyric-align-q8": "executor"}
 	data := json.RawMessage(`{"id":"` + id + `","modelId":"client-budget"}`)
-	snapshot, err := j.alignmentSnapshot("alice", w, data)
+	snapshot, err := j.alignmentSnapshot("alice", w, data, j.config().Models)
 	if err != nil || !strings.Contains(string(snapshot), `"modelId":"lyric-align-q8"`) {
 		t.Fatal("未固定批准模型", string(snapshot), err)
 	}
@@ -88,12 +88,16 @@ func TestAlignmentSnapshotChecksOwnerAndApprovedModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := j.alignmentSnapshot("bob", foreign, data); err == nil {
+	if _, err := j.alignmentSnapshot("bob", foreign, data, j.config().Models); err == nil {
 		t.Fatal("允许对齐其他用户的版本")
 	}
 	j.Config.Models = nil
-	if _, err := j.alignmentSnapshot("alice", w, data); err == nil {
+	if _, err := j.alignmentSnapshot("alice", w, data, j.config().Models); err == nil {
 		t.Fatal("未审批模型仍可排队")
+	}
+	remote := map[string]string{"lyric-align-q8": "selected-node-executor"}
+	if _, err := j.alignmentSnapshot("alice", w, data, remote); err != nil {
+		t.Fatal("选择远端时错误地要求主节点批准", err)
 	}
 }
 

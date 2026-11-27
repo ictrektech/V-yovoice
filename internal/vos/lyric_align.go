@@ -34,7 +34,7 @@ func timingOf(state schema.State, id string) *lyricTiming {
 }
 
 // 对齐只允许引用当前用户已获确认的版本，模型选择也由服务端核验。
-func (j *Jobs) alignmentSnapshot(user string, w *workbench.Workbench, data json.RawMessage) (json.RawMessage, error) {
+func (j *Jobs) alignmentSnapshot(user string, w *workbench.Workbench, data json.RawMessage, approved map[string]string) (json.RawMessage, error) {
 	var input alignmentInput
 	if err := json.Unmarshal(data, &input); err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (j *Jobs) alignmentSnapshot(user string, w *workbench.Workbench, data json.
 			continue
 		}
 		available = true
-		if j.config().Models[model.ID] == "" {
+		if approved[model.ID] == "" {
 			continue
 		}
 		input.ModelID = model.ID

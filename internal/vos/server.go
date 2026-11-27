@@ -224,16 +224,7 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 				return
 			}
 			result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, call.Data, call.ExecutionNode)
-		case "generation.alignLyrics":
-			if s.Jobs == nil {
-				http.Error(out, "V-Scheduler configuration required", 503)
-				return
-			}
-			var snapshot json.RawMessage
-			if snapshot, err = s.Jobs.alignmentSnapshot(id, w, call.Data); err == nil {
-				result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, snapshot, call.ExecutionNode)
-			}
-		case "melody.plan", "melody.cover", "melody.listen":
+		case "generation.alignLyrics", "melody.plan", "melody.cover", "melody.listen":
 			if s.Jobs == nil {
 				http.Error(out, "V-Scheduler configuration required", 503)
 				return
@@ -244,7 +235,12 @@ func (s *Server) ServeHTTP(out http.ResponseWriter, r *http.Request) {
 			}
 			if err == nil {
 				var snapshot json.RawMessage
-				if snapshot, err = musicSnapshot(w, call.Method, call.Data, approved); err == nil {
+				if call.Method == "generation.alignLyrics" {
+					snapshot, err = s.Jobs.alignmentSnapshot(id, w, call.Data, approved)
+				} else {
+					snapshot, err = musicSnapshot(w, call.Method, call.Data, approved)
+				}
+				if err == nil {
 					result, err = s.Jobs.Enqueue(id, call.RequestID, call.Method, snapshot, call.ExecutionNode)
 				}
 			}
