@@ -2,28 +2,41 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import binascii
 import hashlib
+import json
+import re
+from contextlib import asynccontextmanager
 from pathlib import Path
 from time import monotonic
-from typing import Literal
+from typing import Callable, Literal
 from uuid import uuid4
 
 import httpx
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 
 from .admission import configuration
-from .catalog import find_model, resolve_files
+from .catalog import find_model, model_root, resolve_files
 from .config import settings
 from .dialogue import Identity, _admin, _verify_user
+from .modelhub import list_models
 from .scheduling_options import operator_headers
-from .worker import MODE, SENSEVOICE, SENSEVOICE_FILES
-from .worker_execution import MAX_AUDIO_BYTES, TASK_TYPE
-from .worker_weights import CHUNK_BYTES
+from .worker import MODE
+from .worker_execution import MAX_AUDIO_BYTES, TASK_TYPE, SpeechParameters
+from .worker_models import EMBED, MAX_OUTPUT_BYTES, MODELS, SENSEVOICE, SYNTHESIZE
+from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore, open_speaker_store
+from .worker_weights import CHUNK_BYTES, write_json
 
 router = APIRouter(prefix="/api/v1/compute")
 DEPLOYMENT_ID = r"^[a-f0-9]{32}$"
 ID = r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,95}$"
+WeightMode = Literal["auto", "shared", "copy"]
+_preparations: dict[tuple[str, str], asyncio.Task] = {}
+_mutating: set[str] = set()
+_shared_errors = {"BACKEND_SHARED_MODEL_HUB_UNAVAILABLE", "BACKEND_TRANSFER_CONFLICT",
+                  "BACKEND_TRANSFER_NOT_FOUND"}
 
 
 def client() -> httpx.AsyncClient:
@@ -73,7 +86,8 @@ async def node_names(connection: httpx.AsyncClient) -> dict[tuple[str, str], str
 
 
 @router.get("/placements")
-async def placements(identity: Identity = Depends(_verify_user)):
+async def placements(task_type: Literal["voice.transcribe", "voice.synthesize", "voice.speaker_embedding"] = TASK_TYPE,
+                     identity: Identity = Depends(_verify_user)):
     async with client() as connection:
         records = await scheduler(connection, "GET", "backend-deployments")
         placements_with_targets = []
@@ -87,7 +101,7 @@ async def placements(identity: Identity = Depends(_verify_user)):
                     raise
                 target = (row["target_kind"], row["target_id"])
                 placements_with_targets.extend((item, target) for item in selected["items"]
-                                               if item["task_type"] == TASK_TYPE)
+                                               if item["task_type"] == task_type)
         names = await node_names(connection) if placements_with_targets else {}
         return {"items": [{**item, "node_name": names.get(target)} for item, target in placements_with_targets],
                 "can_force_admission": _admin(identity)}
@@ -101,11 +115,32 @@ async def deployments():
             scheduler(connection, "GET", "backend-deployments"),
             node_names(connection),
         )
+        async def describe(row):
+            registered = []
+            if row["state"] == "running" and not row.get("last_error"):
+                try:
+                    result = await scheduler(connection, "GET", f"backend-deployments/{row['id']}/models")
+                    registered = [item["model_id"] for item in result["items"]]
+                except HTTPException as error:
+                    if error.status_code != 409:
+                        raise
+            return {**row, "node_name": names.get((row["target_kind"], row["target_id"])),
+                    "registered_models": registered,
+                    "preparations": [record for key in MODELS if (record := read_preparation(row["id"], key))]}
+        descriptions = await asyncio.gather(*(describe(row) for row in rows["items"]
+                                              if worker_deployment(row) and row["state"] != "removed"))
     targets = [{**target, "node_name": names.get((target["kind"], target["id"]))}
                for target in access.get("targets", [])]
-    return {"targets": targets, "images": access.get("images", {}),
-            "deployments": [{**row, "node_name": names.get((row["target_kind"], row["target_id"]))}
-                            for row in rows["items"] if worker_deployment(row)]}
+    models = await preparation_models()
+    return {"targets": targets, "images": access.get("images", {}), "models": models,
+            "deployments": descriptions}
+
+
+async def preparation_models():
+    rows = await list_models([find_model(key) for key in MODELS])
+    return [{"model_id": item["key"], "name": item["name"], "kind": item["kind"],
+             "status": item["status"], "ready": item["status"] == "ready", "progress": item.get("progress"),
+             "error": item.get("error")} for item in rows]
 
 
 class Deploy(BaseModel):
@@ -143,30 +178,133 @@ async def require_deployment(connection, deployment_id: str) -> str:
 
 @router.post("/deployments/{deployment_id}/{action}", dependencies=[Depends(require_admin)])
 async def lifecycle(deployment_id: str, action: Literal["start", "stop", "prepare"]):
-    async with client() as connection:
-        path = await require_deployment(connection, deployment_id)
-        if action == "prepare":
-            return await prepare(connection, path)
-        return await scheduler(connection, "POST", f"{path}/{action}")
+    async with deployment_change(deployment_id) as (connection, path):
+        return await prepare(connection, path) if action == "prepare" else await scheduler(connection, "POST", f"{path}/{action}")
 
 
 @router.delete("/deployments/{deployment_id}", dependencies=[Depends(require_admin)])
 async def delete_deployment(deployment_id: str):
-    async with client() as connection:
-        return await scheduler(connection, "DELETE", await require_deployment(connection, deployment_id))
+    async with deployment_change(deployment_id) as (connection, path):
+        receipt = await scheduler(connection, "DELETE", path)
+        for model_id in MODELS:
+            preparation_path(deployment_id, model_id).unlink(missing_ok=True)
+        return receipt
 
 
-@router.delete("/deployments/{deployment_id}/models/sensevoice-int8", dependencies=[Depends(require_admin)])
-async def delete_model(deployment_id: str):
-    async with client() as connection:
-        path = await require_deployment(connection, deployment_id)
-        return await scheduler(connection, "DELETE", f"{path}/models/{SENSEVOICE}")
+@router.delete("/deployments/{deployment_id}/models/{model_id}", dependencies=[Depends(require_admin)])
+async def delete_model(deployment_id: str, model_id: str):
+    if model_id not in MODELS:
+        raise HTTPException(404, "VOICE_COMPUTE_MODEL_UNSUPPORTED")
+    async with deployment_change(deployment_id) as (connection, path):
+        receipt = await scheduler(connection, "DELETE", f"{path}/models/{model_id}")
+        preparation_path(deployment_id, model_id).unlink(missing_ok=True)
+        return receipt
 
 
-def source_files() -> tuple[list[dict], dict[str, Path]]:
+@asynccontextmanager
+async def deployment_change(deployment_id: str):
+    if any(key[0] == deployment_id for key in _preparations) or deployment_id in _mutating:
+        raise HTTPException(409, "VOICE_COMPUTE_PREPARATION_ACTIVE")
+    _mutating.add(deployment_id)
     try:
-        paths = {role: Path(path) for role, path in resolve_files(find_model(SENSEVOICE, "asr")).items()}
-        if {role: path.name for role, path in paths.items()} != SENSEVOICE_FILES:
+        async with client() as connection:
+            yield connection, await require_deployment(connection, deployment_id)
+    finally:
+        _mutating.discard(deployment_id)
+
+
+def preparation_path(deployment_id: str, model_id: str) -> Path:
+    return settings.data_dir / "compute-preparations" / f"{deployment_id}-{model_id}.json"
+
+
+def read_preparation(deployment_id: str, model_id: str) -> dict | None:
+    if not re.fullmatch(DEPLOYMENT_ID, deployment_id):
+        return None
+    try:
+        record = json.loads(preparation_path(deployment_id, model_id).read_bytes())
+    except FileNotFoundError:
+        return None
+    if record["state"] == "preparing" and (deployment_id, model_id) not in _preparations:
+        return {**record, "state": "interrupted", "error": "VOICE_COMPUTE_PREPARATION_INTERRUPTED"}
+    return record
+
+
+class PrepareModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    model_id: str = SENSEVOICE
+    weight_mode: WeightMode
+
+
+@router.post("/deployments/{deployment_id}/models", status_code=202, dependencies=[Depends(require_admin)])
+async def prepare_model(deployment_id: str, data: PrepareModel):
+    if data.model_id not in MODELS:
+        raise HTTPException(404, "VOICE_COMPUTE_MODEL_UNSUPPORTED")
+    key = (deployment_id, data.model_id)
+    if key in _preparations:
+        previous = read_preparation(*key)
+        if previous and previous["weight_mode"] == data.weight_mode:
+            return previous
+        raise HTTPException(409, "VOICE_COMPUTE_PREPARATION_ACTIVE")
+    async with deployment_change(deployment_id) as (connection, path):
+        row = await scheduler(connection, "GET", path)
+        if row["state"] != "running" or row.get("last_error"):
+            raise HTTPException(409, "VOICE_COMPUTE_BACKEND_NOT_RUNNING")
+        models = await scheduler(connection, "GET", f"{path}/models")
+        if any(model["model_id"] == data.model_id for model in models["items"]):
+            raise HTTPException(409, "VOICE_COMPUTE_MODEL_ALREADY_REGISTERED")
+        record = {
+            "model_id": data.model_id, "weight_mode": data.weight_mode, "weight_source": None,
+            "state": "preparing", "phase": "source_check", "received_bytes": 0,
+            "total_bytes": 0, "error": None,
+        }
+        status_path = preparation_path(*key)
+        status_path.parent.mkdir(parents=True, exist_ok=True)
+        write_json(status_path, record)
+        _preparations[key] = asyncio.create_task(run_preparation(key, path, status_path, record))
+        return record
+
+
+async def run_preparation(key: tuple[str, str], path: str, status_path: Path, record: dict):
+    last_write = 0.0
+
+    def progress(phase: str, source: str | None, received: int, total: int):
+        nonlocal last_write
+        now = monotonic()
+        changed = (phase, source) != (record["phase"], record["weight_source"])
+        record.update(phase=phase, weight_source=source, received_bytes=received, total_bytes=total)
+        if changed or received == total or now - last_write >= 1:
+            write_json(status_path, record)
+            last_write = now
+
+    try:
+        async with client() as connection:
+            await prepare(connection, path, record["weight_mode"], progress, model_id=key[1])
+        record.update(state="registered")
+    except HTTPException as error:
+        record.update(state="failed", error=error.detail)
+    except (KeyError, OSError, ValueError):
+        record.update(state="failed", error="VOICE_COMPUTE_PREPARATION_FAILED")
+    except asyncio.CancelledError:
+        record.update(state="interrupted", error="VOICE_COMPUTE_PREPARATION_INTERRUPTED")
+        raise
+    finally:
+        try:
+            write_json(status_path, record)
+        finally:
+            _preparations.pop(key, None)
+
+
+def source_files(model_id: str = SENSEVOICE) -> tuple[list[dict], dict[str, Path]]:
+    try:
+        item = find_model(model_id)
+        paths = {role: Path(path) for role, path in resolve_files(item).items()}
+        root = model_root(item).resolve()
+        for name in item["runtime"].get("rule_fsts", []):
+            rule = (root / name).resolve()
+            if not rule.is_relative_to(root):
+                raise ValueError()
+            paths[f"fst-{rule.stem}"] = rule
+        if {role: path.name for role, path in paths.items()} != MODELS[model_id][1]:
             raise ValueError()
         records = []
         for role, path in paths.items():
@@ -181,30 +319,43 @@ def source_files() -> tuple[list[dict], dict[str, Path]]:
         raise HTTPException(409, "VOICE_COMPUTE_SOURCE_MODEL_UNAVAILABLE") from None
 
 
-async def prepare(connection: httpx.AsyncClient, path: str):
-    files, paths = await asyncio.to_thread(source_files)
-    manifest = {"model_id": SENSEVOICE, "files": files}
+async def prepare(connection: httpx.AsyncClient, path: str, mode: WeightMode = "auto",
+                  progress: Callable[[str, str | None, int, int], None] | None = None, *,
+                  model_id: str = SENSEVOICE):
+    report = progress or (lambda *_: None)
+    files, paths = await asyncio.to_thread(source_files, model_id)
+    manifest = {"model_id": model_id, "files": files}
     base = f"{path}/transfers"
-    share = await scheduler(connection, "GET", f"{path}/model-hub")
-    if share.get("state") == "ready":
+    total = sum(row["size_bytes"] for row in files)
+    if mode != "copy":
         try:
             shared = [
                 {**row, "shared_path": paths[row["file_id"]].relative_to(settings.modelhub_root.resolve()).as_posix()}
                 for row in files
             ]
+            report("mounting", "shared", 0, 0)
+            share = await scheduler(connection, "GET", f"{path}/model-hub")
+            if share.get("state") != "ready":
+                raise HTTPException(409, "BACKEND_SHARED_MODEL_HUB_UNAVAILABLE")
             receipt = await scheduler(connection, "POST", base, json={**manifest, "files": shared, "source": "shared"})
             transfer = receipt["transfer_id"]
+            report("target_check", "shared", 0, 0)
             await scheduler(connection, "POST", f"{base}/{transfer}/complete", timeout=310)
-            return await scheduler(connection, "POST", f"{path}/models", json={"model_id": SENSEVOICE, "transfer_id": transfer})
         except ValueError:
-            pass
+            if mode == "shared":
+                raise HTTPException(409, "VOICE_COMPUTE_SOURCE_NOT_SHARED") from None
         except HTTPException as error:
-            if error.detail not in {"BACKEND_SHARED_MODEL_HUB_UNAVAILABLE", "BACKEND_TRANSFER_CONFLICT",
-                                    "BACKEND_TRANSFER_NOT_FOUND"}:
+            if mode == "shared" or error.detail not in _shared_errors:
                 raise
+        else:
+            report("registering", "shared", total, total)
+            return await scheduler(connection, "POST", f"{path}/models", json={"model_id": model_id, "transfer_id": transfer})
+    report("copying", "copy", 0, total)
     receipt = await scheduler(connection, "POST", base, json=manifest)
     transfer = receipt["transfer_id"]
     offsets = {item["file_id"]: item["received_bytes"] for item in receipt["files"]}
+    copied = sum(offsets.values())
+    report("copying", "copy", copied, total)
     for row in files:
         role = row["file_id"]
         offset = offsets[role]
@@ -220,8 +371,12 @@ async def prepare(connection: httpx.AsyncClient, path: str):
                 if reply.get("received_bytes") != offset + len(chunk):
                     raise HTTPException(409, "VOICE_COMPUTE_TRANSFER_RETRY")
                 offset += len(chunk)
+                copied += len(chunk)
+                report("copying", "copy", copied, total)
+    report("target_check", "copy", 0, 0)
     await scheduler(connection, "POST", f"{base}/{transfer}/complete", timeout=310)
-    return await scheduler(connection, "POST", f"{path}/models", json={"model_id": SENSEVOICE, "transfer_id": transfer})
+    report("registering", "copy", total, total)
+    return await scheduler(connection, "POST", f"{path}/models", json={"model_id": model_id, "transfer_id": transfer})
 
 
 @router.post("/transcriptions")
@@ -234,19 +389,117 @@ async def transcriptions(
     force_admission: bool = Form(False),
     identity: Identity = Depends(_verify_user),
 ):
-    if force_admission and not _admin(identity):
-        raise HTTPException(403, "VOICE_COMPUTE_ADMIN_REQUIRED")
+    data, parameters = await audio_input(file, language)
+    receipt, result = await execute_at(request, identity, deployment_id, executor_id, TASK_TYPE,
+                                       parameters, data, force_admission)
+    receipt.pop("model_id")
+    return {**receipt, "transcription": result}
+
+
+async def audio_input(file: UploadFile, language: str = "") -> tuple[bytes, dict]:
     data = await file.read(MAX_AUDIO_BYTES + 1)
     fmt = Path(file.filename or "").suffix.lower().lstrip(".")
     if not data or len(data) > MAX_AUDIO_BYTES:
         raise HTTPException(413, "VOICE_COMPUTE_AUDIO_SIZE")
     if fmt not in {"wav", "flac", "mp3", "ogg", "m4a"}:
         raise HTTPException(422, "VOICE_COMPUTE_AUDIO_FORMAT")
+    return data, {"size_bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
+                  "format": fmt, "language": language}
+
+
+class RemoteSpeech(SpeechParameters):
+    deployment_id: str = Field(pattern=DEPLOYMENT_ID)
+    executor_id: str = Field(pattern=ID)
+
+
+@router.post("/speech")
+async def speech(request: Request, data: RemoteSpeech, identity: Identity = Depends(_verify_user)):
+    receipt, audio = await execute_at(request, identity, data.deployment_id, data.executor_id, SYNTHESIZE,
+                                     data.model_dump(exclude={"deployment_id", "executor_id"}))
+    return Response(audio, media_type="audio/mpeg", headers={
+        "X-Execution-Node": receipt["node_id"], "X-Execution-Executor": receipt["executor_id"],
+        "X-Execution-Deployment": receipt["deployment_id"],
+    })
+
+
+@router.post("/speakers/{action}")
+async def compute_speaker(
+    action: Literal["enroll", "identify", "verify"], request: Request, file: UploadFile = File(),
+    deployment_id: str = Form(pattern=DEPLOYMENT_ID), executor_id: str = Form(pattern=ID),
+    threshold: float = Form(DEFAULT_IDENTIFY_THRESHOLD, ge=0, le=1),
+    name: str = Form("", max_length=64), speaker: str = Form("", max_length=96),
+    identity: Identity = Depends(_verify_user),
+):
+    if action == "enroll":
+        await require_admin(identity)
+    store = open_speaker_store(settings.data_dir)
+    enrolled = store.find(speaker) if action == "verify" else None
+    if action == "verify" and enrolled is None:
+        raise HTTPException(404, "VOICE_COMPUTE_SPEAKER_NOT_FOUND")
+    audio, parameters = await audio_input(file)
+    receipt, content = await execute_at(request, identity, deployment_id, executor_id, EMBED, parameters, audio)
+    try:
+        embedding = json.loads(content)
+        model = receipt["model_id"]
+        if action == "enroll":
+            result = store.create(name, embedding, model)
+        elif action == "identify":
+            ranked = store.rank(embedding, limit=5)
+            best = ranked[0] if ranked else None
+            identified = bool(best and best["score"] >= threshold)
+            result = {"object": "speaker.identification", "model": model, "threshold": threshold,
+                      "identified": identified, "speaker": best if identified else None,
+                      "score": best["score"] if best else 0.0, "ranked": ranked}
+        else:
+            match = next((row for row in store.rank(embedding) if row["id"] == enrolled["id"]), None)
+            score = match["score"] if match else 0.0
+            result = {"object": "speaker.verification", "model": model, "threshold": threshold,
+                      "score": score, "verified": score >= threshold, "speaker": SpeakerStore.describe(enrolled)}
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+    return {**receipt, "result": result}
+
+
+async def read_output(connection, path: str, job: dict, file_id: str) -> bytes:
+    output = job.get("result", {}).get("output")
+    if (not isinstance(output, dict) or output.get("file_id") != file_id
+            or type(output.get("size_bytes")) is not int or not 0 < output["size_bytes"] <= MAX_OUTPUT_BYTES
+            or not isinstance(output.get("sha256"), str) or not re.fullmatch(r"[a-f0-9]{64}", output["sha256"])):
+        raise HTTPException(502, "VOICE_COMPUTE_OUTPUT_INVALID")
+    attempt_id = job.get("attempt_id")
+    fence = job["fence"]
+    if not attempt_id:
+        attempts = await scheduler(connection, "GET", f"tasks/{job['task_id']}/attempts")
+        attempt_id = next((row["attempt_id"] for row in attempts
+                           if row["status"] == "succeeded" and row["fence"] == fence), None)
+    if not isinstance(attempt_id, str) or not re.fullmatch(ID, attempt_id):
+        raise HTTPException(502, "VOICE_COMPUTE_OUTPUT_INVALID")
+    result = bytearray()
+    size = output["size_bytes"]
+    for offset in range(0, size, CHUNK_BYTES):
+        data = await scheduler(connection, "GET", f"{path}/executions/{attempt_id}/outputs/{file_id}",
+                               params={"offset": offset}, headers={"X-Scheduler-Fence": str(fence)})
+        try:
+            chunk = base64.b64decode(data["data_b64"], validate=True)
+        except (KeyError, TypeError, binascii.Error):
+            raise HTTPException(502, "VOICE_COMPUTE_OUTPUT_INVALID") from None
+        if len(chunk) != min(CHUNK_BYTES, size - offset) or data.get("offset") != offset:
+            raise HTTPException(502, "VOICE_COMPUTE_OUTPUT_INVALID")
+        result.extend(chunk)
+    if hashlib.sha256(result).hexdigest() != output["sha256"]:
+        raise HTTPException(502, "VOICE_COMPUTE_OUTPUT_INVALID")
+    return bytes(result)
+
+
+async def execute_at(request: Request, identity: Identity, deployment_id: str, executor_id: str,
+                     task_type: str, parameters: dict, data: bytes = b"", force_admission: bool = False):
+    if force_admission and not _admin(identity):
+        raise HTTPException(403, "VOICE_COMPUTE_ADMIN_REQUIRED")
     async with client() as connection:
         path = await require_deployment(connection, deployment_id)
         available = await scheduler(connection, "GET", f"{path}/models")
         chosen = next((item for item in available["items"]
-                       if item["executor_id"] == executor_id and item["task_type"] == TASK_TYPE), None)
+                       if item["executor_id"] == executor_id and item["task_type"] == task_type), None)
         if not chosen:
             raise HTTPException(409, "VOICE_COMPUTE_PLACEMENT_UNAVAILABLE")
         key = uuid4().hex
@@ -254,13 +507,12 @@ async def transcriptions(
         headers = {"Idempotency-Key": key, **operator_headers(scheduling, request.headers.get("authorization", ""))}
         job = await scheduler(connection, "POST", "tasks", headers=headers, json={
             "protocol_version": 1, "app_task_id": key, "scheduling": scheduling,
-            "executor": {"id": executor_id, "contract_version": "1", "task_type": TASK_TYPE},
-            "parameters": {"size_bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
-                           "format": fmt, "language": language},
+            "executor": {"id": executor_id, "contract_version": "1", "task_type": task_type},
+            "parameters": parameters,
         })
         task_path = f"tasks/{job['task_id']}"
         deadline = monotonic() + 180
-        uploaded = False
+        uploaded_attempt = None
         completed = False
         try:
             while monotonic() < deadline:
@@ -273,9 +525,12 @@ async def transcriptions(
                         raise HTTPException(409, "VOICE_COMPUTE_TRANSCRIPTION_FAILED")
                     if job["executor_id"] != executor_id or job["node_id"] != chosen["node_id"]:
                         raise HTTPException(502, "VOICE_COMPUTE_PLACEMENT_MISMATCH")
-                    return {"deployment_id": deployment_id, "task_id": job["task_id"],
-                            "node_id": job["node_id"], "executor_id": executor_id, "transcription": job["result"]}
-                if job.get("attempt_id") and state in {"assigned", "running"} and not uploaded:
+                    file_id = {SYNTHESIZE: "speech.mp3", EMBED: "embedding.json"}.get(task_type)
+                    result = await read_output(connection, path, job, file_id) if file_id else job["result"]
+                    return ({"deployment_id": deployment_id, "task_id": job["task_id"],
+                             "node_id": job["node_id"], "executor_id": executor_id,
+                             "model_id": chosen.get("model_id")}, result)
+                if data and job.get("attempt_id") and state in {"assigned", "running"} and job["attempt_id"] != uploaded_attempt:
                     payload_path = f"{path}/executions/{job['attempt_id']}/inputs/reference"
                     for offset in range(0, len(data), CHUNK_BYTES):
                         chunk = data[offset:offset + CHUNK_BYTES]
@@ -284,7 +539,7 @@ async def transcriptions(
                                                          "X-Scheduler-Fence": str(job["fence"])})
                         if reply.get("received_bytes") != offset + len(chunk):
                             raise HTTPException(409, "VOICE_COMPUTE_INPUT_TRANSFER_FAILED")
-                    uploaded = True
+                    uploaded_attempt = job["attempt_id"]
                 await asyncio.sleep(0.5)
                 job = await scheduler(connection, "GET", task_path)
             raise HTTPException(504, "VOICE_COMPUTE_TRANSCRIPTION_TIMEOUT")

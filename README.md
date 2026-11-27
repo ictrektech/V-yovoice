@@ -1,5 +1,7 @@
 ## V-Voice for VOS
 
+Open **Manage node deployments** under **Model Management → Speech and speaker models**. Deploy to a node, choose an installed model and **Automatic**, **Read-only NFS mount** or **Transfer to node**, then prepare and register. Choose the primary node or a remote deployment in the **Execution node** field of the speech recognition, synthesis or speaker form. See **API Documentation** for model coverage and request fields.
+
 The VOS build supports selecting a registered SenseVoice deployment for one-shot transcription. Administrators deploy the same V-Voice image with V-Scheduler and prepare the model on the target node. Use **API documentation → Cross-node transcription** for placement discovery, deployment and inference calls.
 
 V-Voice 0.0.42 packages V-Scheduler 0.0.142 as its minimum dependency. Use the Thor/Spark image for DGX Spark placements. SenseVoice uses CUDA on that profile.

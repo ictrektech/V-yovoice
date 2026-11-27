@@ -1,5 +1,7 @@
 # V-Voice
 
+Open **Manage node deployments** under **Model Management → Speech and speaker models**. Deploy to a node, choose an installed model and **Automatic**, **Read-only NFS mount** or **Transfer to node**, then prepare and register. Choose the primary node or a remote deployment in the **Execution node** field of the speech recognition, synthesis or speaker form. See **API Documentation** for model coverage and request fields.
+
 In V-Voice, open **Model Management → Speech and speaker models → Remote nodes**. Choose a target and deploy its Profile image. When the backend is running, choose **Prepare and register SenseVoice**. The main instance must already have SenseVoice weights. Then open **Speech Recognition → Remote nodes**, explicitly choose a model and node, and upload audio. The result names the actual node.
 
 The workbench uses ONNX and audio.cpp GGUF backends, without a PyTorch runtime.

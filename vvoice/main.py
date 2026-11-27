@@ -82,7 +82,7 @@ from .runtime import (
     synthesize,
     transcribe,
 )
-from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore
+from .speakers import DEFAULT_IDENTIFY_THRESHOLD, SpeakerStore, open_speaker_store
 from .transcript import normalize_transcript, subtitle
 
 app = FastAPI(docs_url=None, title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
@@ -95,7 +95,7 @@ if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
     app.add_middleware(AdmissionMiddleware)
 
 hotword_store = HotwordStore(settings.data_dir)
-speaker_store = SpeakerStore(settings.data_dir)
+speaker_store = open_speaker_store(settings.data_dir)
 
 
 class SpeechRequest(BaseModel):

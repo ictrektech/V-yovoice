@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import hashlib
 import json
 import math
@@ -19,10 +20,12 @@ from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from .worker_weights import CHUNK_BYTES, DIGEST, WeightStore, write_json
+from .worker_models import EMBED, MAX_OUTPUT_BYTES, MODELS, SYNTHESIZE, TRANSCRIBE
 
 ATTEMPT = r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,95}$"
-TASK_TYPE = "voice.transcribe"
+TASK_TYPE = TRANSCRIBE
 MAX_AUDIO_BYTES = 20 << 20
+OUTPUT_RETENTION_SECONDS = 600
 
 
 class AudioParameters(BaseModel):
@@ -34,19 +37,25 @@ class AudioParameters(BaseModel):
     language: str = Field(default="", pattern=r"^[a-zA-Z0-9_-]{0,24}$")
 
 
+class SpeechParameters(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    input: str = Field(min_length=1, max_length=500)
+    voice: str = Field(default="default", max_length=96)
+
+
 def failure(code: str) -> dict:
     return {"status": "failed", "stopped": True, "result": {"code": code}}
 
 
-class TranscriptionWorker:
-    def __init__(self, root: Path, store: WeightStore, model_id: str, provider: str, threads: int):
+class ComputeWorker:
+    def __init__(self, root: Path, store: WeightStore, provider: str, threads: int):
         self.root = root
         self.store = store
-        self.model_id = model_id
         self.provider = provider
         self.threads = threads
         self.lock = RLock()
         self.active: dict[str, tuple[subprocess.Popen, float]] = {}
+        self.next_output_sweep = 0.0
 
     def path(self, attempt: str) -> Path:
         if not re.fullmatch(ATTEMPT, attempt):
@@ -76,11 +85,21 @@ class TranscriptionWorker:
 
     def reap(self) -> None:
         with self.lock:
+            now = monotonic()
             for attempt, (process, deadline) in list(self.active.items()):
                 if process.poll() is not None:
                     self.receipt(attempt)
-                elif deadline <= monotonic():
+                elif deadline <= now:
                     self.stop(attempt, failure("WORKER_LEASE_EXPIRED"))
+            if now >= self.next_output_sweep:
+                self.next_output_sweep = now + 60
+                self.sweep_embeddings()
+
+    def sweep_embeddings(self):
+        cutoff = time() - OUTPUT_RETENTION_SECONDS
+        for path in self.root.glob("*/embedding.json"):
+            if path.parent.name not in self.active and path.stat().st_mtime < cutoff:
+                path.unlink(missing_ok=True)
 
     def stop(self, attempt: str, result: dict) -> dict:
         run = self.active.get(attempt)
@@ -92,7 +111,9 @@ class TranscriptionWorker:
                 except ProcessLookupError:
                     pass
                 process.wait(timeout=5)
-        write_json(self.path(attempt) / "receipt.json", result)
+        directory = self.path(attempt)
+        (directory / "reference").unlink(missing_ok=True)
+        write_json(directory / "receipt.json", result)
         self.active.pop(attempt, None)
         return result
 
@@ -106,12 +127,29 @@ class TranscriptionWorker:
             return {"status": "running", "stopped": False, "stage": "waiting_for_audio"}
         code = run[0].poll()
         if code is None:
-            return {"status": "running", "stopped": False, "stage": "transcribing"}
+            return {"status": "running", "stopped": False, "stage": "running"}
         output = directory / "transcription.json"
         result = failure("WORKER_TRANSCRIPTION_FAILED")
         if code == 0 and output.is_file() and output.stat().st_size <= 40 * 1024:
             result = {"status": "succeeded", "stopped": True, "result": json.loads(output.read_bytes())}
         return self.stop(attempt, result)
+
+    def read_output(self, attempt: str, file_id: str, offset: int) -> dict:
+        with self.lock:
+            directory = self.path(attempt)
+            receipt = self.receipt(attempt)
+            output = receipt.get("result", {}).get("output")
+            if receipt["status"] != "succeeded" or not isinstance(output, dict) or output["file_id"] != file_id:
+                raise HTTPException(404, "WORKER_OUTPUT_NOT_FOUND")
+            if not 0 <= offset < output["size_bytes"]:
+                raise HTTPException(422, "WORKER_OUTPUT_OFFSET_INVALID")
+            try:
+                with (directory / file_id).open("rb") as stream:
+                    stream.seek(offset)
+                    chunk = stream.read(CHUNK_BYTES)
+            except FileNotFoundError:
+                raise HTTPException(404, "WORKER_OUTPUT_NOT_FOUND") from None
+            return {**output, "offset": offset, "data_b64": base64.b64encode(chunk).decode("ascii")}
 
     def write_input(self, attempt: str, offset: int, data: bytes) -> dict:
         directory = self.path(attempt)
@@ -171,36 +209,42 @@ class TranscriptionWorker:
 
     def start(self, attempt: str, directory: Path, body: dict, lease: int) -> dict:
         try:
-            if body.get("model_id") != self.model_id:
+            model_id = body.get("model_id")
+            if model_id not in MODELS:
                 raise ValueError()
-            parameters = AudioParameters.model_validate(body.get("parameters"))
+            task, _, _ = MODELS[model_id]
             limits = body.get("model_limits")
-            expected = {"input_bytes", "sample_rate", "duration_seconds"}
+            expected = {"text_characters"} if task == SYNTHESIZE else {"input_bytes", "sample_rate", "duration_seconds"}
             if not isinstance(limits, dict) or not expected.issubset(limits) or any(
                 type(limits[name]) not in (float, int) or not math.isfinite(limits[name]) or limits[name] <= 0
                 for name in expected
-            ) or parameters.size_bytes > limits["input_bytes"]:
+            ):
                 raise ValueError()
-            audio = directory / "reference"
-            if not audio.is_file() or audio.stat().st_size < parameters.size_bytes:
-                if (directory / "attempt.json").stat().st_mtime + 120 < time():
-                    return self.stop(attempt, failure("WORKER_INPUT_TIMEOUT"))
-                return self.receipt(attempt)
-            if audio.stat().st_size != parameters.size_bytes:
-                raise ValueError()
-            digest = hashlib.sha256()
-            with audio.open("rb") as stream:
-                for chunk in iter(lambda: stream.read(CHUNK_BYTES), b""):
-                    digest.update(chunk)
-            if digest.hexdigest() != parameters.sha256:
-                raise ValueError()
-            paths = self.store.verified_files(body.get("transfer_id", ""), self.model_id)
+            if task == SYNTHESIZE:
+                parameters = SpeechParameters.model_validate(body.get("parameters"))
+                if len(parameters.input) > limits["text_characters"]:
+                    raise ValueError()
+            else:
+                parameters = AudioParameters.model_validate(body.get("parameters"))
+                if parameters.size_bytes > limits["input_bytes"]:
+                    raise ValueError()
+                audio = directory / "reference"
+                if not audio.is_file() or audio.stat().st_size < parameters.size_bytes:
+                    if (directory / "attempt.json").stat().st_mtime + 120 < time():
+                        return self.stop(attempt, failure("WORKER_INPUT_TIMEOUT"))
+                    return self.receipt(attempt)
+                if audio.stat().st_size != parameters.size_bytes:
+                    raise ValueError()
+                with audio.open("rb") as stream:
+                    if hashlib.file_digest(stream, "sha256").hexdigest() != parameters.sha256:
+                        raise ValueError()
+            paths = self.store.verified_files(body.get("transfer_id", ""), model_id)
         except (TypeError, ValueError, HTTPException):
             return self.stop(attempt, failure("WORKER_INPUT_OR_WEIGHTS_INVALID"))
         if self.active:
             return self.stop(attempt, failure("WORKER_EXECUTOR_BUSY"))
         operation = directory / "operation.json"
-        write_json(operation, {"model_id": self.model_id, "files": {name: str(path) for name, path in paths.items()},
+        write_json(operation, {"model_id": model_id, "files": {name: str(path) for name, path in paths.items()},
                                "parameters": parameters.model_dump(), "limits": limits})
         env = {**os.environ, "VVOICE_SCHEDULER_REQUIRED": "false",
                "VVOICE_PROVIDER": self.provider, "VVOICE_NUM_THREADS": str(self.threads)}
@@ -215,17 +259,40 @@ class TranscriptionWorker:
         return self.receipt(attempt)
 
 
-if __name__ == "__main__":
-    from .audio import decode_calibrated_audio
+def execute_operation(operation: Path):
+    from .audio import decode_calibrated_audio, encode_audio
     from .catalog import worker_files
-    from .runtime import transcribe
+    from .runtime import extract_embedding, synthesize, transcribe
 
-    operation = Path(sys.argv[1])
     descriptor = json.loads(operation.read_bytes())
-    parameters = AudioParameters.model_validate(descriptor["parameters"])
-    limits = descriptor["limits"]
-    data = (operation.parent / "reference").read_bytes()
-    decoded, rate = decode_calibrated_audio(data, "input." + parameters.format, limits)
-    worker_files.set({descriptor["model_id"]: descriptor["files"]})
-    result = transcribe(descriptor["model_id"], decoded, rate, language=parameters.language)
+    model_id = descriptor["model_id"]
+    task = MODELS[model_id][0]
+    worker_files.set({model_id: descriptor["files"]})
+    if task == SYNTHESIZE:
+        parameters = SpeechParameters.model_validate(descriptor["parameters"])
+        samples, rate = synthesize(model_id, parameters.input, parameters.voice, 1.0)
+        content, _ = encode_audio(samples, rate, "mp3")
+        name = "speech.mp3"
+    else:
+        parameters = AudioParameters.model_validate(descriptor["parameters"])
+        reference = operation.parent / "reference"
+        data = reference.read_bytes()
+        reference.unlink(missing_ok=True)
+        decoded, rate = decode_calibrated_audio(data, "input." + parameters.format, descriptor["limits"])
+        if task == TRANSCRIBE:
+            result = transcribe(model_id, decoded, rate, language=parameters.language)
+            write_json(operation.parent / "transcription.json", result)
+            return
+        if task != EMBED:
+            raise ValueError("unsupported compute task")
+        content = json.dumps(extract_embedding(model_id, decoded, rate).tolist(), allow_nan=False).encode()
+        name = "embedding.json"
+    if not 0 < len(content) <= MAX_OUTPUT_BYTES:
+        raise ValueError("invalid compute result size")
+    (operation.parent / name).write_bytes(content)
+    result = {"output": {"file_id": name, "size_bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()}}
     write_json(operation.parent / "transcription.json", result)
+
+
+if __name__ == "__main__":
+    execute_operation(Path(sys.argv[1]))

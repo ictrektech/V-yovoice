@@ -3,6 +3,7 @@ import { api, formatBytes, AboutInfo, EnrolledSpeaker, HotwordSet, IdentifyResul
 import { Localized } from './i18n/Localized'
 import { languageNames, translateText } from './i18n/messages'
 import { transcribeUpload } from './asr-upload'
+import { checkResponse, ExecutionNode, executionLabel, useComputeTarget } from './compute-target'
 import { setLanguageMode, useLanguage } from './i18n'
 import type { LanguageMode } from './i18n/vosLocale'
 
@@ -144,6 +145,11 @@ function HotwordSets({ sets, refresh }: { sets: HotwordSet[]; refresh: () => voi
 }
 
 function SpeakerConsole({ models }: { models: Model[] }) {
+  const target = useComputeTarget()
+  const { locale } = useLanguage()
+  const cancellation = useRef<AbortController | null>(null)
+  useEffect(() => () => cancellation.current?.abort(), [])
+  const [actualNode, setActualNode] = useState('')
   const ready = useMemo(() => models.filter(model => model.kind === 'speaker' && model.status === 'ready'), [models])
   const [speakers, setSpeakers] = useState<EnrolledSpeaker[]>([])
   const [model, setModel] = useState('')
@@ -152,38 +158,65 @@ function SpeakerConsole({ models }: { models: Model[] }) {
   const [identifyResult, setIdentifyResult] = useState<IdentifyResult | null>(null)
   const [verifySpeakerId, setVerifySpeakerId] = useState(''); const [verifyFile, setVerifyFile] = useState<File | null>(null); const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null)
   const [busy, setBusy] = useState(false); const [error, setError] = useState('')
-  const selectedModel = ready.find(item => item.key === model) || ready[0]
+  const selectedModel = target.remote ? models.find(item => item.key === target.placement?.model_id)
+    : ready.find(item => item.key === model) || ready[0]
+  const unavailable = !selectedModel || (target.remote && (!target.placement || target.unavailable))
+  function clearOutput() { setIdentifyResult(null); setVerifyResult(null); setActualNode(''); setError('') }
+  async function dispatch<T>(action: 'enroll' | 'identify' | 'verify', file: File, fields: Record<string, string>, local: () => Promise<T>) {
+    if (!target.remote) {
+      const result = await local()
+      setActualNode(translateText('主节点（本机）', locale))
+      return result
+    }
+    const placement = target.placement
+    if (!placement || !window.vvoiceCompute) throw new Error('所选部署已不可用')
+    const controller = new AbortController()
+    cancellation.current = controller
+    const body = new FormData()
+    body.set('file', file)
+    body.set('deployment_id', placement.deployment_id)
+    body.set('executor_id', placement.executor_id)
+    for (const [key, value] of Object.entries(fields)) body.set(key, value)
+    const response = await window.vvoiceCompute.speaker(action, body, controller.signal)
+    await checkResponse(response)
+    const receipt: VoicePlacement & { result: T } = await response.json()
+    setActualNode(executionLabel(receipt, placement))
+    return receipt.result
+  }
   const refresh = useCallback(() => api.enrolledSpeakers().then(setSpeakers).catch(() => setSpeakers([])), [])
   useEffect(() => { refresh() }, [refresh])
   async function run(action: () => Promise<unknown>, done?: () => void) {
-    setBusy(true); setError('')
-    try { await action(); done?.(); refresh() } catch (value) { setError(value instanceof Error ? value.message : String(value)) } finally { setBusy(false) }
+    setBusy(true); clearOutput()
+    try { await action(); done?.(); refresh() } catch (value) { setError(translateText(cancellation.current?.signal.aborted ? '已取消。' : value instanceof Error ? value.message : String(value), locale)) } finally { setBusy(false); cancellation.current = null }
   }
   const thresholdInput = <label>相似度阈值<input type="number" min="0" max="1" step="0.05" value={threshold} onChange={event => setThreshold(Number(event.target.value))} /><small>余弦相似度；默认 0.6，越高越严格</small></label>
   return <Localized><section className="hotword-manager">
     <section className="section-heading"><div><p className="eyebrow">SPEAKER ID</p><h1>声纹识别</h1><p>先用说话人音频注册声纹，再对任意音频做归属识别或 1:1 验证。声纹库保存在应用存储 <code>data/speakers.json</code>，全部已注册声纹通过 <code>/v1/audio/speakers</code> 对 V-Router 以 public 能力开放。</p></div><button className="secondary-button" onClick={refresh}>刷新声纹库</button></section>
-    {!ready.length ? <div className="loading-card">暂无已就绪的声纹模型。请先到“模型”页安装 3D-Speaker CAM++ zh-en。</div> : <>
+    {!ready.length && !target.placements.length ? <div className="loading-card">暂无已就绪的声纹模型。请先到“模型”页安装 3D-Speaker CAM++ zh-en。</div> : <>
     <div className="hotword-forms">
-      <form onSubmit={event => { event.preventDefault(); if (!enrollName.trim() || !enrollFile || !selectedModel) return; void run(() => api.enrollSpeaker(enrollName.trim(), selectedModel.key, enrollFile), () => { setEnrollName(''); setEnrollFile(null) }) }}>
+      <ExecutionNode target={target} busy={busy} onChange={clearOutput} />
+      <form onSubmit={event => { event.preventDefault(); if (!enrollName.trim() || !enrollFile || !selectedModel || unavailable) return; void run(() => dispatch('enroll', enrollFile, { name: enrollName.trim() }, () => api.enrollSpeaker(enrollName.trim(), selectedModel.key, enrollFile)), () => { setEnrollName(''); setEnrollFile(null) }) }}>
         <h2>注册声纹</h2>
-        <label>声纹模型<select aria-label="声纹模型" value={selectedModel?.key || ''} onChange={event => setModel(event.target.value)}>{ready.map(item => <option value={item.key} key={item.key}>{item.name} · {item.key}</option>)}</select><small>{`${ready.length} 个已就绪声纹模型`}</small></label>
+        {target.remote ? <label>声纹模型<input value={target.placement?.model_id ?? ''} readOnly /></label> : <label>声纹模型<select aria-label="声纹模型" value={selectedModel?.key || ''} onChange={event => setModel(event.target.value)}>{ready.map(item => <option value={item.key} key={item.key}>{item.name} · {item.key}</option>)}</select><small>{`${ready.length} 个已就绪声纹模型`}</small></label>}
         <label>说话人名称<input value={enrollName} onChange={event => setEnrollName(event.target.value)} maxLength={64} placeholder="例如：张三" /></label>
         <label className="wide">注册音频<input type="file" accept="audio/*" onChange={event => setEnrollFile(event.target.files?.[0] || null)} /><small>建议 10 秒以上清晰单人语音；服务端提取声纹向量后不再保存音频</small></label>
-        <button className="primary" disabled={busy || !enrollName.trim() || !enrollFile}>提取声纹并注册</button>
+        <button className="primary" disabled={busy || unavailable || !enrollName.trim() || !enrollFile}>提取声纹并注册</button>
       </form>
-      <form onSubmit={event => { event.preventDefault(); if (!identifyFile || !selectedModel) return; void run(async () => setIdentifyResult(await api.identifySpeaker(selectedModel.key, identifyFile, threshold))) }}>
+      <form onSubmit={event => { event.preventDefault(); if (!identifyFile || !selectedModel || unavailable) return; void run(async () => setIdentifyResult(await dispatch('identify', identifyFile, { threshold: String(threshold) }, () => api.identifySpeaker(selectedModel.key, identifyFile, threshold)))) }}>
         <h2>识别说话人（1:N 归属）</h2>
         <label className="wide">待识别音频<input type="file" accept="audio/*" onChange={event => setIdentifyFile(event.target.files?.[0] || null)} /><small>返回与全部已注册声纹的余弦相似度排名，最高分超过阈值即判定归属</small></label>
         {thresholdInput}
-        <button className="primary" disabled={busy || !identifyFile}>开始识别</button>
+        <button className="primary" disabled={busy || unavailable || !identifyFile}>开始识别</button>
       </form>
     </div>
-    <form className="verify-form" onSubmit={event => { event.preventDefault(); if (!verifyFile || !verifySpeakerId || !selectedModel) return; void run(async () => setVerifyResult(await api.verifySpeaker(selectedModel.key, verifySpeakerId, verifyFile, threshold))) }}>
+    <form className="verify-form" onSubmit={event => { event.preventDefault(); if (!verifyFile || !verifySpeakerId || !selectedModel || unavailable) return; void run(async () => setVerifyResult(await dispatch('verify', verifyFile, { speaker: verifySpeakerId, threshold: String(threshold) }, () => api.verifySpeaker(selectedModel.key, verifySpeakerId, verifyFile, threshold)))) }}>
       <h2>验证说话人（1:1 比对）</h2>
       <label>已注册说话人<select aria-label="验证说话人" value={verifySpeakerId} onChange={event => setVerifySpeakerId(event.target.value)}><option value="">选择说话人</option>{speakers.map(item => <option value={item.id} key={item.id}>{item.name} · {item.id}</option>)}</select><small>{`${speakers.length} 个已注册声纹`}</small></label>
       <label>待验证音频<input type="file" accept="audio/*" onChange={event => setVerifyFile(event.target.files?.[0] || null)} /></label>
-      <button className="primary" disabled={busy || !verifyFile || !verifySpeakerId}>开始验证</button>
+      <button className="primary" disabled={busy || unavailable || !verifyFile || !verifySpeakerId}>开始验证</button>
     </form>
+    {busy && target.remote ? <button type="button" onClick={() => cancellation.current?.abort()}>取消</button> : null}
+    {actualNode && target.enabled ? <p role="status">实际执行节点 <RawText>{actualNode}</RawText></p> : null}
     {error ? <div className="alert" data-i18n="off">{error}</div> : null}
     {identifyResult ? <div className="speaker-result">
       <h3>识别结果{identifyResult.identified ? <span className="match-badge ok">归属：<RawText>{identifyResult.speaker?.name}</RawText></span> : <span className="match-badge no">无匹配说话人</span>}</h3>
@@ -202,48 +235,117 @@ function SpeakerConsole({ models }: { models: Model[] }) {
 function AsrPlayground({ models, sets }: { models: Model[]; sets: HotwordSet[] }) {
   const { locale } = useLanguage()
   const cancellation = useRef<AbortController | null>(null)
+  const target = useComputeTarget()
+  const [force, setForce] = useState(false)
+  const [actualNode, setActualNode] = useState('')
   useEffect(() => () => cancellation.current?.abort(), [])
   const ready = useMemo(() => models.filter(model => model.kind === 'asr' && model.status === 'ready'), [models])
   const [model, setModel] = useState(''); const [file, setFile] = useState<File | null>(null); const [hotwords, setHotwords] = useState(''); const [hotwordsFile, setHotwordsFile] = useState<File | null>(null); const [hotwordsScore, setHotwordsScore] = useState(1.5); const [hotwordSetId, setHotwordSetId] = useState(''); const [result, setResult] = useState(''); const [busy, setBusy] = useState(false)
   const available = ready.filter(item => item.inference_ready !== false)
   const selectedModel = ready.find(item => item.key === model) || available[0] || ready[0]
-  const selected = selectedModel?.key || ''
+  const { remote, placement, canForce } = target
+  const selected = remote ? placement?.model_id : selectedModel?.key
+  const usable = remote ? Boolean(placement) && !target.unavailable : Boolean(selected) && selectedModel?.inference_ready !== false
+  const changeNode = () => { setResult(''); setActualNode(''); setForce(false) }
   async function submit(event: FormEvent) {
-    event.preventDefault(); if (busy || !file || !selected || selectedModel?.inference_ready === false) return
+    event.preventDefault(); if (busy || !file || !selected || !usable) return
     const controller = new AbortController()
     cancellation.current = controller
-    setBusy(true); setResult('')
+    setBusy(true); setResult(''); setActualNode('')
     const form = new FormData(); form.append('file', file); form.append('model', selected); form.append('response_format', 'verbose_json')
-    if (selectedModel?.hotwords?.supported) {
+    if (!remote && selectedModel?.hotwords?.supported) {
       if (hotwordSetId) form.append('hotwords_set', hotwordSetId)
       if (hotwords.trim()) form.append('hotwords', hotwords)
       if (hotwordsFile) form.append('hotwords_file', hotwordsFile)
       if ((hotwordSetId || hotwords.trim() || hotwordsFile) && selectedModel.hotwords.score) form.append('hotwords_score', String(hotwordsScore))
     }
     try {
-      const text = await transcribeUpload(form, message => setResult(translateText(message, locale)), controller.signal)
-      setResult(text || translateText('未识别到语音。', locale))
+      if (placement && window.vvoiceCompute) {
+        const upload = new FormData()
+        upload.set('file', file)
+        upload.set('deployment_id', placement.deployment_id)
+        upload.set('executor_id', placement.executor_id)
+        if (force && canForce) upload.set('force_admission', 'true')
+        setForce(false)
+        const response = await window.vvoiceCompute.transcribe(upload, controller.signal)
+        await checkResponse(response)
+        const receipt: VoicePlacement & { transcription: { text: string } } = await response.json()
+        setActualNode(executionLabel(receipt, placement))
+        setResult(receipt.transcription.text || translateText('未识别到语音。', locale))
+      } else if (!remote) {
+        const text = await transcribeUpload(form, message => setResult(translateText(message, locale)), controller.signal)
+        setActualNode(translateText('主节点（本机）', locale))
+        setResult(text || translateText('未识别到语音。', locale))
+      }
     } catch (error) {
       setResult(translateText(controller.signal.aborted ? '已取消识别。' : error instanceof Error ? error.message : String(error), locale))
     } finally { setBusy(false); cancellation.current = null }
   }
-  return <Localized><section className="playground"><p className="eyebrow">SPEECH TO TEXT</p><h1>语音识别</h1><p className="intro">上传音频并选择模型，自动转换格式并按模型限制分段识别。</p>{!ready.length ? <EmptyReady kind="ASR" /> : <form onSubmit={submit}><label>模型<select aria-label="ASR 模型" value={selected} onChange={event => setModel(event.target.value)}>{ready.map(item => <option value={item.key} key={item.key} disabled={item.inference_ready === false}>{item.name} · {item.key}{item.inference_ready === false ? translateText(" · 尚未获准识别", locale) : ""}</option>)}</select><small>{selectedModel?.inference_ready === false ? translateText(selectedModel.inference_error || "Model executor is not approved", locale) : `${available.length} ${translateText("个可识别模型", locale)}`}</small></label><label>音频文件<input type="file" accept="audio/*" onChange={event => setFile(event.target.files?.[0] || null)} /><small>WAV、MP3、FLAC、M4A 等常见格式</small></label>{selectedModel?.streaming ? <div className="field-note wide"><strong>该模型支持实时流式识别</strong><span>除整句上传外，可通过 <code>POST /v1/audio/streaming/transcriptions</code>（HTTP 分块）或 <code>/v1/audio/streaming/ws</code>（WebSocket 增量返回）边传边识别，详见 API 页“流式识别”章节。</span></div> : null}{selectedModel?.hotwords?.supported ? <><label>固化热词集<select aria-label="热词集" value={hotwordSetId} onChange={event => setHotwordSetId(event.target.value)}><option value="">不使用</option>{sets.map(item => <option value={item.id} key={item.id}>{item.name} · {item.phrase_count} 个热词</option>)}</select><small>{sets.length ? `与一次性热词合并去重，共 ${sets.length} 个已保存热词集` : '暂无已保存热词集，可到“热词”页创建'}</small></label><label>一次性热词<textarea value={hotwords} onChange={event => setHotwords(event.target.value)} rows={3} placeholder="华为, 昇腾, V-Voice" /><small>逗号或换行分隔，仅本次请求生效，与热词集/文件合并去重</small></label><label>热词文件<input type="file" accept="text/plain,.txt" onChange={event => setHotwordsFile(event.target.files?.[0] || null)} /><small>UTF-8 文本，每行一个热词，仅本次请求生效</small></label>{selectedModel.hotwords.score ? <label>增强分数<input type="number" min="0" max="10" step="0.1" value={hotwordsScore} onChange={event => setHotwordsScore(Number(event.target.value))} /><small>Zipformer 默认 {selectedModel.hotwords.default_score ?? 1.5}</small></label> : <div className="field-note"><strong>{selectedModel.family === 'SeACo-Paraformer' ? 'SeACo 神经热词' : 'Qwen3-ASR 提示词热词'}</strong><span>{selectedModel.family === 'SeACo-Paraformer' ? '每条热词最多 10 字符，无需设置增强分数。' : '该模型无需设置增强分数。'}</span></div>}</> : <div className="field-note wide"><strong>该模型不支持热词</strong><span>如需热词增强，请选择 SeACo、Qwen3-ASR 或 Zipformer。</span></div>}<button className="primary" type={busy ? 'button' : 'submit'} disabled={!busy && (!file || !selected || selectedModel?.inference_ready === false)} onClick={busy ? () => cancellation.current?.abort() : undefined}>{busy ? '取消识别' : '开始识别'}</button></form>}<output>{result ? <RawText>{result}</RawText> : '识别结果会显示在这里。'}</output></section></Localized>
+  return <Localized><section className="playground"><p className="eyebrow">SPEECH TO TEXT</p><h1>语音识别</h1><p className="intro">上传音频并选择模型，自动转换格式并按模型限制分段识别。</p>{!ready.length && !target.placements.length ? <EmptyReady kind="ASR" /> : <form onSubmit={submit}>
+      <ExecutionNode target={target} busy={busy} onChange={changeNode} />
+      {remote ? <label>模型<input readOnly value={placement?.model_id ?? ''} /></label> : <label>模型<select aria-label="ASR 模型" value={selected} onChange={event => setModel(event.target.value)}>{ready.map(item => <option value={item.key} key={item.key} disabled={item.inference_ready === false}>{item.name} · {item.key}{item.inference_ready === false ? translateText(" · 尚未获准识别", locale) : ""}</option>)}</select><small>{selectedModel?.inference_ready === false ? translateText(selectedModel.inference_error || "Model executor is not approved", locale) : `${available.length} ${translateText("个可识别模型", locale)}`}</small></label>}<label>音频文件<input type="file" accept="audio/*" onChange={event => setFile(event.target.files?.[0] || null)} /><small>{remote ? '分节点支持 WAV、MP3、FLAC、OGG 和 M4A，大小和时长以该部署的限制为准。' : 'WAV、MP3、FLAC、M4A 等常见格式'}</small></label>
+      {remote && canForce ? <label><input type="checkbox" checked={force} disabled={busy} onChange={event => setForce(event.target.checked)} />本次直接放行</label> : null}
+      {!remote && selectedModel?.streaming ? <div className="field-note wide"><strong>该模型支持实时流式识别</strong><span>除整句上传外，可通过 <code>POST /v1/audio/streaming/transcriptions</code>（HTTP 分块）或 <code>/v1/audio/streaming/ws</code>（WebSocket 增量返回）边传边识别，详见 API 页“流式识别”章节。</span></div> : null}{!remote && selectedModel?.hotwords?.supported ? <><label>固化热词集<select aria-label="热词集" value={hotwordSetId} onChange={event => setHotwordSetId(event.target.value)}><option value="">不使用</option>{sets.map(item => <option value={item.id} key={item.id}>{item.name} · {item.phrase_count} 个热词</option>)}</select><small>{sets.length ? `与一次性热词合并去重，共 ${sets.length} 个已保存热词集` : '暂无已保存热词集，可到“热词”页创建'}</small></label><label>一次性热词<textarea value={hotwords} onChange={event => setHotwords(event.target.value)} rows={3} placeholder="华为, 昇腾, V-Voice" /><small>逗号或换行分隔，仅本次请求生效，与热词集/文件合并去重</small></label><label>热词文件<input type="file" accept="text/plain,.txt" onChange={event => setHotwordsFile(event.target.files?.[0] || null)} /><small>UTF-8 文本，每行一个热词，仅本次请求生效</small></label>{selectedModel.hotwords.score ? <label>增强分数<input type="number" min="0" max="10" step="0.1" value={hotwordsScore} onChange={event => setHotwordsScore(Number(event.target.value))} /><small>Zipformer 默认 {selectedModel.hotwords.default_score ?? 1.5}</small></label> : <div className="field-note"><strong>{selectedModel.family === 'SeACo-Paraformer' ? 'SeACo 神经热词' : 'Qwen3-ASR 提示词热词'}</strong><span>{selectedModel.family === 'SeACo-Paraformer' ? '每条热词最多 10 字符，无需设置增强分数。' : '该模型无需设置增强分数。'}</span></div>}</> : !remote ? <div className="field-note wide"><strong>该模型不支持热词</strong><span>如需热词增强，请选择 SeACo、Qwen3-ASR 或 Zipformer。</span></div> : null}<button className="primary" type={busy ? 'button' : 'submit'} disabled={!busy && (!file || !usable)} onClick={busy ? () => cancellation.current?.abort() : undefined}>{busy ? '取消识别' : '开始识别'}</button></form>}{actualNode && target.enabled ? <p role="status">实际执行节点 <RawText>{actualNode}</RawText></p> : null}<output>{result ? <RawText>{result}</RawText> : '识别结果会显示在这里。'}</output></section></Localized>
 }
 
 function TtsPlayground({ models }: { models: Model[] }) {
+  const target = useComputeTarget()
+  const { locale } = useLanguage()
+  const cancellation = useRef<AbortController | null>(null)
+  useEffect(() => () => cancellation.current?.abort(), [])
+  const [actualNode, setActualNode] = useState('')
   const ready = useMemo(() => models.filter(model => model.kind === 'tts' && model.status === 'ready'), [models])
   const [model, setModel] = useState(''); const [text, setText] = useState('你好，欢迎使用 V-Voice。'); const [voice, setVoice] = useState(''); const [source, setSource] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false)
-  const selectedModel = ready.find(item => item.key === model) || ready[0]
+  const selectedModel = target.remote ? models.find(item => item.key === target.placement?.model_id)
+    : ready.find(item => item.key === model) || ready[0]
   const voices = Object.entries(selectedModel?.voices || {})
   const selectedVoice = voices.some(([key]) => key === voice) ? voice : voices[0]?.[0] || ''
   function selectModel(key: string) { const next = ready.find(item => item.key === key); setModel(key); setVoice(Object.keys(next?.voices || {})[0] || '') }
+  function clearOutput() {
+    if (source) URL.revokeObjectURL(source)
+    setSource('')
+    setActualNode('')
+    setError('')
+  }
+  const unavailable = target.remote && (!target.placement || target.unavailable)
   async function submit(event: FormEvent) {
-    event.preventDefault(); if (!selectedModel || !selectedVoice) return
-    setBusy(true); setError('')
-    try { const blob = await api.speech({ model: selectedModel.key, input: text, voice: selectedVoice, response_format: 'mp3' }); if (source) URL.revokeObjectURL(source); setSource(URL.createObjectURL(blob)) } catch (value) { setError(value instanceof Error ? value.message : String(value)) } finally { setBusy(false) }
+    event.preventDefault()
+    if (!selectedModel || !selectedVoice || unavailable || busy) return
+    const controller = new AbortController()
+    cancellation.current = controller
+    setBusy(true)
+    clearOutput()
+    try {
+      let blob: Blob
+      const placement = target.placement
+      if (target.remote && placement && window.vvoiceCompute) {
+        const body = JSON.stringify({ input: text, voice: selectedVoice, deployment_id: placement.deployment_id, executor_id: placement.executor_id })
+        const response = await window.vvoiceCompute.speech(body, controller.signal)
+        await checkResponse(response)
+        const node = executionLabel({
+          node_id: response.headers.get('X-Execution-Node') || '',
+          deployment_id: response.headers.get('X-Execution-Deployment') || '',
+          executor_id: response.headers.get('X-Execution-Executor') || '',
+        }, placement)
+        blob = await response.blob()
+        setActualNode(node)
+      } else if (!target.remote) {
+        blob = await api.speech({ model: selectedModel.key, input: text, voice: selectedVoice, response_format: 'mp3' })
+        setActualNode(translateText('主节点（本机）', locale))
+      } else {
+        return
+      }
+      setSource(URL.createObjectURL(blob))
+    } catch (value) {
+      setError(translateText(controller.signal.aborted ? '已取消。' : value instanceof Error ? value.message : String(value), locale))
+    } finally { setBusy(false); cancellation.current = null }
   }
   const downloadName = `vvoice-${selectedModel?.key || 'tts'}-${selectedVoice || 'voice'}.mp3`
-  return <Localized><section className="playground"><p className="eyebrow">TEXT TO SPEECH</p><h1>语音合成</h1><p className="intro">模型和 Voice 均来自当前目录，切换模型后自动更新可用音色。</p>{!ready.length ? <EmptyReady kind="TTS" /> : <form onSubmit={submit}><label>模型<select aria-label="TTS 模型" value={selectedModel?.key || ''} onChange={event => selectModel(event.target.value)}>{ready.map(item => <option value={item.key} key={item.key}>{item.name} · {item.key}</option>)}</select><small>{ready.length} 个已就绪模型</small></label><label>Voice<select aria-label="Voice" value={selectedVoice} onChange={event => setVoice(event.target.value)}>{voices.map(([key, value]) => <option value={key} key={key}>{key} · {languageNames[value.language] || value.language} · SID {value.sid}</option>)}</select><small>{voices.length} 个可用音色</small></label><label className="wide">文本<textarea value={text} onChange={event => setText(event.target.value)} rows={6} maxLength={20000} /><small>{`${text.length} / 20000 字符`}</small></label><button className="primary" disabled={!selectedModel || !selectedVoice || !text.trim() || busy}>{busy ? '合成中…' : '生成语音'}</button></form>}{error ? <div className="alert" data-i18n="off">{error}</div> : null}{source ? <div className="audio-result"><audio src={source} controls autoPlay /><a className="download-button" href={source} download={downloadName}>下载音频 · {downloadName}</a></div> : null}</section></Localized>
+  return <Localized><section className="playground"><p className="eyebrow">TEXT TO SPEECH</p><h1>语音合成</h1><p className="intro">模型和 Voice 均来自当前目录，切换模型后自动更新可用音色。</p>{!ready.length && !target.placements.length ? <EmptyReady kind="TTS" /> : <form onSubmit={submit}>
+    <ExecutionNode target={target} busy={busy} onChange={clearOutput} />
+    {target.remote ? <label>模型<input value={target.placement?.model_id ?? ''} readOnly /></label> : <label>模型<select aria-label="TTS 模型" value={selectedModel?.key || ''} onChange={event => selectModel(event.target.value)}>{ready.map(item => <option value={item.key} key={item.key}>{item.name} · {item.key}</option>)}</select><small>{ready.length} 个已就绪模型</small></label>}<label>Voice<select aria-label="Voice" value={selectedVoice} onChange={event => setVoice(event.target.value)}>{voices.map(([key, value]) => <option value={key} key={key}>{key} · {languageNames[value.language] || value.language} · SID {value.sid}</option>)}</select><small>{voices.length} 个可用音色</small></label><label className="wide">文本<textarea value={text} onChange={event => setText(event.target.value)} rows={6} maxLength={target.remote ? 500 : 20000} /><small>{`${text.length} / ${target.remote ? 500 : 20000} 字符`}</small></label><button className="primary" disabled={!selectedModel || !selectedVoice || !text.trim() || unavailable || (target.remote && text.length > 500) || busy}>{busy ? '合成中…' : '生成语音'}</button>
+    {busy && target.remote ? <button type="button" onClick={() => cancellation.current?.abort()}>取消</button> : null}
+    </form>}{error ? <div className="alert" data-i18n="off">{error}</div> : null}{actualNode && target.enabled ? <p role="status">实际执行节点 <RawText>{actualNode}</RawText></p> : null}{source ? <div className="audio-result"><audio src={source} controls autoPlay /><a className="download-button" href={source} download={downloadName}>下载音频 · {downloadName}</a></div> : null}</section></Localized>
 }
 
 function CodeBlock({ children }: { children: string }) {

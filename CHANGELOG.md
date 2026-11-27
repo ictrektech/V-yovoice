@@ -2,9 +2,13 @@
 
 ### English
 
+- Choose the primary node or a registered remote deployment directly in the speech recognition, speech synthesis and speaker forms. One deployment manager prepares model weights using NFS, copy or automatic selection and reports progress.
+
 - The V-yovoice DSH plugin adds a microphone beside the model selector for voice dictation into the unsent chat draft. Recording stops manually or at the configured limit, recognition stays separate from message submission, and text is inserted only while the captured draft is still current; changed drafts keep the transcript for explicit insertion. Audio is transient and is not saved as a conversation attachment.
 
 ### 简体中文
+
+- 在语音识别、语音合成与声纹表单直接选择主节点或已登记的分节点。同一个节点部署管理面板支持 NFS、传输和自动选择，并显示模型准备进度。
 
 - V-yovoice DSH 插件在模型选择器旁新增语音听写麦克风，可把语音写入未发送的聊天草稿。录音可手动停止或在达到配置时长时自动结束，识别与消息发送完全分离；只有草稿版本未变化时才自动插入，草稿已修改时保留识别文字供明确插入。音频不会被保存为会话附件。
 

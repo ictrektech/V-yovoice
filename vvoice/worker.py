@@ -13,7 +13,8 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
-from .worker_execution import TASK_TYPE, TranscriptionWorker
+from .worker_execution import ComputeWorker
+from .worker_models import MODELS
 from .worker_weights import CHUNK_BYTES, MANIFEST_BYTES, Manifest, WeightStore
 
 MODE = "application-backend-v1"
@@ -26,9 +27,6 @@ PROFILES = {
     "jetson-thor": "thor",
     "dgx-spark": "thor",
 }
-SENSEVOICE = "sensevoice-int8"
-SENSEVOICE_FILES = {"model": "model.int8.onnx", "tokens": "tokens.txt"}
-SENSEVOICE_LIMITS = {"input_bytes": 2 << 20, "sample_rate": 48000, "duration_seconds": 20}
 
 
 async def bounded_body(request: Request, maximum: int) -> bytes:
@@ -55,7 +53,7 @@ def build_worker(encoded: str) -> FastAPI:
     threads = 4
     root = Path(os.getenv("VVOICE_DATA_DIR", "/data")) / "worker"
     store = WeightStore(root / "weights", Path("/modelhub-shared"))
-    executions = TranscriptionWorker(root / "attempts", store, SENSEVOICE, provider, threads)
+    executions = ComputeWorker(root / "attempts", store, provider, threads)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=executions.lifespan)
 
     def authorized(authorization: str = Header(default="")) -> None:
@@ -78,8 +76,9 @@ def build_worker(encoded: str) -> FastAPI:
             "protocol_version": 1,
             "execution_settings": {"provider": provider, "num_threads": threads},
             "async_models": [
-                {"id": SENSEVOICE, "task_type": TASK_TYPE, "model_limits": SENSEVOICE_LIMITS}
-            ] if store.ready(SENSEVOICE) else [],
+                {"id": model_id, "task_type": task_type, "model_limits": limits}
+                for model_id, (task_type, _, limits) in MODELS.items() if store.ready(model_id)
+            ],
             "weight_model_delete": True,
         }
 
@@ -90,7 +89,7 @@ def build_worker(encoded: str) -> FastAPI:
         except ValidationError:
             raise HTTPException(422, "INVALID_WEIGHT_MANIFEST") from None
         files = {row.file_id: row.path for row in manifest.files}
-        if manifest.model_id != SENSEVOICE or files != SENSEVOICE_FILES:
+        if manifest.model_id not in MODELS or files != MODELS[manifest.model_id][1]:
             raise HTTPException(422, "WORKER_MODEL_UNSUPPORTED")
         return await run_in_threadpool(store.begin, manifest)
 
@@ -129,5 +128,10 @@ def build_worker(encoded: str) -> FastAPI:
             raise HTTPException(415, "INVALID_WORKER_INPUT_CONTENT_TYPE")
         data = await bounded_body(request, CHUNK_BYTES)
         return await run_in_threadpool(executions.write_input, attempt_id, offset, data)
+
+    @app.get("/scheduler/executions/{attempt_id}/outputs/{file_id}", dependencies=channel)
+    def output(attempt_id: str, file_id: Literal["speech.mp3", "embedding.json"],
+               offset: Annotated[int, Query(ge=0)]):
+        return executions.read_output(attempt_id, file_id, offset)
 
     return app

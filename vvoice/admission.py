@@ -335,7 +335,8 @@ class AdmissionMiddleware:
         async def guarded_receive():
             nonlocal received_bytes
             message = await receive()
-            if scope["type"] == "http" and scope.get("path") == "/api/v1/compute/transcriptions":
+            if scope["type"] == "http" and (scope["path"] == "/api/v1/compute/transcriptions"
+                                              or scope["path"].startswith("/api/v1/compute/speakers/")):
                 from .worker_execution import MAX_AUDIO_BYTES
                 received_bytes += len(message.get("body", b""))
                 if received_bytes > MAX_AUDIO_BYTES + 65536:

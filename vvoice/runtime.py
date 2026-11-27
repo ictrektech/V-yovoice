@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from .catalog import find_model, model_root, resolve_files
+from .catalog import find_model, model_root, resolve_files, worker_files
 from .config import settings
 from .transcript import merge_segment_transcripts, normalize_transcript
 from .vad import needs_split, _speech_segments
@@ -57,7 +57,7 @@ def _model_provider(key: str | None) -> str:
 def _kwargs(item: dict[str, Any], include_common: bool = True) -> dict[str, Any]:
     runtime = item["runtime"]
     values = dict(runtime.get("options") or {})
-    values.update(resolve_files(item))
+    values.update({key: path for key, path in resolve_files(item).items() if key in runtime["files"]})
     if include_common:
         # Some model/provider combinations are broken on specific accelerators
         # (e.g. int8 Paraformer broadcasting errors on Jetson CUDA EP); listed
@@ -220,9 +220,12 @@ class RuntimeRegistry:
                     "debug": bool(runtime.get("debug", False)),
                 }
             )
+            verified = (worker_files.get() or {}).get(item["key"])
+            rules = [verified[f"fst-{Path(name).stem}"] if verified is not None else str(model_root(item) / name)
+                     for name in runtime.get("rule_fsts", [])]
             config = sherpa.OfflineTtsConfig(
                 model=model,
-                rule_fsts=",".join(str(model_root(item) / name) for name in runtime.get("rule_fsts", [])),
+                rule_fsts=",".join(rules),
                 max_num_sentences=int(runtime.get("max_num_sentences", 1)),
             )
             if not config.validate():

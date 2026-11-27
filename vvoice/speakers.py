@@ -4,6 +4,7 @@ import json
 import threading
 import time
 import uuid
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,11 @@ import numpy as np
 
 MAX_SPEAKER_NAME_CHARS = 64
 DEFAULT_IDENTIFY_THRESHOLD = 0.6
+
+
+@lru_cache(maxsize=1)
+def open_speaker_store(root: Path) -> "SpeakerStore":
+    return SpeakerStore(root)
 
 
 def cosine_similarity(left, right) -> float:

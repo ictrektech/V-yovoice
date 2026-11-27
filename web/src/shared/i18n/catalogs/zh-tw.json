@@ -6840,7 +6840,7 @@
     "defaultMessage": "轉寫"
   },
   "@yovoice.remoteVoice.manage": {
-    "defaultMessage": "管理部署"
+    "defaultMessage": "節點部署管理"
   },
   "@yovoice.remoteVoice.refresh": {
     "defaultMessage": "重新整理"
@@ -6869,14 +6869,38 @@
   "@yovoice.remoteVoice.removeDescription": {
     "defaultMessage": "將移除後端和遠端模型登記。"
   },
+  "@yovoice.remoteVoice.primary": {
+    "defaultMessage": "主節點（本機）"
+  },
+  "@yovoice.remoteVoice.install": {
+    "defaultMessage": "安裝模型"
+  },
+  "@yovoice.remoteVoice.cancelDownload": {
+    "defaultMessage": "停止下載"
+  },
+  "@yovoice.remoteVoice.primaryState.not_installed": {
+    "defaultMessage": "未安裝"
+  },
+  "@yovoice.remoteVoice.primaryState.downloading": {
+    "defaultMessage": "下載中"
+  },
+  "@yovoice.remoteVoice.primaryState.verifying": {
+    "defaultMessage": "校驗中"
+  },
+  "@yovoice.remoteVoice.primaryState.failed": {
+    "defaultMessage": "安裝失敗"
+  },
+  "@yovoice.remoteVoice.model": {
+    "defaultMessage": "模型"
+  },
   "@yovoice.remoteVoice.prepare": {
-    "defaultMessage": "準備並登記 SenseVoice"
+    "defaultMessage": "準備並登記模型"
   },
   "@yovoice.remoteVoice.preparing": {
     "defaultMessage": "正在驗證並準備權重，完成後登記模型…"
   },
   "@yovoice.remoteVoice.registered": {
-    "defaultMessage": "可轉寫"
+    "defaultMessage": "可用"
   },
   "@yovoice.remoteVoice.placement": {
     "defaultMessage": "模型與執行節點"
@@ -6915,7 +6939,7 @@
     "defaultMessage": "執行回條與所選節點或執行器不一致。"
   },
   "@yovoice.remoteVoice.sourceMissing": {
-    "defaultMessage": "請先在 V-Voice 主執行個體安裝 SenseVoice。"
+    "defaultMessage": "先在主節點安裝受支援的模型，再於此準備。"
   },
   "@yovoice.remoteVoice.tasksActive": {
     "defaultMessage": "該後端仍有等待或執行中的任務。"
@@ -6946,6 +6970,51 @@
   },
   "@yovoice.remoteVoice.state.cleanup_failed": {
     "defaultMessage": "移除未確認"
+  },
+  "@yovoice.remoteVoice.weightMode": {
+    "defaultMessage": "權重方式"
+  },
+  "@yovoice.remoteVoice.weight.auto": {
+    "defaultMessage": "自動（優先 NFS）"
+  },
+  "@yovoice.remoteVoice.weight.shared": {
+    "defaultMessage": "NFS 唯讀掛載"
+  },
+  "@yovoice.remoteVoice.weight.copy": {
+    "defaultMessage": "傳輸至節點"
+  },
+  "@yovoice.remoteVoice.phase.source_check": {
+    "defaultMessage": "校驗主節點權重"
+  },
+  "@yovoice.remoteVoice.phase.mounting": {
+    "defaultMessage": "檢查 NFS 掛載"
+  },
+  "@yovoice.remoteVoice.phase.copying": {
+    "defaultMessage": "傳輸權重"
+  },
+  "@yovoice.remoteVoice.phase.target_check": {
+    "defaultMessage": "校驗目標節點權重"
+  },
+  "@yovoice.remoteVoice.phase.registering": {
+    "defaultMessage": "登記模型"
+  },
+  "@yovoice.remoteVoice.removeModel": {
+    "defaultMessage": "清理節點模型"
+  },
+  "@yovoice.remoteVoice.removeModelDescription": {
+    "defaultMessage": "解除節點模型登記並清理目標節點副本。主節點和 NFS 權重會保留。"
+  },
+  "@yovoice.remoteVoice.nfsUnavailable": {
+    "defaultMessage": "目標節點無法讀取 NFS 共享。檢查節點掛載設定，或選擇傳輸權重。"
+  },
+  "@yovoice.remoteVoice.nfsSourceMissing": {
+    "defaultMessage": "來源權重不在 Model Hub 共享目錄。請將權重放入共享目錄，或選擇傳輸。"
+  },
+  "@yovoice.remoteVoice.preparationInterrupted": {
+    "defaultMessage": "模型準備已中斷。重新提交可繼續已複製的權重。"
+  },
+  "@yovoice.remoteVoice.preparationActive": {
+    "defaultMessage": "正在準備模型，請等待完成後重試。"
   },
   "@yovoice.remoteVoice.force": {
     "defaultMessage": "本次直接放行"

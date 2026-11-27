@@ -11,7 +11,7 @@ export function ModelManagement({ category, state, catalog, draft, run }: { cate
   const t = useTranslator();
   const { models: shared, failed } = useSharedModelInventory(category === 'creative');
   return <VStack gap={3} style={{ flex: 1, minHeight: 0 }} data-testid="model-management">
-    {category === 'speech' ? <VStack id="speech-models-panel" style={{ flex: 1, minHeight: 0 }}><HStack paddingInline={4} paddingBlock={2} hAlign="end"><RemoteVoiceButton initialManage /></HStack><SpeechService page="models" /></VStack>
+    {category === 'speech' ? <VStack id="speech-models-panel" style={{ flex: 1, minHeight: 0 }}><HStack paddingInline={4} paddingBlock={2} hAlign="end"><RemoteVoiceButton /></HStack><SpeechService page="models" /></VStack>
       : <VStack id="creative-models-panel" className="settings-page" gap={6} style={{ overflowY: 'auto' }}>
         <VStack as="header" gap={2} style={{ height: 'auto', alignItems: 'stretch' }}><h1>{t('@vvoice.models.creativeTab')}</h1><p>{t('@vvoice.models.sharedHint')}</p><a href="https://modelscope.cn/models/vivibit/v-voice-audiocpp-gguf" target="_blank" rel="noreferrer">ModelScope · vivibit/v-voice-audiocpp-gguf</a></VStack>
         {failed ? <p role="alert">{t('@vvoice.models.inventoryError')}</p> : null}

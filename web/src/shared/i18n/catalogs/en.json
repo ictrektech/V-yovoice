@@ -6840,7 +6840,7 @@
     "defaultMessage": "Transcribe"
   },
   "@yovoice.remoteVoice.manage": {
-    "defaultMessage": "Manage deployments"
+    "defaultMessage": "Manage node deployments"
   },
   "@yovoice.remoteVoice.refresh": {
     "defaultMessage": "Refresh"
@@ -6869,14 +6869,38 @@
   "@yovoice.remoteVoice.removeDescription": {
     "defaultMessage": "The backend and its remote model registration will be removed."
   },
+  "@yovoice.remoteVoice.primary": {
+    "defaultMessage": "Primary node (local)"
+  },
+  "@yovoice.remoteVoice.install": {
+    "defaultMessage": "Install model"
+  },
+  "@yovoice.remoteVoice.cancelDownload": {
+    "defaultMessage": "Stop download"
+  },
+  "@yovoice.remoteVoice.primaryState.not_installed": {
+    "defaultMessage": "Not installed"
+  },
+  "@yovoice.remoteVoice.primaryState.downloading": {
+    "defaultMessage": "Downloading"
+  },
+  "@yovoice.remoteVoice.primaryState.verifying": {
+    "defaultMessage": "Verifying"
+  },
+  "@yovoice.remoteVoice.primaryState.failed": {
+    "defaultMessage": "Installation failed"
+  },
+  "@yovoice.remoteVoice.model": {
+    "defaultMessage": "Model"
+  },
   "@yovoice.remoteVoice.prepare": {
-    "defaultMessage": "Prepare and register SenseVoice"
+    "defaultMessage": "Prepare and register model"
   },
   "@yovoice.remoteVoice.preparing": {
     "defaultMessage": "Verifying and preparing weights, then registering the model…"
   },
   "@yovoice.remoteVoice.registered": {
-    "defaultMessage": "Ready for transcription"
+    "defaultMessage": "Ready"
   },
   "@yovoice.remoteVoice.placement": {
     "defaultMessage": "Model and execution node"
@@ -6915,7 +6939,7 @@
     "defaultMessage": "The receipt does not match the selected node and executor."
   },
   "@yovoice.remoteVoice.sourceMissing": {
-    "defaultMessage": "Install SenseVoice on the main V-Voice instance first."
+    "defaultMessage": "Install a supported model on the primary node, then prepare it here."
   },
   "@yovoice.remoteVoice.tasksActive": {
     "defaultMessage": "This backend has pending or running tasks."
@@ -6946,6 +6970,51 @@
   },
   "@yovoice.remoteVoice.state.cleanup_failed": {
     "defaultMessage": "Removal unconfirmed"
+  },
+  "@yovoice.remoteVoice.weightMode": {
+    "defaultMessage": "Weight source"
+  },
+  "@yovoice.remoteVoice.weight.auto": {
+    "defaultMessage": "Automatic (prefer NFS)"
+  },
+  "@yovoice.remoteVoice.weight.shared": {
+    "defaultMessage": "Read-only NFS mount"
+  },
+  "@yovoice.remoteVoice.weight.copy": {
+    "defaultMessage": "Transfer to node"
+  },
+  "@yovoice.remoteVoice.phase.source_check": {
+    "defaultMessage": "Checking primary-node weights"
+  },
+  "@yovoice.remoteVoice.phase.mounting": {
+    "defaultMessage": "Checking NFS mount"
+  },
+  "@yovoice.remoteVoice.phase.copying": {
+    "defaultMessage": "Transferring weights"
+  },
+  "@yovoice.remoteVoice.phase.target_check": {
+    "defaultMessage": "Verifying target-node weights"
+  },
+  "@yovoice.remoteVoice.phase.registering": {
+    "defaultMessage": "Registering model"
+  },
+  "@yovoice.remoteVoice.removeModel": {
+    "defaultMessage": "Remove node model"
+  },
+  "@yovoice.remoteVoice.removeModelDescription": {
+    "defaultMessage": "Unregister this model and remove its target-node copies. Primary and NFS weights are retained."
+  },
+  "@yovoice.remoteVoice.nfsUnavailable": {
+    "defaultMessage": "The target cannot read the NFS share. Check the node mount settings or select weight transfer."
+  },
+  "@yovoice.remoteVoice.nfsSourceMissing": {
+    "defaultMessage": "Source weights are outside the Model Hub share. Put them in the share or select transfer."
+  },
+  "@yovoice.remoteVoice.preparationInterrupted": {
+    "defaultMessage": "Preparation was interrupted. Submit again to resume copied weights."
+  },
+  "@yovoice.remoteVoice.preparationActive": {
+    "defaultMessage": "Model preparation is active. Wait for it to finish and retry."
   },
   "@yovoice.remoteVoice.force": {
     "defaultMessage": "Direct admission for this request"
