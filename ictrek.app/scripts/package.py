@@ -23,7 +23,6 @@ LOCK_PATH = ROOT / "dependency-lock.json"
 SPREADSHEET = os.getenv("FEISHU_SPREADSHEET_TOKEN", "Htotsn3oahO1zxt73YMcaB1zn8e")
 REPOSITORY = "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice"
 IMAGE_REFERENCE = re.compile(r"^[\w.-]+\.[\w.-]+(?::\d+)?/[^\s]+$")
-IMAGE_TAG = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
 PACKAGE_MEMBERS = (
     ".env",
     "manifest.yml",
@@ -41,6 +40,14 @@ PROFILES = {
     "VVOICE_ARM_CUDA_IMAGE": ["ARM_with_cuda"],
     "VVOICE_L4T_IMAGE": ["l4t"],
     "VVOICE_THOR_IMAGE": ["thor_spark"],
+}
+IMAGE_PREFIXES = {
+    "VVOICE_AMD_IMAGE": "amd",
+    "VVOICE_AMD_CUDA_IMAGE": "amd_cu128",
+    "VVOICE_ARM_IMAGE": "arm",
+    "VVOICE_ARM_CUDA_IMAGE": "arm_cu130",
+    "VVOICE_L4T_IMAGE": "l4t",
+    "VVOICE_THOR_IMAGE": "thor",
 }
 REMOTE_PROFILES = {
     "amd-cuda": "VVOICE_AMD_CUDA_IMAGE",
@@ -307,6 +314,15 @@ def parse_image_overrides(values: list[str]) -> dict[str, str]:
     return overrides
 
 
+def verify_release_images(images: dict[str, str], version: str) -> None:
+    if set(images) != set(PROFILES):
+        raise RuntimeError(f"image variables differ from supported profiles: {sorted(images)}")
+    for variable, image in images.items():
+        expected = f"{REPOSITORY}:{IMAGE_PREFIXES[variable]}_{version}"
+        if image != expected:
+            raise RuntimeError(f"{variable} requires the release image {expected} from the approved repository, got {image}")
+
+
 def verify_pull_package(output: Path, version: str) -> None:
     """校验最终安装包，不依赖某个候选版本，也不访问外部服务。"""
     with tarfile.open(output) as outer:
@@ -336,19 +352,10 @@ def verify_pull_package(output: Path, version: str) -> None:
             if not separator or not key or key in images:
                 raise RuntimeError(f"invalid image entry: {line}")
             images[key] = image
-        if set(images) != set(PROFILES):
-            raise RuntimeError(f"image variables differ from supported profiles: {sorted(images)}")
-        for variable, image in images.items():
-            prefix = REPOSITORY + ":"
-            if not image.startswith(prefix):
-                raise RuntimeError(f"{variable} does not use the approved repository: {image}")
-            tag = image.removeprefix(prefix)
-            if not IMAGE_TAG.fullmatch(tag) or tag.lower() == "latest":
-                raise RuntimeError(f"{variable} has an invalid release tag: {image}")
-
         manifest = yaml.safe_load(read("manifest.yml"))
         if str(manifest.get("version", "")) != version:
             raise RuntimeError(f"manifest version differs from {version}")
+        verify_release_images(images, version)
         dependencies = manifest.get("dependencies", {}).get("apps", [])
         if {entry.get("id") for entry in dependencies} != set(DEPENDENCIES):
             raise RuntimeError("dependency set differs from the supported applications")
@@ -424,10 +431,14 @@ def main() -> None:
         action="store_true",
         help="resolve live dependencies and update dependency-lock.json after retesting",
     )
+    parser.add_argument("--check-release-images", action="store_true",
+                        help="check all six published image tags in Feishu without building a package")
     args = parser.parse_args()
     version = args.version or (ROOT / "VERSION").read_text().strip()
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         raise SystemExit(f"invalid version: {version}")
+    if args.check_release_images and (args.verify_package or args.image or args.update_dependency_lock):
+        parser.error("--check-release-images cannot be combined with other operations or image overrides")
     if args.update_dependency_lock:
         if args.verify_package or args.image:
             parser.error("--update-dependency-lock cannot be combined with package verification or image overrides")
@@ -441,7 +452,6 @@ def main() -> None:
             parser.error("--verify-package cannot be combined with --image")
         verify_pull_package(Path(args.verify_package), version)
         return
-    dependency_lock = load_dependency_lock()
     try:
         overrides = parse_image_overrides(args.image)
     except ValueError as exc:
@@ -470,6 +480,11 @@ def main() -> None:
             break
         if variable not in images:
             raise RuntimeError("; ".join(errors))
+    verify_release_images(images, version)
+    if args.check_release_images:
+        print(f"PASS: release image tags version={version} profiles={len(images)}")
+        return
+    dependency_lock = load_dependency_lock()
     stage = DIST / "staging"
     if stage.exists():
         shutil.rmtree(stage)

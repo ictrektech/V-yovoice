@@ -33,6 +33,7 @@ branch="$(git symbolic-ref --quiet --short HEAD)"
 remote_tags="$(git ls-remote --tags origin "refs/tags/${trigger}" "refs/tags/${public_tag}")"
 [[ -z "$remote_tags" ]] || { echo "release tag already exists on origin" >&2; exit 1; }
 python3 scripts/release-notes.py "$public_tag" >/dev/null
+python3 ictrek.app/scripts/package.py --version "$version" --check-release-images
 printf '%s\n' "$version" > "$version_file"
 git add ictrek.app/VERSION
 git commit -m "chore: release VOS v-voice ${version}"

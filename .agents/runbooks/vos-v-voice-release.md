@@ -67,16 +67,16 @@ bash docker/build_image.sh --sheet l4t --dry-run
 
 在对应构建机执行，按表选择 `--sheet`：
 
-| Profile | `--sheet` | 镜像标签 | 构建机 | 当前重建 |
-| --- | --- | --- | --- | --- |
-| `amd` | `AMD_with_mxn100` | `amd_X.Y.Z` | x86_64 | 否 |
-| `amd-cuda` | `AMD_with_cuda` | `amd_cu128_X.Y.Z` | x86_64 CUDA | 是 |
-| `arm` | `ARM_without_cuda` | `arm_X.Y.Z` | ARM64 | 否 |
-| `arm-cuda` | `ARM_with_cuda` | `arm_cu130_X.Y.Z` | ARM64 CUDA | 否 |
-| `l4t` | `l4t` | `l4t_X.Y.Z` | Jetson L4T | 是 |
-| `thor` | `thor_spark` | `thor_X.Y.Z` | Thor / Spark | 是 |
+| Profile | `--sheet` | 镜像标签 | 构建机 |
+| --- | --- | --- | --- |
+| `amd` | `AMD_with_mxn100` | `amd_X.Y.Z` | x86_64 |
+| `amd-cuda` | `AMD_with_cuda` | `amd_cu128_X.Y.Z` | x86_64 CUDA |
+| `arm` | `ARM_without_cuda` | `arm_X.Y.Z` | ARM64 |
+| `arm-cuda` | `ARM_with_cuda` | `arm_cu130_X.Y.Z` | ARM64 CUDA |
+| `l4t` | `l4t` | `l4t_X.Y.Z` | Jetson L4T |
+| `thor` | `thor_spark` | `thor_X.Y.Z` | Thor / Spark |
 
-当前阶段默认只构建和验证 `AMD_with_cuda`、`l4t`、`thor_spark`，每条命令仍用 `--sheet` 明确指定一个平台。只有用户明确要求本次构建全部 6 个 profile 时，才运行 AMD CPU、ARM CPU 和 ARM CUDA 对应的 `--sheet`；`build_image.sh` 继续保持通用，不增加额外门控。manifest 和 compose 仍保留六个 profile 以维持安装兼容和现有包结构，这不代表默认重建范围。
+正式发布必须用 `--sheet` 分别构建并验证表中全部六个 Profile。六组镜像均通过冒烟、完成推送和飞书登记后，再运行版本脚本。脚本在推送触发标签前校验所有镜像标签与候选版本一致，打包时再校验最终安装包。
 
 候选流程必须先构建，再冒烟，最后推送。不要使用默认的“构建并发布”组合命令，否则镜像会在冒烟前进入仓库和飞书。
 
@@ -105,7 +105,7 @@ L4T 和 Thor 使用相同顺序，在各自构建机执行 `--build-only`、镜�
 
 `haru_dialogue_smoke.py` 自动从当前已安装的 V-Voice 容器找到只读模型目录；没有已安装实例时显式传 `--model-root`。它使用 `docker run --rm`、无网络、临时 `/data`，不修改现有容器，验证 worker `ready`、首个 6400 字节 PCM 帧、正常 `end`、worker 退出码 0、无孤儿进程和驻留状态清理。AMD CUDA、L4T、Thor 都必须通过，不能只看镜像里的 CUDA 链接结果。
 
-默认版本为 `ictrek.app/VERSION` 的下一个 patch；发布时建议明确传入候选版本。预检阶段发现问题时，修复后可用同一候选版本重新构建、冒烟和推送覆盖；尚未写入飞书的候选标签不视为正式发布。未受影响的平台可以沿用旧镜像，包括日期标签。
+默认版本为 `ictrek.app/VERSION` 的下一个 patch；发布时建议明确传入候选版本。预检阶段发现问题时，修复后可用同一候选版本重新构建、冒烟和推送覆盖；尚未写入飞书的候选标签不视为正式发布。
 
 当前阶段的完整构建范围只包括 `AMD_with_cuda`、`l4t` 和 `thor_spark`。其余 profile 在打包时只读取飞书已有的镜像标签，不重新构建或做设备验证；打包器不会代为构建镜像。
 

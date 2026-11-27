@@ -15,8 +15,8 @@ spec.loader.exec_module(package)
 
 def image_references(version="1.2.3"):
     return {
-        variable: f"{package.REPOSITORY}:profile-{index}_{version}"
-        for index, variable in enumerate(package.PROFILES, 1)
+        variable: f"{package.REPOSITORY}:{prefix}_{version}"
+        for variable, prefix in package.IMAGE_PREFIXES.items()
     }
 
 
@@ -87,6 +87,17 @@ def test_images_must_use_the_approved_repository(tmp_path):
     write_package(path, images=images)
 
     with pytest.raises(RuntimeError, match="approved repository"):
+        package.verify_pull_package(path, "1.2.3")
+
+
+@pytest.mark.parametrize("tag", ["arm_1.2.2", "amd_1.2.3"])
+def test_profile_requires_its_image_for_the_release_version(tmp_path, tag):
+    images = image_references()
+    images["VVOICE_ARM_IMAGE"] = f"{package.REPOSITORY}:{tag}"
+    path = tmp_path / "v_voice_1.2.3_pull.tar"
+    write_package(path, images=images)
+
+    with pytest.raises(RuntimeError, match="VVOICE_ARM_IMAGE requires the release image"):
         package.verify_pull_package(path, "1.2.3")
 
 

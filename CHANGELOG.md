@@ -8,6 +8,16 @@
 
 - V-yovoice DSH 插件在模型选择器旁新增语音听写麦克风，可把语音写入未发送的聊天草稿。录音可手动停止或在达到配置时长时自动结束，识别与消息发送完全分离；只有草稿版本未变化时才自动插入，草稿已修改时保留识别文字供明确插入。音频不会被保存为会话附件。
 
+## [0.0.42] - 2026-11-27
+
+### English
+
+- Build the current V-Voice application for all six VOS Profiles. Release packaging checks each Profile's image version before publication.
+
+### 简体中文
+
+- 为六个 VOS Profile 提供本次版本的 V-Voice 镜像，发版前逐个校验安装包中的镜像版本。
+
 ## [0.0.41] - 2026-11-27
 
 ### English
