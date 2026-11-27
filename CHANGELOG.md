@@ -2,15 +2,21 @@
 
 ### English
 
-- Discover ready SenseVoice backends by node and submit a one-shot transcription to an explicit deployment. The response identifies the actual executor and node.
-
 - The V-yovoice DSH plugin adds a microphone beside the model selector for voice dictation into the unsent chat draft. Recording stops manually or at the configured limit, recognition stays separate from message submission, and text is inserted only while the captured draft is still current; changed drafts keep the transcript for explicit insertion. Audio is transient and is not saved as a conversation attachment.
 
 ### 简体中文
 
-- 可按节点查询就绪的 SenseVoice 后端，指定部署执行整句转写，并在回执中核对实际执行器与节点。
-
 - V-yovoice DSH 插件在模型选择器旁新增语音听写麦克风，可把语音写入未发送的聊天草稿。录音可手动停止或在达到配置时长时自动结束，识别与消息发送完全分离；只有草稿版本未变化时才自动插入，草稿已修改时保留识别文字供明确插入。音频不会被保存为会话附件。
+
+## [0.0.41] - 2026-11-27
+
+### English
+
+- Discover ready SenseVoice backends by node and submit a one-shot transcription to an explicit deployment. The response identifies the actual executor and node.
+
+### 简体中文
+
+- 可按节点查询就绪的 SenseVoice 后端，指定部署执行整句转写，并在回执中核对实际执行器与节点。
 
 ## [0.0.40] - 2026-11-22
 
