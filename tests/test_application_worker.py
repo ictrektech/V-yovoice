@@ -52,6 +52,33 @@ def test_model_preparation_route_reaches_the_registration_handler(monkeypatch, t
     assert pending == [((deployment, model), "shared")]
 
 
+def test_workbench_copied_model_keeps_native_sidecars_adjacent(monkeypatch, tmp_path):
+    from pathlib import Path
+
+    from vvoice import worker_execution
+
+    files = {}
+    for role, name in enumerate(("phonon-31m-en-q8_0.gguf", "default-voice.safetensors")):
+        source = tmp_path / f"file_{role}" / name
+        source.parent.mkdir()
+        source.write_bytes(name.encode())
+        files[f"mirrors/gradium/phonon-31m-en-audiocpp/{name}"] = str(source)
+    operation = tmp_path / "operation.json"
+    operation.write_text(json.dumps({"model_id": "audiocpp-gradium-phonon-31m-en-q8", "packages": files}))
+
+    def run(arguments, *, env, check):
+        base = Path(env["MODEL_HUB_SHARED_MODELS_PATH"]) / "export/ms/vivibit/v-voice-audiocpp-gguf/current"
+        for relative, source in files.items():
+            target = base / relative
+            assert not target.is_symlink()
+            assert target.samefile(source)
+        Path(arguments[-1]).write_bytes(b"fixture output")
+
+    monkeypatch.setattr(worker_execution.subprocess, "run", run)
+    worker_execution.execute_operation(operation)
+    assert (tmp_path / "workbench.zip").read_bytes() == b"fixture output"
+
+
 def test_worker_copy_verification_and_cancellation(tmp_path, monkeypatch):
     token = "a" * 64
     monkeypatch.setenv("V_SCHEDULER_BACKEND_CHANNEL_TOKEN", token)

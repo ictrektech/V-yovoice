@@ -13,10 +13,12 @@
 ### English
 
 - Fix the deployment model preparation endpoint so the node’s Verify and Register action reaches the model registration handler.
+- Keep copied model sidecars adjacent to the native model during remote execution.
 
 ### 简体中文
 
 - 修复节点部署的模型准备接口，让「准备并登记」操作进入模型登记流程。
+- 远端执行使用已复制的权重时，保持原生模型与配套文件位于同一目录。
 
 ## [0.0.44] - 2026-11-28
 

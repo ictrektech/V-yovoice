@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import errno
 import hashlib
 import json
 import math
@@ -272,9 +273,10 @@ class ComputeWorker:
                     item = workbench_models()[key]
                     verified = paths if key == model_id else self.store.verified_files(self.store.ready_transfer(key) or "", key)
                     for field, target in item["runtime"]["files"].items():
-                        if target in packages and packages[target] != str(verified[field]):
+                        source = str(verified[field])
+                        previous = packages.setdefault(target, source)
+                        if previous != source and file_sha256(Path(previous)) != file_sha256(Path(source)):
                             raise ValueError()
-                        packages[target] = str(verified[field])
         except (KeyError, OSError, TypeError, ValueError, HTTPException):
             return self.stop(attempt, failure("WORKER_INPUT_OR_WEIGHTS_INVALID"))
         if self.active:
@@ -314,7 +316,14 @@ def execute_operation(operation: Path):
             if not target.resolve().is_relative_to(base.resolve()):
                 raise ValueError("invalid catalog path")
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.symlink_to(path)
+            try:
+                # Copied roles occupy separate directories. Native runtimes
+                # resolve the model path and open sidecars next to it.
+                os.link(path, target)
+            except OSError as error:
+                if error.errno != errno.EXDEV:
+                    raise
+                target.symlink_to(path)
         output = operation.parent / "workbench.zip"
         subprocess.run(
             ["/opt/vvoice/vvoice-studio", "node-job", str(root / "state"), str(operation.parent / "reference"), str(output)],
