@@ -10,6 +10,13 @@ import uvicorn
 
 
 def main() -> None:
+    deployment = os.environ.get("V_SCHEDULER_BACKEND_CONFIG_B64")
+    if deployment is not None:
+        from .worker import build_worker
+
+        uvicorn.run(build_worker(deployment), host="0.0.0.0", port=7070)
+        return
+
     os.environ["VVOICE_STUDIO_INTERNAL_TOKEN"] = secrets.token_hex(32)
     studio = subprocess.Popen([os.getenv("VVOICE_STUDIO_BINARY", "/opt/vvoice/vvoice-studio")])
     stopping = threading.Event()

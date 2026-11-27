@@ -87,6 +87,10 @@ from .transcript import normalize_transcript, subtitle
 
 app = FastAPI(docs_url=None, title="V-Voice", version=__version__, description="Shared ASR and TTS APIs with ONNX and native audio.cpp inference")
 app.include_router(dialogue_router)
+if os.getenv("VVOICE_STUDIO_ENABLED") == "true":
+    from .compute import router as compute_router
+
+    app.include_router(compute_router)
 if os.getenv("VVOICE_SCHEDULER_REQUIRED") == "true":
     app.add_middleware(AdmissionMiddleware)
 

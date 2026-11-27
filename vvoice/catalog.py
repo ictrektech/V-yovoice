@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import hashlib
+from contextvars import ContextVar
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from .config import settings
+
+worker_files: ContextVar[dict[str, dict[str, str]] | None] = ContextVar("worker_model_files", default=None)
 
 
 @lru_cache(maxsize=1024)
@@ -118,6 +121,9 @@ def descriptor_for(item: dict[str, Any]) -> dict[str, Any]:
 
 
 def resolve_files(item: dict[str, Any]) -> dict[str, str]:
+    verified = worker_files.get()
+    if verified is not None and item["key"] in verified:
+        return verified[item["key"]]
     root = model_root(item).resolve()
     resolved: dict[str, str] = {}
     for field, relative in item["runtime"]["files"].items():

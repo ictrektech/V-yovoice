@@ -1,5 +1,7 @@
 # V-Voice
 
+One-shot SenseVoice transcription can run on a registered remote node. After the administrator deploys and prepares the model through V-Scheduler, callers can inspect the execution node in Models & Providers or choose it through the API documented under Cross-node transcription.
+
 The workbench uses ONNX and audio.cpp GGUF backends, without a PyTorch runtime.
 The four PyTorch-only music models and their separate Background music page/API
 are removed; GGUF music generation, speech, voice cloning and scores remain.

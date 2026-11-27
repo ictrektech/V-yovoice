@@ -335,7 +335,12 @@ class AdmissionMiddleware:
         async def guarded_receive():
             nonlocal received_bytes
             message = await receive()
-            if scope["type"] == "http" and scope.get("path") == "/v1/audio/transcriptions/full":
+            if scope["type"] == "http" and scope.get("path") == "/api/v1/compute/transcriptions":
+                from .worker_execution import MAX_AUDIO_BYTES
+                received_bytes += len(message.get("body", b""))
+                if received_bytes > MAX_AUDIO_BYTES + 65536:
+                    raise HTTPException(413, "VOICE_COMPUTE_AUDIO_SIZE")
+            elif scope["type"] == "http" and scope.get("path") == "/v1/audio/transcriptions/full":
                 received_bytes += len(message.get("body", b""))
                 from .config import settings
                 if received_bytes > settings.max_upload_mb * 1024 * 1024 + 65536:

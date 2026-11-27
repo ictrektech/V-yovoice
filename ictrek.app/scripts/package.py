@@ -42,6 +42,12 @@ PROFILES = {
     "VVOICE_L4T_IMAGE": ["l4t"],
     "VVOICE_THOR_IMAGE": ["thor_spark"],
 }
+REMOTE_PROFILES = {
+    "amd-cuda": "VVOICE_AMD_CUDA_IMAGE",
+    "jetson-orin": "VVOICE_L4T_IMAGE",
+    "jetson-thor": "VVOICE_THOR_IMAGE",
+    "dgx-spark": "VVOICE_THOR_IMAGE",
+}
 DEPENDENCIES = {
     "com.ictrek.v-scheduler": ("ictrektech/V-Scheduler", "0.0.24"),
 }
@@ -275,6 +281,12 @@ def render(
         lambda match: images.get(match.group(1), match.group(0)),
         compose,
     )
+    remote_images = {
+        profile: images[variable] for profile, variable in REMOTE_PROFILES.items()
+        if images[variable].endswith("_" + version)
+    }
+    if remote_images:
+        compose = "x-v-scheduler-backend-images: " + json.dumps(remote_images, separators=(",", ":")) + "\n" + compose
     (stage / "docker-compose.yml").write_text(compose, encoding="utf-8")
     if re.search(r"\$\{[^}]*_IMAGE[^}]*\}", compose):
         raise RuntimeError("unrendered image variable remains")

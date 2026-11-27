@@ -1,5 +1,7 @@
 # V-Voice
 
+整句 SenseVoice 转写可使用已登记的远端节点。管理员通过 V-Scheduler 部署并准备模型后，调用方可在 Scheduler 的「模型与上游」查看执行节点，也可通过「API 文档 → 跨节点转写」的接口选择节点并核对回执。
+
 工作台采用 ONNX 与 audio.cpp GGUF 后端，不再安装 PyTorch 运行时。
 移除四个仅支持 PyTorch 的音乐模型及独立配乐页面/API；GGUF 音乐生成、语音、
 声音克隆和编曲继续保留。已安装模型文件、作品和音频不删除。

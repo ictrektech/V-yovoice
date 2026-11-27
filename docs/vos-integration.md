@@ -12,6 +12,12 @@ Existing ASR, translation, streaming, hotwords, speaker recognition, TTS,
 discovery and management routes remain compatible. The original console remains
 available alongside the voice-creation workbench.
 
+## 跨应用选择 V-Voice 执行节点 / Cross-app node selection
+
+VOS 同域 Scheduler 基址为 `/api/com.ictrek.v-scheduler`；容器网络网关为 `http://v-scheduler:8080`。两条调用使用当前 VOS 用户的 Bearer 令牌。先用 `GET /api/v1/voice/compute/placements` 查询 `items[]`，将 `node_id` 与 `model_id` 显示在下拉选项，并保存该项的 `deployment_id` 和 `executor_id`。两个 ID 都用于 `POST /api/v1/voice/compute/transcriptions` 的 multipart 表单，另传 `file` 和可选 `language`。同步成功回执含 `task_id`、实际 `node_id`、`deployment_id`、`executor_id` 和 `transcription`。客户端可通过取消 HTTP 请求触发任务取消。遇到 409 刷新部署列表，再由用户选择并重试。旧的本机模型调用继续使用 `/v1/audio/transcriptions`。
+
+Use the VOS user's bearer token on both Scheduler calls. Read the placement list and send the selected deployment and executor together. The successful response identifies the actual node and executor. Closing the request asks V-Voice to cancel the task. This path currently covers SenseVoice one-shot transcription and is available only when the target deployment is registered and measured. The existing local inference endpoints keep their original contract.
+
 ## Acceptance gates
 
 - Retained Python API tests pass without deleting existing coverage.

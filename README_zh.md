@@ -1,5 +1,7 @@
 ## VOS 版 V-Voice
 
+VOS 版支持选择已登记的 SenseVoice 部署进行整句转写。管理员通过 V-Scheduler 在目标节点部署同一个 V-Voice 镜像，再准备模型。在「API 文档 → 跨节点转写」查看节点查询、部署和转写接口。
+
 请从 VOS 应用抽屉打开 V-Voice，使用平台模型及推理功能。
 实验性的 `make dev-browser` 本地服务开发流程已移除。
 

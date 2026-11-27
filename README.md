@@ -1,5 +1,7 @@
 ## V-Voice for VOS
 
+The VOS build supports selecting a registered SenseVoice deployment for one-shot transcription. Administrators deploy the same V-Voice image with V-Scheduler and prepare the model on the target node. Use **API documentation → Cross-node transcription** for placement discovery, deployment and inference calls.
+
 Open V-Voice from the VOS app drawer to use platform models and inference.
 The experimental `make dev-browser` local service workflow has been removed.
 
