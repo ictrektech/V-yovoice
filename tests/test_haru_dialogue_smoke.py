@@ -60,12 +60,14 @@ import json
 import sys
 
 print(json.dumps({{"type":"ready","protocol":4,"model":{{"name":"haru-4b","task":"dialogue","sample_rate":24000,"frame_samples":3200}}}}), flush=True)
+frames = 0
 for line in sys.stdin:
     value = json.loads(line)
-    if value.get("type") == "dialogue":
-        print(json.dumps({{"type":"chunk","id":value["id"],"seq":0,"pcm":base64.b64encode(b"\\0" * 6400).decode(),"text":"hello"}}), flush=True)
+    if value.get("type") == "chunk":
+        print(json.dumps({{"type":"chunk","id":value["id"],"seq":frames,"pcm":base64.b64encode(b"\\0" * 6400).decode(),"text":"hello"}}), flush=True)
+        frames += 1
     elif value.get("type") == "hang_up":
-        print(json.dumps({{"type":"end","id":value["id"],"frames":1,"samples":3200}}), flush=True)
+        print(json.dumps({{"type":"end","id":value["id"],"frames":frames,"samples":frames * 3200}}), flush=True)
         break
 """,
         encoding="utf-8",
