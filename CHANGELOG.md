@@ -8,6 +8,16 @@
 
 - V-yovoice DSH 插件在模型选择器旁新增语音听写麦克风，可把语音写入未发送的聊天草稿。录音可手动停止或在达到配置时长时自动结束，识别与消息发送完全分离；只有草稿版本未变化时才自动插入，草稿已修改时保留识别文字供明确插入。音频不会被保存为会话附件。
 
+## [0.0.43] - 2026-11-27
+
+### English
+
+- Deploy, prepare and register remote SenseVoice backends inside V-Voice. In Speech Recognition, select the model and execution node, transcribe an audio file, and check the actual node in the result.
+
+### 简体中文
+
+- 在 V-Voice 内向所选节点部署后端、准备并登记 SenseVoice。语音识别支持选定模型和执行节点后上传音频，结果显示实际执行节点。
+
 ## [0.0.42] - 2026-11-27
 
 ### English

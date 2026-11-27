@@ -57,11 +57,25 @@ async def require_admin(identity: Identity = Depends(_verify_user)) -> None:
         raise HTTPException(403, "VOICE_COMPUTE_ADMIN_REQUIRED")
 
 
+async def node_names(connection: httpx.AsyncClient) -> dict[tuple[str, str], str]:
+    # 仅附加显示名。节点目录暂不可读时仍保留可调用的部署和节点 ID。
+    try:
+        inventory = await scheduler(connection, "GET", "managed-nodes")
+    except HTTPException:
+        return {}
+    return {
+        (kind, row["id"]): name
+        for kind, field in (("ssh", "items"), ("cluster", "cluster_nodes"))
+        for row in inventory.get(field, [])
+        if (name := row.get("name") or row.get("hostname"))
+    }
+
+
 @router.get("/placements", dependencies=[Depends(_verify_user)])
 async def placements():
     async with client() as connection:
         records = await scheduler(connection, "GET", "backend-deployments")
-        items = []
+        placements_with_targets = []
         for row in records["items"]:
             if worker_deployment(row) and row["state"] == "running":
                 try:
@@ -70,19 +84,26 @@ async def placements():
                     if error.status_code == 409:
                         continue
                     raise
-                items.extend(item for item in selected["items"] if item["task_type"] == TASK_TYPE)
-        return {"items": items}
+                target = (row["target_kind"], row["target_id"])
+                placements_with_targets.extend((item, target) for item in selected["items"]
+                                               if item["task_type"] == TASK_TYPE)
+        names = await node_names(connection) if placements_with_targets else {}
+        return {"items": [{**item, "node_name": names.get(target)} for item, target in placements_with_targets]}
 
 
 @router.get("/deployments", dependencies=[Depends(require_admin)])
 async def deployments():
     async with client() as connection:
-        access, rows = await asyncio.gather(
+        access, rows, names = await asyncio.gather(
             scheduler(connection, "GET", f"backend-deployment-access/{settings.app_id}"),
             scheduler(connection, "GET", "backend-deployments"),
+            node_names(connection),
         )
-    return {"targets": access.get("targets", []), "images": access.get("images", {}),
-            "deployments": [row for row in rows["items"] if worker_deployment(row)]}
+    targets = [{**target, "node_name": names.get((target["kind"], target["id"]))}
+               for target in access.get("targets", [])]
+    return {"targets": targets, "images": access.get("images", {}),
+            "deployments": [{**row, "node_name": names.get((row["target_kind"], row["target_id"]))}
+                            for row in rows["items"] if worker_deployment(row)]}
 
 
 class Deploy(BaseModel):

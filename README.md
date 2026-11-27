@@ -4,7 +4,9 @@ The VOS build supports selecting a registered SenseVoice deployment for one-shot
 
 V-Voice 0.0.42 packages V-Scheduler 0.0.142 as its minimum dependency. Use the Thor/Spark image for DGX Spark placements. SenseVoice uses CUDA on that profile.
 
-V-Scheduler supplies the Profile image for an SSH deployment. Wait for the deployment to reach `running` before preparing the model. If image delivery fails, check the Image Hub upstream credentials and target platform in Scheduler.
+In V-Voice, open **Model Management → Speech and speaker models → Remote nodes** to deploy to a compatible node and prepare SenseVoice. The main instance first needs the model weights. To transcribe, use **Speech Recognition → Remote nodes**, select the model and node, then upload audio. Verify the execution node shown in the result. V-Voice calls V-Scheduler with its own service identity to deploy, transfer weights and register the model.
+
+在 V-Voice 内打开「模型管理 → 语音与声纹模型 → 远端节点」部署后端、准备并登记 SenseVoice。从「语音识别 ASR → 远端节点」选模型和节点后上传文件，结果显示实际节点。
 
 Open V-Voice from the VOS app drawer to use platform models and inference.
 The experimental `make dev-browser` local service workflow has been removed.

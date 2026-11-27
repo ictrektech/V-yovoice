@@ -6832,5 +6832,119 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "所有匯出輸入合計超過 200 MiB。"
+  },
+  "@yovoice.remoteVoice.title": {
+    "defaultMessage": "遠端節點"
+  },
+  "@yovoice.remoteVoice.use": {
+    "defaultMessage": "轉寫"
+  },
+  "@yovoice.remoteVoice.manage": {
+    "defaultMessage": "管理部署"
+  },
+  "@yovoice.remoteVoice.refresh": {
+    "defaultMessage": "重新整理"
+  },
+  "@yovoice.remoteVoice.loading": {
+    "defaultMessage": "正在讀取節點…"
+  },
+  "@yovoice.remoteVoice.target": {
+    "defaultMessage": "目標節點與 Profile"
+  },
+  "@yovoice.remoteVoice.selectTarget": {
+    "defaultMessage": "選擇節點"
+  },
+  "@yovoice.remoteVoice.deploy": {
+    "defaultMessage": "部署後端"
+  },
+  "@yovoice.remoteVoice.start": {
+    "defaultMessage": "啟動後端"
+  },
+  "@yovoice.remoteVoice.stop": {
+    "defaultMessage": "停止後端"
+  },
+  "@yovoice.remoteVoice.remove": {
+    "defaultMessage": "移除後端"
+  },
+  "@yovoice.remoteVoice.removeDescription": {
+    "defaultMessage": "將移除後端和遠端模型登記。"
+  },
+  "@yovoice.remoteVoice.prepare": {
+    "defaultMessage": "準備並登記 SenseVoice"
+  },
+  "@yovoice.remoteVoice.preparing": {
+    "defaultMessage": "正在驗證並準備權重，完成後登記模型…"
+  },
+  "@yovoice.remoteVoice.registered": {
+    "defaultMessage": "可轉寫"
+  },
+  "@yovoice.remoteVoice.placement": {
+    "defaultMessage": "模型與執行節點"
+  },
+  "@yovoice.remoteVoice.selectPlacement": {
+    "defaultMessage": "選擇模型與節點"
+  },
+  "@yovoice.remoteVoice.empty": {
+    "defaultMessage": "暫無可用的遠端模型。管理員可在「管理部署」部署後端並準備模型。"
+  },
+  "@yovoice.remoteVoice.audio": {
+    "defaultMessage": "音訊檔案"
+  },
+  "@yovoice.remoteVoice.transcribe": {
+    "defaultMessage": "開始轉寫"
+  },
+  "@yovoice.remoteVoice.actualNode": {
+    "defaultMessage": "實際執行節點"
+  },
+  "@yovoice.remoteVoice.copy": {
+    "defaultMessage": "複製轉寫結果"
+  },
+  "@yovoice.remoteVoice.error": {
+    "defaultMessage": "遠端操作失敗"
+  },
+  "@yovoice.remoteVoice.adminRequired": {
+    "defaultMessage": "部署管理需要 VOS 管理員權限。"
+  },
+  "@yovoice.remoteVoice.nodeNotReady": {
+    "defaultMessage": "目標運算 Agent 未就緒。請在 V-Scheduler 檢查節點後重試。"
+  },
+  "@yovoice.remoteVoice.placementUnavailable": {
+    "defaultMessage": "所選部署已不可用。請重新整理後選擇節點。"
+  },
+  "@yovoice.remoteVoice.placementMismatch": {
+    "defaultMessage": "執行回條與所選節點或執行器不一致。"
+  },
+  "@yovoice.remoteVoice.sourceMissing": {
+    "defaultMessage": "請先在 V-Voice 主執行個體安裝 SenseVoice。"
+  },
+  "@yovoice.remoteVoice.tasksActive": {
+    "defaultMessage": "該後端仍有等待或執行中的任務。"
+  },
+  "@yovoice.remoteVoice.imagePullFailed": {
+    "defaultMessage": "請在 V-Scheduler 檢查映像檔倉庫認證和節點連線。"
+  },
+  "@yovoice.remoteVoice.timeout": {
+    "defaultMessage": "所選節點未按時傳回轉寫結果。"
+  },
+  "@yovoice.remoteVoice.state.pending": {
+    "defaultMessage": "等待部署"
+  },
+  "@yovoice.remoteVoice.state.running": {
+    "defaultMessage": "後端執行中"
+  },
+  "@yovoice.remoteVoice.state.failed": {
+    "defaultMessage": "部署失敗"
+  },
+  "@yovoice.remoteVoice.state.stopped": {
+    "defaultMessage": "後端已停止"
+  },
+  "@yovoice.remoteVoice.state.stopping": {
+    "defaultMessage": "正在停止後端"
+  },
+  "@yovoice.remoteVoice.state.deleting": {
+    "defaultMessage": "正在移除後端"
+  },
+  "@yovoice.remoteVoice.state.cleanup_failed": {
+    "defaultMessage": "移除未確認"
   }
 }

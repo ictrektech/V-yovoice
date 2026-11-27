@@ -6832,5 +6832,119 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "所有导出输入合计超过 200 MiB。"
+  },
+  "@yovoice.remoteVoice.title": {
+    "defaultMessage": "远端节点"
+  },
+  "@yovoice.remoteVoice.use": {
+    "defaultMessage": "转写"
+  },
+  "@yovoice.remoteVoice.manage": {
+    "defaultMessage": "管理部署"
+  },
+  "@yovoice.remoteVoice.refresh": {
+    "defaultMessage": "刷新"
+  },
+  "@yovoice.remoteVoice.loading": {
+    "defaultMessage": "正在读取节点…"
+  },
+  "@yovoice.remoteVoice.target": {
+    "defaultMessage": "目标节点与 Profile"
+  },
+  "@yovoice.remoteVoice.selectTarget": {
+    "defaultMessage": "选择节点"
+  },
+  "@yovoice.remoteVoice.deploy": {
+    "defaultMessage": "部署后端"
+  },
+  "@yovoice.remoteVoice.start": {
+    "defaultMessage": "启动后端"
+  },
+  "@yovoice.remoteVoice.stop": {
+    "defaultMessage": "停止后端"
+  },
+  "@yovoice.remoteVoice.remove": {
+    "defaultMessage": "移除后端"
+  },
+  "@yovoice.remoteVoice.removeDescription": {
+    "defaultMessage": "将移除后端和远端模型登记。"
+  },
+  "@yovoice.remoteVoice.prepare": {
+    "defaultMessage": "准备并登记 SenseVoice"
+  },
+  "@yovoice.remoteVoice.preparing": {
+    "defaultMessage": "正在校验并准备权重，完成后登记模型…"
+  },
+  "@yovoice.remoteVoice.registered": {
+    "defaultMessage": "可转写"
+  },
+  "@yovoice.remoteVoice.placement": {
+    "defaultMessage": "模型与执行节点"
+  },
+  "@yovoice.remoteVoice.selectPlacement": {
+    "defaultMessage": "选择模型与节点"
+  },
+  "@yovoice.remoteVoice.empty": {
+    "defaultMessage": "暂无可用的远端模型。管理员可在「管理部署」部署后端并准备模型。"
+  },
+  "@yovoice.remoteVoice.audio": {
+    "defaultMessage": "音频文件"
+  },
+  "@yovoice.remoteVoice.transcribe": {
+    "defaultMessage": "开始转写"
+  },
+  "@yovoice.remoteVoice.actualNode": {
+    "defaultMessage": "实际执行节点"
+  },
+  "@yovoice.remoteVoice.copy": {
+    "defaultMessage": "复制转写结果"
+  },
+  "@yovoice.remoteVoice.error": {
+    "defaultMessage": "远端操作失败"
+  },
+  "@yovoice.remoteVoice.adminRequired": {
+    "defaultMessage": "部署管理需要 VOS 管理员权限。"
+  },
+  "@yovoice.remoteVoice.nodeNotReady": {
+    "defaultMessage": "目标计算 Agent 未就绪。请在 V-Scheduler 检查节点后重试。"
+  },
+  "@yovoice.remoteVoice.placementUnavailable": {
+    "defaultMessage": "所选部署已不可用。请刷新后重新选择节点。"
+  },
+  "@yovoice.remoteVoice.placementMismatch": {
+    "defaultMessage": "执行回执与所选节点或执行器不一致。"
+  },
+  "@yovoice.remoteVoice.sourceMissing": {
+    "defaultMessage": "请先在 V-Voice 主实例安装 SenseVoice。"
+  },
+  "@yovoice.remoteVoice.tasksActive": {
+    "defaultMessage": "该后端仍有等待或运行中的任务。"
+  },
+  "@yovoice.remoteVoice.imagePullFailed": {
+    "defaultMessage": "请在 V-Scheduler 检查镜像仓库认证和节点连通性。"
+  },
+  "@yovoice.remoteVoice.timeout": {
+    "defaultMessage": "所选节点未按时返回转写结果。"
+  },
+  "@yovoice.remoteVoice.state.pending": {
+    "defaultMessage": "等待部署"
+  },
+  "@yovoice.remoteVoice.state.running": {
+    "defaultMessage": "后端运行中"
+  },
+  "@yovoice.remoteVoice.state.failed": {
+    "defaultMessage": "部署失败"
+  },
+  "@yovoice.remoteVoice.state.stopped": {
+    "defaultMessage": "后端已停止"
+  },
+  "@yovoice.remoteVoice.state.stopping": {
+    "defaultMessage": "正在停止后端"
+  },
+  "@yovoice.remoteVoice.state.deleting": {
+    "defaultMessage": "正在移除后端"
+  },
+  "@yovoice.remoteVoice.state.cleanup_failed": {
+    "defaultMessage": "移除未确认"
   }
 }

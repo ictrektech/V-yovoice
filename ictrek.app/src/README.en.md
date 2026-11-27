@@ -1,6 +1,6 @@
 # V-Voice
 
-One-shot SenseVoice transcription can run on a registered remote node. After the administrator deploys the backend and verifies the model weights through V-Scheduler, callers can inspect the execution node in Models & Providers or choose it through the API documented under Cross-node transcription. Tasks wait on the selected node while its worker or resources are busy.
+In V-Voice, open **Model Management → Speech and speaker models → Remote nodes**. Choose a target and deploy its Profile image. When the backend is running, choose **Prepare and register SenseVoice**. The main instance must already have SenseVoice weights. Then open **Speech Recognition → Remote nodes**, explicitly choose a model and node, and upload audio. The result names the actual node.
 
 The workbench uses ONNX and audio.cpp GGUF backends, without a PyTorch runtime.
 The four PyTorch-only music models and their separate Background music page/API
