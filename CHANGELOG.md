@@ -8,6 +8,16 @@
 
 - V-yovoice DSH 插件在模型选择器旁新增语音听写麦克风，可把语音写入未发送的聊天草稿。录音可手动停止或在达到配置时长时自动结束，识别与消息发送完全分离；只有草稿版本未变化时才自动插入，草稿已修改时保留识别文字供明确插入。音频不会被保存为会话附件。
 
+## [0.0.45] - 2026-11-28
+
+### English
+
+- Fix the deployment model preparation endpoint so the node’s Verify and Register action reaches the model registration handler.
+
+### 简体中文
+
+- 修复节点部署的模型准备接口，让「准备并登记」操作进入模型登记流程。
+
 ## [0.0.44] - 2026-11-28
 
 ### English

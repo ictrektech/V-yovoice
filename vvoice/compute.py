@@ -181,12 +181,6 @@ async def require_deployment(connection, deployment_id: str) -> str:
     return path
 
 
-@router.post("/deployments/{deployment_id}/{action}", dependencies=[Depends(require_admin)])
-async def lifecycle(deployment_id: str, action: Literal["start", "stop", "prepare"]):
-    async with deployment_change(deployment_id) as (connection, path):
-        return await prepare(connection, path) if action == "prepare" else await scheduler(connection, "POST", f"{path}/{action}")
-
-
 @router.delete("/deployments/{deployment_id}", dependencies=[Depends(require_admin)])
 async def delete_deployment(deployment_id: str):
     async with deployment_change(deployment_id) as (connection, path):
@@ -267,6 +261,12 @@ async def prepare_model(deployment_id: str, data: PrepareModel):
         write_json(status_path, record)
         _preparations[key] = asyncio.create_task(run_preparation(key, path, status_path, record))
         return record
+
+
+@router.post("/deployments/{deployment_id}/{action}", dependencies=[Depends(require_admin)])
+async def lifecycle(deployment_id: str, action: Literal["start", "stop", "prepare"]):
+    async with deployment_change(deployment_id) as (connection, path):
+        return await prepare(connection, path) if action == "prepare" else await scheduler(connection, "POST", f"{path}/{action}")
 
 
 async def run_preparation(key: tuple[str, str], path: str, status_path: Path, record: dict):

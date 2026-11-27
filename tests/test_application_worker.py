@@ -11,6 +11,47 @@ from vvoice.worker import build_worker
 from vvoice.worker_models import SENSEVOICE_LIMITS
 
 
+def test_model_preparation_route_reaches_the_registration_handler(monkeypatch, tmp_path):
+    from contextlib import asynccontextmanager
+    from dataclasses import replace
+
+    from fastapi import FastAPI
+
+    from vvoice import compute
+    from vvoice.dialogue import Identity
+
+    deployment = "1" * 32
+    model = "audiocpp-generaluser-gs-sf2"
+    pending = []
+
+    @asynccontextmanager
+    async def deployment_change(deployment_id):
+        assert deployment_id == deployment
+        yield None, f"backend-deployments/{deployment}"
+
+    async def scheduler(_connection, method, path):
+        assert method == "GET"
+        return {"items": []} if path.endswith("/models") else {"state": "running"}
+
+    async def prepare(key, _path, _status_path, record):
+        pending.append((key, record["weight_mode"]))
+        compute._preparations.pop(key, None)
+
+    monkeypatch.setattr(compute, "settings", replace(compute.settings, data_dir=tmp_path))
+    monkeypatch.setattr(compute, "deployment_change", deployment_change)
+    monkeypatch.setattr(compute, "scheduler", scheduler)
+    monkeypatch.setattr(compute, "run_preparation", prepare)
+    app = FastAPI()
+    app.include_router(compute.router)
+    app.dependency_overrides[compute._verify_user] = lambda: Identity(subject="fixture", role="system_admin")
+    with TestClient(app) as client:
+        response = client.post(f"/api/v1/compute/deployments/{deployment}/models",
+                               json={"model_id": model, "weight_mode": "shared"})
+        assert response.status_code == 202
+        assert response.json()["model_id"] == model
+    assert pending == [((deployment, model), "shared")]
+
+
 def test_worker_copy_verification_and_cancellation(tmp_path, monkeypatch):
     token = "a" * 64
     monkeypatch.setenv("V_SCHEDULER_BACKEND_CHANNEL_TOKEN", token)
