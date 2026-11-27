@@ -44,6 +44,11 @@ RUN python3 -m pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" . "nump
     && rm /tmp/onnxruntime_gpu-1.27.0-cp312-cp312-linux_aarch64.whl \
     && rm -rf /tmp/sherpa-wheels
 COPY --from=frontend /src/frontend/dist ./frontend/dist
+RUN --mount=type=bind,from=spark_runtime,target=/tmp/spark-runtime,ro \
+    python3 -m pip install --no-index --no-deps --target /opt/vvoice/spark-runtime /tmp/spark-runtime/*.whl
 RUN python3 -c "import sherpa_onnx, onnxruntime; assert '+cuda' in sherpa_onnx.__version__; assert 'CUDAExecutionProvider' in onnxruntime.get_available_providers(); print(sherpa_onnx.__version__)"
+RUN PYTHONPATH=/opt/vvoice/spark-runtime python3 -c "import sherpa_onnx, onnxruntime; assert '+cuda' in sherpa_onnx.__version__; assert onnxruntime.__version__ == '1.27.1'; assert 'CUDAExecutionProvider' in onnxruntime.get_available_providers()"
+COPY docker/spark_entrypoint.py /opt/vvoice/spark_entrypoint.py
 EXPOSE 7070
+ENTRYPOINT ["python3", "/opt/vvoice/spark_entrypoint.py"]
 CMD ["python3", "-m", "uvicorn", "vvoice.main:app", "--host", "0.0.0.0", "--port", "7070"]

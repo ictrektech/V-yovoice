@@ -3,6 +3,7 @@ set -euo pipefail
 [[ "${VVOICE_LEGACY_STAGE:-}" == 1 ]] || { echo "Internal stage; use docker/build_image.sh" >&2; exit 1; }
 
 cd "$(dirname "$0")/.."
+root_dir="$PWD"
 REGISTRY="${REGISTRY:-swr.cn-southwest-2.myhuaweicloud.com/ictrek}"
 REPOSITORY="${REGISTRY}/v-voice"
 VERSION="${VVOICE_IMAGE_VERSION:?VVOICE_IMAGE_VERSION is required}"
@@ -78,6 +79,14 @@ if [[ "$dockerfile" != docker/Dockerfile.cpu ]]; then
     }
   fi
   build_args+=(--build-context "sherpa_wheels=${wheel_dir}")
+fi
+if [[ "$sheet" == thor_spark && "$build" == true ]]; then
+  spark_runtime="${VVOICE_SPARK_RUNTIME_DIR:?set VVOICE_SPARK_RUNTIME_DIR to the validated GB10 CUDA wheel directory}"
+  (
+    cd "$spark_runtime"
+    sha256sum -c "$root_dir/docker/spark-runtime.sha256"
+  )
+  build_args+=(--build-context "spark_runtime=$spark_runtime")
 fi
 
 if [[ "$sheet" == l4t ]]; then

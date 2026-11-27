@@ -12,11 +12,13 @@
 
 ### English
 
-- Build the current V-Voice application for all six VOS Profiles. Release packaging checks each Profile's image version before publication.
+- Publish verified images for all six VOS Profiles.
+- Use SenseVoice with CUDA on DGX Spark. Requests wait for the selected node and report the actual node and executor.
 
 ### 简体中文
 
-- 为六个 VOS Profile 提供本次版本的 V-Voice 镜像，发版前逐个校验安装包中的镜像版本。
+- 为六个 VOS Profile 提供经过校验的镜像。
+- 支持在 DGX Spark 上使用 CUDA 执行 SenseVoice 转写。请求在所选节点排队，转写回执返回实际节点和执行器。
 
 ## [0.0.41] - 2026-11-27
 

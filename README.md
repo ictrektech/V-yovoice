@@ -2,7 +2,9 @@
 
 The VOS build supports selecting a registered SenseVoice deployment for one-shot transcription. Administrators deploy the same V-Voice image with V-Scheduler and prepare the model on the target node. Use **API documentation → Cross-node transcription** for placement discovery, deployment and inference calls.
 
-V-Voice 0.0.42 uses V-Scheduler 0.0.141 or later. V-Scheduler 0.0.141 includes the Jetson Orin CUDA calibration for the 0.0.42 image.
+V-Voice 0.0.42 packages V-Scheduler 0.0.142 as its minimum dependency. Use the Thor/Spark image for DGX Spark placements. SenseVoice uses CUDA on that profile.
+
+V-Scheduler supplies the Profile image for an SSH deployment. Wait for the deployment to reach `running` before preparing the model. If image delivery fails, check the Image Hub upstream credentials and target platform in Scheduler.
 
 Open V-Voice from the VOS app drawer to use platform models and inference.
 The experimental `make dev-browser` local service workflow has been removed.
@@ -86,6 +88,15 @@ credentials stay in this app's private storage and reload without restarting.
 New node approvals declare input-limit protocol v1 and enforce their measured text,
 speed, encoded-audio size, source sample rate and duration before native model loading.
 Audio decoding is bounded; oversized direct and gateway requests do not acquire a compute permit.
+Remote SenseVoice weights are registered after verification, with optional matching calibration.
+Use `GET /api/v1/voice/compute/placements` and `POST /api/v1/voice/compute/transcriptions`
+on V-Scheduler to select a registered placement. The synchronous call queues on the selected
+node until the worker and its resources are available. The 180-second V-Voice wait includes
+queueing and execution. A successful response identifies the actual node and executor.
+
+远端 SenseVoice 权重校验通过后即可注册，可选用匹配的实测校准。调用 V-Scheduler
+的上述接口指定已登记位置。资源或后端忙时任务在所选节点排队，V-Voice 的同步等待
+包含排队和执行，最长 180 秒。成功响应返回实际执行节点与执行器。
 The ASR page reads `/api/v1/models/{key}/input-limits` before submitting calibrated
 models. It uses the upstream browser audio helpers to resample to 16 kHz, mix down
 to mono PCM WAV, and send consecutive parts within both duration and byte limits.

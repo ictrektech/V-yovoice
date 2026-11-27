@@ -28,6 +28,7 @@ PROFILES = {
 }
 SENSEVOICE = "sensevoice-int8"
 SENSEVOICE_FILES = {"model": "model.int8.onnx", "tokens": "tokens.txt"}
+SENSEVOICE_LIMITS = {"input_bytes": 2 << 20, "sample_rate": 48000, "duration_seconds": 20}
 
 
 async def bounded_body(request: Request, maximum: int) -> bytes:
@@ -76,7 +77,9 @@ def build_worker(encoded: str) -> FastAPI:
         return {
             "protocol_version": 1,
             "execution_settings": {"provider": provider, "num_threads": threads},
-            "async_models": [{"id": SENSEVOICE, "task_type": TASK_TYPE}] if store.ready(SENSEVOICE) else [],
+            "async_models": [
+                {"id": SENSEVOICE, "task_type": TASK_TYPE, "model_limits": SENSEVOICE_LIMITS}
+            ] if store.ready(SENSEVOICE) else [],
             "weight_model_delete": True,
         }
 

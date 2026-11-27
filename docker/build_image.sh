@@ -43,7 +43,7 @@ case "$sheet" in
   ARM_without_cuda|SOPHON_bm1688) [[ "$arch" == arm64 ]] || exit 1; prefix=arm ;;
   ARM_with_cuda) [[ "$arch" == arm64 ]] || exit 1; prefix=arm_cu130; cuda=ON ;;
   l4t) [[ "$arch" == arm64 ]] || exit 1; prefix=l4t; cuda=ON; speech_cuda=ON; speech_architectures='87-real'; audio_architectures='87-real' ;;
-  thor_spark) [[ "$arch" == arm64 ]] || exit 1; prefix=thor; cuda=ON; speech_cuda=ON; speech_architectures='110-real'; audio_architectures='110-real' ;;
+  thor_spark) [[ "$arch" == arm64 ]] || exit 1; prefix=thor; cuda=ON; speech_cuda=ON; speech_architectures='110-real;121-real'; audio_architectures='110-real;121-real' ;;
   *) echo "Explicit supported --sheet required" >&2; exit 1 ;;
 esac
 if [[ -z "$version" ]]; then

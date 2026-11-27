@@ -4,7 +4,7 @@ import json
 
 from fastapi.testclient import TestClient
 
-from vvoice.worker import build_worker
+from vvoice.worker import SENSEVOICE_LIMITS, build_worker
 
 
 def test_worker_copy_verification_and_cancellation(tmp_path, monkeypatch):
@@ -36,7 +36,7 @@ def test_worker_copy_verification_and_cancellation(tmp_path, monkeypatch):
             assert result.json()["received_bytes"] == len(blob)
         assert client.post(transfer + "/complete", headers=headers).json()["verified"] is True
         assert client.get(channel + "/capabilities", headers=headers).json()["async_models"] == [
-            {"id": "sensevoice-int8", "task_type": "voice.transcribe"},
+            {"id": "sensevoice-int8", "task_type": "voice.transcribe", "model_limits": SENSEVOICE_LIMITS},
         ]
         command = {"task_id": "task-one", "fence": 1}
         endpoint = channel + "/executions/attempt-one"
@@ -81,7 +81,8 @@ def test_remote_transcription_returns_only_the_selected_execution(monkeypatch):
             task = json.loads(request.content)
             assert task["executor"]["id"] == executor
             assert task["parameters"]["sha256"] == hashlib.sha256(audio).hexdigest()
-            result = {**record, "status": "assigned"}
+            observed.append("queued")
+            result = {**record, "status": "queued", "attempt_id": None}
         elif path == f"/backend-deployments/{deployment}/executions/{attempt}/inputs/reference":
             assert request.content == audio
             assert request.headers["X-Scheduler-Fence"] == "1"
@@ -89,7 +90,11 @@ def test_remote_transcription_returns_only_the_selected_execution(monkeypatch):
             result = {"received_bytes": len(audio)}
         else:
             assert path == "/tasks/scheduler-task"
-            result = {**record, "status": "succeeded", "result": {"text": "fixture transcript"}}
+            result = ({**record, "status": "succeeded", "result": {"text": "fixture transcript"}}
+                      if observed[-1] == "upload"
+                      else {**record, "status": "assigned"})
+            if result["status"] == "assigned":
+                observed.append("assign")
         return httpx.Response(200, json={"code": "OK", "data": result})
 
     monkeypatch.setattr(compute, "client", lambda: httpx.AsyncClient(
@@ -110,4 +115,4 @@ def test_remote_transcription_returns_only_the_selected_execution(monkeypatch):
                 assert response.json()["executor_id"] == executor
             else:
                 assert response.json()["detail"] == "VOICE_COMPUTE_PLACEMENT_MISMATCH"
-    assert observed == ["upload", "upload"]
+    assert observed == ["queued", "assign", "upload", "queued", "assign", "upload"]
