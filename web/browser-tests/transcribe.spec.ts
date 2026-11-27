@@ -315,6 +315,8 @@ test('视频在上、字幕在下：空格播放暂停，字幕里打字时空�
   const editor = await seedTranscript(page, captions, 'd'.repeat(32) + '.webm');
   const video = editor.locator('video');
   await expect(video).toHaveJSProperty('readyState', 4);
+  // 此处只验证切换播放和暂停，避免短视频自然播完与暂停命令混淆。
+  await video.evaluate((element: HTMLVideoElement) => { element.loop = true; });
   const paused = () => video.evaluate((element: HTMLVideoElement) => element.paused);
   await page.keyboard.press('Space');
   await expect.poll(paused).toBe(false);

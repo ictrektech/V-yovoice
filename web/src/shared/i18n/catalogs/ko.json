@@ -6832,5 +6832,125 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "내보낼 입력 파일의 합계가 200 MiB를 초과합니다."
+  },
+  "@yovoice.remoteVoice.title": {
+    "defaultMessage": "원격 노드"
+  },
+  "@yovoice.remoteVoice.use": {
+    "defaultMessage": "음성 인식"
+  },
+  "@yovoice.remoteVoice.manage": {
+    "defaultMessage": "배포 관리"
+  },
+  "@yovoice.remoteVoice.refresh": {
+    "defaultMessage": "새로 고침"
+  },
+  "@yovoice.remoteVoice.loading": {
+    "defaultMessage": "Loading node information…"
+  },
+  "@yovoice.remoteVoice.target": {
+    "defaultMessage": "대상 노드와 프로필"
+  },
+  "@yovoice.remoteVoice.selectTarget": {
+    "defaultMessage": "노드 선택"
+  },
+  "@yovoice.remoteVoice.deploy": {
+    "defaultMessage": "백엔드 배포"
+  },
+  "@yovoice.remoteVoice.start": {
+    "defaultMessage": "Start backend"
+  },
+  "@yovoice.remoteVoice.stop": {
+    "defaultMessage": "Stop backend"
+  },
+  "@yovoice.remoteVoice.remove": {
+    "defaultMessage": "Remove backend"
+  },
+  "@yovoice.remoteVoice.removeDescription": {
+    "defaultMessage": "The backend and its remote model registration will be removed."
+  },
+  "@yovoice.remoteVoice.prepare": {
+    "defaultMessage": "Prepare and register SenseVoice"
+  },
+  "@yovoice.remoteVoice.preparing": {
+    "defaultMessage": "Verifying and preparing weights, then registering the model…"
+  },
+  "@yovoice.remoteVoice.registered": {
+    "defaultMessage": "Ready for transcription"
+  },
+  "@yovoice.remoteVoice.placement": {
+    "defaultMessage": "모델과 실행 노드"
+  },
+  "@yovoice.remoteVoice.selectPlacement": {
+    "defaultMessage": "Choose a model and node"
+  },
+  "@yovoice.remoteVoice.empty": {
+    "defaultMessage": "No remote model is ready. An administrator can deploy and prepare a model in Manage deployments."
+  },
+  "@yovoice.remoteVoice.audio": {
+    "defaultMessage": "오디오 파일"
+  },
+  "@yovoice.remoteVoice.transcribe": {
+    "defaultMessage": "음성 인식 시작"
+  },
+  "@yovoice.remoteVoice.actualNode": {
+    "defaultMessage": "실제 실행 노드"
+  },
+  "@yovoice.remoteVoice.copy": {
+    "defaultMessage": "Copy transcript"
+  },
+  "@yovoice.remoteVoice.error": {
+    "defaultMessage": "Remote operation failed"
+  },
+  "@yovoice.remoteVoice.adminRequired": {
+    "defaultMessage": "Deployment management requires a VOS administrator."
+  },
+  "@yovoice.remoteVoice.nodeNotReady": {
+    "defaultMessage": "The target compute agent is unavailable. Check the node in V-Scheduler and retry."
+  },
+  "@yovoice.remoteVoice.placementUnavailable": {
+    "defaultMessage": "The selected deployment is no longer available. Refresh and choose a node again."
+  },
+  "@yovoice.remoteVoice.placementMismatch": {
+    "defaultMessage": "The receipt does not match the selected node and executor."
+  },
+  "@yovoice.remoteVoice.sourceMissing": {
+    "defaultMessage": "Install SenseVoice on the main V-Voice instance first."
+  },
+  "@yovoice.remoteVoice.tasksActive": {
+    "defaultMessage": "This backend has pending or running tasks."
+  },
+  "@yovoice.remoteVoice.imagePullFailed": {
+    "defaultMessage": "Check the registry credentials and connectivity in V-Scheduler."
+  },
+  "@yovoice.remoteVoice.timeout": {
+    "defaultMessage": "The selected node did not return a result in time."
+  },
+  "@yovoice.remoteVoice.state.pending": {
+    "defaultMessage": "Waiting for deployment"
+  },
+  "@yovoice.remoteVoice.state.running": {
+    "defaultMessage": "Backend running"
+  },
+  "@yovoice.remoteVoice.state.failed": {
+    "defaultMessage": "Deployment failed"
+  },
+  "@yovoice.remoteVoice.state.stopped": {
+    "defaultMessage": "Backend stopped"
+  },
+  "@yovoice.remoteVoice.state.stopping": {
+    "defaultMessage": "Stopping backend"
+  },
+  "@yovoice.remoteVoice.state.deleting": {
+    "defaultMessage": "Removing backend"
+  },
+  "@yovoice.remoteVoice.state.cleanup_failed": {
+    "defaultMessage": "Removal unconfirmed"
+  },
+  "@yovoice.remoteVoice.force": {
+    "defaultMessage": "Direct admission for this request"
+  },
+  "@yovoice.remoteVoice.forceHint": {
+    "defaultMessage": "Administrator option. Relaxes soft resource headroom. The selected node and hard resource limits still apply."
   }
 }
