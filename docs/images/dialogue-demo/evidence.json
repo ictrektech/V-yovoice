@@ -1,0 +1,94 @@
+{
+  "device": "tc232",
+  "app": "com.ictrek.v-voice",
+  "profile": "amd-cuda",
+  "image": "amd_cu128_0.0.40",
+  "vosUrl": "https://10.144.144.232:1180",
+  "startedAt": "2026-11-27T08:58:00.168Z",
+  "modelLoadSeconds": 1.38,
+  "sessionSeconds": 61.61,
+  "endReason": "complete",
+  "turns": [
+    {
+      "index": 1,
+      "userText": "你好呀，今天过得怎么样？",
+      "clipSeconds": 2.59,
+      "replyText": "小语，好温暖，好自然。",
+      "audioLatencySeconds": 0.06,
+      "textLatencySeconds": 0,
+      "replyAudioSeconds": 3.5,
+      "replySeconds": 1.1
+    },
+    {
+      "index": 2,
+      "userText": "我周末想去公园散步，你觉得怎么样？",
+      "clipSeconds": 3.52,
+      "replyText": "我觉得挺好的， 你觉得怎么样？",
+      "audioLatencySeconds": 1.31,
+      "textLatencySeconds": 1.12,
+      "replyAudioSeconds": 4.61,
+      "replySeconds": 1.44
+    },
+    {
+      "index": 3,
+      "userText": "最近有什么轻松一点的电视剧推荐吗？",
+      "clipSeconds": 3.66,
+      "replyText": "最近啊，我看了《罪与华。",
+      "audioLatencySeconds": 0.48,
+      "textLatencySeconds": 2.62,
+      "replyAudioSeconds": 7.39,
+      "replySeconds": 1.25
+    },
+    {
+      "index": 4,
+      "userText": "工作累了的时候，你一般怎么放松？",
+      "clipSeconds": 3.29,
+      "replyText": "工作的时候，我就 听播客啦。 你是你听吗？",
+      "audioLatencySeconds": 0.69,
+      "textLatencySeconds": 1.2,
+      "replyAudioSeconds": 3.59,
+      "replySeconds": 2.82
+    }
+  ],
+  "transcript": " 小语，好温暖，好自然。 我觉得挺好的， 你觉得怎么样？ 最近啊，我看了《罪与华。 工作的时候，我就 听播客啦。 你是你听吗？ ",
+  "statusAfterEnd": {
+    "supported": true,
+    "model_installed": true,
+    "state": "ready_idle",
+    "busy": false,
+    "idle_unload_seconds": 120,
+    "model": {
+      "key": "haru-4b-q8",
+      "name": "Haru-4B Q8_0",
+      "languages": [
+        "zh",
+        "en"
+      ]
+    }
+  },
+  "screenshots": [
+    "01-idle.png",
+    "02-loading.png",
+    "03-active-empty.png",
+    "04-active-turn1.png",
+    "05-active-turn2.png",
+    "06-active-final.png",
+    "07-ended.png"
+  ],
+  "statusAfterUnload": {
+    "supported": true,
+    "model_installed": true,
+    "state": "unloaded",
+    "busy": false,
+    "idle_unload_seconds": 120,
+    "model": {
+      "key": "haru-4b-q8",
+      "name": "Haru-4B Q8_0",
+      "languages": [
+        "zh",
+        "en"
+      ]
+    }
+  },
+  "unloadWaitSeconds": 121.6
+}
