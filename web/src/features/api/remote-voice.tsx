@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@astryxdesign/core/Button';
+import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Server } from 'lucide-react';
@@ -56,6 +57,8 @@ function RemoteVoice({ initialManage, onClose }: { initialManage: boolean; onClo
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [overview, setOverview] = useState<Overview>();
   const [selected, setSelected] = useState('');
+  const [canForce, setCanForce] = useState(false);
+  const [force, setForce] = useState(false);
   const [target, setTarget] = useState('');
   const [file, setFile] = useState<File>();
   const [result, setResult] = useState<{ receipt: Receipt; placement: Placement }>();
@@ -72,8 +75,11 @@ function RemoteVoice({ initialManage, onClose }: { initialManage: boolean; onClo
   const destination = eligible.find(item => targetKey(item) === target);
 
   async function load(withManagement: boolean, signal?: AbortSignal) {
-    const { items } = await payload<{ items: Placement[] }>(schedulerFetch(listPath, { signal }));
-    if (!signal?.aborted) setPlacements(items);
+    const { items, can_force_admission } = await payload<{ items: Placement[]; can_force_admission?: boolean }>(schedulerFetch(listPath, { signal }));
+    if (!signal?.aborted) {
+      setPlacements(items);
+      setCanForce(can_force_admission === true);
+    }
     if (withManagement) {
       const catalog = await payload<Overview>(vosFetch(deploymentsPath, { signal }));
       if (!signal?.aborted) setOverview(catalog);
@@ -153,6 +159,8 @@ function RemoteVoice({ initialManage, onClose }: { initialManage: boolean; onClo
       data.set('file', file);
       data.set('deployment_id', selection.deployment_id);
       data.set('executor_id', selection.executor_id);
+      if (force && canForce) data.set('force_admission', 'true');
+      setForce(false);
       const receipt = await payload<Receipt>(schedulerFetch('/api/v1/voice/compute/transcriptions', { method: 'POST', body: data, signal: controller.signal }));
       if (!matches(receipt, selection)) throw new Error('VOICE_COMPUTE_PLACEMENT_MISMATCH');
       setResult({ receipt, placement: selection });
@@ -197,10 +205,11 @@ function RemoteVoice({ initialManage, onClose }: { initialManage: boolean; onClo
       </> : <>
         {placements.length ? <Selector label={tr('placement')} placeholder={tr('selectPlacement')}
           options={placements.map(item => ({ value: placementKey(item), label: `${item.model_id} · ${item.node_name || item.node_id} · ${item.profile}` }))}
-          value={selection ? selected : ''} isDisabled={!!busy} onChange={value => { setSelected(value); setResult(undefined); setError(''); }} /> : <p>{tr('empty')}</p>}
+          value={selection ? selected : ''} isDisabled={!!busy} onChange={value => { setSelected(value); setForce(false); setResult(undefined); setError(''); }} /> : <p>{tr('empty')}</p>}
         {selection ? <>
           <label>{tr('audio')} <input type="file" accept=".wav,.flac,.mp3,.ogg,.m4a" disabled={!!busy}
             onChange={event => { setFile(event.target.files?.[0]); setResult(undefined); }} /></label>
+          {canForce ? <CheckboxInput label={tr('force')} description={tr('forceHint')} value={force} isDisabled={!!busy} onChange={setForce} /> : null}
           <HStack gap={2} wrap="wrap">
             <Button label={tr('transcribe')} variant="primary" isDisabled={!file || !!busy} isLoading={busy === 'transcribe'} onClick={transcribe} />
             {busy === 'transcribe' ? <Button label={t('@yovoice.action.cancel')} onClick={() => inference.current?.abort()} /> : null}

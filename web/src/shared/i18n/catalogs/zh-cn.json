@@ -6946,5 +6946,11 @@
   },
   "@yovoice.remoteVoice.state.cleanup_failed": {
     "defaultMessage": "移除未确认"
+  },
+  "@yovoice.remoteVoice.force": {
+    "defaultMessage": "本次直接放行"
+  },
+  "@yovoice.remoteVoice.forceHint": {
+    "defaultMessage": "管理员选项。仅放宽软资源余量，仍使用所选节点并检查硬资源限制。"
   }
 }

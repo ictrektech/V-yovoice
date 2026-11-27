@@ -68,6 +68,7 @@ def test_remote_transcription_returns_only_the_selected_execution(monkeypatch):
     }
     observed = []
     actual_node = ["selected-orin"]
+    forced = []
 
     def exchange(request):
         path = request.url.path
@@ -81,6 +82,11 @@ def test_remote_transcription_returns_only_the_selected_execution(monkeypatch):
             task = json.loads(request.content)
             assert task["executor"]["id"] == executor
             assert task["parameters"]["sha256"] == hashlib.sha256(audio).hexdigest()
+            if task["scheduling"].get("force_admission"):
+                assert request.headers["X-VScheduler-Admin-Authorization"] == "Bearer fixture-admin"
+                forced.append(True)
+            else:
+                assert "X-VScheduler-Admin-Authorization" not in request.headers
             observed.append("queued")
             result = {**record, "status": "queued", "attempt_id": None}
         elif path == f"/backend-deployments/{deployment}/executions/{attempt}/inputs/reference":
@@ -115,4 +121,15 @@ def test_remote_transcription_returns_only_the_selected_execution(monkeypatch):
                 assert response.json()["executor_id"] == executor
             else:
                 assert response.json()["detail"] == "VOICE_COMPUTE_PLACEMENT_MISMATCH"
-    assert observed == ["queued", "assign", "upload", "queued", "assign", "upload"]
+        form = {"deployment_id": deployment, "executor_id": executor, "force_admission": "true"}
+        files = {"file": ("sample.wav", audio)}
+        response = client.post("/api/v1/compute/transcriptions", data=form, files=files)
+        assert response.status_code == 403
+        assert response.json()["detail"] == "VOICE_COMPUTE_ADMIN_REQUIRED"
+        app.dependency_overrides[compute._verify_user] = lambda: Identity(subject="admin", role="system_admin")
+        actual_node[0] = "selected-orin"
+        approved = client.post("/api/v1/compute/transcriptions", data=form, files=files,
+                               headers={"Authorization": "Bearer fixture-admin"})
+        assert approved.status_code == 200
+    assert forced == [True]
+    assert observed == ["queued", "assign", "upload"] * 3

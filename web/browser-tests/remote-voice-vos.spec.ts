@@ -43,7 +43,7 @@ test('VOS 语音识别页在所选节点部署、登记模型并核对转写回�
     prepared = true;
     return route.fulfill({ json: selected });
   });
-  await page.route('**/api/v1/voice/compute/placements', route => route.fulfill({ json: { items: [
+  await page.route('**/api/v1/voice/compute/placements', route => route.fulfill({ json: { can_force_admission: true, items: [
     { ...selected, deployment_id: 'first-deployment', executor_id: 'first-executor', node_id: 'worker-a', node_name: 'Spark A' },
     ...(prepared ? [selected] : []),
   ] } }));
@@ -52,6 +52,8 @@ test('VOS 语音识别页在所选节点部署、登记模型并核对转写回�
     const body = route.request().postDataBuffer()?.toString() ?? '';
     expect(body).toContain('name="deployment_id"\r\n\r\nsecond-deployment');
     expect(body).toContain('name="executor_id"\r\n\r\nsecond-executor');
+    if (calls === 0) expect(body).not.toContain('name="force_admission"');
+    else expect(body).toContain('name="force_admission"\r\n\r\ntrue');
     return route.fulfill({ json: { ...selected, node_id: ++calls === 1 ? 'worker-a' : 'worker-b',
       task_id: 'qa-task', transcription: { text: '这是一条测试转写' } } });
   });
@@ -73,6 +75,7 @@ test('VOS 语音识别页在所选节点部署、登记模型并核对转写回�
   await dialog.getByRole('button', { name: '开始转写' }).click();
   await expect(dialog.getByRole('alert')).toContainText('执行回执与所选节点或执行器不一致');
   await expect(dialog.getByText('这是一条测试转写')).toHaveCount(0);
+  await dialog.getByRole('checkbox', { name: '本次直接放行' }).check();
   await dialog.getByRole('button', { name: '开始转写' }).click();
   await expect(dialog.getByText('实际执行节点 Spark B · worker-b')).toBeVisible();
   await expect(dialog.getByText('这是一条测试转写')).toBeVisible();

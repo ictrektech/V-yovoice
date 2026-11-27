@@ -12,11 +12,11 @@
 
 ### English
 
-- Deploy, prepare and register remote SenseVoice backends inside V-Voice. In Speech Recognition, select the model and execution node, transcribe an audio file, and check the actual node in the result.
+- Deploy, prepare and register remote SenseVoice backends inside V-Voice. In Speech Recognition, select the model and execution node, transcribe an audio file, and check the actual node in the result. Administrators can explicitly request direct admission for one transcription.
 
 ### 简体中文
 
-- 在 V-Voice 内向所选节点部署后端、准备并登记 SenseVoice。语音识别支持选定模型和执行节点后上传音频，结果显示实际执行节点。
+- 在 V-Voice 内向所选节点部署后端、准备并登记 SenseVoice。语音识别支持选定模型和执行节点后上传音频，结果显示实际执行节点。管理员可对单次请求选择直接放行。
 
 ## [0.0.42] - 2026-11-27
 

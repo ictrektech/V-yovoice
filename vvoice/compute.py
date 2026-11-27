@@ -16,6 +16,7 @@ from .admission import configuration
 from .catalog import find_model, resolve_files
 from .config import settings
 from .dialogue import Identity, _admin, _verify_user
+from .scheduling_options import operator_headers
 from .worker import MODE, SENSEVOICE, SENSEVOICE_FILES
 from .worker_execution import MAX_AUDIO_BYTES, TASK_TYPE
 from .worker_weights import CHUNK_BYTES
@@ -71,8 +72,8 @@ async def node_names(connection: httpx.AsyncClient) -> dict[tuple[str, str], str
     }
 
 
-@router.get("/placements", dependencies=[Depends(_verify_user)])
-async def placements():
+@router.get("/placements")
+async def placements(identity: Identity = Depends(_verify_user)):
     async with client() as connection:
         records = await scheduler(connection, "GET", "backend-deployments")
         placements_with_targets = []
@@ -88,7 +89,8 @@ async def placements():
                 placements_with_targets.extend((item, target) for item in selected["items"]
                                                if item["task_type"] == TASK_TYPE)
         names = await node_names(connection) if placements_with_targets else {}
-        return {"items": [{**item, "node_name": names.get(target)} for item, target in placements_with_targets]}
+        return {"items": [{**item, "node_name": names.get(target)} for item, target in placements_with_targets],
+                "can_force_admission": _admin(identity)}
 
 
 @router.get("/deployments", dependencies=[Depends(require_admin)])
@@ -222,14 +224,18 @@ async def prepare(connection: httpx.AsyncClient, path: str):
     return await scheduler(connection, "POST", f"{path}/models", json={"model_id": SENSEVOICE, "transfer_id": transfer})
 
 
-@router.post("/transcriptions", dependencies=[Depends(_verify_user)])
+@router.post("/transcriptions")
 async def transcriptions(
     request: Request,
     deployment_id: str = Form(pattern=DEPLOYMENT_ID),
     executor_id: str = Form(pattern=ID),
     language: str = Form(default="", pattern=r"^[a-zA-Z0-9_-]{0,24}$"),
     file: UploadFile = File(),
+    force_admission: bool = Form(False),
+    identity: Identity = Depends(_verify_user),
 ):
+    if force_admission and not _admin(identity):
+        raise HTTPException(403, "VOICE_COMPUTE_ADMIN_REQUIRED")
     data = await file.read(MAX_AUDIO_BYTES + 1)
     fmt = Path(file.filename or "").suffix.lower().lstrip(".")
     if not data or len(data) > MAX_AUDIO_BYTES:
@@ -244,8 +250,10 @@ async def transcriptions(
         if not chosen:
             raise HTTPException(409, "VOICE_COMPUTE_PLACEMENT_UNAVAILABLE")
         key = uuid4().hex
-        job = await scheduler(connection, "POST", "tasks", headers={"Idempotency-Key": key}, json={
-            "protocol_version": 1, "app_task_id": key,
+        scheduling = {"force_admission": True} if force_admission else {}
+        headers = {"Idempotency-Key": key, **operator_headers(scheduling, request.headers.get("authorization", ""))}
+        job = await scheduler(connection, "POST", "tasks", headers=headers, json={
+            "protocol_version": 1, "app_task_id": key, "scheduling": scheduling,
             "executor": {"id": executor_id, "contract_version": "1", "task_type": TASK_TYPE},
             "parameters": {"size_bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
                            "format": fmt, "language": language},

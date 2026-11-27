@@ -6946,5 +6946,11 @@
   },
   "@yovoice.remoteVoice.state.cleanup_failed": {
     "defaultMessage": "Removal unconfirmed"
+  },
+  "@yovoice.remoteVoice.force": {
+    "defaultMessage": "Direct admission for this request"
+  },
+  "@yovoice.remoteVoice.forceHint": {
+    "defaultMessage": "Administrator option. Relaxes soft resource headroom. The selected node and hard resource limits still apply."
   }
 }
