@@ -5105,6 +5105,27 @@
   "@yovoice.error.stemsMissing": {
     "defaultMessage": "このバージョンにはまだステムがありません。先にステムを分離してください。"
   },
+  "@yovoice.remoteVoice.weight.auto": {
+    "defaultMessage": "自動（NFS を優先）"
+  },
+  "@yovoice.remoteVoice.weight.copy": {
+    "defaultMessage": "ノードに転送"
+  },
+  "@yovoice.remoteVoice.weight.shared": {
+    "defaultMessage": "読み取り専用の NFS マウント"
+  },
+  "@yovoice.remoteVoice.weightMode": {
+    "defaultMessage": "重みの取得元"
+  },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "ワークベンチの実行ノード"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "選択した実行ノード"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "リモートノードを一時的に検出できません"
+  },
   "@yovoice.resing.action": {
     "defaultMessage": "変更した小節だけ歌い直す"
   },
@@ -6832,6 +6853,69 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "入力の合計が 200 MiB を超えています。"
+  },
+  "@yovoice.remoteVoice.cancelDownload": {
+    "defaultMessage": "ダウンロードを停止"
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "CPU 予算（ミリコア、0 = 自動）"
+  },
+  "@yovoice.remoteVoice.install": {
+    "defaultMessage": "モデルをインストール"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "メモリ予算（MiB、0 = 自動）"
+  },
+  "@yovoice.remoteVoice.model": {
+    "defaultMessage": "モデル"
+  },
+  "@yovoice.remoteVoice.nfsSourceMissing": {
+    "defaultMessage": "元の重みが Model Hub の共有領域にありません。共有領域に配置するか、転送を選択してください。"
+  },
+  "@yovoice.remoteVoice.nfsUnavailable": {
+    "defaultMessage": "対象ノードから NFS 共有領域を読み取れません。マウント設定を確認するか、重みの転送を選択してください。"
+  },
+  "@yovoice.remoteVoice.phase.copying": {
+    "defaultMessage": "重みを転送中"
+  },
+  "@yovoice.remoteVoice.phase.mounting": {
+    "defaultMessage": "NFS マウントを確認中"
+  },
+  "@yovoice.remoteVoice.phase.registering": {
+    "defaultMessage": "モデルを登録中"
+  },
+  "@yovoice.remoteVoice.phase.source_check": {
+    "defaultMessage": "メインノードの重みを確認中"
+  },
+  "@yovoice.remoteVoice.phase.target_check": {
+    "defaultMessage": "対象ノードの重みを検証中"
+  },
+  "@yovoice.remoteVoice.preparationActive": {
+    "defaultMessage": "モデルを準備中です。完了後に再試行してください。"
+  },
+  "@yovoice.remoteVoice.preparationInterrupted": {
+    "defaultMessage": "準備が中断されました。もう一度実行すると転送を再開できます。"
+  },
+  "@yovoice.remoteVoice.primary": {
+    "defaultMessage": "メインノード（ローカル）"
+  },
+  "@yovoice.remoteVoice.primaryState.downloading": {
+    "defaultMessage": "ダウンロード中"
+  },
+  "@yovoice.remoteVoice.primaryState.failed": {
+    "defaultMessage": "インストールに失敗"
+  },
+  "@yovoice.remoteVoice.primaryState.not_installed": {
+    "defaultMessage": "未インストール"
+  },
+  "@yovoice.remoteVoice.primaryState.verifying": {
+    "defaultMessage": "検証中"
+  },
+  "@yovoice.remoteVoice.removeModel": {
+    "defaultMessage": "ノードのモデルを削除"
+  },
+  "@yovoice.remoteVoice.removeModelDescription": {
+    "defaultMessage": "このモデルの登録と対象ノードのコピーを削除します。メインノードと NFS の重みは保持されます。"
   },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "リモートノード"

@@ -5105,6 +5105,27 @@
   "@yovoice.error.stemsMissing": {
     "defaultMessage": "У этой версии ещё нет дорожек. Сначала разделите её на дорожки."
   },
+  "@yovoice.remoteVoice.weight.auto": {
+    "defaultMessage": "Автоматически (предпочитать NFS)"
+  },
+  "@yovoice.remoteVoice.weight.copy": {
+    "defaultMessage": "Передать на узел"
+  },
+  "@yovoice.remoteVoice.weight.shared": {
+    "defaultMessage": "Монтирование NFS только для чтения"
+  },
+  "@yovoice.remoteVoice.weightMode": {
+    "defaultMessage": "Источник весов"
+  },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "Узел выполнения в рабочей области"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "Выбранный узел выполнения"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "Обнаружение удалённых узлов временно недоступно"
+  },
   "@yovoice.resing.action": {
     "defaultMessage": "Перепеть изменённые такты"
   },
@@ -6832,6 +6853,69 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "Общий размер файлов для экспорта превышает 200 МиБ."
+  },
+  "@yovoice.remoteVoice.cancelDownload": {
+    "defaultMessage": "Остановить загрузку"
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "Бюджет ЦП (миллиядра, 0 — автоматически)"
+  },
+  "@yovoice.remoteVoice.install": {
+    "defaultMessage": "Установить модель"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "Бюджет памяти (МиБ, 0 — автоматически)"
+  },
+  "@yovoice.remoteVoice.model": {
+    "defaultMessage": "Модель"
+  },
+  "@yovoice.remoteVoice.nfsSourceMissing": {
+    "defaultMessage": "Исходные веса находятся вне общего ресурса Model Hub. Поместите их в общий ресурс или выберите передачу."
+  },
+  "@yovoice.remoteVoice.nfsUnavailable": {
+    "defaultMessage": "Целевой узел не может читать общий ресурс NFS. Проверьте параметры монтирования или выберите передачу весов."
+  },
+  "@yovoice.remoteVoice.phase.copying": {
+    "defaultMessage": "Передача весов"
+  },
+  "@yovoice.remoteVoice.phase.mounting": {
+    "defaultMessage": "Проверка монтирования NFS"
+  },
+  "@yovoice.remoteVoice.phase.registering": {
+    "defaultMessage": "Регистрация модели"
+  },
+  "@yovoice.remoteVoice.phase.source_check": {
+    "defaultMessage": "Проверка весов на основном узле"
+  },
+  "@yovoice.remoteVoice.phase.target_check": {
+    "defaultMessage": "Проверка весов на целевом узле"
+  },
+  "@yovoice.remoteVoice.preparationActive": {
+    "defaultMessage": "Идёт подготовка модели. Дождитесь завершения и повторите попытку."
+  },
+  "@yovoice.remoteVoice.preparationInterrupted": {
+    "defaultMessage": "Подготовка прервана. Повторите запуск, чтобы продолжить передачу весов."
+  },
+  "@yovoice.remoteVoice.primary": {
+    "defaultMessage": "Основной узел (локальный)"
+  },
+  "@yovoice.remoteVoice.primaryState.downloading": {
+    "defaultMessage": "Загрузка"
+  },
+  "@yovoice.remoteVoice.primaryState.failed": {
+    "defaultMessage": "Ошибка установки"
+  },
+  "@yovoice.remoteVoice.primaryState.not_installed": {
+    "defaultMessage": "Не установлено"
+  },
+  "@yovoice.remoteVoice.primaryState.verifying": {
+    "defaultMessage": "Проверка"
+  },
+  "@yovoice.remoteVoice.removeModel": {
+    "defaultMessage": "Удалить модель с узла"
+  },
+  "@yovoice.remoteVoice.removeModelDescription": {
+    "defaultMessage": "Отменяет регистрацию модели и удаляет её копии с целевого узла. Веса на основном узле и в NFS сохраняются."
   },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "Удалённые узлы"

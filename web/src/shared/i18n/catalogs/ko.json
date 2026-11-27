@@ -5105,6 +5105,27 @@
   "@yovoice.error.stemsMissing": {
     "defaultMessage": "이 버전에는 아직 스템이 없습니다. 먼저 스템을 분리하세요."
   },
+  "@yovoice.remoteVoice.weight.auto": {
+    "defaultMessage": "자동(NFS 우선)"
+  },
+  "@yovoice.remoteVoice.weight.copy": {
+    "defaultMessage": "노드로 전송"
+  },
+  "@yovoice.remoteVoice.weight.shared": {
+    "defaultMessage": "읽기 전용 NFS 마운트"
+  },
+  "@yovoice.remoteVoice.weightMode": {
+    "defaultMessage": "가중치 원본"
+  },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "작업대 실행 노드"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "선택한 실행 노드"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "원격 노드 검색을 일시적으로 사용할 수 없습니다"
+  },
   "@yovoice.resing.action": {
     "defaultMessage": "바꾼 마디만 다시 부르기"
   },
@@ -6832,6 +6853,69 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "내보낼 입력 파일의 합계가 200 MiB를 초과합니다."
+  },
+  "@yovoice.remoteVoice.cancelDownload": {
+    "defaultMessage": "다운로드 중지"
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "CPU 예산(밀리코어, 0 = 자동)"
+  },
+  "@yovoice.remoteVoice.install": {
+    "defaultMessage": "모델 설치"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "메모리 예산(MiB, 0 = 자동)"
+  },
+  "@yovoice.remoteVoice.model": {
+    "defaultMessage": "모델"
+  },
+  "@yovoice.remoteVoice.nfsSourceMissing": {
+    "defaultMessage": "원본 가중치가 Model Hub 공유 경로에 없습니다. 공유 경로에 배치하거나 전송을 선택하세요."
+  },
+  "@yovoice.remoteVoice.nfsUnavailable": {
+    "defaultMessage": "대상 노드가 NFS 공유 경로를 읽을 수 없습니다. 마운트 설정을 확인하거나 가중치 전송을 선택하세요."
+  },
+  "@yovoice.remoteVoice.phase.copying": {
+    "defaultMessage": "가중치 전송 중"
+  },
+  "@yovoice.remoteVoice.phase.mounting": {
+    "defaultMessage": "NFS 마운트 확인 중"
+  },
+  "@yovoice.remoteVoice.phase.registering": {
+    "defaultMessage": "모델 등록 중"
+  },
+  "@yovoice.remoteVoice.phase.source_check": {
+    "defaultMessage": "주 노드의 가중치 확인 중"
+  },
+  "@yovoice.remoteVoice.phase.target_check": {
+    "defaultMessage": "대상 노드의 가중치 검증 중"
+  },
+  "@yovoice.remoteVoice.preparationActive": {
+    "defaultMessage": "모델을 준비 중입니다. 완료된 후 다시 시도하세요."
+  },
+  "@yovoice.remoteVoice.preparationInterrupted": {
+    "defaultMessage": "준비가 중단되었습니다. 다시 시작하면 가중치 전송을 이어서 진행합니다."
+  },
+  "@yovoice.remoteVoice.primary": {
+    "defaultMessage": "주 노드(로컬)"
+  },
+  "@yovoice.remoteVoice.primaryState.downloading": {
+    "defaultMessage": "다운로드 중"
+  },
+  "@yovoice.remoteVoice.primaryState.failed": {
+    "defaultMessage": "설치 실패"
+  },
+  "@yovoice.remoteVoice.primaryState.not_installed": {
+    "defaultMessage": "설치되지 않음"
+  },
+  "@yovoice.remoteVoice.primaryState.verifying": {
+    "defaultMessage": "검증 중"
+  },
+  "@yovoice.remoteVoice.removeModel": {
+    "defaultMessage": "노드에서 모델 제거"
+  },
+  "@yovoice.remoteVoice.removeModelDescription": {
+    "defaultMessage": "이 모델의 등록을 취소하고 대상 노드의 사본을 제거합니다. 주 노드와 NFS의 가중치는 유지됩니다."
   },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "원격 노드"

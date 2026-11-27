@@ -5105,6 +5105,27 @@
   "@yovoice.error.stemsMissing": {
     "defaultMessage": "Esta versão ainda não tem faixas. Separe as faixas primeiro."
   },
+  "@yovoice.remoteVoice.weight.auto": {
+    "defaultMessage": "Automático (preferir NFS)"
+  },
+  "@yovoice.remoteVoice.weight.copy": {
+    "defaultMessage": "Transferir para o nó"
+  },
+  "@yovoice.remoteVoice.weight.shared": {
+    "defaultMessage": "Montagem NFS somente leitura"
+  },
+  "@yovoice.remoteVoice.weightMode": {
+    "defaultMessage": "Origem dos pesos"
+  },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "Nó de execução do estúdio"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "Nó de execução selecionado"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "A descoberta de nós remotos está temporariamente indisponível"
+  },
   "@yovoice.resing.action": {
     "defaultMessage": "Recantar compassos alterados"
   },
@@ -6832,6 +6853,69 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "As entradas da exportação excedem 200 MiB no total."
+  },
+  "@yovoice.remoteVoice.cancelDownload": {
+    "defaultMessage": "Parar download"
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "Limite de CPU (milinúcleos, 0 = automático)"
+  },
+  "@yovoice.remoteVoice.install": {
+    "defaultMessage": "Instalar modelo"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "Limite de memória (MiB, 0 = automático)"
+  },
+  "@yovoice.remoteVoice.model": {
+    "defaultMessage": "Modelo"
+  },
+  "@yovoice.remoteVoice.nfsSourceMissing": {
+    "defaultMessage": "Os pesos de origem estão fora do compartilhamento do Model Hub. Mova-os para o compartilhamento ou selecione a transferência."
+  },
+  "@yovoice.remoteVoice.nfsUnavailable": {
+    "defaultMessage": "O nó de destino não consegue ler o compartilhamento NFS. Verifique a montagem ou selecione a transferência de pesos."
+  },
+  "@yovoice.remoteVoice.phase.copying": {
+    "defaultMessage": "Transferindo pesos"
+  },
+  "@yovoice.remoteVoice.phase.mounting": {
+    "defaultMessage": "Verificando montagem NFS"
+  },
+  "@yovoice.remoteVoice.phase.registering": {
+    "defaultMessage": "Registrando modelo"
+  },
+  "@yovoice.remoteVoice.phase.source_check": {
+    "defaultMessage": "Verificando os pesos do nó principal"
+  },
+  "@yovoice.remoteVoice.phase.target_check": {
+    "defaultMessage": "Validando os pesos no nó de destino"
+  },
+  "@yovoice.remoteVoice.preparationActive": {
+    "defaultMessage": "O modelo está sendo preparado. Aguarde a conclusão e tente novamente."
+  },
+  "@yovoice.remoteVoice.preparationInterrupted": {
+    "defaultMessage": "A preparação foi interrompida. Inicie novamente para retomar a transferência."
+  },
+  "@yovoice.remoteVoice.primary": {
+    "defaultMessage": "Nó principal (local)"
+  },
+  "@yovoice.remoteVoice.primaryState.downloading": {
+    "defaultMessage": "Baixando"
+  },
+  "@yovoice.remoteVoice.primaryState.failed": {
+    "defaultMessage": "Falha na instalação"
+  },
+  "@yovoice.remoteVoice.primaryState.not_installed": {
+    "defaultMessage": "Não instalado"
+  },
+  "@yovoice.remoteVoice.primaryState.verifying": {
+    "defaultMessage": "Validando"
+  },
+  "@yovoice.remoteVoice.removeModel": {
+    "defaultMessage": "Remover modelo do nó"
+  },
+  "@yovoice.remoteVoice.removeModelDescription": {
+    "defaultMessage": "Cancela o registro do modelo e remove suas cópias no nó de destino. Os pesos do nó principal e do NFS são preservados."
   },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "Nós remotos"

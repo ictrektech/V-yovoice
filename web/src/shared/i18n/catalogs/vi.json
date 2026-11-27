@@ -5105,6 +5105,27 @@
   "@yovoice.error.stemsMissing": {
     "defaultMessage": "Phiên bản này chưa có bè. Hãy tách bè trước."
   },
+  "@yovoice.remoteVoice.weight.auto": {
+    "defaultMessage": "Tự động (ưu tiên NFS)"
+  },
+  "@yovoice.remoteVoice.weight.copy": {
+    "defaultMessage": "Truyền đến nút"
+  },
+  "@yovoice.remoteVoice.weight.shared": {
+    "defaultMessage": "Gắn kết NFS chỉ đọc"
+  },
+  "@yovoice.remoteVoice.weightMode": {
+    "defaultMessage": "Nguồn trọng số"
+  },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "Nút thực thi của bàn làm việc"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "Nút thực thi đã chọn"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "Tạm thời không thể phát hiện nút từ xa"
+  },
   "@yovoice.resing.action": {
     "defaultMessage": "Hát lại các ô nhịp đã sửa"
   },
@@ -6832,6 +6853,69 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "Tổng dung lượng đầu vào để xuất vượt quá 200 MiB."
+  },
+  "@yovoice.remoteVoice.cancelDownload": {
+    "defaultMessage": "Dừng tải xuống"
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "Ngân sách CPU (millicore, 0 = tự động)"
+  },
+  "@yovoice.remoteVoice.install": {
+    "defaultMessage": "Cài đặt mô hình"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "Ngân sách bộ nhớ (MiB, 0 = tự động)"
+  },
+  "@yovoice.remoteVoice.model": {
+    "defaultMessage": "Mô hình"
+  },
+  "@yovoice.remoteVoice.nfsSourceMissing": {
+    "defaultMessage": "Trọng số nguồn nằm ngoài vùng chia sẻ Model Hub. Hãy đưa chúng vào vùng chia sẻ hoặc chọn truyền tệp."
+  },
+  "@yovoice.remoteVoice.nfsUnavailable": {
+    "defaultMessage": "Nút đích không đọc được vùng chia sẻ NFS. Kiểm tra cấu hình gắn kết hoặc chọn truyền trọng số."
+  },
+  "@yovoice.remoteVoice.phase.copying": {
+    "defaultMessage": "Đang truyền trọng số"
+  },
+  "@yovoice.remoteVoice.phase.mounting": {
+    "defaultMessage": "Đang kiểm tra gắn kết NFS"
+  },
+  "@yovoice.remoteVoice.phase.registering": {
+    "defaultMessage": "Đang đăng ký mô hình"
+  },
+  "@yovoice.remoteVoice.phase.source_check": {
+    "defaultMessage": "Đang kiểm tra trọng số trên nút chính"
+  },
+  "@yovoice.remoteVoice.phase.target_check": {
+    "defaultMessage": "Đang xác minh trọng số tại nút đích"
+  },
+  "@yovoice.remoteVoice.preparationActive": {
+    "defaultMessage": "Mô hình đang được chuẩn bị. Hãy chờ hoàn tất rồi thử lại."
+  },
+  "@yovoice.remoteVoice.preparationInterrupted": {
+    "defaultMessage": "Quá trình chuẩn bị bị gián đoạn. Hãy chạy lại để tiếp tục truyền trọng số."
+  },
+  "@yovoice.remoteVoice.primary": {
+    "defaultMessage": "Nút chính (cục bộ)"
+  },
+  "@yovoice.remoteVoice.primaryState.downloading": {
+    "defaultMessage": "Đang tải xuống"
+  },
+  "@yovoice.remoteVoice.primaryState.failed": {
+    "defaultMessage": "Cài đặt thất bại"
+  },
+  "@yovoice.remoteVoice.primaryState.not_installed": {
+    "defaultMessage": "Chưa cài đặt"
+  },
+  "@yovoice.remoteVoice.primaryState.verifying": {
+    "defaultMessage": "Đang xác minh"
+  },
+  "@yovoice.remoteVoice.removeModel": {
+    "defaultMessage": "Xóa mô hình khỏi nút"
+  },
+  "@yovoice.remoteVoice.removeModelDescription": {
+    "defaultMessage": "Hủy đăng ký mô hình và xóa các bản sao trên nút đích. Trọng số trên nút chính và NFS được giữ lại."
   },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "Nút từ xa"

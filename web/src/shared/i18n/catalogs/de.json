@@ -5105,6 +5105,27 @@
   "@yovoice.error.stemsMissing": {
     "defaultMessage": "Diese Version hat noch keine Spuren. Trenne zuerst die Spuren."
   },
+  "@yovoice.remoteVoice.weight.auto": {
+    "defaultMessage": "Automatisch (NFS bevorzugt)"
+  },
+  "@yovoice.remoteVoice.weight.copy": {
+    "defaultMessage": "Zum Knoten übertragen"
+  },
+  "@yovoice.remoteVoice.weight.shared": {
+    "defaultMessage": "Schreibgeschützte NFS-Einbindung"
+  },
+  "@yovoice.remoteVoice.weightMode": {
+    "defaultMessage": "Quelle der Gewichte"
+  },
+  "@yovoice.remoteVoice.workbenchNode": {
+    "defaultMessage": "Ausführungsknoten der Werkbank"
+  },
+  "@yovoice.remoteVoice.workbenchQueued": {
+    "defaultMessage": "Ausgewählter Ausführungsknoten"
+  },
+  "@yovoice.remoteVoice.workbenchUnavailable": {
+    "defaultMessage": "Erkennung entfernter Knoten vorübergehend nicht verfügbar"
+  },
   "@yovoice.resing.action": {
     "defaultMessage": "Geänderte Takte neu singen"
   },
@@ -6832,6 +6853,69 @@
   },
   "@vvoice.dub.videoSize": {
     "defaultMessage": "Die Eingaben für den Export überschreiten zusammen 200 MiB."
+  },
+  "@yovoice.remoteVoice.cancelDownload": {
+    "defaultMessage": "Download stoppen"
+  },
+  "@yovoice.remoteVoice.cpuBudget": {
+    "defaultMessage": "CPU-Budget (Millikerne, 0 = automatisch)"
+  },
+  "@yovoice.remoteVoice.install": {
+    "defaultMessage": "Modell installieren"
+  },
+  "@yovoice.remoteVoice.memoryBudget": {
+    "defaultMessage": "Arbeitsspeicherbudget (MiB, 0 = automatisch)"
+  },
+  "@yovoice.remoteVoice.model": {
+    "defaultMessage": "Modell"
+  },
+  "@yovoice.remoteVoice.nfsSourceMissing": {
+    "defaultMessage": "Die Quellgewichte liegen außerhalb der Model-Hub-Freigabe. Verschieben Sie sie in die Freigabe oder wählen Sie die Übertragung."
+  },
+  "@yovoice.remoteVoice.nfsUnavailable": {
+    "defaultMessage": "Der Zielknoten kann die NFS-Freigabe nicht lesen. Prüfen Sie die Einbindung oder wählen Sie die Übertragung der Gewichte."
+  },
+  "@yovoice.remoteVoice.phase.copying": {
+    "defaultMessage": "Gewichte werden übertragen"
+  },
+  "@yovoice.remoteVoice.phase.mounting": {
+    "defaultMessage": "NFS-Einbindung wird geprüft"
+  },
+  "@yovoice.remoteVoice.phase.registering": {
+    "defaultMessage": "Modell wird registriert"
+  },
+  "@yovoice.remoteVoice.phase.source_check": {
+    "defaultMessage": "Gewichte des Hauptknotens werden geprüft"
+  },
+  "@yovoice.remoteVoice.phase.target_check": {
+    "defaultMessage": "Gewichte des Zielknotens werden verifiziert"
+  },
+  "@yovoice.remoteVoice.preparationActive": {
+    "defaultMessage": "Das Modell wird vorbereitet. Warten Sie bis zum Abschluss und versuchen Sie es erneut."
+  },
+  "@yovoice.remoteVoice.preparationInterrupted": {
+    "defaultMessage": "Die Vorbereitung wurde unterbrochen. Erneut starten, um die Übertragung fortzusetzen."
+  },
+  "@yovoice.remoteVoice.primary": {
+    "defaultMessage": "Hauptknoten (lokal)"
+  },
+  "@yovoice.remoteVoice.primaryState.downloading": {
+    "defaultMessage": "Wird heruntergeladen"
+  },
+  "@yovoice.remoteVoice.primaryState.failed": {
+    "defaultMessage": "Installation fehlgeschlagen"
+  },
+  "@yovoice.remoteVoice.primaryState.not_installed": {
+    "defaultMessage": "Nicht installiert"
+  },
+  "@yovoice.remoteVoice.primaryState.verifying": {
+    "defaultMessage": "Wird verifiziert"
+  },
+  "@yovoice.remoteVoice.removeModel": {
+    "defaultMessage": "Modell vom Knoten entfernen"
+  },
+  "@yovoice.remoteVoice.removeModelDescription": {
+    "defaultMessage": "Die Registrierung und Kopien auf dem Zielknoten werden entfernt. Gewichte auf dem Hauptknoten und in NFS bleiben erhalten."
   },
   "@yovoice.remoteVoice.title": {
     "defaultMessage": "Remote-Knoten"
