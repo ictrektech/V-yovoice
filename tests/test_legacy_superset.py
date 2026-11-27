@@ -37,10 +37,11 @@ def test_all_downloadable_yovoice_speech_precisions_are_projected():
     root = Path(__file__).resolve().parents[1]
     upstream = json.loads((root / "internal/catalog/catalog.json").read_text())["models"]
     expected = {"audiocpp-" + row["id"] for row in upstream
-                if row.get("task") not in {"gen", "instrument", "midi", "align", "asr"}}
+                if row.get("task") not in {"gen", "instrument", "midi", "align", "asr", "sep"}}
     actual = {row["key"] for row in catalog()}
     assert expected <= actual
     assert "audiocpp-qwen3-asr-0.6b-q8" not in actual
+    assert not any("audiocpp-" + row["id"] in actual for row in upstream if row.get("task") == "sep")
 
 
 def test_creator_management_also_includes_music_and_soundfonts():

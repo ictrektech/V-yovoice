@@ -13,7 +13,8 @@ def test_cpu_model_pin_reaches_native_factory(monkeypatch, kind, pinned):
     monkeypatch.setattr(runtime, 'settings', SimpleNamespace(cpu_models=(key,) if pinned else (),
                                                          num_threads=4, max_loaded_models=2))
     monkeypatch.setattr(runtime, 'detect_provider', lambda: 'cuda')
-    descriptor = {'key': key, 'runtime': {'family': 'vits', 'factory': 'from_sense_voice'}}
+    descriptor = {'key': key, 'runtime': {'family': 'vits', 'factory': 'from_sense_voice',
+                                         'files': {'model': 'fixture.onnx'}}}
     monkeypatch.setattr(runtime, 'find_model', lambda *_: descriptor)
     monkeypatch.setattr(runtime, 'resolve_files', lambda *_: {'model': '/fixture.onnx'})
     def config(**kwargs):
