@@ -23,6 +23,7 @@ LOCK_PATH = ROOT / "dependency-lock.json"
 SPREADSHEET = os.getenv("FEISHU_SPREADSHEET_TOKEN", "Htotsn3oahO1zxt73YMcaB1zn8e")
 REPOSITORY = "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice"
 IMAGE_REFERENCE = re.compile(r"^[\w.-]+\.[\w.-]+(?::\d+)?/[^\s]+$")
+IMAGE_TAG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 PACKAGE_MEMBERS = (
     ".env",
     "manifest.yml",
@@ -317,8 +318,22 @@ def parse_image_overrides(values: list[str]) -> dict[str, str]:
 def verify_release_images(images: dict[str, str], version: str) -> None:
     if set(images) != set(PROFILES):
         raise RuntimeError(f"image variables differ from supported profiles: {sorted(images)}")
+    review_path = ROOT / "image-reuse" / f"{version}.json"
+    reuse = json.loads(review_path.read_text(encoding="utf-8")) if review_path.is_file() else {}
+    if not isinstance(reuse, dict) or set(reuse) - set(PROFILES):
+        raise RuntimeError(f"invalid image reuse review: {review_path}")
     for variable, image in images.items():
-        expected = f"{REPOSITORY}:{IMAGE_PREFIXES[variable]}_{version}"
+        prefix = f"{REPOSITORY}:{IMAGE_PREFIXES[variable]}_"
+        expected = prefix + version
+        if variable in reuse:
+            entry = reuse[variable]
+            if not isinstance(entry, dict):
+                raise RuntimeError(f"{variable} needs a valid image reuse review")
+            reference, reason = entry.get("image"), entry.get("reason")
+            tag = reference[len(prefix):] if isinstance(reference, str) and reference.startswith(prefix) else ""
+            if not IMAGE_TAG.fullmatch(tag) or tag.lower() == "latest" or not isinstance(reason, str) or not reason.strip():
+                raise RuntimeError(f"{variable} needs a Profile image from the approved repository and a reuse reason")
+            expected = reference
         if image != expected:
             raise RuntimeError(f"{variable} requires the release image {expected} from the approved repository, got {image}")
 

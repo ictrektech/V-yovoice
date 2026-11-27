@@ -1,6 +1,7 @@
 """发布包契约检查必须覆盖每个版本，而不是绑定历史候选版本。"""
 import importlib.util
 import io
+import json
 import tarfile
 from pathlib import Path
 
@@ -99,6 +100,21 @@ def test_profile_requires_its_image_for_the_release_version(tmp_path, tag):
 
     with pytest.raises(RuntimeError, match="VVOICE_ARM_IMAGE requires the release image"):
         package.verify_pull_package(path, "1.2.3")
+
+
+def test_reviewed_unchanged_profile_can_reuse_an_earlier_image(tmp_path, monkeypatch):
+    monkeypatch.setattr(package, "ROOT", tmp_path)
+    images = image_references()
+    images["VVOICE_ARM_IMAGE"] = f"{package.REPOSITORY}:arm_1.2.2"
+    review = tmp_path / "image-reuse"
+    review.mkdir()
+    (review / "1.2.3.json").write_text(json.dumps({
+        "VVOICE_ARM_IMAGE": {"image": images["VVOICE_ARM_IMAGE"], "reason": "No ARM application image inputs changed"},
+    }))
+    path = tmp_path / "v_voice_1.2.3_pull.tar"
+    write_package(path, images=images)
+
+    package.verify_pull_package(path, "1.2.3")
 
 
 def test_compose_images_must_match_env(tmp_path):

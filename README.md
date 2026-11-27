@@ -137,9 +137,10 @@ The sections below describe the original upstream desktop app; they do not imply
 that VOS images or releases have passed their release gates. Fork source and
 merge baseline are recorded in [UPSTREM](UPSTREM).
 
-VOS releases require all six Profile images for the same release version.
-The version script checks their tags in Feishu before creating the trigger tag,
-and packaging checks the image references in the finished archive.
+VOS releases require verified images for all six Profiles. Rebuild affected
+images and record any reviewed reuse of unaffected images in the release runbook's
+format. The version script checks the Feishu references before creating the
+trigger tag, and packaging checks them again in the finished archive.
 VOS packaging also verifies current published dependency versions. Private GitHub
 repositories are checked through the existing approved App Store SSH tunnel,
 including the published archive, without copying a broad GitHub token into CI.

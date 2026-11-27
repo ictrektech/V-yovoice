@@ -76,7 +76,7 @@ bash docker/build_image.sh --sheet l4t --dry-run
 | `l4t` | `l4t` | `l4t_X.Y.Z` | Jetson L4T |
 | `thor` | `thor_spark` | `thor_X.Y.Z` | Thor / Spark |
 
-正式发布必须用 `--sheet` 分别构建并验证表中全部六个 Profile。六组镜像均通过冒烟、完成推送和飞书登记后，再运行版本脚本。脚本在推送触发标签前校验所有镜像标签与候选版本一致，打包时再校验最终安装包。
+正式发布必须验证表中全部六个 Profile。受影响的镜像用 `--sheet` 重建，通过冒烟后推送并登记飞书。构建输入未受影响的 Profile 可以复用已有镜像，先确认该镜像可拉取且通过本次冒烟，再在 `ictrek.app/image-reuse/<版本>.json` 记录。文件以镜像变量为键，每项包含 `image`（飞书表中该 Profile 的完整镜像引用）和 `reason`（构建输入未受影响的依据）。例如 `{"VVOICE_ARM_IMAGE":{"image":"swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:arm_0.0.42","reason":"ARM CPU 构建输入未变，冒烟验证通过"}}`。版本脚本先从飞书核对六组引用，打包时再校验最终安装包。
 
 候选流程必须先构建，再冒烟，最后推送。不要使用默认的“构建并发布”组合命令，否则镜像会在冒烟前进入仓库和飞书。
 
