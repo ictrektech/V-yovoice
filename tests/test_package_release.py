@@ -27,17 +27,25 @@ def write_package(path, *, package_version="1.2.3", images=None,
         images = image_references(package_version)
     manifest = {
         "version": package_version,
+        "profiles": [
+            {"name": name, "conflicts": sorted(package.INSTALL_PROFILES.keys() - {name})}
+            for name in package.INSTALL_PROFILES
+        ],
         "dependencies": {
             "apps": [{"id": "com.ictrek.v-scheduler", "version": dependency}]
         },
     }
     if compose_images is None:
         compose_images = list(images.values())
-    service_images = compose_images
     compose = {
         "services": {
-            f"service-{index}": {"image": image}
-            for index, image in enumerate(service_images, 1)
+            variable: {
+                "image": image,
+                "profiles": [
+                    name for name, target in package.INSTALL_PROFILES.items() if variable == target
+                ],
+            }
+            for variable, image in zip(images, compose_images)
         }
     }
     files = {
@@ -69,7 +77,7 @@ def test_valid_pull_package_is_accepted(tmp_path, capsys):
 
     package.verify_pull_package(path, "1.2.3")
 
-    assert "profiles=6" in capsys.readouterr().out
+    assert "profiles=7 images=6" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("dependency", ["latest", ">=0.0.23"])

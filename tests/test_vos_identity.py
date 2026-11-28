@@ -11,11 +11,11 @@ def test_v_voice_logo_is_preserved_in_both_interfaces_and_package():
         assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected
 
 
-def test_release_identity_and_six_profiles_are_retained():
+def test_release_identity_and_canonical_hardware_profiles():
     manifest = (ROOT / "ictrek.app/src/manifest.yml").read_text()
     assert "id: com.ictrek.v-voice\n" in manifest
     assert "zh-CN: V-Voice\n" in manifest and "en: V-Voice\n" in manifest
-    for name in ("amd", "amd-cuda", "arm", "arm-cuda", "l4t", "thor"):
+    for name in ("amd-cpu", "amd-cuda", "arm-cpu", "arm-cuda", "jetson-orin", "jetson-thor", "dgx-spark"):
         assert f"  - name: {name}\n" in manifest
     workflow = (ROOT / ".github/workflows/vos-release.yml").read_text()
     assert '"vos-v-voice-v*"' in workflow
