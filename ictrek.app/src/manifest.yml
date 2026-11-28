@@ -45,23 +45,23 @@ permissions:
       default_roles: [system_admin, platform_admin]
 
 profiles:
-  - name: amd
+  - name: amd-cpu
     title: {zh-CN: AMD64 CPU, en: AMD64 CPU}
     description: {zh-CN: AMD64 CPU 推理。, en: AMD64 CPU inference.}
     caps: {arch: amd64}
-    conflicts: [amd-cuda, arm, arm-cuda, l4t, thor]
+    conflicts: [amd-cuda, arm-cpu, arm-cuda, jetson-orin, jetson-thor, dgx-spark]
   - name: amd-cuda
     title: {zh-CN: AMD64 CUDA, en: AMD64 CUDA}
     description: {zh-CN: AMD64 NVIDIA CUDA 加速。, en: AMD64 NVIDIA CUDA acceleration.}
     caps:
       arch: amd64
       software: [cuda]
-    conflicts: [amd, arm, arm-cuda, l4t, thor]
-  - name: arm
+    conflicts: [amd-cpu, arm-cpu, arm-cuda, jetson-orin, jetson-thor, dgx-spark]
+  - name: arm-cpu
     title: {zh-CN: ARM64 CPU, en: ARM64 CPU}
     description: {zh-CN: ARM64 CPU 推理。, en: ARM64 CPU inference.}
     caps: {arch: arm64}
-    conflicts: [amd, amd-cuda, arm-cuda, l4t, thor]
+    conflicts: [amd-cpu, amd-cuda, arm-cuda, jetson-orin, jetson-thor, dgx-spark]
   - name: arm-cuda
     title: {zh-CN: ARM64 CUDA, en: ARM64 CUDA}
     description: {zh-CN: 通用 ARM64 NVIDIA CUDA 加速。, en: Generic ARM64 NVIDIA CUDA acceleration.}
@@ -69,25 +69,34 @@ profiles:
       device-type: generic
       arch: arm64
       software: [cuda]
-    conflicts: [amd, amd-cuda, arm, l4t, thor]
-  - name: l4t
-    title: {zh-CN: Jetson / L4T, en: Jetson / L4T}
-    description: {zh-CN: Jetson / L4T CUDA 加速。, en: Jetson / L4T CUDA acceleration.}
+    conflicts: [amd-cpu, amd-cuda, arm-cpu, jetson-orin, jetson-thor, dgx-spark]
+  - name: jetson-orin
+    title: {zh-CN: Jetson Orin, en: Jetson Orin}
+    description: {zh-CN: Jetson Orin CUDA 加速。, en: Jetson Orin CUDA acceleration.}
     caps:
       device-type:
-        - any-of: [l4t, jetson]
+        - any-of: [jetson-orin, l4t, jetson]
       arch: arm64
       software: [cuda]
-    conflicts: [amd, amd-cuda, arm, arm-cuda, thor]
-  - name: thor
-    title: {zh-CN: Thor, en: Thor}
-    description: {zh-CN: Thor / Spark CUDA 加速。, en: Thor / Spark CUDA acceleration.}
+    conflicts: [amd-cpu, amd-cuda, arm-cpu, arm-cuda, jetson-thor, dgx-spark]
+  - name: jetson-thor
+    title: {zh-CN: Jetson Thor, en: Jetson Thor}
+    description: {zh-CN: Jetson Thor CUDA 加速。, en: Jetson Thor CUDA acceleration.}
     caps:
       device-type:
-        - any-of: [thor-spark, thor]
+        - any-of: [jetson-thor, thor, thor-spark]
       arch: arm64
       software: [cuda]
-    conflicts: [amd, amd-cuda, arm, arm-cuda, l4t]
+    conflicts: [amd-cpu, amd-cuda, arm-cpu, arm-cuda, jetson-orin, dgx-spark]
+  - name: dgx-spark
+    title: {zh-CN: DGX Spark, en: DGX Spark}
+    description: {zh-CN: NVIDIA GB10 CUDA 加速。, en: NVIDIA GB10 CUDA acceleration.}
+    caps:
+      device-type:
+        - any-of: [dgx-spark, spark]
+      arch: arm64
+      software: [cuda]
+    conflicts: [amd-cpu, amd-cuda, arm-cpu, arm-cuda, jetson-orin, jetson-thor]
 
 require-profiles: true
 

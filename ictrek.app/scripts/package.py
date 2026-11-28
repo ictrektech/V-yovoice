@@ -56,6 +56,15 @@ REMOTE_PROFILES = {
     "jetson-thor": "VVOICE_THOR_IMAGE",
     "dgx-spark": "VVOICE_THOR_IMAGE",
 }
+INSTALL_PROFILES = {
+    "amd-cpu": "VVOICE_AMD_IMAGE",
+    "amd-cuda": "VVOICE_AMD_CUDA_IMAGE",
+    "arm-cpu": "VVOICE_ARM_IMAGE",
+    "arm-cuda": "VVOICE_ARM_CUDA_IMAGE",
+    "jetson-orin": "VVOICE_L4T_IMAGE",
+    "jetson-thor": "VVOICE_THOR_IMAGE",
+    "dgx-spark": "VVOICE_THOR_IMAGE",
+}
 DEPENDENCIES = {
     "com.ictrek.v-scheduler": ("ictrektech/V-Scheduler", "0.0.24"),
 }
@@ -385,11 +394,22 @@ def verify_pull_package(output: Path, version: str) -> None:
                 raise RuntimeError(f"{dependency['id']} is below required contract {minimum}")
 
         compose = yaml.safe_load(read("docker-compose.yml"))
-        service_images = [str(service.get("image", "")) for service in compose.get("services", {}).values()]
+        services = compose.get("services", {}).values()
+        service_images = [str(service.get("image", "")) for service in services]
         if sorted(service_images) != sorted(images.values()):
             raise RuntimeError("docker-compose image references differ from .env")
+        profiles = manifest.get("profiles", [])
+        if {entry.get("name") for entry in profiles} != set(INSTALL_PROFILES) or len(profiles) != len(INSTALL_PROFILES):
+            raise RuntimeError("manifest does not declare the supported hardware Profiles")
+        for profile in profiles:
+            name = profile["name"]
+            if set(profile.get("conflicts", [])) != set(INSTALL_PROFILES) - {name}:
+                raise RuntimeError(f"{name} must conflict with the other hardware Profiles")
+            selected = [service["image"] for service in services if name in service.get("profiles", [])]
+            if selected != [images[INSTALL_PROFILES[name]]]:
+                raise RuntimeError(f"{name} does not select exactly its published backend image")
 
-    print(f"PASS: pull package {output.name} version={version} profiles={len(images)}")
+    print(f"PASS: pull package {output.name} version={version} profiles={len(INSTALL_PROFILES)} images={len(images)}")
 
 
 def package(version: str, stage: Path) -> Path:

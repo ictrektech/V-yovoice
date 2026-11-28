@@ -46,7 +46,7 @@ MORE CLI:
 - 测试只覆盖行为和逻辑（数据流、状态、交互结果）；纯展示性改动（文案、改名、排序、样式）不新增断言。
 - 浏览器测试较耗时，日常调试优先定向执行相关用例（如 `pnpm --dir web exec playwright test browser-tests/<file>.spec.ts`），提交前再运行 `pnpm --dir web test`。
 - 功能稳定的用例在 `web/playwright.config.ts` 的 `sealed` 列表中封存，`pnpm --dir web test` 和日常 CI 不跑；改到这些功能或发布前运行 `pnpm --dir web run test:all`（CI 每周一全量跑一次）。功能重新频繁改动时移出列表。
-- VOS 正式发布须验证全部六个 Profile 的镜像。使用 `--sheet` 重建受改动影响的镜像。复用未受影响的镜像前，按发布手册记录准确引用和验证依据。
+- VOS 正式发布须验证安装包中全部标准 Profile 的镜像。使用 `--sheet` 重建受改动影响的镜像。复用未受影响的镜像前，按发布手册记录准确引用和验证依据。
 - V-yovoice DSH 插件及其 npm 包发布前，先阅读 `.agents/runbooks/harness-plugin-release.md`。
 - VOS 构建、发布或“构建预检包”前，先阅读 `.agents/runbooks/vos-v-voice-release.md`，并按其中的流程执行。
 - 不将浏览器预览和交叉编译视为 Windows 实机推理已验证。

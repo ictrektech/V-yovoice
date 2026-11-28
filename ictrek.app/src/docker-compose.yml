@@ -61,7 +61,7 @@ x-vvoice-gpu: &vvoice-gpu
 services:
   v-voice-amd:
     <<: *vvoice-base
-    profiles: ["amd"]
+    profiles: ["amd-cpu"]
     image: ${VVOICE_AMD_IMAGE}
     environment:
       <<: *vvoice-env
@@ -79,7 +79,7 @@ services:
       NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
   v-voice-arm:
     <<: *vvoice-base
-    profiles: ["arm"]
+    profiles: ["arm-cpu"]
     image: ${VVOICE_ARM_IMAGE}
     environment:
       <<: *vvoice-env
@@ -97,7 +97,7 @@ services:
       NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
   v-voice-l4t:
     <<: *vvoice-gpu
-    profiles: ["l4t"]
+    profiles: ["jetson-orin"]
     image: ${VVOICE_L4T_IMAGE}
     environment:
       <<: *vvoice-env
@@ -109,7 +109,7 @@ services:
       NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
   v-voice-thor:
     <<: *vvoice-gpu
-    profiles: ["thor"]
+    profiles: ["jetson-thor", "dgx-spark"]
     image: ${VVOICE_THOR_IMAGE}
     environment:
       <<: *vvoice-env

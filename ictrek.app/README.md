@@ -2,16 +2,19 @@
 
 中文逐步操作手册：[VOS V-Voice 正式发布流程](../.agents/runbooks/vos-v-voice-release.md)。
 
-The release contains one pull-mode package for six mutually exclusive profiles:
+The release contains one pull-mode package for seven mutually exclusive Profiles:
 
 | Profile | Feishu sheet | Runtime |
 |---|---|---|
-| `amd` | `AMD_with_mxn100` | AMD64 CPU |
+| `amd-cpu` | `AMD_with_mxn100` | AMD64 CPU |
 | `amd-cuda` | `AMD_with_cuda` | AMD64 CUDA |
-| `arm` | `ARM_without_cuda` / `SOPHON_bm1688` | ARM64 CPU |
+| `arm-cpu` | `ARM_without_cuda` / `SOPHON_bm1688` | ARM64 CPU |
 | `arm-cuda` | `ARM_with_cuda` | ARM64 CUDA |
-| `l4t` | `l4t` | Jetson CUDA |
-| `thor` | `thor_spark` | Thor CUDA |
+| `jetson-orin` | `l4t` | Jetson CUDA |
+| `jetson-thor` | `thor_spark` | Jetson Thor CUDA |
+| `dgx-spark` | `thor_spark` | NVIDIA GB10 CUDA using the verified Thor image |
+
+When upgrading an existing installation, select the new Profile and retain the storage path. Map `amd` to `amd-cpu`, `arm` to `arm-cpu` and `l4t` to `jetson-orin`. Map `thor` to `jetson-thor` on Jetson Thor or `dgx-spark` on Spark with matching device metadata. A device reporting only legacy `thor-spark` metadata can select `jetson-thor`. CUDA selections `amd-cuda` and `arm-cuda` keep their IDs. API upgrades must submit the mapped `profiles` explicitly. To roll back, select the matching Profile advertised by the older package.
 
 Run `docker/build_image.sh --sheet <sheet>` on a matching build host. After every
 required image and Feishu cell is published, run `ictrek.app/scripts/update_version.sh patch`

@@ -69,14 +69,15 @@ bash docker/build_image.sh --sheet l4t --dry-run
 
 | Profile | `--sheet` | 镜像标签 | 构建机 |
 | --- | --- | --- | --- |
-| `amd` | `AMD_with_mxn100` | `amd_X.Y.Z` | x86_64 |
+| `amd-cpu` | `AMD_with_mxn100` | `amd_X.Y.Z` | x86_64 |
 | `amd-cuda` | `AMD_with_cuda` | `amd_cu128_X.Y.Z` | x86_64 CUDA |
-| `arm` | `ARM_without_cuda` | `arm_X.Y.Z` | ARM64 |
+| `arm-cpu` | `ARM_without_cuda` | `arm_X.Y.Z` | ARM64 |
 | `arm-cuda` | `ARM_with_cuda` | `arm_cu130_X.Y.Z` | ARM64 CUDA |
-| `l4t` | `l4t` | `l4t_X.Y.Z` | Jetson L4T |
-| `thor` | `thor_spark` | `thor_X.Y.Z` | Thor / Spark |
+| `jetson-orin` | `l4t` | `l4t_X.Y.Z` | Jetson L4T |
+| `jetson-thor` | `thor_spark` | `thor_X.Y.Z` | Jetson Thor |
+| `dgx-spark` | `thor_spark` | `thor_X.Y.Z` | 在 Spark 上验证该 CUDA 镜像 |
 
-正式发布必须验证表中全部六个 Profile。受影响的镜像用 `--sheet` 重建，通过冒烟后推送并登记飞书。构建输入未受影响的 Profile 可以复用已有镜像，先确认该镜像可拉取且通过本次冒烟，再在 `ictrek.app/image-reuse/<版本>.json` 记录。文件以镜像变量为键，每项包含 `image`（飞书表中该 Profile 的完整镜像引用）和 `reason`（构建输入未受影响的依据）。例如 `{"VVOICE_ARM_IMAGE":{"image":"swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:arm_0.0.42","reason":"ARM CPU 构建输入未变，冒烟验证通过"}}`。版本脚本先从飞书核对六组引用，打包时再校验最终安装包。
+正式发布必须验证表中全部七个 Profile。受影响的镜像用 `--sheet` 重建，通过冒烟后推送并登记飞书。构建输入未受影响的 Profile 可以复用已有镜像，先确认该镜像可拉取且通过本次冒烟，再在 `ictrek.app/image-reuse/<版本>.json` 记录。文件以镜像变量为键，每项包含 `image`（飞书表中该 Profile 的完整镜像引用）和 `reason`（构建输入未受影响的依据）。例如 `{"VVOICE_ARM_IMAGE":{"image":"swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:arm_0.0.42","reason":"ARM CPU 构建输入未变，冒烟验证通过"}}`。版本脚本先从飞书核对六组引用，打包时再校验最终安装包。
 
 候选流程必须先构建，再冒烟，最后推送。不要使用默认的“构建并发布”组合命令，否则镜像会在冒烟前进入仓库和飞书。
 
@@ -101,13 +102,13 @@ python3 scripts/haru_dialogue_smoke.py \
 docker push "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_cu128_${RELEASE_VERSION}"
 ```
 
-L4T 和 Thor 使用相同顺序，在各自构建机执行 `--build-only`、镜像冒烟、Haru 冒烟（映射见 `$vos-preflight-package/references/v-voice.md`）和 `docker push`。全部六个 Profile 的镜像引用核验通过后才能开始打包。
+L4T 和 Thor 使用相同顺序，在各自构建机执行 `--build-only`、镜像冒烟、Haru 冒烟（映射见 `$vos-preflight-package/references/v-voice.md`）和 `docker push`。全部七个 Profile 的镜像引用核验通过后才能开始打包。
 
 `haru_dialogue_smoke.py` 自动从当前已安装的 V-Voice 容器找到只读模型目录；没有已安装实例时显式传 `--model-root`。它使用 `docker run --rm`、无网络、临时 `/data`，不修改现有容器，验证 worker `ready`、首个 6400 字节 PCM 帧、正常 `end`、worker 退出码 0、无孤儿进程和驻留状态清理。AMD CUDA、L4T、Thor 都必须通过，不能只看镜像里的 CUDA 链接结果。
 
 默认版本为 `ictrek.app/VERSION` 的下一个 patch；发布时建议明确传入候选版本。预检阶段发现问题时，修复后可用同一候选版本重新构建、冒烟和推送覆盖；尚未写入飞书的候选标签不视为正式发布。
 
-本阶段按上表核对六个 Profile。共用代码有改动时，重建受影响的各 Profile。可复用的镜像须按上文登记和验证；打包器只解析并校验镜像引用。
+本阶段按上表核对七个 Profile。共用代码有改动时，重建受影响的各 Profile。可复用的镜像须按上文登记和验证；打包器只解析并校验镜像引用。
 
 本阶段只推送候选镜像，不更新飞书。候选包通过 `package.sh --image` 显式引用这些标签；用户确认正式发布后，才在各自构建机运行 `--publish-only`，将同一标签推送到仓库并登记到飞书。
 
@@ -145,7 +146,7 @@ git diff -- ictrek.app/dependency-lock.json
 
 所有重新构建的 Profile 都通过 `--image` 使用各自的候选标签。复用已发布镜像的 Profile 使用飞书读凭据（优先 `~/.feishu.components.json`，其次 `~/.feishu.json`，或由 `FEISHU_CONFIG_FILE` 指定）。本步骤只读取飞书，不写入。V-Scheduler 依赖从已发布的 GitHub 包查询，依次使用 `GH_TOKEN`、`GITHUB_TOKEN` 或本机 `gh auth login` 已保存的登录，避免匿名 API 限流；无需手动导出 CLI 令牌。私有仓库无法读取时，可通过已授权的本机隧道设置 `VVOICE_APPSTORE_API_URL` 查询商店记录。依赖查询失败时先解决凭据或通道问题，不提前触发正式发布。
 
-外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、镜像引用和依赖，并核验六个 Profile 的镜像引用。产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。如果看到 `Dependency drift`，停止打包，重新验证并提交锁文件。
+外层包应只有 `app.tar.gz`。核对 `ictrek.app/dist/staging/` 中的版本、镜像引用和依赖，并核验七个 Profile 的镜像引用。产物为 `ictrek.app/dist/v_voice_X.Y.Z_pull.tar`。如果看到 `Dependency drift`，停止打包，重新验证并提交锁文件。
 
 ### 候选包安装预检
 
@@ -194,7 +195,7 @@ bash docker/build_image.sh --sheet l4t --version "$RELEASE_VERSION" --publish-on
 bash docker/build_image.sh --sheet thor_spark --version "$RELEASE_VERSION" --publish-only
 ```
 
-`--publish-only` 会重新确认本地候选标签存在、推送一次并写入对应飞书 sheet。任一步失败都停在正式发版前；六个 Profile 的引用回读一致后继续。
+`--publish-only` 会重新确认本地候选标签存在、推送一次并写入对应飞书 sheet。任一步失败都停在正式发版前；七个 Profile 的引用回读一致后继续。
 
 沿用第 2 节确定的同一候选版本，先检查发布说明：
 
