@@ -8,6 +8,16 @@
 
 - V-yovoice DSH 插件在模型选择器旁新增语音听写麦克风，可把语音写入未发送的聊天草稿。录音可手动停止或在达到配置时长时自动结束，识别与消息发送完全分离；只有草稿版本未变化时才自动插入，草稿已修改时保留识别文字供明确插入。音频不会被保存为会话附件。
 
+## [0.0.46] - 2026-11-28
+
+### English
+
+- Use the standard VOS hardware Profile names in the installer and expose Jetson Thor and DGX Spark as distinct CUDA choices. During upgrades, preserve the app storage and select the new name for the existing backend.
+
+### 简体中文
+
+- 安装器使用统一的 VOS 硬件 Profile 名称，分别提供 Jetson Thor 和 DGX Spark 的 CUDA 选项。升级时保留应用存储，并为现有后端选择对应的新名称。
+
 ## [0.0.45] - 2026-11-28
 
 ### English
