@@ -24,7 +24,9 @@ Image tags use the platform prefix and the next patch version from `ictrek.app/V
 for example `amd_cu128_0.0.31`. Use `--version X.Y.Z` to select a version explicitly;
 pass the same version to both `--build-only` and `--publish-only`. Published tags must
 not be overwritten with different images. Existing date tags remain valid, and profiles
-that have not changed can retain their previously published images.
+that have not changed can retain their previously published images. The package lists all approved
+remote GPU image references in `x-v-scheduler-backend-images`, including images
+reused by the release. The deployment request contract stays the same.
 
 The AMD CUDA image uses CPU-only Python ONNX Runtime for SeACo and sherpa-onnx
 for CUDA inference. Both share the provider bridge shipped with sherpa-onnx,

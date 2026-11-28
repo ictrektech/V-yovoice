@@ -8,6 +8,16 @@
 
 - V-yovoice DSH 插件在模型选择器旁新增语音听写麦克风，可把语音写入未发送的聊天草稿。录音可手动停止或在达到配置时长时自动结束，识别与消息发送完全分离；只有草稿版本未变化时才自动插入，草稿已修改时保留识别文字供明确插入。音频不会被保存为会话附件。
 
+## [0.0.47] - 2026-11-28
+
+### English
+
+- Preserve the Scheduler backend image catalog when a VOS package reuses verified runtime images. Deploying to compute nodes uses the image listed for its Profile.
+
+### 简体中文
+
+- 安装包复用已验证的运行时镜像时保留 Scheduler 后端镜像目录。向分节点部署时使用对应 Profile 的镜像。
+
 ## [0.0.46] - 2026-11-28
 
 ### English

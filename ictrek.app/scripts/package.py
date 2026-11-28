@@ -298,12 +298,8 @@ def render(
         lambda match: images.get(match.group(1), match.group(0)),
         compose,
     )
-    remote_images = {
-        profile: images[variable] for profile, variable in REMOTE_PROFILES.items()
-        if images[variable].endswith("_" + version)
-    }
-    if remote_images:
-        compose = "x-v-scheduler-backend-images: " + json.dumps(remote_images, separators=(",", ":")) + "\n" + compose
+    remote_images = {profile: images[variable] for profile, variable in REMOTE_PROFILES.items()}
+    compose = "x-v-scheduler-backend-images: " + json.dumps(remote_images, separators=(",", ":")) + "\n" + compose
     (stage / "docker-compose.yml").write_text(compose, encoding="utf-8")
     if re.search(r"\$\{[^}]*_IMAGE[^}]*\}", compose):
         raise RuntimeError("unrendered image variable remains")
@@ -393,7 +389,15 @@ def verify_pull_package(output: Path, version: str) -> None:
             if resolved < required:
                 raise RuntimeError(f"{dependency['id']} is below required contract {minimum}")
 
-        compose = yaml.safe_load(read("docker-compose.yml"))
+        compose_text = read("docker-compose.yml")
+        compose = yaml.safe_load(compose_text)
+        catalog = [
+            line.split(":", 1)[1] for line in compose_text.splitlines()
+            if line.startswith("x-v-scheduler-backend-images:")
+        ]
+        expected = {profile: images[variable] for profile, variable in REMOTE_PROFILES.items()}
+        if len(catalog) != 1 or json.loads(catalog[0]) != expected:
+            raise RuntimeError("invalid scheduler backend image catalog in docker-compose.yml")
         services = compose.get("services", {}).values()
         service_images = [str(service.get("image", "")) for service in services]
         if sorted(service_images) != sorted(images.values()):

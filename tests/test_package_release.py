@@ -22,7 +22,7 @@ def image_references(version="1.2.3"):
 
 
 def write_package(path, *, package_version="1.2.3", images=None,
-                  dependency=">=0.0.120", compose_images=None):
+                  dependency=">=0.0.120", compose_images=None, remote_catalog=True):
     if images is None:
         images = image_references(package_version)
     manifest = {
@@ -48,10 +48,14 @@ def write_package(path, *, package_version="1.2.3", images=None,
             for variable, image in zip(images, compose_images)
         }
     }
+    compose_text = yaml.safe_dump(compose, sort_keys=False)
+    if remote_catalog:
+        refs = {profile: images[variable] for profile, variable in package.REMOTE_PROFILES.items()}
+        compose_text = "x-v-scheduler-backend-images: " + json.dumps(refs) + "\n" + compose_text
     files = {
         ".env": "".join(f"{key}={value}\n" for key, value in images.items()).encode(),
         "manifest.yml": yaml.safe_dump(manifest, sort_keys=False).encode(),
-        "docker-compose.yml": yaml.safe_dump(compose, sort_keys=False).encode(),
+        "docker-compose.yml": compose_text.encode(),
         "configs.yml": b"[]\n",
         "routers.yml": b"[]\n",
         "icon.png": b"png",
@@ -133,6 +137,29 @@ def test_compose_images_must_match_env(tmp_path):
     write_package(path, images=images, compose_images=compose_images)
 
     with pytest.raises(RuntimeError, match="docker-compose"):
+        package.verify_pull_package(path, "1.2.3")
+
+
+def test_approved_reused_gpu_images_are_in_the_scheduler_catalog(tmp_path, monkeypatch):
+    images = image_references("1.2.3")
+    monkeypatch.setattr(package, "resolve_dependencies", lambda *_args, **_kwargs: None)
+    stage = tmp_path / "stage"
+
+    package.render("1.2.4", images, stage, {})
+
+    compose = (stage / "docker-compose.yml").read_text()
+    prefix, _, catalog = compose.splitlines()[0].partition(":")
+    assert prefix == "x-v-scheduler-backend-images"
+    assert json.loads(catalog) == {
+        profile: images[variable] for profile, variable in package.REMOTE_PROFILES.items()
+    }
+
+
+def test_package_must_include_scheduler_image_catalog(tmp_path):
+    path = tmp_path / "v_voice_1.2.3_pull.tar"
+    write_package(path, remote_catalog=False)
+
+    with pytest.raises(RuntimeError, match="scheduler backend image catalog"):
         package.verify_pull_package(path, "1.2.3")
 
 
