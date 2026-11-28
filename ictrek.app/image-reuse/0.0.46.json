@@ -1,0 +1,26 @@
+{
+  "VVOICE_AMD_IMAGE": {
+    "image": "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_0.0.45",
+    "reason": "Package-only hardware Profile normalization. Runtime image inputs are unchanged. The published 0.0.45 manifest and the new Compose selection were verified for this image."
+  },
+  "VVOICE_AMD_CUDA_IMAGE": {
+    "image": "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:amd_cu128_0.0.45",
+    "reason": "Package-only hardware Profile normalization. Runtime image inputs are unchanged. The published 0.0.45 manifest and the new Compose selection were verified for this image."
+  },
+  "VVOICE_ARM_IMAGE": {
+    "image": "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:arm_0.0.45",
+    "reason": "Package-only hardware Profile normalization. Runtime image inputs are unchanged. The published 0.0.45 manifest and the new Compose selection were verified for this image."
+  },
+  "VVOICE_ARM_CUDA_IMAGE": {
+    "image": "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:arm_cu130_0.0.45",
+    "reason": "Package-only hardware Profile normalization. Runtime image inputs are unchanged. The published 0.0.45 manifest and the new Compose selection were verified for this image."
+  },
+  "VVOICE_L4T_IMAGE": {
+    "image": "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:l4t_0.0.45",
+    "reason": "Package-only hardware Profile normalization. Runtime image inputs are unchanged. The published 0.0.45 manifest and the new Compose selection were verified for this image."
+  },
+  "VVOICE_THOR_IMAGE": {
+    "image": "swr.cn-southwest-2.myhuaweicloud.com/ictrek/v-voice:thor_0.0.45",
+    "reason": "Package-only hardware Profile normalization. Runtime image inputs are unchanged. The published 0.0.45 manifest and the new Compose selection were verified for this image."
+  }
+}
